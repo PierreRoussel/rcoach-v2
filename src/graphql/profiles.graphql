@@ -1,5 +1,5 @@
-query GetMyProfile($userId: uuid!) {
-  profiles(where: { id: { _eq: $userId } }, limit: 1) {
+mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
+  update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
     id
     display_name
     avatar_url

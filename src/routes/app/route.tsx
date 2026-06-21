@@ -1,39 +1,34 @@
-import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { requireAuth } from '@/lib/auth/guards'
+import { flushSyncQueue } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { useMyProfile } from '@/hooks/useProfile'
 
 export const Route = createFileRoute('/app')({
+  beforeLoad: requireAuth,
   component: AppLayout,
 })
 
 function AppLayout() {
-  const { isAuthenticated, isLoading, nhost } = useAuth()
-  const navigate = useNavigate()
+  const { nhost } = useAuth()
   const { data: profile } = useMyProfile()
+  const hydrate = useActiveWorkoutStore((state) => state.hydrate)
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      void navigate({ to: '/auth/login' })
-    }
-  }, [isAuthenticated, isLoading, navigate])
+    void hydrate()
+    void flushSyncQueue(nhost)
+  }, [hydrate, nhost])
 
   async function handleSignOut() {
     const session = nhost.getUserSession()
     if (session?.refreshTokenId) {
       await nhost.auth.signOut({ refreshToken: session.refreshTokenId })
     }
-    await navigate({ to: '/auth/login' })
-  }
-
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-svh items-center justify-center text-sm text-muted-foreground">
-        Chargement...
-      </div>
-    )
+    window.location.href = '/auth/login'
   }
 
   const showCoachLink =
@@ -70,16 +65,25 @@ function AppLayout() {
         <Link
           to="/app"
           className="rounded-md px-2 py-2 text-center hover:bg-muted"
+          activeOptions={{ exact: true }}
           activeProps={{ className: 'rounded-md bg-muted px-2 py-2 text-center' }}
         >
           Home
         </Link>
-        <span className="rounded-md px-2 py-2 text-center text-muted-foreground">
+        <Link
+          to="/app/stats"
+          className="rounded-md px-2 py-2 text-center hover:bg-muted"
+          activeProps={{ className: 'rounded-md bg-muted px-2 py-2 text-center' }}
+        >
           Stats
-        </span>
-        <span className="rounded-md px-2 py-2 text-center text-muted-foreground">
+        </Link>
+        <Link
+          to="/app/profile"
+          className="rounded-md px-2 py-2 text-center hover:bg-muted"
+          activeProps={{ className: 'rounded-md bg-muted px-2 py-2 text-center' }}
+        >
           Profil
-        </span>
+        </Link>
       </nav>
     </div>
   )

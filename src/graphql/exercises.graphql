@@ -10,23 +10,3 @@ query ListPublicExercises {
     is_public
   }
 }
-
-mutation InsertWorkout($object: workouts_insert_input!) {
-  insert_workouts_one(object: $object) {
-    id
-    title
-    started_at
-    workout_exercises {
-      id
-      exercise {
-        name
-      }
-      sets {
-        id
-        set_index
-        weight_kg
-        reps
-      }
-    }
-  }
-}

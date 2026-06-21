@@ -1,32 +1,55 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   GET_MY_PROFILE,
   LIST_PUBLIC_EXERCISES,
+  UPDATE_MY_PROFILE,
   type Exercise,
   type Profile,
+  type ProfileUpdateInput,
 } from '@/lib/graphql/operations'
+import { graphqlRequest } from '@/lib/graphql/request'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useMyProfile() {
-  const { nhost, user, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated } = useAuth()
 
   return useQuery({
-    queryKey: ['profile', user?.id],
-    enabled: isAuthenticated && Boolean(user?.id),
+    queryKey: ['profile', 'me'],
+    enabled: isAuthenticated,
     queryFn: async () => {
-      const response = await nhost.graphql.request<{
-        profiles: Profile[]
-      }>({
-        query: GET_MY_PROFILE,
-        variables: { userId: user!.id },
-      })
+      const data = await graphqlRequest<{ profiles: Profile[] }>(
+        nhost,
+        GET_MY_PROFILE,
+      )
 
-      if (response.body.errors?.length) {
-        throw new Error(response.body.errors[0]?.message ?? 'Profile query failed')
-      }
+      return data.profiles[0] ?? null
+    },
+  })
+}
 
-      return response.body.data?.profiles[0] ?? null
+export function useUpdateProfile() {
+  const { nhost } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      profileId,
+      changes,
+    }: {
+      profileId: string
+      changes: ProfileUpdateInput
+    }) => {
+      const data = await graphqlRequest<{ update_profiles_by_pk: Profile | null }>(
+        nhost,
+        UPDATE_MY_PROFILE,
+        { id: profileId, changes },
+      )
+
+      return data.update_profiles_by_pk
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
     },
   })
 }
@@ -38,19 +61,12 @@ export function usePublicExercises() {
     queryKey: ['exercises', 'public'],
     enabled: isAuthenticated,
     queryFn: async () => {
-      const response = await nhost.graphql.request<{
-        exercises: Exercise[]
-      }>({
-        query: LIST_PUBLIC_EXERCISES,
-      })
+      const data = await graphqlRequest<{ exercises: Exercise[] }>(
+        nhost,
+        LIST_PUBLIC_EXERCISES,
+      )
 
-      if (response.body.errors?.length) {
-        throw new Error(
-          response.body.errors[0]?.message ?? 'Exercises query failed',
-        )
-      }
-
-      return response.body.data?.exercises ?? []
+      return data.exercises
     },
   })
 }

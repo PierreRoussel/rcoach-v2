@@ -15,9 +15,68 @@ export type Exercise = {
   is_public: boolean
 }
 
+export type WorkoutSummary = {
+  id: string
+  title: string
+  started_at: string
+  ended_at: string | null
+  workout_exercises: Array<{
+    id: string
+    exercise: { name: string; muscle_group: string | null }
+    sets: Array<{
+      set_index: number
+      weight_kg: number | null
+      reps: number | null
+      set_type: string
+    }>
+  }>
+}
+
+export type ProfileUpdateInput = {
+  display_name?: string
+  unit_system?: 'kg' | 'lb'
+}
+
+export const UPDATE_MY_PROFILE = `
+  mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
+    update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      created_at
+    }
+  }
+`
+
+export const LIST_MY_WORKOUTS = `
+  query ListMyWorkouts {
+    workouts(order_by: { started_at: desc }, limit: 100) {
+      id
+      title
+      started_at
+      ended_at
+      workout_exercises {
+        id
+        exercise {
+          name
+          muscle_group
+        }
+        sets {
+          set_index
+          weight_kg
+          reps
+          set_type
+        }
+      }
+    }
+  }
+`
+
 export const GET_MY_PROFILE = `
-  query GetMyProfile($userId: uuid!) {
-    profiles(where: { id: { _eq: $userId } }, limit: 1) {
+  query GetMyProfile {
+    profiles(limit: 1) {
       id
       display_name
       avatar_url

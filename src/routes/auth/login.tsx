@@ -12,23 +12,21 @@ import {
 import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { redirectIfAuthenticated } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/login')({
+  beforeLoad: redirectIfAuthenticated,
   component: LoginPage,
 })
 
 function LoginPage() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  if (isAuthenticated) {
-    void navigate({ to: '/app' })
-  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()

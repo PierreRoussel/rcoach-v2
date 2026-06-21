@@ -1,24 +1,19 @@
 import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
-import { useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { requireAuth } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useMyProfile } from '@/hooks/useProfile'
 
 export const Route = createFileRoute('/coach')({
+  beforeLoad: requireAuth,
   component: CoachLayout,
 })
 
 function CoachLayout() {
-  const { isAuthenticated, isLoading, nhost } = useAuth()
+  const { nhost } = useAuth()
   const navigate = useNavigate()
   const { data: profile } = useMyProfile()
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      void navigate({ to: '/auth/login' })
-    }
-  }, [isAuthenticated, isLoading, navigate])
 
   async function handleSignOut() {
     const session = nhost.getUserSession()
@@ -26,14 +21,6 @@ function CoachLayout() {
       await nhost.auth.signOut({ refreshToken: session.refreshTokenId })
     }
     await navigate({ to: '/auth/login' })
-  }
-
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-svh items-center justify-center text-sm text-muted-foreground">
-        Chargement...
-      </div>
-    )
   }
 
   const isCoach = profile?.role === 'coach' || profile?.role === 'both'
@@ -49,18 +36,19 @@ function CoachLayout() {
           <Link
             to="/coach"
             className="block rounded-md px-3 py-2 hover:bg-muted"
+            activeOptions={{ exact: true }}
             activeProps={{ className: 'block rounded-md bg-muted px-3 py-2' }}
           >
             Dashboard
           </Link>
           <span className="block rounded-md px-3 py-2 text-muted-foreground">
-            Clients
+            Clients (Phase 2)
           </span>
           <span className="block rounded-md px-3 py-2 text-muted-foreground">
-            Programmes
+            Programmes (Phase 2)
           </span>
           <span className="block rounded-md px-3 py-2 text-muted-foreground">
-            Analytics
+            Analytics (Phase 2)
           </span>
         </nav>
         <div className="mt-8 space-y-2">
@@ -83,7 +71,7 @@ function CoachLayout() {
 
         <main className="flex-1 p-4 md:p-8">
           {!isCoach ? (
-            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+            <div className="mb-4 rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
               Espace coach — desktop recommande. Passez votre profil en role
               coach pour debloquer cette vue (Phase 2).
             </div>

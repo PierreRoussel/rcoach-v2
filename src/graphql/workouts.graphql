@@ -1,0 +1,21 @@
+query ListMyWorkouts {
+  workouts(order_by: { started_at: desc }, limit: 100) {
+    id
+    title
+    started_at
+    ended_at
+    workout_exercises {
+      id
+      exercise {
+        name
+        muscle_group
+      }
+      sets {
+        set_index
+        weight_kg
+        reps
+        set_type
+      }
+    }
+  }
+}

@@ -44,3 +44,20 @@ npm run codegen
 - Shells `/app` (mobile) and `/coach` (desktop)
 - Public exercises library via GraphQL
 - Postgres schema + Hasura permissions
+
+## Phase 1 scope
+
+- PWA installable (`vite-plugin-pwa`, manifest, service worker network-first GraphQL)
+- Routes athlete : `/app/stats`, `/app/profile`, `/app/workouts`, `/app/workout/active`, `/app/import`
+- Seance active (Zustand + timer repos + persistance Dexie)
+- Import CSV Hevy (PapaParse)
+- Statistiques volume hebdomadaire (Recharts)
+- File de sync offline Dexie pour les mutations workout
+
+## Verification
+
+```bash
+npm run typecheck
+npm run verify:routes   # build + HTTP 200 sur toutes les routes
+npm run verify:graphql  # schema Hasura deploye
+```

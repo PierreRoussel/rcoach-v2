@@ -16,6 +16,11 @@ import { Route as CoachIndexRouteImport } from './routes/coach/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AppStatsRouteImport } from './routes/app/stats'
+import { Route as AppProfileRouteImport } from './routes/app/profile'
+import { Route as AppImportRouteImport } from './routes/app/import'
+import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/index'
+import { Route as AppWorkoutActiveRouteImport } from './routes/app/workout/active'
 
 const CoachRouteRoute = CoachRouteRouteImport.update({
   id: '/coach',
@@ -52,32 +57,72 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppStatsRoute = AppStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppImportRoute = AppImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppWorkoutsIndexRoute = AppWorkoutsIndexRouteImport.update({
+  id: '/workouts/',
+  path: '/workouts/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppWorkoutActiveRoute = AppWorkoutActiveRouteImport.update({
+  id: '/workout/active',
+  path: '/workout/active',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
+  '/app/import': typeof AppImportRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/stats': typeof AppStatsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
+  '/app/workout/active': typeof AppWorkoutActiveRoute
+  '/app/workouts/': typeof AppWorkoutsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/import': typeof AppImportRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/stats': typeof AppStatsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app': typeof AppIndexRoute
   '/coach': typeof CoachIndexRoute
+  '/app/workout/active': typeof AppWorkoutActiveRoute
+  '/app/workouts': typeof AppWorkoutsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
+  '/app/import': typeof AppImportRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/stats': typeof AppStatsRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
+  '/app/workout/active': typeof AppWorkoutActiveRoute
+  '/app/workouts/': typeof AppWorkoutsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -85,21 +130,41 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/coach'
+    | '/app/import'
+    | '/app/profile'
+    | '/app/stats'
     | '/auth/login'
     | '/auth/register'
     | '/app/'
     | '/coach/'
+    | '/app/workout/active'
+    | '/app/workouts/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/login' | '/auth/register' | '/app' | '/coach'
+  to:
+    | '/'
+    | '/app/import'
+    | '/app/profile'
+    | '/app/stats'
+    | '/auth/login'
+    | '/auth/register'
+    | '/app'
+    | '/coach'
+    | '/app/workout/active'
+    | '/app/workouts'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/coach'
+    | '/app/import'
+    | '/app/profile'
+    | '/app/stats'
     | '/auth/login'
     | '/auth/register'
     | '/app/'
     | '/coach/'
+    | '/app/workout/active'
+    | '/app/workouts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -161,15 +226,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/stats': {
+      id: '/app/stats'
+      path: '/stats'
+      fullPath: '/app/stats'
+      preLoaderRoute: typeof AppStatsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/import': {
+      id: '/app/import'
+      path: '/import'
+      fullPath: '/app/import'
+      preLoaderRoute: typeof AppImportRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/workouts/': {
+      id: '/app/workouts/'
+      path: '/workouts'
+      fullPath: '/app/workouts/'
+      preLoaderRoute: typeof AppWorkoutsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/workout/active': {
+      id: '/app/workout/active'
+      path: '/workout/active'
+      fullPath: '/app/workout/active'
+      preLoaderRoute: typeof AppWorkoutActiveRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
+  AppImportRoute: typeof AppImportRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppStatsRoute: typeof AppStatsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppWorkoutActiveRoute: typeof AppWorkoutActiveRoute
+  AppWorkoutsIndexRoute: typeof AppWorkoutsIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppImportRoute: AppImportRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppStatsRoute: AppStatsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppWorkoutActiveRoute: AppWorkoutActiveRoute,
+  AppWorkoutsIndexRoute: AppWorkoutsIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
