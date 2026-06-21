@@ -15,11 +15,15 @@ export type ActiveWorkoutDraft = {
   exercises: Array<{
     exerciseId: string
     exerciseName: string
+    muscleGroup?: string | null
+    equipment?: string | null
     sets: Array<{
       setIndex: number
       setType: 'normal' | 'warmup' | 'failure'
       weightKg: number | null
       reps: number | null
+      durationSeconds?: number | null
+      distanceKm?: number | null
     }>
   }>
 }

@@ -4,17 +4,26 @@ import { db, type ActiveWorkoutDraft } from '@/lib/db/dexie'
 
 type ActiveSet = ActiveWorkoutDraft['exercises'][number]['sets'][number]
 
-type ActiveExercise = ActiveWorkoutDraft['exercises'][number]
+export type ActiveExerciseEntry = ActiveWorkoutDraft['exercises'][number]
 
 type ActiveWorkoutState = {
   title: string
   startedAt: string | null
-  exercises: ActiveExercise[]
+  exercises: ActiveExerciseEntry[]
+  activeExerciseIndex: number
   restSecondsLeft: number
   isResting: boolean
   hydrate: () => Promise<void>
   startWorkout: (title: string) => Promise<void>
-  addExercise: (exercise: { id: string; name: string }) => Promise<void>
+  addExercise: (exercise: {
+    id: string
+    name: string
+    muscle_group?: string | null
+    equipment?: string | null
+  }) => Promise<void>
+  removeExercise: (exerciseIndex: number) => Promise<void>
+  reorderExercises: (fromIndex: number, toIndex: number) => Promise<void>
+  setActiveExerciseIndex: (index: number) => void
   addSet: (exerciseIndex: number, set: Omit<ActiveSet, 'setIndex'>) => Promise<void>
   startRest: (seconds: number) => void
   tickRest: () => void
@@ -22,7 +31,9 @@ type ActiveWorkoutState = {
   cancelWorkout: () => Promise<void>
 }
 
-async function persistDraft(state: Pick<ActiveWorkoutState, 'title' | 'startedAt' | 'exercises'>) {
+async function persistDraft(
+  state: Pick<ActiveWorkoutState, 'title' | 'startedAt' | 'exercises'>,
+) {
   if (!state.startedAt) {
     return
   }
@@ -39,6 +50,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   title: '',
   startedAt: null,
   exercises: [],
+  activeExerciseIndex: 0,
   restSecondsLeft: 0,
   isResting: false,
 
@@ -52,26 +64,88 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title: draft.title,
       startedAt: draft.startedAt,
       exercises: draft.exercises,
+      activeExerciseIndex: 0,
     })
   },
 
   startWorkout: async (title) => {
     const startedAt = new Date().toISOString()
-    set({ title, startedAt, exercises: [], restSecondsLeft: 0, isResting: false })
+    set({
+      title,
+      startedAt,
+      exercises: [],
+      activeExerciseIndex: 0,
+      restSecondsLeft: 0,
+      isResting: false,
+    })
     await persistDraft({ title, startedAt, exercises: [] })
   },
 
   addExercise: async (exercise) => {
+    if (get().exercises.some((item) => item.exerciseId === exercise.id)) {
+      return
+    }
+
     const nextExercises = [
       ...get().exercises,
-      { exerciseId: exercise.id, exerciseName: exercise.name, sets: [] },
+      {
+        exerciseId: exercise.id,
+        exerciseName: exercise.name,
+        muscleGroup: exercise.muscle_group ?? null,
+        equipment: exercise.equipment ?? null,
+        sets: [],
+      },
     ]
-    set({ exercises: nextExercises })
+
+    set({
+      exercises: nextExercises,
+      activeExerciseIndex: nextExercises.length - 1,
+    })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       exercises: nextExercises,
     })
+  },
+
+  removeExercise: async (exerciseIndex) => {
+    const nextExercises = get().exercises.filter((_, index) => index !== exerciseIndex)
+    const nextActive = Math.min(get().activeExerciseIndex, Math.max(nextExercises.length - 1, 0))
+    set({ exercises: nextExercises, activeExerciseIndex: nextActive })
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      exercises: nextExercises,
+    })
+  },
+
+  reorderExercises: async (fromIndex, toIndex) => {
+    const exercises = [...get().exercises]
+    const [moved] = exercises.splice(fromIndex, 1)
+    if (!moved) {
+      return
+    }
+    exercises.splice(toIndex, 0, moved)
+
+    let activeExerciseIndex = get().activeExerciseIndex
+    if (activeExerciseIndex === fromIndex) {
+      activeExerciseIndex = toIndex
+    } else if (fromIndex < activeExerciseIndex && toIndex >= activeExerciseIndex) {
+      activeExerciseIndex -= 1
+    } else if (fromIndex > activeExerciseIndex && toIndex <= activeExerciseIndex) {
+      activeExerciseIndex += 1
+    }
+
+    set({ exercises, activeExerciseIndex })
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      exercises,
+    })
+  },
+
+  setActiveExerciseIndex: (index) => {
+    set({ activeExerciseIndex: index })
   },
 
   addSet: async (exerciseIndex, setInput) => {
@@ -132,6 +206,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title: '',
       startedAt: null,
       exercises: [],
+      activeExerciseIndex: 0,
       restSecondsLeft: 0,
       isResting: false,
     })
@@ -145,6 +220,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title: '',
       startedAt: null,
       exercises: [],
+      activeExerciseIndex: 0,
       restSecondsLeft: 0,
       isResting: false,
     })

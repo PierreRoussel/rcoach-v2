@@ -42,6 +42,12 @@ function AppHomePage() {
             </Link>
           </Button>
           <Button variant="outline" className="rounded-full" asChild>
+            <Link to="/app/exercises">
+              <Dumbbell className="size-4" />
+              Catalogue
+            </Link>
+          </Button>
+          <Button variant="outline" className="rounded-full" asChild>
             <Link to="/app/import">
               <Upload className="size-4" />
               Import Hevy

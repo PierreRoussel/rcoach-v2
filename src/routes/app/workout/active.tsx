@@ -2,6 +2,9 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Timer } from 'lucide-react'
 
+import { ExercisePerformancePanel } from '@/components/workout/ExercisePerformancePanel'
+import { ExercisePicker } from '@/components/workout/ExercisePicker'
+import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -14,10 +17,10 @@ import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
-import { usePublicExercises } from '@/hooks/useProfile'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import type { OverloadSuggestion } from '@/lib/workout/progressive-overload'
 
 export const Route = createFileRoute('/app/workout/active')({
   component: ActiveWorkoutPage,
@@ -26,16 +29,19 @@ export const Route = createFileRoute('/app/workout/active')({
 function ActiveWorkoutPage() {
   const { nhost } = useAuth()
   const navigate = useNavigate()
-  const { data: exercises } = usePublicExercises()
   const {
     title,
     startedAt,
     exercises: activeExercises,
+    activeExerciseIndex,
     restSecondsLeft,
     isResting,
     hydrate,
     startWorkout,
     addExercise,
+    removeExercise,
+    reorderExercises,
+    setActiveExerciseIndex,
     addSet,
     startRest,
     tickRest,
@@ -44,13 +50,14 @@ function ActiveWorkoutPage() {
   } = useActiveWorkoutStore()
 
   const [workoutTitle, setWorkoutTitle] = useState('Seance libre')
-  const [selectedExerciseId, setSelectedExerciseId] = useState('')
   const [weightKg, setWeightKg] = useState('')
   const [reps, setReps] = useState('')
-  const [activeExerciseIndex, setActiveExerciseIndex] = useState(0)
+  const [setType, setSetType] = useState<'normal' | 'warmup' | 'failure'>('normal')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  const activeExercise = activeExercises[activeExerciseIndex]
 
   useEffect(() => {
     void hydrate()
@@ -65,38 +72,35 @@ function ActiveWorkoutPage() {
     return () => window.clearInterval(timer)
   }, [isResting, tickRest])
 
+  function applySuggestion(suggestion: OverloadSuggestion) {
+    if (suggestion.suggestedWeightKg != null) {
+      setWeightKg(String(suggestion.suggestedWeightKg))
+    }
+    if (suggestion.suggestedReps != null) {
+      setReps(String(suggestion.suggestedReps))
+    }
+  }
+
   async function handleStart() {
     setError(null)
     await startWorkout(workoutTitle.trim() || 'Seance libre')
   }
 
-  async function handleAddExercise() {
-    const exercise = exercises?.find((item) => item.id === selectedExerciseId)
-    if (!exercise) {
-      setError('Selectionnez un exercice.')
-      return
-    }
-
-    setError(null)
-    await addExercise(exercise)
-    setActiveExerciseIndex(useActiveWorkoutStore.getState().exercises.length - 1)
-    setSelectedExerciseId('')
-  }
-
   async function handleLogSet() {
-    if (activeExercises.length === 0) {
+    if (!activeExercise) {
       setError('Ajoutez un exercice avant de logger un set.')
       return
     }
 
     setError(null)
     await addSet(activeExerciseIndex, {
-      setType: 'normal',
+      setType,
       weightKg: weightKg ? Number(weightKg) : null,
       reps: reps ? Number(reps) : null,
     })
     setWeightKg('')
     setReps('')
+    setSetType('normal')
     startRest(90)
   }
 
@@ -154,18 +158,10 @@ function ActiveWorkoutPage() {
         <PageHeader
           eyebrow="Seance active"
           title="Nouvelle seance"
-          description="Demarrez une seance avec timer de repos integre."
+          description="Composez votre seance, reordonnez les exercices et suivez votre surcharge."
         />
         <Card className="rounded-2xl border-border">
-          <CardHeader>
-            <CardTitle className="font-display font-black">
-              Configuration
-            </CardTitle>
-            <CardDescription>
-              Donnez un titre a votre seance avant de commencer.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="workoutTitle">Titre</Label>
               <Input
@@ -191,8 +187,8 @@ function ActiveWorkoutPage() {
           title={title}
           description={
             isResting
-              ? `Repos en cours — ${restSecondsLeft}s restantes`
-              : 'Loggez vos sets et enregistrez la seance.'
+              ? `Repos — ${restSecondsLeft}s`
+              : `${activeExercises.length} exercices dans la seance`
           }
         />
         {isResting ? (
@@ -204,139 +200,125 @@ function ActiveWorkoutPage() {
       </div>
 
       <Card className="rounded-2xl border-border">
-        <CardContent className="space-y-4 pt-6">
-          <div className="space-y-2">
-            <Label htmlFor="exercise">Exercice</Label>
-            <select
-              id="exercise"
-              className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-              value={selectedExerciseId}
-              onChange={(event) => setSelectedExerciseId(event.target.value)}
-            >
-              <option value="">Choisir...</option>
-              {exercises?.map((exercise) => (
-                <option key={exercise.id} value={exercise.id}>
-                  {exercise.name}
-                </option>
-              ))}
-            </select>
-            <Button
-              type="button"
-              variant="soft"
-              onClick={() => void handleAddExercise()}
-            >
-              Ajouter l&apos;exercice
-            </Button>
-          </div>
-
-          {activeExercises.length > 0 ? (
-            <div className="space-y-2">
-              <Label htmlFor="activeExercise">Exercice actif</Label>
-              <select
-                id="activeExercise"
-                className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-                value={activeExerciseIndex}
-                onChange={(event) =>
-                  setActiveExerciseIndex(Number(event.target.value))
-                }
-              >
-                {activeExercises.map((exercise, index) => (
-                  <option key={`${exercise.exerciseId}-${index}`} value={index}>
-                    {exercise.exerciseName} ({exercise.sets.length} sets)
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="weight">Poids (kg)</Label>
-              <Input
-                id="weight"
-                inputMode="decimal"
-                value={weightKg}
-                onChange={(event) => setWeightKg(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reps">Reps</Label>
-              <Input
-                id="reps"
-                inputMode="numeric"
-                value={reps}
-                onChange={(event) => setReps(event.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="pill" onClick={() => void handleLogSet()}>
-              Logger le set
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="rounded-full"
-              onClick={() => startRest(90)}
-            >
-              Repos 90s
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              className="rounded-full"
-              disabled={isSaving}
-              onClick={() => void handleFinish()}
-            >
-              {isSaving ? 'Enregistrement...' : 'Terminer'}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => void cancelWorkout()}
-            >
-              Annuler
-            </Button>
-          </div>
-
-          {message ? (
-            <p className="text-sm text-secondary-foreground">{message}</p>
-          ) : null}
-          {error ? <FormMessage>{error}</FormMessage> : null}
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl border-border">
         <CardHeader>
-          <CardTitle className="font-display font-black">Recap</CardTitle>
+          <CardTitle className="font-display font-black">Programme</CardTitle>
+          <CardDescription>Glissez pour reordonner les exercices.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {activeExercises.length === 0 ? (
-            <p className="text-muted-foreground">Aucun exercice ajoute.</p>
-          ) : (
-            activeExercises.map((exercise, index) => (
-              <div
-                key={`${exercise.exerciseId}-${index}`}
-                className="rounded-2xl bg-soft-primary/40 p-3"
-              >
-                <p className="font-display font-black">{exercise.exerciseName}</p>
-                <ul className="mt-1 space-y-1 font-data text-xs text-muted-foreground">
-                  {exercise.sets.map((set) => (
-                    <li key={set.setIndex}>
-                      Set {set.setIndex + 1} — {set.weightKg ?? '—'} kg x{' '}
-                      {set.reps ?? '—'} reps
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
-          )}
-          <Button variant="outline" size="sm" className="rounded-full" asChild>
-            <Link to="/app">Retour home</Link>
-          </Button>
+        <CardContent className="space-y-3">
+          <ExercisePicker
+            excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
+            onSelect={(exercise) => void addExercise(exercise)}
+          />
+          <SortableExerciseList
+            exercises={activeExercises}
+            activeIndex={activeExerciseIndex}
+            onSelect={setActiveExerciseIndex}
+            onReorder={(from, to) => void reorderExercises(from, to)}
+            onRemove={(index) => void removeExercise(index)}
+          />
         </CardContent>
       </Card>
+
+      {activeExercise ? (
+        <Card className="rounded-2xl border-border">
+          <CardHeader>
+            <CardTitle className="font-display font-black">
+              {activeExercise.exerciseName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ExercisePerformancePanel
+              exercise={{
+                id: activeExercise.exerciseId,
+                name: activeExercise.exerciseName,
+                equipment: activeExercise.equipment ?? null,
+              }}
+              onApplySuggestion={applySuggestion}
+            />
+
+            <div className="grid grid-cols-3 gap-2">
+              {(['normal', 'warmup', 'failure'] as const).map((type) => (
+                <Button
+                  key={type}
+                  type="button"
+                  size="sm"
+                  variant={setType === type ? 'pill' : 'outline'}
+                  className="rounded-full capitalize"
+                  onClick={() => setSetType(type)}
+                >
+                  {type}
+                </Button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="weight">Poids (kg)</Label>
+                <Input
+                  id="weight"
+                  inputMode="decimal"
+                  value={weightKg}
+                  onChange={(event) => setWeightKg(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reps">Reps</Label>
+                <Input
+                  id="reps"
+                  inputMode="numeric"
+                  value={reps}
+                  onChange={(event) => setReps(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="pill" onClick={() => void handleLogSet()}>
+                Logger le set
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="rounded-full"
+                onClick={() => startRest(90)}
+              >
+                Repos 90s
+              </Button>
+            </div>
+
+            <ul className="space-y-1 font-data text-xs text-muted-foreground">
+              {activeExercise.sets.map((set) => (
+                <li key={set.setIndex}>
+                  Set {set.setIndex + 1} ({set.setType}) — {set.weightKg ?? '—'} kg x{' '}
+                  {set.reps ?? '—'} reps
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="pill"
+          disabled={isSaving}
+          onClick={() => void handleFinish()}
+        >
+          {isSaving ? 'Enregistrement...' : 'Terminer la seance'}
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => void cancelWorkout()}>
+          Annuler
+        </Button>
+        <Button variant="outline" size="sm" className="rounded-full" asChild>
+          <Link to="/app/exercises">Catalogue</Link>
+        </Button>
+      </div>
+
+      {message ? (
+        <p className="text-sm text-secondary-foreground">{message}</p>
+      ) : null}
+      {error ? <FormMessage>{error}</FormMessage> : null}
     </div>
   )
 }

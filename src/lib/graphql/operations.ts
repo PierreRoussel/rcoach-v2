@@ -102,6 +102,59 @@ export const LIST_PUBLIC_EXERCISES = `
   }
 `
 
+export const LIST_ALL_EXERCISES = `
+  query ListAllExercises {
+    exercises(order_by: { name: asc }) {
+      id
+      name
+      muscle_group
+      equipment
+      is_public
+      created_by
+    }
+  }
+`
+
+export const INSERT_EXERCISE = `
+  mutation InsertExercise($object: exercises_insert_input!) {
+    insert_exercises_one(object: $object) {
+      id
+      name
+      muscle_group
+      equipment
+      is_public
+    }
+  }
+`
+
+export const GET_LAST_EXERCISE_PERFORMANCE = `
+  query GetLastExercisePerformance($exerciseId: uuid!) {
+    workout_exercises(
+      where: { exercise_id: { _eq: $exerciseId } }
+      order_by: { workout: { started_at: desc } }
+      limit: 1
+    ) {
+      workout {
+        title
+        started_at
+      }
+      exercise {
+        name
+        equipment
+        muscle_group
+      }
+      sets(order_by: { set_index: asc }) {
+        set_index
+        set_type
+        weight_kg
+        reps
+        duration_seconds
+        distance_km
+      }
+    }
+  }
+`
+
 export const INSERT_WORKOUT = `
   mutation InsertWorkout($object: workouts_insert_input!) {
     insert_workouts_one(object: $object) {

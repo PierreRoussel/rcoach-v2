@@ -10,3 +10,51 @@ query ListPublicExercises {
     is_public
   }
 }
+
+query ListAllExercises {
+  exercises(order_by: { name: asc }) {
+    id
+    name
+    muscle_group
+    equipment
+    is_public
+    created_by
+  }
+}
+
+mutation InsertExercise($object: exercises_insert_input!) {
+  insert_exercises_one(object: $object) {
+    id
+    name
+    muscle_group
+    equipment
+    is_public
+    created_by
+  }
+}
+
+query GetLastExercisePerformance($exerciseId: uuid!) {
+  workout_exercises(
+    where: { exercise_id: { _eq: $exerciseId } }
+    order_by: { workout: { started_at: desc } }
+    limit: 1
+  ) {
+    workout {
+      title
+      started_at
+    }
+    exercise {
+      name
+      equipment
+      muscle_group
+    }
+    sets(order_by: { set_index: asc }) {
+      set_index
+      set_type
+      weight_kg
+      reps
+      duration_seconds
+      distance_km
+    }
+  }
+}
