@@ -19,8 +19,12 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppStatsRouteImport } from './routes/app/stats'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppImportRouteImport } from './routes/app/import'
+import { Route as CoachProgramsIndexRouteImport } from './routes/coach/programs/index'
+import { Route as CoachClientsIndexRouteImport } from './routes/coach/clients/index'
+import { Route as CoachAnalyticsIndexRouteImport } from './routes/coach/analytics/index'
 import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/index'
 import { Route as AppExercisesIndexRouteImport } from './routes/app/exercises/index'
+import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach/programs/$programId'
 import { Route as AppWorkoutActiveRouteImport } from './routes/app/workout/active'
 
 const CoachRouteRoute = CoachRouteRouteImport.update({
@@ -73,6 +77,21 @@ const AppImportRoute = AppImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const CoachProgramsIndexRoute = CoachProgramsIndexRouteImport.update({
+  id: '/programs/',
+  path: '/programs/',
+  getParentRoute: () => CoachRouteRoute,
+} as any)
+const CoachClientsIndexRoute = CoachClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
+  getParentRoute: () => CoachRouteRoute,
+} as any)
+const CoachAnalyticsIndexRoute = CoachAnalyticsIndexRouteImport.update({
+  id: '/analytics/',
+  path: '/analytics/',
+  getParentRoute: () => CoachRouteRoute,
+} as any)
 const AppWorkoutsIndexRoute = AppWorkoutsIndexRouteImport.update({
   id: '/workouts/',
   path: '/workouts/',
@@ -82,6 +101,11 @@ const AppExercisesIndexRoute = AppExercisesIndexRouteImport.update({
   id: '/exercises/',
   path: '/exercises/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const CoachProgramsProgramIdRoute = CoachProgramsProgramIdRouteImport.update({
+  id: '/programs/$programId',
+  path: '/programs/$programId',
+  getParentRoute: () => CoachRouteRoute,
 } as any)
 const AppWorkoutActiveRoute = AppWorkoutActiveRouteImport.update({
   id: '/workout/active',
@@ -101,8 +125,12 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
+  '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
+  '/coach/analytics/': typeof CoachAnalyticsIndexRoute
+  '/coach/clients/': typeof CoachClientsIndexRoute
+  '/coach/programs/': typeof CoachProgramsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -114,8 +142,12 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/coach': typeof CoachIndexRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
+  '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/app/exercises': typeof AppExercisesIndexRoute
   '/app/workouts': typeof AppWorkoutsIndexRoute
+  '/coach/analytics': typeof CoachAnalyticsIndexRoute
+  '/coach/clients': typeof CoachClientsIndexRoute
+  '/coach/programs': typeof CoachProgramsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -130,8 +162,12 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
+  '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
+  '/coach/analytics/': typeof CoachAnalyticsIndexRoute
+  '/coach/clients/': typeof CoachClientsIndexRoute
+  '/coach/programs/': typeof CoachProgramsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,8 +183,12 @@ export interface FileRouteTypes {
     | '/app/'
     | '/coach/'
     | '/app/workout/active'
+    | '/coach/programs/$programId'
     | '/app/exercises/'
     | '/app/workouts/'
+    | '/coach/analytics/'
+    | '/coach/clients/'
+    | '/coach/programs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -160,8 +200,12 @@ export interface FileRouteTypes {
     | '/app'
     | '/coach'
     | '/app/workout/active'
+    | '/coach/programs/$programId'
     | '/app/exercises'
     | '/app/workouts'
+    | '/coach/analytics'
+    | '/coach/clients'
+    | '/coach/programs'
   id:
     | '__root__'
     | '/'
@@ -175,8 +219,12 @@ export interface FileRouteTypes {
     | '/app/'
     | '/coach/'
     | '/app/workout/active'
+    | '/coach/programs/$programId'
     | '/app/exercises/'
     | '/app/workouts/'
+    | '/coach/analytics/'
+    | '/coach/clients/'
+    | '/coach/programs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -259,6 +307,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppImportRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/coach/programs/': {
+      id: '/coach/programs/'
+      path: '/programs'
+      fullPath: '/coach/programs/'
+      preLoaderRoute: typeof CoachProgramsIndexRouteImport
+      parentRoute: typeof CoachRouteRoute
+    }
+    '/coach/clients/': {
+      id: '/coach/clients/'
+      path: '/clients'
+      fullPath: '/coach/clients/'
+      preLoaderRoute: typeof CoachClientsIndexRouteImport
+      parentRoute: typeof CoachRouteRoute
+    }
+    '/coach/analytics/': {
+      id: '/coach/analytics/'
+      path: '/analytics'
+      fullPath: '/coach/analytics/'
+      preLoaderRoute: typeof CoachAnalyticsIndexRouteImport
+      parentRoute: typeof CoachRouteRoute
+    }
     '/app/workouts/': {
       id: '/app/workouts/'
       path: '/workouts'
@@ -272,6 +341,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/exercises/'
       preLoaderRoute: typeof AppExercisesIndexRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/coach/programs/$programId': {
+      id: '/coach/programs/$programId'
+      path: '/programs/$programId'
+      fullPath: '/coach/programs/$programId'
+      preLoaderRoute: typeof CoachProgramsProgramIdRouteImport
+      parentRoute: typeof CoachRouteRoute
     }
     '/app/workout/active': {
       id: '/app/workout/active'
@@ -309,10 +385,18 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 
 interface CoachRouteRouteChildren {
   CoachIndexRoute: typeof CoachIndexRoute
+  CoachProgramsProgramIdRoute: typeof CoachProgramsProgramIdRoute
+  CoachAnalyticsIndexRoute: typeof CoachAnalyticsIndexRoute
+  CoachClientsIndexRoute: typeof CoachClientsIndexRoute
+  CoachProgramsIndexRoute: typeof CoachProgramsIndexRoute
 }
 
 const CoachRouteRouteChildren: CoachRouteRouteChildren = {
   CoachIndexRoute: CoachIndexRoute,
+  CoachProgramsProgramIdRoute: CoachProgramsProgramIdRoute,
+  CoachAnalyticsIndexRoute: CoachAnalyticsIndexRoute,
+  CoachClientsIndexRoute: CoachClientsIndexRoute,
+  CoachProgramsIndexRoute: CoachProgramsIndexRoute,
 }
 
 const CoachRouteRouteWithChildren = CoachRouteRoute._addFileChildren(

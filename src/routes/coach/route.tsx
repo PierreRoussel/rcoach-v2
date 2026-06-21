@@ -45,15 +45,36 @@ function CoachLayout() {
           >
             Dashboard
           </Link>
-          <span className="block rounded-xl px-3 py-2 text-muted-foreground">
-            Clients (Phase 2)
-          </span>
-          <span className="block rounded-xl px-3 py-2 text-muted-foreground">
-            Programmes (Phase 2)
-          </span>
-          <span className="block rounded-xl px-3 py-2 text-muted-foreground">
-            Analytics (Phase 2)
-          </span>
+          <Link
+            to="/coach/clients"
+            className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"
+            activeProps={{
+              className:
+                'block rounded-xl bg-sidebar-accent px-3 py-2 font-semibold text-sidebar-primary',
+            }}
+          >
+            Clients
+          </Link>
+          <Link
+            to="/coach/programs"
+            className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"
+            activeProps={{
+              className:
+                'block rounded-xl bg-sidebar-accent px-3 py-2 font-semibold text-sidebar-primary',
+            }}
+          >
+            Programmes
+          </Link>
+          <Link
+            to="/coach/analytics"
+            className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"
+            activeProps={{
+              className:
+                'block rounded-xl bg-sidebar-accent px-3 py-2 font-semibold text-sidebar-primary',
+            }}
+          >
+            Analytics
+          </Link>
         </nav>
         <div className="mt-8 space-y-2">
           <Button variant="soft" size="sm" className="w-full rounded-full" asChild>
@@ -82,8 +103,11 @@ function CoachLayout() {
           </div>
           {!isCoach ? (
             <div className="mb-4 rounded-2xl border border-dashed border-border bg-soft-accent/40 p-6 text-sm text-muted-foreground">
-              Espace coach — desktop recommande. Passez votre profil en role
-              coach pour debloquer cette vue (Phase 2).
+              Espace coach — passez votre profil en role coach ou both dans{' '}
+              <Link to="/app/profile" className="font-semibold text-primary">
+                votre profil
+              </Link>{' '}
+              pour debloquer la gestion clients et programmes.
             </div>
           ) : null}
           <Outlet />

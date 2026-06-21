@@ -66,6 +66,23 @@ import { ThemeProvider, useTheme, PageHeader, Pill } from '@/design-system'
 - **Switch theme later:** call `setThemeId()` from `useTheme()` after registering a new theme in `src/design-system/themes/`
 - **UI primitives:** shadcn components in [`src/components/ui/`](src/components/ui/) styled with Sports Candy tokens from the Figma Make export
 
+## Phase 2 scope
+
+### Athlete — builder de seance
+
+- Catalogue exercices complet (`/app/exercises`) avec filtres muscle/equipement
+- Creation d exercices personnels
+- Seance active ergonomique : picker, drag & drop, types de serie (normal/warmup/failure)
+- Rappel performance seance precedente par exercice
+- Suggestions de surcharge progressive adaptees au type d exercice (charge, poids du corps, cardio, tempo)
+
+### Coach ERP
+
+- Role coach/both configurable dans le profil
+- Gestion clients (`/coach/clients`) : invitation par email, activation/archivage
+- Programmes templates (`/coach/programs`) : jours + exercices cibles
+- Analytics (`/coach/analytics`) : volume par client, seances recentes
+
 ## Verification
 
 ```bash

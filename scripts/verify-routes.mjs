@@ -18,8 +18,16 @@ const expectedRoutes = [
   '/app/workouts',
   '/app/workout/active',
   '/app/import',
+  '/app/exercises',
+  '/app/exercises/',
   '/coach',
   '/coach/',
+  '/coach/clients',
+  '/coach/clients/',
+  '/coach/programs',
+  '/coach/programs/',
+  '/coach/analytics',
+  '/coach/analytics/',
 ]
 
 function readRouteTree() {

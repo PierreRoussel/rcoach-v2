@@ -27,6 +27,7 @@ function ProfileEditor({
   const updateProfile = useUpdateProfile()
   const [displayName, setDisplayName] = useState(profile.display_name)
   const [unitSystem, setUnitSystem] = useState(profile.unit_system)
+  const [role, setRole] = useState(profile.role)
   const [message, setMessage] = useState<string | null>(null)
 
   async function handleSave() {
@@ -38,6 +39,7 @@ function ProfileEditor({
         changes: {
           display_name: displayName,
           unit_system: unitSystem,
+          role,
         },
       })
       setMessage('Profil mis a jour.')
@@ -74,9 +76,23 @@ function ProfileEditor({
           <option value="lb">Livres (lb)</option>
         </select>
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="role">Role</Label>
+        <select
+          id="role"
+          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+          value={role}
+          onChange={(event) =>
+            setRole(event.target.value as 'athlete' | 'coach' | 'both')
+          }
+        >
+          <option value="athlete">Athlete</option>
+          <option value="coach">Coach</option>
+          <option value="both">Athlete + Coach</option>
+        </select>
+      </div>
       <p className="font-data text-xs text-muted-foreground">
-        Role : {profile.role} — cree le{' '}
-        {new Date(profile.created_at).toLocaleDateString('fr-FR')}
+        Cree le {new Date(profile.created_at).toLocaleDateString('fr-FR')}
       </p>
       <Button
         type="button"
