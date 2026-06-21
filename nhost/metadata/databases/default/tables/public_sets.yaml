@@ -1,0 +1,71 @@
+table:
+  name: sets
+  schema: public
+object_relationships:
+  - name: workout_exercise
+    using:
+      foreign_key_constraint_on: workout_exercise_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - workout_exercise_id
+        - set_index
+        - set_type
+        - weight_kg
+        - reps
+        - distance_km
+        - duration_seconds
+        - rpe
+      filter:
+        workout_exercise:
+          workout:
+            user_id:
+              _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        workout_exercise:
+          workout:
+            user_id:
+              _eq: X-Hasura-User-Id
+      columns:
+        - workout_exercise_id
+        - set_index
+        - set_type
+        - weight_kg
+        - reps
+        - distance_km
+        - duration_seconds
+        - rpe
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - set_index
+        - set_type
+        - weight_kg
+        - reps
+        - distance_km
+        - duration_seconds
+        - rpe
+      filter:
+        workout_exercise:
+          workout:
+            user_id:
+              _eq: X-Hasura-User-Id
+      check:
+        workout_exercise:
+          workout:
+            user_id:
+              _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        workout_exercise:
+          workout:
+            user_id:
+              _eq: X-Hasura-User-Id

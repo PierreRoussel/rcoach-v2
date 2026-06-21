@@ -1,0 +1,59 @@
+table:
+  name: programs
+  schema: public
+object_relationships:
+  - name: coach
+    using:
+      foreign_key_constraint_on: coach_id
+array_relationships:
+  - name: program_days
+    using:
+      foreign_key_constraint_on:
+        column: program_id
+        table:
+          name: program_days
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - name
+        - description
+        - coach_id
+        - is_template
+        - created_at
+      filter:
+        coach_id:
+          _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        coach_id:
+          _eq: X-Hasura-User-Id
+      set:
+        coach_id: x-hasura-User-Id
+      columns:
+        - name
+        - description
+        - is_template
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - name
+        - description
+        - is_template
+      filter:
+        coach_id:
+          _eq: X-Hasura-User-Id
+      check:
+        coach_id:
+          _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        coach_id:
+          _eq: X-Hasura-User-Id

@@ -1,0 +1,75 @@
+table:
+  name: workouts
+  schema: public
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+  - name: program_day
+    using:
+      foreign_key_constraint_on: program_day_id
+array_relationships:
+  - name: workout_exercises
+    using:
+      foreign_key_constraint_on:
+        column: workout_id
+        table:
+          name: workout_exercises
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - user_id
+        - program_day_id
+        - title
+        - started_at
+        - ended_at
+        - notes
+        - created_at
+      filter:
+        _or:
+          - user_id:
+              _eq: X-Hasura-User-Id
+          - user:
+              coach_clients_as_athlete:
+                coach_id:
+                  _eq: X-Hasura-User-Id
+                status:
+                  _eq: active
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - program_day_id
+        - title
+        - started_at
+        - ended_at
+        - notes
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - program_day_id
+        - title
+        - started_at
+        - ended_at
+        - notes
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id

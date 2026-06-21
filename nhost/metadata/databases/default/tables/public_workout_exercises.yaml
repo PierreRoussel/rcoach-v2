@@ -1,0 +1,67 @@
+table:
+  name: workout_exercises
+  schema: public
+object_relationships:
+  - name: workout
+    using:
+      foreign_key_constraint_on: workout_id
+  - name: exercise
+    using:
+      foreign_key_constraint_on: exercise_id
+array_relationships:
+  - name: sets
+    using:
+      foreign_key_constraint_on:
+        column: workout_exercise_id
+        table:
+          name: sets
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - workout_id
+        - exercise_id
+        - sort_order
+        - superset_id
+        - notes
+      filter:
+        workout:
+          user_id:
+            _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        workout:
+          user_id:
+            _eq: X-Hasura-User-Id
+      columns:
+        - workout_id
+        - exercise_id
+        - sort_order
+        - superset_id
+        - notes
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - sort_order
+        - superset_id
+        - notes
+      filter:
+        workout:
+          user_id:
+            _eq: X-Hasura-User-Id
+      check:
+        workout:
+          user_id:
+            _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        workout:
+          user_id:
+            _eq: X-Hasura-User-Id

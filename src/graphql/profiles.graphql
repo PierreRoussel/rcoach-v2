@@ -1,0 +1,10 @@
+query GetMyProfile($userId: uuid!) {
+  profiles(where: { id: { _eq: $userId } }, limit: 1) {
+    id
+    display_name
+    avatar_url
+    role
+    unit_system
+    created_at
+  }
+}

@@ -1,0 +1,59 @@
+table:
+  name: program_days
+  schema: public
+object_relationships:
+  - name: program
+    using:
+      foreign_key_constraint_on: program_id
+array_relationships:
+  - name: program_exercises
+    using:
+      foreign_key_constraint_on:
+        column: program_day_id
+        table:
+          name: program_exercises
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - program_id
+        - name
+        - sort_order
+      filter:
+        program:
+          coach_id:
+            _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        program:
+          coach_id:
+            _eq: X-Hasura-User-Id
+      columns:
+        - program_id
+        - name
+        - sort_order
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - name
+        - sort_order
+      filter:
+        program:
+          coach_id:
+            _eq: X-Hasura-User-Id
+      check:
+        program:
+          coach_id:
+            _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        program:
+          coach_id:
+            _eq: X-Hasura-User-Id

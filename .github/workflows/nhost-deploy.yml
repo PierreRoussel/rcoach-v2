@@ -1,0 +1,21 @@
+# Replace YOUR_SUBDOMAIN with your Nhost project subdomain.
+# Requires repository secret NHOST_SUBDOMAIN and GitHub integration on Nhost Cloud.
+
+name: Deploy Nhost
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nhost/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: nhost/nhost-actions/deploy@v1
+        with:
+          subdomain: ${{ secrets.NHOST_SUBDOMAIN }}
