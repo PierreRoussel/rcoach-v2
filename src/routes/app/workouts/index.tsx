@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { CalendarDays, Dumbbell } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -9,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { PageHeader, Pill } from '@/design-system'
 import { countWorkoutSets, useMyWorkouts } from '@/hooks/useWorkouts'
 
 export const Route = createFileRoute('/app/workouts/')({
@@ -20,10 +23,26 @@ function WorkoutsPage() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <PageHeader
+        eyebrow="Historique"
+        title="Vos seances"
+        description="Retrouvez vos dernieres seances enregistrees."
+      />
+
+      <Card className="rounded-2xl border-border">
         <CardHeader>
-          <CardTitle>Historique</CardTitle>
-          <CardDescription>Vos dernieres seances enregistrees.</CardDescription>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <CardTitle className="font-display font-black">Timeline</CardTitle>
+              <CardDescription>
+                Seances synchronisees depuis l&apos;application.
+              </CardDescription>
+            </div>
+            <Pill tone="purple">
+              <CalendarDays className="size-3" />
+              {workouts?.length ?? 0}
+            </Pill>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -35,30 +54,38 @@ function WorkoutsPage() {
             </p>
           ) : null}
           {!isLoading && !error && workouts?.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucune seance.{' '}
-              <Link to="/app/workout/active" className="underline">
-                Demarrer une seance
-              </Link>
-            </p>
+            <div className="rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Aucune seance enregistree pour le moment.
+              </p>
+              <Button variant="pill" className="mt-4" asChild>
+                <Link to="/app/workout/active">Demarrer une seance</Link>
+              </Button>
+            </div>
           ) : null}
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {workouts?.map((workout) => (
-              <li key={workout.id} className="rounded-md border px-3 py-3">
+              <li
+                key={workout.id}
+                className="rounded-2xl border border-border bg-card px-4 py-3 transition-shadow hover:shadow-sm"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium">{workout.title}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-display font-black text-foreground">
+                      {workout.title}
+                    </p>
+                    <p className="font-data text-xs text-muted-foreground">
                       {format(new Date(workout.started_at), 'd MMM yyyy HH:mm', {
                         locale: fr,
                       })}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <Pill tone="secondary">
                     {countWorkoutSets(workout)} sets
-                  </span>
+                  </Pill>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Dumbbell className="size-3" />
                   {workout.workout_exercises.length} exercices
                 </p>
               </li>

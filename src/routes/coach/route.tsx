@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
+import { BrandLogo, ThemeToggle } from '@/design-system'
 import { requireAuth } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useMyProfile } from '@/hooks/useProfile'
@@ -26,33 +27,36 @@ function CoachLayout() {
   const isCoach = profile?.role === 'coach' || profile?.role === 'both'
 
   return (
-    <div className="min-h-svh md:grid md:grid-cols-[240px_1fr]">
-      <aside className="hidden border-r p-4 md:block">
-        <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-          Coach
+    <div className="min-h-svh bg-background md:grid md:grid-cols-[260px_1fr]">
+      <aside className="hidden border-r border-sidebar-border bg-sidebar p-5 md:block">
+        <BrandLogo />
+        <p className="mt-6 mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          Coach ERP
         </p>
-        <h1 className="mb-6 text-lg font-semibold">RCoach ERP</h1>
         <nav className="space-y-1 text-sm">
           <Link
             to="/coach"
-            className="block rounded-md px-3 py-2 hover:bg-muted"
+            className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"
             activeOptions={{ exact: true }}
-            activeProps={{ className: 'block rounded-md bg-muted px-3 py-2' }}
+            activeProps={{
+              className:
+                'block rounded-xl bg-sidebar-accent px-3 py-2 font-semibold text-sidebar-primary',
+            }}
           >
             Dashboard
           </Link>
-          <span className="block rounded-md px-3 py-2 text-muted-foreground">
+          <span className="block rounded-xl px-3 py-2 text-muted-foreground">
             Clients (Phase 2)
           </span>
-          <span className="block rounded-md px-3 py-2 text-muted-foreground">
+          <span className="block rounded-xl px-3 py-2 text-muted-foreground">
             Programmes (Phase 2)
           </span>
-          <span className="block rounded-md px-3 py-2 text-muted-foreground">
+          <span className="block rounded-xl px-3 py-2 text-muted-foreground">
             Analytics (Phase 2)
           </span>
         </nav>
         <div className="mt-8 space-y-2">
-          <Button variant="outline" size="sm" className="w-full" asChild>
+          <Button variant="soft" size="sm" className="w-full rounded-full" asChild>
             <Link to="/app">Vue athlete</Link>
           </Button>
           <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut}>
@@ -62,16 +66,22 @@ function CoachLayout() {
       </aside>
 
       <div className="flex min-h-svh flex-col">
-        <header className="flex items-center justify-between border-b px-4 py-3 md:hidden">
-          <h1 className="font-semibold">Coach</h1>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/app">App</Link>
-          </Button>
+        <header className="flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:hidden">
+          <BrandLogo compact />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="soft" size="sm" asChild>
+              <Link to="/app">App</Link>
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 p-4 md:p-8">
+          <div className="mb-6 hidden items-center justify-end gap-2 md:flex">
+            <ThemeToggle />
+          </div>
           {!isCoach ? (
-            <div className="mb-4 rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+            <div className="mb-4 rounded-2xl border border-dashed border-border bg-soft-accent/40 p-6 text-sm text-muted-foreground">
               Espace coach — desktop recommande. Passez votre profil en role
               coach pour debloquer cette vue (Phase 2).
             </div>

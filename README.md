@@ -54,6 +54,18 @@ npm run codegen
 - Statistiques volume hebdomadaire (Recharts)
 - File de sync offline Dexie pour les mutations workout
 
+## Design system
+
+All UI tokens, theme switching, and shared layout components are centralized in [`src/design-system/`](src/design-system/).
+
+```tsx
+import { ThemeProvider, useTheme, PageHeader, Pill } from '@/design-system'
+```
+
+- **Theme entry point:** wrap the app with `ThemeProvider` (already done in `main.tsx`)
+- **Switch theme later:** call `setThemeId()` from `useTheme()` after registering a new theme in `src/design-system/themes/`
+- **UI primitives:** shadcn components in [`src/components/ui/`](src/components/ui/) styled with Sports Candy tokens from the Figma Make export
+
 ## Verification
 
 ```bash

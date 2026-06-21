@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Figma Make export (integrated into src/design-system)
+src/assets/Modern Design System for Sports/

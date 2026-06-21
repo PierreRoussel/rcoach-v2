@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { Timer } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +13,7 @@ import {
 import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PageHeader, Pill } from '@/design-system'
 import { usePublicExercises } from '@/hooks/useProfile'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -148,47 +150,66 @@ function ActiveWorkoutPage() {
 
   if (!startedAt) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Nouvelle seance</CardTitle>
-          <CardDescription>
-            Demarrez une seance active avec timer de repos.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="workoutTitle">Titre</Label>
-            <Input
-              id="workoutTitle"
-              value={workoutTitle}
-              onChange={(event) => setWorkoutTitle(event.target.value)}
-            />
-          </div>
-          <Button type="button" onClick={() => void handleStart()}>
-            Demarrer
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <PageHeader
+          eyebrow="Seance active"
+          title="Nouvelle seance"
+          description="Demarrez une seance avec timer de repos integre."
+        />
+        <Card className="rounded-2xl border-border">
+          <CardHeader>
+            <CardTitle className="font-display font-black">
+              Configuration
+            </CardTitle>
+            <CardDescription>
+              Donnez un titre a votre seance avant de commencer.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="workoutTitle">Titre</Label>
+              <Input
+                id="workoutTitle"
+                value={workoutTitle}
+                onChange={(event) => setWorkoutTitle(event.target.value)}
+              />
+            </div>
+            <Button type="button" variant="pill" onClick={() => void handleStart()}>
+              Demarrer
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>
-            {isResting
-              ? `Repos : ${restSecondsLeft}s`
-              : 'Loggez vos sets et enregistrez la seance.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <PageHeader
+          eyebrow="En cours"
+          title={title}
+          description={
+            isResting
+              ? `Repos en cours — ${restSecondsLeft}s restantes`
+              : 'Loggez vos sets et enregistrez la seance.'
+          }
+        />
+        {isResting ? (
+          <Pill tone="accent">
+            <Timer className="size-3" />
+            {restSecondsLeft}s
+          </Pill>
+        ) : null}
+      </div>
+
+      <Card className="rounded-2xl border-border">
+        <CardContent className="space-y-4 pt-6">
           <div className="space-y-2">
             <Label htmlFor="exercise">Exercice</Label>
             <select
               id="exercise"
-              className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
               value={selectedExerciseId}
               onChange={(event) => setSelectedExerciseId(event.target.value)}
             >
@@ -201,7 +222,7 @@ function ActiveWorkoutPage() {
             </select>
             <Button
               type="button"
-              variant="outline"
+              variant="soft"
               onClick={() => void handleAddExercise()}
             >
               Ajouter l&apos;exercice
@@ -213,7 +234,7 @@ function ActiveWorkoutPage() {
               <Label htmlFor="activeExercise">Exercice actif</Label>
               <select
                 id="activeExercise"
-                className="flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+                className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
                 value={activeExerciseIndex}
                 onChange={(event) =>
                   setActiveExerciseIndex(Number(event.target.value))
@@ -250,18 +271,21 @@ function ActiveWorkoutPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={() => void handleLogSet()}>
+            <Button type="button" variant="pill" onClick={() => void handleLogSet()}>
               Logger le set
             </Button>
             <Button
               type="button"
               variant="secondary"
+              className="rounded-full"
               onClick={() => startRest(90)}
             >
               Repos 90s
             </Button>
             <Button
               type="button"
+              variant="default"
+              className="rounded-full"
               disabled={isSaving}
               onClick={() => void handleFinish()}
             >
@@ -277,24 +301,27 @@ function ActiveWorkoutPage() {
           </div>
 
           {message ? (
-            <p className="text-sm text-green-700">{message}</p>
+            <p className="text-sm text-secondary-foreground">{message}</p>
           ) : null}
           {error ? <FormMessage>{error}</FormMessage> : null}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-border">
         <CardHeader>
-          <CardTitle>Recap</CardTitle>
+          <CardTitle className="font-display font-black">Recap</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {activeExercises.length === 0 ? (
             <p className="text-muted-foreground">Aucun exercice ajoute.</p>
           ) : (
             activeExercises.map((exercise, index) => (
-              <div key={`${exercise.exerciseId}-${index}`}>
-                <p className="font-medium">{exercise.exerciseName}</p>
-                <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+              <div
+                key={`${exercise.exerciseId}-${index}`}
+                className="rounded-2xl bg-soft-primary/40 p-3"
+              >
+                <p className="font-display font-black">{exercise.exerciseName}</p>
+                <ul className="mt-1 space-y-1 font-data text-xs text-muted-foreground">
                   {exercise.sets.map((set) => (
                     <li key={set.setIndex}>
                       Set {set.setIndex + 1} — {set.weightKg ?? '—'} kg x{' '}
@@ -305,7 +332,7 @@ function ActiveWorkoutPage() {
               </div>
             ))
           )}
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" className="rounded-full" asChild>
             <Link to="/app">Retour home</Link>
           </Button>
         </CardContent>

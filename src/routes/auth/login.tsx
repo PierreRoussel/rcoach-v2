@@ -12,6 +12,7 @@ import {
 import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AuthShell } from '@/design-system'
 import { redirectIfAuthenticated } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -50,11 +51,13 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <AuthShell>
+      <Card className="w-full rounded-2xl border-border shadow-sm">
         <CardHeader>
-          <CardTitle>RCoach</CardTitle>
-          <CardDescription>Connectez-vous a votre compte</CardDescription>
+          <CardTitle className="font-display text-2xl font-black">
+            Bon retour
+          </CardTitle>
+          <CardDescription>Connectez-vous a votre compte RCoach.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -81,18 +84,18 @@ function LoginPage() {
               />
             </FormField>
             {error ? <FormMessage>{error}</FormMessage> : null}
-            <Button className="w-full" type="submit" disabled={isSubmitting}>
+            <Button className="w-full rounded-full" variant="pill" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Connexion...' : 'Se connecter'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Pas de compte ?{' '}
-            <Link className="text-foreground underline" to="/auth/register">
+            <Link className="font-semibold text-primary underline-offset-4 hover:underline" to="/auth/register">
               Creer un compte
             </Link>
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   )
 }

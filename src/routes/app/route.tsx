@@ -2,6 +2,11 @@ import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
+import {
+  AppBottomNav,
+  BrandLogo,
+  ThemeToggle,
+} from '@/design-system'
 import { requireAuth } from '@/lib/auth/guards'
 import { flushSyncQueue } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -35,25 +40,26 @@ function AppLayout() {
     profile?.role === 'coach' || profile?.role === 'both'
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-lg flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Athlete
-          </p>
-          <h1 className="font-semibold">
-            {profile?.display_name ?? 'Mon espace'}
-          </h1>
-        </div>
-        <div className="flex gap-2">
-          {showCoachLink ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/coach">Coach</Link>
+    <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <BrandLogo compact />
+            <p className="mt-1 truncate font-display text-sm font-black text-foreground">
+              {profile?.display_name ?? 'Mon espace'}
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            {showCoachLink ? (
+              <Button variant="soft" size="sm" asChild>
+                <Link to="/coach">Coach</Link>
+              </Button>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              Quitter
             </Button>
-          ) : null}
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            Deconnexion
-          </Button>
+          </div>
         </div>
       </header>
 
@@ -61,30 +67,7 @@ function AppLayout() {
         <Outlet />
       </main>
 
-      <nav className="sticky bottom-0 grid grid-cols-3 border-t bg-background px-2 py-2 text-xs">
-        <Link
-          to="/app"
-          className="rounded-md px-2 py-2 text-center hover:bg-muted"
-          activeOptions={{ exact: true }}
-          activeProps={{ className: 'rounded-md bg-muted px-2 py-2 text-center' }}
-        >
-          Home
-        </Link>
-        <Link
-          to="/app/stats"
-          className="rounded-md px-2 py-2 text-center hover:bg-muted"
-          activeProps={{ className: 'rounded-md bg-muted px-2 py-2 text-center' }}
-        >
-          Stats
-        </Link>
-        <Link
-          to="/app/profile"
-          className="rounded-md px-2 py-2 text-center hover:bg-muted"
-          activeProps={{ className: 'rounded-md bg-muted px-2 py-2 text-center' }}
-        >
-          Profil
-        </Link>
-      </nav>
+      <AppBottomNav />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { FormMessage } from '@/components/ui/form'
+import { PageHeader, Pill } from '@/design-system'
 import { usePublicExercises } from '@/hooks/useProfile'
 import {
   buildExerciseLookup,
@@ -82,31 +84,57 @@ function ImportPage() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <PageHeader
+        eyebrow="Migration"
+        title="Import Hevy"
+        description="Importez un export CSV Hevy en rapprochant les exercices par nom exact."
+      />
+
+      <Card className="rounded-2xl border-border">
         <CardHeader>
-          <CardTitle>Import Hevy</CardTitle>
-          <CardDescription>
-            Importez un export CSV Hevy. Les exercices sont rapproches de la
-            bibliotheque publique par nom exact.
-          </CardDescription>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <CardTitle className="font-display font-black">Fichier CSV</CardTitle>
+              <CardDescription>
+                Selectionnez votre export Hevy au format CSV.
+              </CardDescription>
+            </div>
+            <Pill tone="primary">
+              <Upload className="size-3" />
+              Hevy
+            </Pill>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            disabled={isImporting || !exercises?.length}
-            onChange={(event) => void handleFileChange(event)}
-          />
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-soft-purple/40 px-4 py-8 text-center transition-colors hover:bg-soft-purple/60">
+            <Upload className="mb-2 size-6 text-primary" />
+            <span className="text-sm font-semibold text-foreground">
+              Choisir un fichier CSV
+            </span>
+            <span className="mt-1 text-xs text-muted-foreground">
+              {isImporting ? 'Import en cours...' : 'Cliquez pour parcourir'}
+            </span>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              disabled={isImporting || !exercises?.length}
+              className="sr-only"
+              onChange={(event) => void handleFileChange(event)}
+            />
+          </label>
           {fileName ? (
-            <p className="text-sm text-muted-foreground">Fichier : {fileName}</p>
+            <p className="font-data text-sm text-muted-foreground">
+              Fichier : {fileName}
+            </p>
           ) : null}
           {progress ? (
-            <p className="text-sm text-green-700">{progress}</p>
+            <p className="text-sm text-secondary-foreground">{progress}</p>
           ) : null}
           {error ? <FormMessage>{error}</FormMessage> : null}
           <Button
             type="button"
             variant="outline"
+            className="rounded-full"
             disabled={isImporting}
             onClick={() => {
               setFileName(null)

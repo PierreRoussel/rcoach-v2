@@ -12,6 +12,7 @@ import {
 import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AuthShell } from '@/design-system'
 import { redirectIfAuthenticated } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -27,11 +28,13 @@ function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+    setSuccess(null)
     setIsSubmitting(true)
 
     try {
@@ -41,12 +44,17 @@ function RegisterPage() {
         options: { displayName: displayName || email.split('@')[0] },
       })
 
-      if (response.status !== 200 || response.body.session == null) {
+      if (response.status !== 200) {
         setError("Impossible de creer le compte. L'email est peut-etre deja utilise.")
         return
       }
 
-      await navigate({ to: '/app' })
+      if (response.body.session != null) {
+        await navigate({ to: '/app' })
+        return
+      }
+
+      setSuccess('Compte créé — vérifiez votre email pour confirmer.')
     } catch {
       setError('Inscription impossible. Reessayez plus tard.')
     } finally {
@@ -55,11 +63,13 @@ function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <AuthShell>
+      <Card className="w-full rounded-2xl border-border shadow-sm">
         <CardHeader>
-          <CardTitle>RCoach</CardTitle>
-          <CardDescription>Creez votre compte athlete</CardDescription>
+          <CardTitle className="font-display text-2xl font-black">
+            Rejoindre RCoach
+          </CardTitle>
+          <CardDescription>Creez votre compte athlete en quelques secondes.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -96,18 +106,26 @@ function RegisterPage() {
               />
             </FormField>
             {error ? <FormMessage>{error}</FormMessage> : null}
-            <Button className="w-full" type="submit" disabled={isSubmitting}>
+            {success ? (
+              <p className="text-sm text-foreground">{success}</p>
+            ) : null}
+            <Button
+              className="w-full rounded-full"
+              variant="pill"
+              type="submit"
+              disabled={isSubmitting || success != null}
+            >
               {isSubmitting ? 'Creation...' : "S'inscrire"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Deja un compte ?{' '}
-            <Link className="text-foreground underline" to="/auth/login">
+            <Link className="font-semibold text-primary underline-offset-4 hover:underline" to="/auth/login">
               Se connecter
             </Link>
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   )
 }
