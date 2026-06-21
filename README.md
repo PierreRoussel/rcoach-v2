@@ -22,7 +22,7 @@ npm run dev
 
 Database migrations and Hasura metadata live in [`nhost/`](nhost/).
 
-**Note:** `nhost.toml` is intentionally not committed — service config stays on Nhost Cloud (Dashboard). Only migrations + metadata are deployed via Git.
+**Note:** `nhost/config.yaml` (Hasura CLI, `version: 3`) is required for Git deploys. Service config (`nhost.toml`) stays on Nhost Cloud unless you pull it with `nhost config pull`.
 
 Deploy by pushing to the Git branch linked to your Nhost project, or:
 
