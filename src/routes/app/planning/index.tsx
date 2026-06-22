@@ -32,20 +32,45 @@ import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
 import { resolveScheduleTitle } from '@/lib/schedule/resolve-schedule-title'
 import type { ScheduledSessionRecord } from '@/lib/graphql/operations'
 
+import type { PlanningSearchParams } from '@/lib/schedule/planning-navigation'
+
 export const Route = createFileRoute('/app/planning/')({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): PlanningSearchParams => {
+    const params: PlanningSearchParams = {}
+
     const date =
       typeof search.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
         ? search.date
         : undefined
 
-    return date ? { date } : {}
+    if (date) {
+      params.date = date
+    }
+
+    if (typeof search.templateId === 'string' && search.templateId.trim()) {
+      params.templateId = search.templateId.trim()
+    }
+
+    if (typeof search.title === 'string' && search.title.trim()) {
+      params.title = search.title.trim()
+    }
+
+    if (search.schedule === true || search.schedule === 'true' || search.schedule === '1') {
+      params.schedule = true
+    }
+
+    return params
   },
   component: PlanningPage,
 })
 
 function PlanningPage() {
-  const { date: initialDateParam } = Route.useSearch()
+  const {
+    date: initialDateParam,
+    templateId: initialTemplateId,
+    title: initialTitle,
+    schedule: openScheduleForm,
+  } = Route.useSearch()
   const initialDate = initialDateParam
     ? parseISO(`${initialDateParam}T12:00:00`)
     : undefined
@@ -61,7 +86,7 @@ function PlanningPage() {
   const { startPlannedSession, isStarting } = useStartPlannedSession()
 
   const [editing, setEditing] = useState<ScheduledSessionRecord | null>(null)
-  const [showForm, setShowForm] = useState(Boolean(initialDate))
+  const [showForm, setShowForm] = useState(Boolean(initialDate || openScheduleForm))
   const [formDate, setFormDate] = useState<Date | undefined>(initialDate)
 
   function openPlanForm(date: Date) {
@@ -188,11 +213,14 @@ function PlanningPage() {
         {showForm ? (
           <CardContent>
             <ScheduleSessionForm
+              key={`${editing?.id ?? 'new'}-${initialTemplateId ?? 'none'}-${initialTitle ?? ''}`}
               templates={(templates ?? []).map((template) => ({
                 id: template.id,
                 name: template.name,
               }))}
               initialDate={formDate}
+              initialTemplateId={editing ? undefined : initialTemplateId}
+              initialTitle={editing ? undefined : initialTitle}
               editing={editing}
               isPending={createSession.isPending || updateSession.isPending}
               onSubmit={handleSubmit}

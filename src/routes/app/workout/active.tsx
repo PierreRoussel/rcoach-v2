@@ -1,10 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ListOrdered, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Timer } from 'lucide-react'
 
+import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
 import { ExercisePerformancePanel } from '@/components/workout/ExercisePerformancePanel'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
+import { RestTimerBar } from '@/components/workout/RestTimerBar'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,23 +16,40 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import {
+  buildCircuitSteps,
+  countCompletedSets,
+  getValidatedExercisesForSync,
+} from '@/lib/workout/workout-circuit'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
-import type { OverloadSuggestion } from '@/lib/workout/progressive-overload'
 
 export const Route = createFileRoute('/app/workout/active')({
+  validateSearch: (search: Record<string, unknown>) => {
+    if (typeof search.templateId === 'string' && search.templateId.trim()) {
+      return { templateId: search.templateId.trim() }
+    }
+
+    return {}
+  },
   component: ActiveWorkoutPage,
 })
 
 function ActiveWorkoutPage() {
+  const { templateId: initialTemplateId } = Route.useSearch()
   const { nhost } = useAuth()
   const navigate = useNavigate()
   const { data: profile } = useMyProfile()
@@ -37,29 +57,29 @@ function ActiveWorkoutPage() {
   const {
     title,
     startedAt,
-    defaultRestSeconds,
     exercises: activeExercises,
-    activeExerciseIndex,
+    activeStepIndex,
     restSecondsLeft,
+    restTargetSeconds,
     isResting,
     hydrate,
-    startWorkout,
     addExercise,
     removeExercise,
     reorderExercises,
-    setActiveExerciseIndex,
-    addSet,
-    startRest,
+    updatePlannedSet,
+    addPlannedSet,
+    completeCurrentStep,
+    goToStep,
+    adjustRest,
     tickRest,
+    skipRest,
     finishWorkout,
     cancelWorkout,
+    getCurrentStep,
+    getNextStepLabel,
   } = useActiveWorkoutStore()
 
-  const [workoutTitle, setWorkoutTitle] = useState('Seance libre')
-  const [weightKg, setWeightKg] = useState('')
-  const [reps, setReps] = useState('')
-  const [rpe, setRpe] = useState('')
-  const [setType, setSetType] = useState<'normal' | 'warmup' | 'failure'>('normal')
+  const [programOpen, setProgramOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -67,7 +87,11 @@ function ActiveWorkoutPage() {
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
 
-  const activeExercise = activeExercises[activeExerciseIndex]
+  const currentStep = getCurrentStep()
+  const currentExercise =
+    currentStep != null ? activeExercises[currentStep.exerciseIndex] : null
+  const steps = buildCircuitSteps(activeExercises)
+  const completedCount = countCompletedSets(activeExercises)
 
   useEffect(() => {
     void hydrate()
@@ -82,49 +106,9 @@ function ActiveWorkoutPage() {
     return () => window.clearInterval(timer)
   }, [isResting, tickRest])
 
-  function applySuggestion(suggestion: OverloadSuggestion) {
-    if (suggestion.suggestedWeightKg != null) {
-      setWeightKg(String(suggestion.suggestedWeightKg))
-    }
-    if (suggestion.suggestedReps != null) {
-      setReps(String(suggestion.suggestedReps))
-    }
-  }
-
-  async function handleStart() {
-    setError(null)
-    await startWorkout(workoutTitle.trim() || 'Seance libre')
-  }
-
-  async function handleLogSet() {
-    if (!activeExercise) {
-      setError('Ajoutez un exercice avant de logger un set.')
-      return
-    }
-
-    setError(null)
-
-    await addSet(activeExerciseIndex, {
-      setType,
-      weightKg: weightKg ? Number(weightKg) : null,
-      reps: reps ? Number(reps) : null,
-      restSeconds: defaultRestSeconds,
-      rpe: rpeEnabled && rpe ? Number(rpe) : null,
-    })
-    setWeightKg('')
-    setReps('')
-    setRpe('')
-    setSetType('normal')
-    startRest(defaultRestSeconds)
-  }
-
   async function handleFinish() {
-    const hasLoggedSets = activeExercises.some(
-      (exercise) => exercise.sets.length > 0,
-    )
-
-    if (!hasLoggedSets) {
-      setError('Ajoutez au moins un set avant de terminer.')
+    if (completedCount === 0) {
+      setError('Validez au moins une serie avant de terminer.')
       return
     }
 
@@ -139,14 +123,16 @@ function ActiveWorkoutPage() {
         return
       }
 
+      const validatedExercises = getValidatedExercisesForSync(draft.exercises)
+
       await syncWorkoutDraft(nhost, {
         title: draft.title,
         startedAt: draft.startedAt,
-        exercises: draft.exercises.map((exercise) => ({
+        exercises: validatedExercises.map((exercise) => ({
           exerciseId: exercise.exerciseId,
           sets: exercise.sets.map((set) => ({
             setIndex: set.setIndex,
-            setType: set.setType,
+            setType: set.setType ?? 'normal',
             weightKg: set.weightKg,
             reps: set.reps,
             rpe: set.rpe ?? null,
@@ -175,27 +161,13 @@ function ActiveWorkoutPage() {
           title="Nouvelle seance"
           description="Composez votre seance, reordonnez les exercices et suivez votre surcharge."
         />
-        <Card className="rounded-2xl border-border">
-          <CardContent className="space-y-4 pt-6">
-            <div className="space-y-2">
-              <Label htmlFor="workoutTitle">Titre</Label>
-              <Input
-                id="workoutTitle"
-                value={workoutTitle}
-                onChange={(event) => setWorkoutTitle(event.target.value)}
-              />
-            </div>
-            <Button type="button" variant="pill" onClick={() => void handleStart()}>
-              Demarrer
-            </Button>
-          </CardContent>
-        </Card>
+        <StartWorkoutForm initialTemplateId={initialTemplateId} />
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className={isResting ? 'space-y-4 pb-44' : 'space-y-4 pb-24'}>
       {wearSyncEnabled ? (
         <Pill tone={watchAvailable ? 'secondary' : 'default'}>
           {watchAvailable ? 'Montre Wear OS connectee' : 'Montre Wear OS non detectee'}
@@ -206,134 +178,75 @@ function ActiveWorkoutPage() {
         <PageHeader
           eyebrow="En cours"
           title={title}
-          description={
-            isResting
-              ? `Repos — ${restSecondsLeft}s`
-              : `${activeExercises.length} exercices dans la seance`
-          }
+          description={`Etape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} serie${completedCount > 1 ? 's' : ''} validee${completedCount > 1 ? 's' : ''}`}
         />
-        {isResting ? (
-          <Pill tone="accent">
-            <Timer className="size-3" />
-            {restSecondsLeft}s
-          </Pill>
-        ) : null}
+        <Button
+          type="button"
+          variant="soft"
+          size="sm"
+          className="shrink-0 rounded-full"
+          onClick={() => setProgramOpen(true)}
+        >
+          <Settings2 className="size-4" />
+          Programme
+        </Button>
       </div>
 
-      <Card className="rounded-2xl border-border">
-        <CardHeader>
-          <CardTitle className="font-display font-black">Programme</CardTitle>
-          <CardDescription>Glissez pour reordonner les exercices.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <ExercisePicker
-            excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
-            onSelect={(exercise) => void addExercise(exercise)}
-          />
-          <SortableExerciseList
-            exercises={activeExercises}
-            activeIndex={activeExerciseIndex}
-            onSelect={setActiveExerciseIndex}
-            onReorder={(from, to) => void reorderExercises(from, to)}
-            onRemove={(index) => void removeExercise(index)}
-          />
-        </CardContent>
-      </Card>
-
-      {activeExercise ? (
+      {currentExercise ? (
         <Card className="rounded-2xl border-border">
-          <CardHeader>
-            <CardTitle className="font-display font-black">
-              {activeExercise.exerciseName}
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base font-black">
+              Surcharge — {currentExercise.exerciseName}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <ExercisePerformancePanel
               exercise={{
-                id: activeExercise.exerciseId,
-                name: activeExercise.exerciseName,
-                equipment: activeExercise.equipment ?? null,
+                id: currentExercise.exerciseId,
+                name: currentExercise.exerciseName,
+                equipment: currentExercise.equipment ?? null,
               }}
-              onApplySuggestion={applySuggestion}
+              onApplySuggestion={(suggestion) => {
+                if (!currentStep) {
+                  return
+                }
+
+                void updatePlannedSet(currentStep.exerciseIndex, currentStep.setIndex, {
+                  weightKg:
+                    suggestion.suggestedWeightKg ?? currentExercise.sets[currentStep.setIndex]?.weightKg ?? null,
+                  reps:
+                    suggestion.suggestedReps ?? currentExercise.sets[currentStep.setIndex]?.reps ?? null,
+                })
+              }}
             />
-
-            <div className="grid grid-cols-3 gap-2">
-              {(['normal', 'warmup', 'failure'] as const).map((type) => (
-                <Button
-                  key={type}
-                  type="button"
-                  size="sm"
-                  variant={setType === type ? 'pill' : 'outline'}
-                  className="rounded-full capitalize"
-                  onClick={() => setSetType(type)}
-                >
-                  {type}
-                </Button>
-              ))}
-            </div>
-
-            <div className={`grid gap-3 ${rpeEnabled ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Poids (kg)</Label>
-                <Input
-                  id="weight"
-                  inputMode="decimal"
-                  value={weightKg}
-                  onChange={(event) => setWeightKg(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reps">Reps</Label>
-                <Input
-                  id="reps"
-                  inputMode="numeric"
-                  value={reps}
-                  onChange={(event) => setReps(event.target.value)}
-                />
-              </div>
-              {rpeEnabled ? (
-                <div className="space-y-2">
-                  <Label htmlFor="rpe">RPE</Label>
-                  <Input
-                    id="rpe"
-                    inputMode="decimal"
-                    min={1}
-                    max={10}
-                    step={0.5}
-                    placeholder="1-10"
-                    value={rpe}
-                    onChange={(event) => setRpe(event.target.value)}
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="pill" onClick={() => void handleLogSet()}>
-                Logger le set
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className="rounded-full"
-                onClick={() => startRest(90)}
-              >
-                Repos 90s
-              </Button>
-            </div>
-
-            <ul className="space-y-1 font-data text-xs text-muted-foreground">
-              {activeExercise.sets.map((set) => (
-                <li key={set.setIndex}>
-                  Set {set.setIndex + 1} ({set.setType}) — {set.weightKg ?? '—'} kg x{' '}
-                  {set.reps ?? '—'} reps
-                  {set.rpe != null ? ` · RPE ${set.rpe}` : ''}
-                </li>
-              ))}
-            </ul>
           </CardContent>
         </Card>
       ) : null}
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-display font-black">
+            <ListOrdered className="size-4" />
+            Circuit
+          </CardTitle>
+          <CardDescription>
+            Validez chaque serie dans l ordre. Les supersets alternent automatiquement.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActiveWorkoutCircuit
+            exercises={activeExercises}
+            activeStepIndex={activeStepIndex}
+            rpeEnabled={rpeEnabled}
+            onUpdateSet={(exerciseIndex, setIndex, patch) =>
+              void updatePlannedSet(exerciseIndex, setIndex, patch)
+            }
+            onCompleteCurrentStep={() => void completeCurrentStep()}
+            onAddPlannedSet={(exerciseIndex) => void addPlannedSet(exerciseIndex)}
+            onGoToStep={goToStep}
+          />
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -356,6 +269,46 @@ function ActiveWorkoutPage() {
         <p className="text-sm text-secondary-foreground">{message}</p>
       ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
+
+      {isResting ? (
+        <RestTimerBar
+          restSecondsLeft={restSecondsLeft}
+          restTargetSeconds={restTargetSeconds}
+          nextStepLabel={getNextStepLabel()}
+          onAdjust={adjustRest}
+          onSkip={skipRest}
+        />
+      ) : null}
+
+      <Sheet open={programOpen} onOpenChange={setProgramOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle className="font-display font-black">Modifier le programme</SheetTitle>
+            <SheetDescription>
+              Reordonnez ou ajoutez des exercices. Le circuit sera recalcule.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-3 overflow-y-auto px-4 pb-6">
+            <ExercisePicker
+              excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
+              onSelect={(exercise) => void addExercise(exercise)}
+            />
+            <SortableExerciseList
+              exercises={activeExercises}
+              activeIndex={currentStep?.exerciseIndex ?? 0}
+              onSelect={(index) => {
+                const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
+                if (stepIndex >= 0) {
+                  goToStep(stepIndex)
+                }
+              }}
+              onReorder={(from, to) => void reorderExercises(from, to)}
+              onRemove={(index) => void removeExercise(index)}
+              showSetCount
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

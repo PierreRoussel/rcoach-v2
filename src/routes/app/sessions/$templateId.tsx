@@ -84,6 +84,7 @@ function EditSessionTemplatePage() {
       </Button>
       <TemplateEditorForm
         key={`${template.id}-${template.updated_at}`}
+        templateId={templateId}
         initialName={template.name}
         initialExercises={initial.exercises}
         isSaving={saveTemplate.isPending}

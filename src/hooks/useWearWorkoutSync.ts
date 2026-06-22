@@ -10,6 +10,11 @@ import {
   publishWorkoutSnapshot,
   subscribeToWatchCommands,
 } from '@/lib/wear/wear-bridge'
+import {
+  buildCircuitSteps,
+  getStepLabel,
+  findNextPendingStepIndex,
+} from '@/lib/workout/workout-circuit'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 
 export function useWearWorkoutSync(enabled = true) {
@@ -46,16 +51,32 @@ export function useWearWorkoutSync(enabled = true) {
 
   async function publishCurrentSnapshot() {
     const state = useActiveWorkoutStore.getState()
+    const steps = buildCircuitSteps(state.exercises)
+    const currentStep = steps[state.activeStepIndex] ?? null
+    const nextIndex = findNextPendingStepIndex(steps, state.exercises, state.activeStepIndex + 1)
+    const nextStepLabel = getStepLabel(
+      state.exercises,
+      nextIndex != null ? steps[nextIndex] ?? null : null,
+    )
+
     const snapshot = state.startedAt
-      ? buildWorkoutSnapshot({
-          title: state.title,
-          startedAt: state.startedAt,
-          defaultRestSeconds: state.defaultRestSeconds,
-          exercises: state.exercises,
-          activeExerciseIndex: state.activeExerciseIndex,
-          isResting: state.isResting,
-          restSecondsLeft: state.restSecondsLeft,
-        })
+      ? buildWorkoutSnapshot(
+          {
+            title: state.title,
+            startedAt: state.startedAt,
+            defaultRestSeconds: state.defaultRestSeconds,
+            exercises: state.exercises,
+            activeStepIndex: state.activeStepIndex,
+            isResting: state.isResting,
+            restSecondsLeft: state.restSecondsLeft,
+            restTargetSeconds: state.restTargetSeconds,
+          },
+          {
+            steps,
+            currentStep,
+            nextStepLabel,
+          },
+        )
       : buildIdleWorkoutSnapshot()
 
     await publishWorkoutSnapshot(snapshot)
@@ -65,33 +86,35 @@ export function useWearWorkoutSync(enabled = true) {
     const state = useActiveWorkoutStore.getState()
 
     switch (command.type) {
+      case 'completeStep':
       case 'logSet': {
         if (!state.startedAt) {
           return
         }
 
-        await state.addSet(command.exerciseIndex, {
-          setType: command.setType,
+        await state.completeStep(command.exerciseIndex, command.setIndex, {
           weightKg: command.weightKg,
           reps: command.reps,
+          rpe: command.rpe,
+          setType: command.setType,
         })
-        state.startRest(state.defaultRestSeconds)
         break
       }
+      case 'adjustRest':
+        state.adjustRest(command.deltaSeconds)
+        break
       case 'skipRest':
         state.skipRest()
         break
       case 'nextExercise': {
-        const next = Math.min(
-          state.activeExerciseIndex + 1,
-          Math.max(state.exercises.length - 1, 0),
-        )
-        state.setActiveExerciseIndex(next)
+        const steps = buildCircuitSteps(state.exercises)
+        const next = Math.min(state.activeStepIndex + 1, Math.max(steps.length - 1, 0))
+        state.goToStep(next)
         break
       }
       case 'prevExercise': {
-        const prev = Math.max(state.activeExerciseIndex - 1, 0)
-        state.setActiveExerciseIndex(prev)
+        const prev = Math.max(state.activeStepIndex - 1, 0)
+        state.goToStep(prev)
         break
       }
       case 'ping':

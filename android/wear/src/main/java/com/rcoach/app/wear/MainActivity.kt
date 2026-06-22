@@ -54,6 +54,11 @@ fun WearApp() {
 
         if (state.isResting) {
             Text("Repos ${state.restSecondsLeft}s")
+            state.nextStepLabel?.let { label ->
+                Text(label, textAlign = TextAlign.Center)
+            }
+            Button(onClick = { viewModel.adjustRest(-15) }) { Text("-15s") }
+            Button(onClick = { viewModel.adjustRest(15) }) { Text("+15s") }
             Button(onClick = { viewModel.skipRest() }) { Text("Passer") }
             return@Column
         }

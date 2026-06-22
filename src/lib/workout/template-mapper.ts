@@ -10,6 +10,7 @@ export function templateExercisesToActive(
     muscleGroup: exercise.muscleGroup,
     equipment: exercise.equipment,
     supersetId: exercise.supersetId,
+    defaultRestSeconds: exercise.defaultRestSeconds,
     sets: exercise.sets.map((set, index) => ({
       setIndex: index,
       setType: 'normal' as const,
@@ -18,6 +19,7 @@ export function templateExercisesToActive(
       restSeconds: set.usesGlobalRest
         ? exercise.defaultRestSeconds
         : set.restSeconds,
+      completedAt: null,
     })),
   }))
 }

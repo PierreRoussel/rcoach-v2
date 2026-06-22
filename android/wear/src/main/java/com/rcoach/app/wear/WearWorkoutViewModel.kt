@@ -19,6 +19,10 @@ data class WearUiState(
     val reps: Int? = null,
     val isResting: Boolean = false,
     val restSecondsLeft: Int = 0,
+    val restTargetSeconds: Int = 0,
+    val nextStepLabel: String? = null,
+    val activeExerciseIndex: Int = 0,
+    val activeSetIndex: Int = 0,
 )
 
 class WearWorkoutViewModel(
@@ -28,7 +32,6 @@ class WearWorkoutViewModel(
     val uiState: StateFlow<WearUiState> = _uiState.asStateFlow()
 
     private var restJob: Job? = null
-    private var activeExerciseIndex = 0
 
     init {
         repository.onSnapshot = { json -> applySnapshot(json) }
@@ -43,30 +46,47 @@ class WearWorkoutViewModel(
     private fun applySnapshot(json: JSONObject) {
         val sessionId = json.optString("sessionId", "")
         val sessionActive = sessionId.isNotBlank()
-        val exercises = json.optJSONArray("exercises")
-        activeExerciseIndex = json.optInt("activeExerciseIndex", 0)
 
-        if (!sessionActive || exercises == null || exercises.length() == 0) {
+        if (!sessionActive) {
             restJob?.cancel()
             _uiState.value = WearUiState()
             return
         }
 
-        val exercise = exercises.getJSONObject(activeExerciseIndex.coerceAtMost(exercises.length() - 1))
-        val setsCount = exercise.optInt("setsCount", 0)
-        val suggested = exercise.optJSONObject("suggestedSet")
+        val currentStep = json.optJSONObject("currentStep")
         val isResting = json.optBoolean("isResting", false)
         val restSecondsLeft = json.optInt("restSecondsLeft", 0)
+        val restTargetSeconds = json.optInt("restTargetSeconds", restSecondsLeft)
+        val nextStepLabel = json.optString("nextStepLabel", "").ifBlank { null }
+
+        val exerciseName = currentStep?.optString("exerciseName", "Exercice") ?: "Exercice"
+        val setNumber = currentStep?.optInt("setNumber", 1) ?: 1
+        val exerciseIndex = currentStep?.optInt("exerciseIndex", 0) ?: 0
+        val setIndex = currentStep?.optInt("setIndex", 0) ?: 0
+        val weightKg = if (currentStep != null && currentStep.has("weightKg") && !currentStep.isNull("weightKg")) {
+            currentStep.optDouble("weightKg")
+        } else {
+            null
+        }
+        val reps = if (currentStep != null && currentStep.has("reps") && !currentStep.isNull("reps")) {
+            currentStep.optInt("reps")
+        } else {
+            null
+        }
 
         _uiState.value = WearUiState(
             sessionActive = true,
             title = json.optString("title", "Seance"),
-            exerciseName = exercise.optString("exerciseName", "Exercice"),
-            setNumber = setsCount + 1,
-            weightKg = if (suggested != null && suggested.has("weightKg") && !suggested.isNull("weightKg")) suggested.optDouble("weightKg") else null,
-            reps = if (suggested != null && suggested.has("reps") && !suggested.isNull("reps")) suggested.optInt("reps") else null,
+            exerciseName = exerciseName,
+            setNumber = setNumber,
+            weightKg = weightKg,
+            reps = reps,
             isResting = isResting,
             restSecondsLeft = restSecondsLeft,
+            restTargetSeconds = restTargetSeconds,
+            nextStepLabel = nextStepLabel,
+            activeExerciseIndex = exerciseIndex,
+            activeSetIndex = setIndex,
         )
 
         if (isResting) {
@@ -87,11 +107,23 @@ class WearWorkoutViewModel(
         _uiState.value = current.copy(reps = ((current.reps ?: 0) + delta).coerceAtLeast(0))
     }
 
+    fun adjustRest(deltaSeconds: Int) {
+        viewModelScope.launch {
+            repository.sendCommand(
+                JSONObject()
+                    .put("type", "adjustRest")
+                    .put("deltaSeconds", deltaSeconds)
+                    .toString(),
+            )
+        }
+    }
+
     fun logSet() {
         val current = _uiState.value
         val command = JSONObject()
-            .put("type", "logSet")
-            .put("exerciseIndex", activeExerciseIndex)
+            .put("type", "completeStep")
+            .put("exerciseIndex", current.activeExerciseIndex)
+            .put("setIndex", current.activeSetIndex)
             .put("weightKg", current.weightKg)
             .put("reps", current.reps)
             .put("setType", "normal")

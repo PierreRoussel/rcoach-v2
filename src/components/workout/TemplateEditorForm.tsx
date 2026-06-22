@@ -4,6 +4,7 @@ import { Play, Save } from 'lucide-react'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import { TemplateEditorMenu } from '@/components/workout/TemplateEditorMenu'
 import { TemplateExerciseSetsEditor } from '@/components/workout/TemplateExerciseSetsEditor'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +28,7 @@ import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
 type TemplateEditorFormProps = {
+  templateId?: string
   initialName?: string
   initialExercises?: TemplateExerciseDraft[]
   isSaving?: boolean
@@ -35,6 +37,7 @@ type TemplateEditorFormProps = {
 }
 
 export function TemplateEditorForm({
+  templateId,
   initialName = '',
   initialExercises = [],
   isSaving = false,
@@ -159,12 +162,17 @@ export function TemplateEditorForm({
   return (
     <div className="space-y-4">
       <div className="sticky top-0 z-10 -mx-1 space-y-3 rounded-2xl border border-border bg-background/95 p-3 backdrop-blur">
-        <Input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Nom de la seance"
-          className="h-10 border-0 bg-transparent px-1 font-display text-lg font-black shadow-none focus-visible:ring-0"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Nom de la seance"
+            className="h-10 min-w-0 flex-1 border-0 bg-transparent px-1 font-display text-lg font-black shadow-none focus-visible:ring-0"
+          />
+          {templateId ? (
+            <TemplateEditorMenu templateId={templateId} title={name} />
+          ) : null}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="pill"

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { BookmarkPlus, Link2, MoreVertical } from 'lucide-react'
+import { BookmarkPlus, CalendarClock, Link2, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { WorkoutDetail, WorkoutSummary } from '@/lib/graphql/operations'
 import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
+import { buildPlanningSearchParams } from '@/lib/schedule/planning-navigation'
 import {
   copyWorkoutShareLink,
   ensureWorkoutShareToken,
@@ -117,6 +118,19 @@ export function WorkoutDetailMenu({
           >
             <Link2 className="size-4" />
             Partager la seance
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              to="/app/planning"
+              search={buildPlanningSearchParams({
+                title: workout.title,
+                templateId: existingTemplate?.id,
+                openScheduleForm: true,
+              })}
+            >
+              <CalendarClock className="size-4" />
+              Programmer une recurrence
+            </Link>
           </DropdownMenuItem>
           {existingTemplate ? (
             <>

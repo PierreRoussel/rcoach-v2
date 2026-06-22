@@ -100,7 +100,7 @@ export function WorkoutSummaryHeader({
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
 
-      <div className="flex gap-4 border-b border-border pb-3">
+      <div className="grid grid-cols-3 gap-3 border-b border-border pb-3">
         <WorkoutStat
           label="Durée"
           value={duration ?? '—'}

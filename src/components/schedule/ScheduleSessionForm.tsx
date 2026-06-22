@@ -32,13 +32,20 @@ export type ScheduleFormValues = {
 type ScheduleSessionFormProps = {
   templates: Array<{ id: string; name: string }>
   initialDate?: Date
+  initialTemplateId?: string | null
+  initialTitle?: string
   editing?: ScheduledSessionRecord | null
   isPending?: boolean
   onSubmit: (values: ScheduleFormValues) => Promise<void>
   onCancel?: () => void
 }
 
-function defaultValues(initialDate?: Date, editing?: ScheduledSessionRecord | null): ScheduleFormValues {
+function defaultValues(
+  initialDate?: Date,
+  editing?: ScheduledSessionRecord | null,
+  initialTemplateId?: string | null,
+  initialTitle?: string,
+): ScheduleFormValues {
   const today = initialDate ?? new Date()
 
   if (editing) {
@@ -55,8 +62,8 @@ function defaultValues(initialDate?: Date, editing?: ScheduledSessionRecord | nu
   }
 
   return {
-    title: '',
-    workoutTemplateId: null,
+    title: initialTitle ?? '',
+    workoutTemplateId: initialTemplateId ?? null,
     recurrenceType: 'once',
     weekdays: [],
     scheduledDate: format(today, 'yyyy-MM-dd'),
@@ -69,19 +76,21 @@ function defaultValues(initialDate?: Date, editing?: ScheduledSessionRecord | nu
 export function ScheduleSessionForm({
   templates,
   initialDate,
+  initialTemplateId,
+  initialTitle,
   editing,
   isPending = false,
   onSubmit,
   onCancel,
 }: ScheduleSessionFormProps) {
   const [values, setValues] = useState<ScheduleFormValues>(() =>
-    defaultValues(initialDate, editing),
+    defaultValues(initialDate, editing, initialTemplateId, initialTitle),
   )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setValues(defaultValues(initialDate, editing))
-  }, [initialDate, editing])
+    setValues(defaultValues(initialDate, editing, initialTemplateId, initialTitle))
+  }, [initialDate, editing, initialTemplateId, initialTitle])
 
   function toggleWeekday(day: number) {
     setValues((current) => ({

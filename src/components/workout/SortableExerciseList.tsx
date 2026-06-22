@@ -31,6 +31,7 @@ import {
   wrapSortableDragEnd,
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
+import { buildExerciseUnits } from '@/lib/workout/exercise-units'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 
 const SUPERSET_ACCENTS = [
@@ -262,33 +263,7 @@ type RenderUnit =
   | { type: 'superset'; supersetId: number; indices: number[] }
 
 function buildRenderUnits(exercises: ActiveExerciseEntry[]): RenderUnit[] {
-  const units: RenderUnit[] = []
-  let index = 0
-
-  while (index < exercises.length) {
-    const supersetId = exercises[index]?.supersetId
-
-    if (supersetId != null) {
-      const indices = [index]
-      let next = index + 1
-
-      while (next < exercises.length && exercises[next]?.supersetId === supersetId) {
-        indices.push(next)
-        next += 1
-      }
-
-      if (indices.length > 1) {
-        units.push({ type: 'superset', supersetId, indices })
-        index = next
-        continue
-      }
-    }
-
-    units.push({ type: 'single', index })
-    index += 1
-  }
-
-  return units
+  return buildExerciseUnits(exercises)
 }
 
 function isSplitSuperset(

@@ -18,6 +18,8 @@ type WorkoutHistoryCardProps = {
   workout: WorkoutSummary
   profile: Pick<Profile, 'display_name' | 'avatar_url'> | null | undefined
   allWorkouts?: WorkoutSummary[]
+  /** Pleine largeur dans une liste (sans bordure interne). */
+  variant?: 'standalone' | 'embedded'
   className?: string
 }
 
@@ -33,6 +35,7 @@ export function WorkoutHistoryCard({
   workout,
   profile,
   allWorkouts = [],
+  variant = 'standalone',
   className,
 }: WorkoutHistoryCardProps) {
   const displayName = profile?.display_name ?? 'Athlète'
@@ -45,7 +48,10 @@ export function WorkoutHistoryCard({
   return (
     <div
       className={cn(
-        'relative rounded-2xl border border-border bg-card px-4 py-3 pr-12 transition-shadow hover:shadow-sm',
+        'relative w-full pr-12 transition-colors',
+        variant === 'standalone'
+          ? 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm hover:shadow-md'
+          : 'border-border bg-card px-4 py-3 hover:bg-muted/20',
         className,
       )}
     >

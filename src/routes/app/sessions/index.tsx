@@ -252,8 +252,8 @@ function HistoryTab() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, isIntersecting])
 
   return (
-    <Card className="rounded-2xl border-border">
-      <CardHeader>
+    <Card className="gap-0 overflow-hidden rounded-2xl border-border">
+      <CardHeader className="px-4 pb-4">
         <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle className="font-display font-black">Historique</CardTitle>
@@ -265,17 +265,17 @@ function HistoryTab() {
           </Pill>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 pb-0">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Chargement...</p>
+          <p className="px-4 pb-4 text-sm text-muted-foreground">Chargement...</p>
         ) : null}
         {error ? (
-          <p className="text-sm text-destructive">
+          <p className="px-4 pb-4 text-sm text-destructive">
             {error instanceof Error ? error.message : 'Erreur de chargement'}
           </p>
         ) : null}
         {!isLoading && !error && workouts.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
+          <div className="mx-4 mb-4 rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
             <p className="text-sm text-muted-foreground">
               Aucune seance enregistree pour le moment.
             </p>
@@ -284,19 +284,20 @@ function HistoryTab() {
             </Button>
           </div>
         ) : null}
-        <ul className="space-y-3">
+        <ul className="divide-y divide-border border-t border-border">
           {workouts.map((workout) => (
             <li key={workout.id}>
               <WorkoutHistoryCard
                 workout={workout}
                 profile={profile}
                 allWorkouts={workouts}
+                variant="embedded"
               />
             </li>
           ))}
         </ul>
         {hasNextPage ? (
-          <div ref={targetRef} className="py-4 text-center">
+          <div ref={targetRef} className="border-t border-border px-4 py-4 text-center">
             {isFetchingNextPage ? (
               <p className="text-sm text-muted-foreground">Chargement...</p>
             ) : (

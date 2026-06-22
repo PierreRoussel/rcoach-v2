@@ -8,28 +8,35 @@ export type SyncQueueItem = {
   attempts: number
 }
 
+export type ActiveSetDraft = {
+  setIndex: number
+  setType: 'normal' | 'warmup' | 'failure'
+  weightKg: number | null
+  reps: number | null
+  restSeconds?: number | null
+  durationSeconds?: number | null
+  distanceKm?: number | null
+  rpe?: number | null
+  completedAt: string | null
+}
+
+export type ActiveExerciseDraft = {
+  exerciseId: string
+  exerciseName: string
+  muscleGroup?: string | null
+  equipment?: string | null
+  supersetId?: number | null
+  defaultRestSeconds?: number
+  sets: ActiveSetDraft[]
+}
+
 export type ActiveWorkoutDraft = {
   id: 'current'
   title: string
   startedAt: string
   defaultRestSeconds?: number
-  exercises: Array<{
-    exerciseId: string
-    exerciseName: string
-    muscleGroup?: string | null
-    equipment?: string | null
-    supersetId?: number | null
-    sets: Array<{
-      setIndex: number
-      setType: 'normal' | 'warmup' | 'failure'
-      weightKg: number | null
-      reps: number | null
-      restSeconds?: number | null
-      durationSeconds?: number | null
-      distanceKm?: number | null
-      rpe?: number | null
-    }>
-  }>
+  activeStepIndex?: number
+  exercises: ActiveExerciseDraft[]
 }
 
 class RCoachDB extends Dexie {
@@ -43,6 +50,30 @@ class RCoachDB extends Dexie {
       syncQueue: '++id, type, createdAt',
       activeDraft: 'id',
     })
+
+    this.version(2)
+      .stores({
+        syncQueue: '++id, type, createdAt',
+        activeDraft: 'id',
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table<ActiveWorkoutDraft, 'current'>('activeDraft')
+          .toCollection()
+          .modify((draft) => {
+            draft.activeStepIndex = draft.activeStepIndex ?? 0
+
+            for (const exercise of draft.exercises) {
+              exercise.defaultRestSeconds =
+                exercise.defaultRestSeconds ?? draft.defaultRestSeconds ?? 90
+
+              for (const set of exercise.sets) {
+                const legacySet = set as ActiveSetDraft & { completedAt?: string | null }
+                legacySet.completedAt = legacySet.completedAt ?? null
+              }
+            }
+          })
+      })
   }
 }
 
