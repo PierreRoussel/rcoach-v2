@@ -1,0 +1,1 @@
+-- Repair migration: no automatic rollback.
