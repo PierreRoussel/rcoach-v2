@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch'
 import { PageHeader, ThemeSetting } from '@/design-system'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import { Capacitor } from '@capacitor/core'
 
 export const Route = createFileRoute('/app/profile')({
   component: ProfilePage,
@@ -262,7 +263,27 @@ function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-2">
           <Label>Theme</Label>
-          <ThemeSetting />
+          
+      <Card>
+        <CardHeader>
+          <CardTitle>Montre Wear OS</CardTitle>
+          <CardDescription>
+            Disponible via l application Android Capacitor pendant une seance active.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            Plateforme actuelle : {Capacitor.isNativePlatform() ? Capacitor.getPlatform() : 'web/PWA'}
+          </p>
+          <p>
+            Installez l APK Android, ouvrez une seance active et verifiez le bandeau
+            « Montre Wear OS connectee » sur l ecran seance.
+          </p>
+          <p>Voir docs/wear-os-testing.md pour le pairing emulateur.</p>
+        </CardContent>
+      </Card>
+
+      <ThemeSetting />
         </CardContent>
       </Card>
 

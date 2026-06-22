@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
 import { useMyProfile } from '@/hooks/useProfile'
+import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
+import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
@@ -61,6 +63,9 @@ function ActiveWorkoutPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+  const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
 
   const activeExercise = activeExercises[activeExerciseIndex]
 
@@ -191,6 +196,12 @@ function ActiveWorkoutPage() {
 
   return (
     <div className="space-y-4">
+      {wearSyncEnabled ? (
+        <Pill tone={watchAvailable ? 'secondary' : 'default'}>
+          {watchAvailable ? 'Montre Wear OS connectee' : 'Montre Wear OS non detectee'}
+        </Pill>
+      ) : null}
+
       <div className="flex items-start justify-between gap-3">
         <PageHeader
           eyebrow="En cours"

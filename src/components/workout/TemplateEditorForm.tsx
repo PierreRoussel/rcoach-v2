@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Play, Save } from 'lucide-react'
 
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
+import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { TemplateExerciseSetsEditor } from '@/components/workout/TemplateExerciseSetsEditor'
 import { Button } from '@/components/ui/button'
@@ -72,6 +73,7 @@ export function TemplateEditorForm({
   const [defaultRestSeconds, setDefaultRestSeconds] = useState(initialDefaultRestSeconds)
   const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [reorderOpen, setReorderOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -81,7 +83,7 @@ export function TemplateEditorForm({
     setDefaultRestSeconds(initialDefaultRestSeconds)
   }, [initialName, initialExercises, initialDefaultRestSeconds])
 
-  const activeExercise = exercises[activeIndex]
+  const activeEntries = toActiveEntries(exercises)
 
   function handleGlobalRestChange(value: number) {
     const next = Math.max(0, value)
@@ -262,7 +264,7 @@ export function TemplateEditorForm({
           </div>
 
           <SortableExerciseList
-            exercises={toActiveEntries(exercises)}
+            exercises={activeEntries}
             activeIndex={activeIndex}
             onSelect={setActiveIndex}
             onReorder={handleReorder}
@@ -271,18 +273,22 @@ export function TemplateEditorForm({
             onRemoveFromSuperset={handleRemoveFromSuperset}
             showSetCount
             dragHandle="subtle"
+            onOpenReorder={() => setReorderOpen(true)}
+            renderSetsContent={(index) => (
+              <TemplateExerciseSetsEditor
+                exercise={exercises[index]!}
+                defaultRestSeconds={defaultRestSeconds}
+                onChange={(exercise) => handleUpdateExercise(index, exercise)}
+              />
+            )}
           />
 
-          {activeExercise ? (
-            <div className="rounded-2xl border border-border bg-soft-primary/20 p-4">
-              <p className="mb-3 font-display font-black">{activeExercise.exerciseName}</p>
-              <TemplateExerciseSetsEditor
-                exercise={activeExercise}
-                defaultRestSeconds={defaultRestSeconds}
-                onChange={(exercise) => handleUpdateExercise(activeIndex, exercise)}
-              />
-            </div>
-          ) : null}
+          <ExerciseReorderDrawer
+            open={reorderOpen}
+            onOpenChange={setReorderOpen}
+            exercises={activeEntries}
+            onReorder={handleReorder}
+          />
         </CardContent>
       </Card>
 

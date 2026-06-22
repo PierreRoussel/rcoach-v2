@@ -147,6 +147,8 @@ function SortableExerciseItem({
   dragHandle,
   onAddToSuperset,
   onRemoveFromSuperset,
+  onOpenReorder,
+  renderSetsContent,
   supersetBadge,
 }: {
   exercise: ActiveExerciseEntry
@@ -159,6 +161,8 @@ function SortableExerciseItem({
   dragHandle: 'subtle' | 'default'
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
+  onOpenReorder?: () => void
+  renderSetsContent?: (index: number) => ReactNode
   supersetBadge?: number
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -169,8 +173,9 @@ function SortableExerciseItem({
     inSuperset && exercise.supersetId != null
       ? supersetAccentClass(exercise.supersetId)
       : null
+  const hasSetsSection = renderSetsContent != null
 
-  return (
+  const card = (
     <div
       ref={setNodeRef}
       style={{
@@ -178,56 +183,81 @@ function SortableExerciseItem({
         transition,
       }}
       className={cn(
-        'group flex items-center gap-2 rounded-2xl border px-3 py-2',
+        'group rounded-2xl border',
         isActive ? 'border-primary bg-soft-primary/60' : 'border-border bg-card',
         inSuperset && !isActive && accent,
         isDragging && 'opacity-70 shadow-md',
       )}
     >
-      <button
-        type="button"
-        className={cn(
-          'shrink-0 text-muted-foreground',
-          dragHandle === 'subtle'
-            ? 'cursor-grab opacity-0 transition-opacity group-hover:opacity-40 active:cursor-grabbing active:opacity-70'
-            : 'cursor-grab active:cursor-grabbing',
-        )}
-        aria-label="Reordonner"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className={dragHandle === 'subtle' ? 'size-3' : 'size-4'} />
-      </button>
-      <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect}>
-        <div className="flex items-center gap-2">
-          <p className="truncate font-display font-black">{exercise.exerciseName}</p>
-          {supersetBadge != null ? (
-            <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
-              S{supersetBadge}
-            </span>
-          ) : null}
-        </div>
-        {showSetCount ? (
-          <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            {exercise.muscleGroup ?? exercise.equipment ?? '—'}
-          </p>
-        )}
-      </button>
-      {onAddToSuperset && onRemoveFromSuperset ? (
-        <ExerciseSupersetMenu
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button
+          type="button"
+          className={cn(
+            'shrink-0 text-muted-foreground',
+            dragHandle === 'subtle'
+              ? 'cursor-grab opacity-0 transition-opacity group-hover:opacity-40 active:cursor-grabbing active:opacity-70'
+              : 'cursor-grab active:cursor-grabbing',
+          )}
+          aria-label="Reordonner"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className={dragHandle === 'subtle' ? 'size-3' : 'size-4'} />
+        </button>
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect}>
+          <div className="flex items-center gap-2">
+            <p className="truncate font-display font-black">{exercise.exerciseName}</p>
+            {supersetBadge != null ? (
+              <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
+                S{supersetBadge}
+              </span>
+            ) : null}
+          </div>
+          {showSetCount ? (
+            <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {exercise.muscleGroup ?? exercise.equipment ?? '—'}
+            </p>
+          )}
+        </button>
+        {hasSetsSection ? (
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 [&[data-state=open]>svg]:rotate-180"
+              aria-label="Replier ou deplier les series"
+            >
+              <ChevronDown className="size-4 transition-transform duration-200" />
+            </Button>
+          </CollapsibleTrigger>
+        ) : null}
+        <ExerciseActionsMenu
           index={index}
           exercises={exercises}
           onAddToSuperset={onAddToSuperset}
           onRemoveFromSuperset={onRemoveFromSuperset}
+          onOpenReorder={onOpenReorder}
         />
+        <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
+          <Trash2 className="size-4" />
+        </Button>
+      </div>
+      {hasSetsSection ? (
+        <CollapsibleContent className="border-t border-border/60 px-3 py-3">
+          {renderSetsContent(index)}
+        </CollapsibleContent>
       ) : null}
-      <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
-        <Trash2 className="size-4" />
-      </Button>
     </div>
   )
+
+  if (hasSetsSection) {
+    return <Collapsible defaultOpen>{card}</Collapsible>
+  }
+
+  return card
 }
 
 type RenderUnit =
@@ -304,6 +334,8 @@ export function SortableExerciseList({
   dragHandle = 'default',
   onAddToSuperset,
   onRemoveFromSuperset,
+  renderSetsContent,
+  onOpenReorder,
 }: SortableExerciseListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -341,6 +373,8 @@ export function SortableExerciseList({
         dragHandle={dragHandle}
         onAddToSuperset={onAddToSuperset}
         onRemoveFromSuperset={onRemoveFromSuperset}
+        onOpenReorder={onOpenReorder}
+        renderSetsContent={renderSetsContent}
         supersetBadge={isSplitSuperset(exercises, index)}
       />
     )

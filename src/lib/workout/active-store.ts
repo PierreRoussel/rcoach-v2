@@ -33,6 +33,7 @@ type ActiveWorkoutState = {
   addSet: (exerciseIndex: number, set: Omit<ActiveSet, 'setIndex'>) => Promise<void>
   startRest: (seconds: number) => void
   tickRest: () => void
+  skipRest: () => void
   finishWorkout: () => Promise<ActiveWorkoutDraft | null>
   cancelWorkout: () => Promise<void>
 }
@@ -215,6 +216,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
 
     set({ restSecondsLeft: next })
+  },
+
+  skipRest: () => {
+    set({ isResting: false, restSecondsLeft: 0 })
   },
 
   finishWorkout: async () => {

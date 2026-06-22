@@ -1,0 +1,27 @@
+{
+  "name": "@rcoach/capacitor-wear-bridge",
+  "version": "0.1.0",
+  "description": "Wear OS Data Layer bridge for RCoach",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "android/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/core": "^7.0.0",
+    "typescript": "~6.0.2"
+  },
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  }
+}

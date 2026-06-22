@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RCoach</string>
+    <string name="title_activity_main">RCoach</string>
+    <string name="package_name">com.rcoach.app</string>
+    <string name="custom_url_scheme">com.rcoach.app</string>
+</resources>
