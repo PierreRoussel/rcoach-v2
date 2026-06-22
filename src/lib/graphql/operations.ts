@@ -121,7 +121,6 @@ export const LIST_MY_WORKOUTS = `
       title
       started_at
       ended_at
-      share_token
       workout_exercises {
         id
         exercise {
@@ -484,15 +483,12 @@ export const LIST_CLIENT_WORKOUTS = `
   }
 `
 
-export const GET_WORKOUT_BY_ID = `
-  query GetWorkoutById($id: uuid!) {
-    workouts_by_pk(id: $id) {
+const GET_WORKOUT_BY_ID_FIELDS = `
       id
       title
       started_at
       ended_at
       notes
-      share_token
       workout_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
@@ -512,6 +508,21 @@ export const GET_WORKOUT_BY_ID = `
           rpe
         }
       }
+`
+
+export const GET_WORKOUT_BY_ID = `
+  query GetWorkoutById($id: uuid!) {
+    workouts_by_pk(id: $id) {
+      share_token
+${GET_WORKOUT_BY_ID_FIELDS}
+    }
+  }
+`
+
+export const GET_WORKOUT_BY_ID_WITHOUT_SHARE = `
+  query GetWorkoutByIdWithoutShare($id: uuid!) {
+    workouts_by_pk(id: $id) {
+${GET_WORKOUT_BY_ID_FIELDS}
     }
   }
 `

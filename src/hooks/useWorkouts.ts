@@ -3,11 +3,13 @@ import { useMemo } from 'react'
 
 import {
   GET_WORKOUT_BY_ID,
+  GET_WORKOUT_BY_ID_WITHOUT_SHARE,
   LIST_MY_WORKOUTS,
   type WorkoutDetail,
   type WorkoutSummary,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useMyWorkouts() {
@@ -34,10 +36,21 @@ export function useWorkoutById(workoutId: string) {
     queryKey: ['workouts', workoutId],
     enabled: isAuthenticated && Boolean(workoutId),
     queryFn: async () => {
-      const data = await graphqlRequest<{
-        workouts_by_pk: WorkoutDetail | null
-      }>(nhost, GET_WORKOUT_BY_ID, { id: workoutId })
-      return data.workouts_by_pk
+      try {
+        const data = await graphqlRequest<{
+          workouts_by_pk: WorkoutDetail | null
+        }>(nhost, GET_WORKOUT_BY_ID, { id: workoutId })
+        return data.workouts_by_pk
+      } catch (error) {
+        if (!isGraphqlMissingFieldError(error, 'share_token')) {
+          throw error
+        }
+
+        const data = await graphqlRequest<{
+          workouts_by_pk: WorkoutDetail | null
+        }>(nhost, GET_WORKOUT_BY_ID_WITHOUT_SHARE, { id: workoutId })
+        return data.workouts_by_pk
+      }
     },
   })
 }
