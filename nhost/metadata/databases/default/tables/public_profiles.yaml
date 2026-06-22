@@ -63,20 +63,14 @@ select_permissions:
         - rpe_enabled
         - created_at
       filter:
-        id:
-          _eq: X-Hasura-User-Id
-  - role: user
-    permission:
-      columns:
-        - id
-        - display_name
-        - avatar_url
-      filter:
-        coach_clients_as_athlete:
-          coach_id:
-            _eq: X-Hasura-User-Id
-          status:
-            _eq: active
+        _or:
+          - id:
+              _eq: X-Hasura-User-Id
+          - coach_clients_as_athlete:
+              coach_id:
+                _eq: X-Hasura-User-Id
+              status:
+                _eq: active
   - role: public
     permission:
       columns:
