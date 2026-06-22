@@ -14,8 +14,8 @@ export function buildTemplateExerciseInsertObjects(
   }>,
   options?: { includeSupersetId?: boolean; includeDefaultRestSeconds?: boolean },
 ) {
-  const includeSupersetId = options?.includeSupersetId ?? true
-  const includeDefaultRestSeconds = options?.includeDefaultRestSeconds ?? true
+  const includeSupersetId = options?.includeSupersetId ?? false
+  const includeDefaultRestSeconds = options?.includeDefaultRestSeconds ?? false
 
   return exercises.map((exercise, sortOrder) => {
     const object: Record<string, unknown> = {

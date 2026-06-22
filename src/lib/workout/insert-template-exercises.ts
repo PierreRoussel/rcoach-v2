@@ -5,10 +5,7 @@ import {
   INSERT_WORKOUT_TEMPLATE_SETS,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import {
-  isGraphqlDatabaseError,
-  isGraphqlMissingFieldError,
-} from '@/lib/graphql/schema-errors'
+import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
 import { buildTemplateExerciseInsertObjects } from '@/lib/workout/template-insert'
 
 type TemplateExerciseInsertInput = Parameters<
@@ -25,11 +22,10 @@ type ExerciseInsertOptions = {
   includeDefaultRestSeconds?: boolean
 }
 
-const EXERCISE_INSERT_STRATEGIES: ExerciseInsertOptions[] = [
-  { includeSupersetId: false, includeDefaultRestSeconds: false },
-  { includeSupersetId: true, includeDefaultRestSeconds: false },
-  { includeSupersetId: true, includeDefaultRestSeconds: true },
-]
+const FULL_EXERCISE_INSERT_OPTIONS: ExerciseInsertOptions = {
+  includeSupersetId: true,
+  includeDefaultRestSeconds: true,
+}
 
 function buildExerciseRows(
   templateId: string,
@@ -159,23 +155,50 @@ async function insertSets(
   await graphqlRequest(nhost, INSERT_WORKOUT_TEMPLATE_SETS, { objects })
 }
 
-function shouldRetryExerciseInsert(error: unknown, options: ExerciseInsertOptions) {
-  if (isGraphqlMissingFieldError(error, 'superset_id') && options.includeSupersetId) {
-    return true
-  }
-
+function degradeExerciseInsertOptions(
+  error: unknown,
+  options: ExerciseInsertOptions,
+): ExerciseInsertOptions | null {
   if (
-    isGraphqlMissingFieldError(error, 'default_rest_seconds') &&
-    options.includeDefaultRestSeconds
+    options.includeDefaultRestSeconds &&
+    isGraphqlMissingFieldError(error, 'default_rest_seconds')
   ) {
-    return true
+    return { ...options, includeDefaultRestSeconds: false }
   }
 
-  if (isGraphqlDatabaseError(error)) {
-    return true
+  if (options.includeSupersetId && isGraphqlMissingFieldError(error, 'superset_id')) {
+    return { ...options, includeSupersetId: false }
   }
 
-  return false
+  return null
+}
+
+async function insertWithDegradingOptions(
+  attempt: (
+    options: ExerciseInsertOptions,
+  ) => Promise<void>,
+  initialOptions: ExerciseInsertOptions = FULL_EXERCISE_INSERT_OPTIONS,
+) {
+  let options = { ...initialOptions }
+  let lastError: unknown
+
+  for (let attemptIndex = 0; attemptIndex < 4; attemptIndex += 1) {
+    try {
+      await attempt(options)
+      return
+    } catch (error) {
+      lastError = error
+
+      const nextOptions = degradeExerciseInsertOptions(error, options)
+      if (!nextOptions) {
+        break
+      }
+
+      options = nextOptions
+    }
+  }
+
+  throw lastError
 }
 
 async function insertWithFlatSets(
@@ -184,44 +207,17 @@ async function insertWithFlatSets(
   exercises: TemplateExerciseInsertInput,
   defaultRestSeconds: number,
 ) {
-  let lastError: unknown
-
-  for (const options of EXERCISE_INSERT_STRATEGIES) {
-    try {
+  try {
+    await insertWithDegradingOptions(async (options) => {
       const inserted = await insertExercises(nhost, templateId, exercises, options)
       await insertSets(nhost, inserted, exercises, defaultRestSeconds)
-      return
-    } catch (error) {
-      lastError = error
-
-      const nextOptions = EXERCISE_INSERT_STRATEGIES[
-        EXERCISE_INSERT_STRATEGIES.indexOf(options) + 1
-      ]
-
-      if (!nextOptions || !shouldRetryExerciseInsert(error, options)) {
-        break
-      }
-    }
-  }
-
-  for (const options of EXERCISE_INSERT_STRATEGIES) {
-    try {
+    })
+  } catch (error) {
+    await insertWithDegradingOptions(async (options) => {
       await insertExercisesWithNestedSets(nhost, templateId, exercises, options)
-      return
-    } catch (error) {
-      lastError = error
-
-      const nextOptions = EXERCISE_INSERT_STRATEGIES[
-        EXERCISE_INSERT_STRATEGIES.indexOf(options) + 1
-      ]
-
-      if (!nextOptions || !shouldRetryExerciseInsert(error, options)) {
-        break
-      }
-    }
+    })
+    return
   }
-
-  throw lastError
 }
 
 export async function insertTemplateExercises(
