@@ -10,3 +10,4 @@
 - "!include public_workout_template_sets.yaml"
 - "!include public_sets.yaml"
 - "!include public_coach_clients.yaml"
+- "!include public_scheduled_sessions.yaml"

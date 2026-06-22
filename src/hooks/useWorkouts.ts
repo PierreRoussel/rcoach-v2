@@ -1,10 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import {
   GET_WORKOUT_BY_ID,
   GET_WORKOUT_BY_ID_WITHOUT_SHARE,
   LIST_MY_WORKOUTS,
+  LIST_MY_WORKOUTS_PAGE,
+  WORKOUTS_PAGE_SIZE,
   type WorkoutDetail,
   type WorkoutSummary,
 } from '@/lib/graphql/operations'
@@ -26,6 +28,41 @@ export function useMyWorkouts() {
 
       return data.workouts
     },
+  })
+}
+
+export type WorkoutsPageResult = {
+  workouts: WorkoutSummary[]
+  nextOffset: number | undefined
+}
+
+export function useMyWorkoutsInfinite(pageSize = WORKOUTS_PAGE_SIZE) {
+  const { nhost, isAuthenticated } = useAuth()
+
+  return useInfiniteQuery({
+    queryKey: ['workouts', 'mine', 'infinite', pageSize],
+    enabled: isAuthenticated,
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const data = await graphqlRequest<{ workouts: WorkoutSummary[] }>(
+        nhost,
+        LIST_MY_WORKOUTS_PAGE,
+        {
+          limit: pageSize,
+          offset: pageParam,
+        },
+      )
+
+      const workouts = data.workouts
+      const nextOffset = pageParam + workouts.length
+
+      return {
+        workouts,
+        nextOffset:
+          workouts.length === pageSize ? nextOffset : undefined,
+      } satisfies WorkoutsPageResult
+    },
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
   })
 }
 

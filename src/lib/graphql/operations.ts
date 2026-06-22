@@ -142,6 +142,39 @@ export const LIST_MY_WORKOUTS = `
   }
 `
 
+export const WORKOUTS_PAGE_SIZE = 15
+
+export const LIST_MY_WORKOUTS_PAGE = `
+  query ListMyWorkoutsPage($limit: Int!, $offset: Int!) {
+    workouts(
+      order_by: { started_at: desc }
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      title
+      started_at
+      ended_at
+      workout_exercises {
+        id
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        sets {
+          set_index
+          weight_kg
+          reps
+          set_type
+          rpe
+        }
+      }
+    }
+  }
+`
+
 export const GET_MY_PROFILE = `
   query GetMyProfile {
     profiles(limit: 1) {
@@ -718,6 +751,137 @@ export const INSERT_WORKOUT_TEMPLATE_EXERCISES = `
 export const DELETE_WORKOUT_TEMPLATE = `
   mutation DeleteWorkoutTemplate($id: uuid!) {
     delete_workout_templates_by_pk(id: $id) {
+      id
+    }
+  }
+`
+
+export type ScheduledSessionRecord = {
+  id: string
+  title: string
+  workout_template_id: string | null
+  recurrence_type: 'once' | 'weekly'
+  weekdays: number[] | null
+  scheduled_date: string | null
+  time_local: string | null
+  start_date: string
+  end_date: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  workout_template?: { id: string; name: string } | null
+}
+
+export type ScheduledSessionInput = {
+  title: string
+  workout_template_id?: string | null
+  recurrence_type: 'once' | 'weekly'
+  weekdays?: number[] | null
+  scheduled_date?: string | null
+  time_local?: string | null
+  start_date: string
+  end_date?: string | null
+  is_active?: boolean
+}
+
+export const LIST_MY_SCHEDULED_SESSIONS = `
+  query ListMyScheduledSessions {
+    scheduled_sessions(
+      where: { is_active: { _eq: true } }
+      order_by: { start_date: asc }
+    ) {
+      id
+      title
+      workout_template_id
+      recurrence_type
+      weekdays
+      scheduled_date
+      time_local
+      start_date
+      end_date
+      is_active
+      created_at
+      updated_at
+      workout_template {
+        id
+        name
+      }
+    }
+  }
+`
+
+export const LIST_ALL_MY_SCHEDULED_SESSIONS = `
+  query ListAllMyScheduledSessions {
+    scheduled_sessions(order_by: { updated_at: desc }) {
+      id
+      title
+      workout_template_id
+      recurrence_type
+      weekdays
+      scheduled_date
+      time_local
+      start_date
+      end_date
+      is_active
+      created_at
+      updated_at
+      workout_template {
+        id
+        name
+      }
+    }
+  }
+`
+
+export const INSERT_SCHEDULED_SESSION = `
+  mutation InsertScheduledSession($object: scheduled_sessions_insert_input!) {
+    insert_scheduled_sessions_one(object: $object) {
+      id
+      title
+      workout_template_id
+      recurrence_type
+      weekdays
+      scheduled_date
+      time_local
+      start_date
+      end_date
+      is_active
+      workout_template {
+        id
+        name
+      }
+    }
+  }
+`
+
+export const UPDATE_SCHEDULED_SESSION = `
+  mutation UpdateScheduledSession(
+    $id: uuid!
+    $changes: scheduled_sessions_set_input!
+  ) {
+    update_scheduled_sessions_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      title
+      workout_template_id
+      recurrence_type
+      weekdays
+      scheduled_date
+      time_local
+      start_date
+      end_date
+      is_active
+      updated_at
+      workout_template {
+        id
+        name
+      }
+    }
+  }
+`
+
+export const DELETE_SCHEDULED_SESSION = `
+  mutation DeleteScheduledSession($id: uuid!) {
+    delete_scheduled_sessions_by_pk(id: $id) {
       id
     }
   }

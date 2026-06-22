@@ -13,6 +13,13 @@ array_relationships:
         table:
           name: workout_template_exercises
           schema: public
+  - name: scheduled_sessions
+    using:
+      foreign_key_constraint_on:
+        column: workout_template_id
+        table:
+          name: scheduled_sessions
+          schema: public
 select_permissions:
   - role: user
     permission:

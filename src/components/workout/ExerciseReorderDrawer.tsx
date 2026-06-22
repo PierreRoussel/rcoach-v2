@@ -1,15 +1,7 @@
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  type DragEndEvent,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
+import { useEffect } from 'react'
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
@@ -23,6 +15,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  prepareForSortableDrag,
+  restorePointerInteraction,
+  useSortableSensors,
+  wrapSortableDragEnd,
+} from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 
@@ -83,12 +81,13 @@ export function ExerciseReorderDrawer({
   exercises,
   onReorder,
 }: ExerciseReorderDrawerProps) {
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+  const sensors = useSortableSensors()
+
+  useEffect(() => {
+    if (!open) {
+      restorePointerInteraction()
+    }
+  }, [open])
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -106,7 +105,15 @@ export function ExerciseReorderDrawer({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next)
+        if (!next) {
+          restorePointerInteraction()
+        }
+      }}
+    >
       <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
         <SheetHeader>
           <SheetTitle className="font-display font-black">
@@ -119,7 +126,9 @@ export function ExerciseReorderDrawer({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+          onDragStart={prepareForSortableDrag}
+          onDragCancel={restorePointerInteraction}
+          onDragEnd={wrapSortableDragEnd(handleDragEnd)}
         >
           <SortableContext
             items={exercises.map((exercise) => exercise.exerciseId)}

@@ -1,15 +1,6 @@
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  type DragEndEvent,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
@@ -33,6 +24,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  prepareForSortableDrag,
+  restorePointerInteraction,
+  useSortableSensors,
+  wrapSortableDragEnd,
+} from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 
@@ -84,7 +81,7 @@ function ExerciseActionsMenu({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
@@ -337,12 +334,7 @@ export function SortableExerciseList({
   renderSetsContent,
   onOpenReorder,
 }: SortableExerciseListProps) {
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+  const sensors = useSortableSensors()
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -391,7 +383,13 @@ export function SortableExerciseList({
   const units = buildRenderUnits(exercises)
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={prepareForSortableDrag}
+      onDragCancel={restorePointerInteraction}
+      onDragEnd={wrapSortableDragEnd(handleDragEnd)}
+    >
       <SortableContext
         items={exercises.map((exercise) => exercise.exerciseId)}
         strategy={verticalListSortingStrategy}

@@ -27,9 +27,17 @@ select_permissions:
         - superset_id
         - notes
       filter:
-        workout:
-          user_id:
-            _eq: X-Hasura-User-Id
+        _or:
+          - workout:
+              user_id:
+                _eq: X-Hasura-User-Id
+          - workout:
+              user:
+                coach_clients_as_athlete:
+                  coach_id:
+                    _eq: X-Hasura-User-Id
+                  status:
+                    _eq: active
   - role: public
     permission:
       columns:

@@ -1,0 +1,74 @@
+table:
+  name: scheduled_sessions
+  schema: public
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+  - name: workout_template
+    using:
+      foreign_key_constraint_on: workout_template_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - user_id
+        - title
+        - workout_template_id
+        - recurrence_type
+        - weekdays
+        - scheduled_date
+        - time_local
+        - start_date
+        - end_date
+        - is_active
+        - created_at
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - title
+        - workout_template_id
+        - recurrence_type
+        - weekdays
+        - scheduled_date
+        - time_local
+        - start_date
+        - end_date
+        - is_active
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - title
+        - workout_template_id
+        - recurrence_type
+        - weekdays
+        - scheduled_date
+        - time_local
+        - start_date
+        - end_date
+        - is_active
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id

@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Activity, CalendarDays, Users } from 'lucide-react'
+import { Activity, CalendarDays, Mail, Users } from 'lucide-react'
 
+import { CoachClientActivityList } from '@/components/coach/CoachClientActivityList'
+import { CoachRecentSessions } from '@/components/coach/CoachRecentSessions'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,11 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageHeader, Pill, StatCard } from '@/design-system'
-import {
-  useClientWorkouts,
-  useCoachClients,
-  useCoachPrograms,
-} from '@/hooks/useCoach'
+import { useCoachDashboard } from '@/hooks/useCoachDashboard'
 import { useMyProfile } from '@/hooks/useProfile'
 
 export const Route = createFileRoute('/coach/')({
@@ -23,41 +21,98 @@ export const Route = createFileRoute('/coach/')({
 
 function CoachHomePage() {
   const { data: profile } = useMyProfile()
-  const { data: clients } = useCoachClients()
-  const { data: programs } = useCoachPrograms()
-  const { data: workouts } = useClientWorkouts(20)
-
-  const activeClients =
-    clients?.filter((client) => client.status === 'active').length ?? 0
+  const {
+    stats,
+    clientRows,
+    recentWorkouts,
+    pendingCount,
+    isLoading,
+    error,
+  } = useCoachDashboard()
 
   return (
     <div className="space-y-4">
       <PageHeader
         eyebrow="Coach"
         title="Dashboard"
-        description="Gestion clients, programmes templates et suivi d activite."
+        description="Suivez l activite de vos clients et vos invitations en attente."
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={<Users className="size-4" />}
           label="Clients actifs"
-          value={String(activeClients)}
+          value={String(stats.activeClients)}
           tone="primary"
         />
         <StatCard
-          icon={<CalendarDays className="size-4" />}
-          label="Programmes"
-          value={String(programs?.length ?? 0)}
+          icon={<Mail className="size-4" />}
+          label="Invitations en attente"
+          value={String(stats.pendingInvites)}
           tone="secondary"
         />
         <StatCard
           icon={<Activity className="size-4" />}
-          label="Seances clients"
-          value={String(workouts?.length ?? 0)}
+          label="Seances 7 jours"
+          value={String(stats.sessionsLast7Days)}
           tone="accent"
         />
+        <StatCard
+          icon={<CalendarDays className="size-4" />}
+          label="Volume 7 jours"
+          value={`${Math.round(stats.volumeLast7Days).toLocaleString('fr-FR')} kg`}
+          tone="purple"
+        />
       </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Chargement du dashboard...</p>
+      ) : null}
+
+      {error ? (
+        <p className="text-sm text-destructive">
+          {error instanceof Error ? error.message : 'Erreur de chargement'}
+        </p>
+      ) : null}
+
+      {pendingCount > 0 ? (
+        <Card className="rounded-2xl border-border bg-soft-secondary/40">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-display font-bold">
+                {pendingCount} invitation{pendingCount > 1 ? 's' : ''} en attente
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Activez vos clients pour suivre leur activite.
+              </p>
+            </div>
+            <Button variant="pill" asChild>
+              <Link to="/coach/clients">Gerer les clients</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <CardTitle className="font-display font-black">
+                Mes clients actifs
+              </CardTitle>
+              <CardDescription>
+                Derniere activite et volume sur les 7 derniers jours.
+              </CardDescription>
+            </div>
+            <Pill tone="primary">{clientRows.length}</Pill>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <CoachClientActivityList rows={clientRows} />
+        </CardContent>
+      </Card>
+
+      <CoachRecentSessions workouts={recentWorkouts} />
 
       <Card className="rounded-2xl border-border">
         <CardHeader>

@@ -35,7 +35,11 @@ export function WorkoutDetailMenu({
   compact = false,
 }: WorkoutDetailMenuProps) {
   const navigate = useNavigate()
-  const { data: existingTemplate } = useTemplateBySourceWorkout(workout.id)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const { data: existingTemplate } = useTemplateBySourceWorkout(
+    workout.id,
+    menuOpen,
+  )
   const enableShare = useEnableWorkoutShare()
   const createTemplate = useCreateTemplateFromWorkout()
 
@@ -94,7 +98,7 @@ export function WorkoutDetailMenu({
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"

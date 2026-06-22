@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router'
 
 import { BrandLogo } from '@/design-system'
-import { useMyWorkouts } from '@/hooks/useWorkouts'
+import { useCalendarData } from '@/hooks/useCalendarData'
+import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import { formatTodayReminderMessage } from '@/lib/schedule/today-reminders'
 
 function getFirstName(displayName: string | null | undefined): string | null {
   if (!displayName?.trim()) {
@@ -44,12 +46,15 @@ type AppWelcomeHeaderProps = {
 
 export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
   const startedAt = useActiveWorkoutStore((state) => state.startedAt)
-  const { data: workouts } = useMyWorkouts()
+  const { workouts, todayReminders } = useCalendarData()
+  const { startPlannedSession, isStarting } = useStartPlannedSession()
 
   const firstName = getFirstName(displayName)
   const greeting = firstName ? `Bonjour ${firstName} 👋` : 'Bonjour 👋'
 
-  const mostRecentWorkout = workouts?.[0]
+  const mostRecentWorkout = workouts[0]
+  const todayMessage = formatTodayReminderMessage(todayReminders)
+  const primaryReminder = todayReminders[0]
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -58,7 +63,26 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
         <p className="truncate font-display text-sm font-black text-foreground">
           {greeting}
         </p>
-        {startedAt ? (
+        {todayMessage && primaryReminder ? (
+          <p className="truncate text-xs text-muted-foreground">
+            {todayMessage} —{' '}
+            <button
+              type="button"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+              disabled={isStarting}
+              onClick={() => void startPlannedSession(primaryReminder)}
+            >
+              Demarrer
+            </button>
+            {' · '}
+            <Link
+              to="/app/planning"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Planning
+            </Link>
+          </p>
+        ) : startedAt ? (
           <p className="truncate text-xs text-muted-foreground">
             Seance en cours —{' '}
             <Link

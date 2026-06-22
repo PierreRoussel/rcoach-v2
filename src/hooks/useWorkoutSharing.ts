@@ -19,12 +19,15 @@ import { insertTemplateExercises } from '@/lib/workout/insert-template-exercises
 import { workoutToTemplateExercises } from '@/lib/workout/workout-to-template'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-export function useTemplateBySourceWorkout(workoutId: string) {
+export function useTemplateBySourceWorkout(
+  workoutId: string,
+  enabled = true,
+) {
   const { nhost, isAuthenticated } = useAuth()
 
   return useQuery({
     queryKey: ['workout-templates', 'source', workoutId],
-    enabled: isAuthenticated && Boolean(workoutId),
+    enabled: enabled && isAuthenticated && Boolean(workoutId),
     queryFn: async () => {
       try {
         const data = await graphqlRequest<{

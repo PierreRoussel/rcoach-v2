@@ -19,10 +19,19 @@ select_permissions:
         - duration_seconds
         - rpe
       filter:
-        workout_exercise:
-          workout:
-            user_id:
-              _eq: X-Hasura-User-Id
+        _or:
+          - workout_exercise:
+              workout:
+                user_id:
+                  _eq: X-Hasura-User-Id
+          - workout_exercise:
+              workout:
+                user:
+                  coach_clients_as_athlete:
+                    coach_id:
+                      _eq: X-Hasura-User-Id
+                    status:
+                      _eq: active
   - role: public
     permission:
       columns:

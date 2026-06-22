@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
-import { BrandLogo, ThemeToggle } from '@/design-system'
+import { BrandLogo, CoachBottomNav, ThemeToggle } from '@/design-system'
 import { requireAuth } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useMyProfile } from '@/hooks/useProfile'
@@ -97,7 +97,7 @@ function CoachLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">
           <div className="mb-6 hidden items-center justify-end gap-2 md:flex">
             <ThemeToggle />
           </div>
@@ -112,6 +112,7 @@ function CoachLayout() {
           ) : null}
           <Outlet />
         </main>
+        <CoachBottomNav />
       </div>
     </div>
   )

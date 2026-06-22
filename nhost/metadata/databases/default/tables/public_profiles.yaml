@@ -44,6 +44,13 @@ array_relationships:
         table:
           name: workout_templates
           schema: public
+  - name: scheduled_sessions
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: scheduled_sessions
+          schema: public
 select_permissions:
   - role: user
     permission:
@@ -58,6 +65,18 @@ select_permissions:
       filter:
         id:
           _eq: X-Hasura-User-Id
+  - role: user
+    permission:
+      columns:
+        - id
+        - display_name
+        - avatar_url
+      filter:
+        coach_clients_as_athlete:
+          coach_id:
+            _eq: X-Hasura-User-Id
+          status:
+            _eq: active
   - role: public
     permission:
       columns:

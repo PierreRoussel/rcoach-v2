@@ -1,0 +1,141 @@
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { useMemo, useState } from 'react'
+
+import { Calendar } from '@/components/ui/calendar'
+import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
+import {
+  getMarkerKind,
+  type CalendarMarkers,
+  type DayMarker,
+} from '@/lib/schedule/calendar-markers'
+import { cn } from '@/lib/utils'
+
+export type WorkoutCalendarProps = {
+  markers: CalendarMarkers
+  mode?: 'compact' | 'full'
+  selected?: Date
+  onSelect?: (date: Date | undefined) => void
+  className?: string
+  streak?: number
+}
+
+function markerDates(markers: CalendarMarkers, kinds: string[]): Date[] {
+  const dates: Date[] = []
+
+  for (const marker of markers.values()) {
+    const kind = getMarkerKind(marker)
+    if (kind && kinds.includes(kind)) {
+      dates.push(parseISO(`${marker.date}T12:00:00`))
+    }
+  }
+
+  return dates
+}
+
+function CalendarLegend() {
+  return (
+    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-primary" />
+        Realise
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-secondary" />
+        Planifie
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-muted-foreground/50" />
+        Manque
+      </span>
+    </div>
+  )
+}
+
+export function WorkoutCalendar({
+  markers,
+  mode = 'compact',
+  selected,
+  onSelect,
+  className,
+  streak,
+}: WorkoutCalendarProps) {
+  const [internalSelected, setInternalSelected] = useState<Date | undefined>(
+    selected ?? new Date(),
+  )
+
+  const currentSelected = selected ?? internalSelected
+
+  const modifiers = useMemo(
+    () => ({
+      done: markerDates(markers, ['done', 'mixed']),
+      planned: markerDates(markers, ['planned', 'mixed']),
+      missed: markerDates(markers, ['missed']),
+    }),
+    [markers],
+  )
+
+  const markerDotClass =
+    'after:absolute after:bottom-0.5 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:rounded-full after:ring-2 after:ring-background'
+
+  function handleSelect(date: Date | undefined) {
+    setInternalSelected(date)
+    onSelect?.(date)
+  }
+
+  return (
+    <div className={cn('w-full space-y-3', className)}>
+      <div className="relative w-full">
+        {streak != null ? (
+          <div className="absolute right-2 top-2 z-10">
+            <WeeklyStreakIndicator streak={streak} />
+          </div>
+        ) : null}
+        <Calendar
+        mode="single"
+        selected={currentSelected}
+        onSelect={handleSelect}
+        locale={fr}
+        modifiers={modifiers}
+        modifiersClassNames={{
+          done: cn(
+            'relative',
+            markerDotClass,
+            'after:bg-primary aria-selected:after:bg-primary-foreground',
+          ),
+          planned: cn(
+            'relative',
+            markerDotClass,
+            'after:bg-secondary aria-selected:after:bg-primary-foreground',
+          ),
+          missed: 'text-muted-foreground/60 line-through decoration-muted-foreground/40',
+        }}
+        classNames={{
+          day_today:
+            'font-semibold bg-primary/10 text-foreground ring-1 ring-inset ring-primary/25',
+          day_selected:
+            'bg-primary text-primary-foreground ring-0 hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+        }}
+        className={cn(
+          'w-full rounded-2xl border border-border bg-card',
+          mode === 'compact' ? 'px-1 py-2' : 'p-2',
+          streak != null ? 'pt-10' : null,
+        )}
+      />
+      </div>
+      {mode === 'full' ? <CalendarLegend /> : null}
+    </div>
+  )
+}
+
+export function formatDayMarkerTitle(_marker: DayMarker | undefined, date: Date) {
+  return format(date, "EEEE d MMMM", { locale: fr })
+}
+
+export function getDayMarker(
+  markers: CalendarMarkers,
+  date: Date,
+): DayMarker | undefined {
+  const key = format(date, 'yyyy-MM-dd')
+  return markers.get(key)
+}

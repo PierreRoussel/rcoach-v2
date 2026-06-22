@@ -7,14 +7,42 @@ query ListMyWorkouts {
     workout_exercises {
       id
       exercise {
+        id
         name
         muscle_group
+        equipment
       }
       sets {
         set_index
         weight_kg
         reps
         set_type
+        rpe
+      }
+    }
+  }
+}
+
+query ListMyWorkoutsPage($limit: Int!, $offset: Int!) {
+  workouts(order_by: { started_at: desc }, limit: $limit, offset: $offset) {
+    id
+    title
+    started_at
+    ended_at
+    workout_exercises {
+      id
+      exercise {
+        id
+        name
+        muscle_group
+        equipment
+      }
+      sets {
+        set_index
+        weight_kg
+        reps
+        set_type
+        rpe
       }
     }
   }

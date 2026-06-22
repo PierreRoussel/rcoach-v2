@@ -9,6 +9,7 @@ const REQUIRED_ROOT_FIELDS = [
   'exercises',
   'workouts',
   'workout_templates',
+  'scheduled_sessions',
   'insert_workouts_one',
   'insert_workout_templates_one',
 ]

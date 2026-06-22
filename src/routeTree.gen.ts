@@ -24,6 +24,7 @@ import { Route as CoachClientsIndexRouteImport } from './routes/coach/clients/in
 import { Route as CoachAnalyticsIndexRouteImport } from './routes/coach/analytics/index'
 import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/index'
 import { Route as AppSessionsIndexRouteImport } from './routes/app/sessions/index'
+import { Route as AppPlanningIndexRouteImport } from './routes/app/planning/index'
 import { Route as AppExercisesIndexRouteImport } from './routes/app/exercises/index'
 import { Route as ShareWorkoutShareTokenRouteImport } from './routes/share/workout/$shareToken'
 import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach/programs/$programId'
@@ -107,6 +108,11 @@ const AppSessionsIndexRoute = AppSessionsIndexRouteImport.update({
   path: '/sessions/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPlanningIndexRoute = AppPlanningIndexRouteImport.update({
+  id: '/planning/',
+  path: '/planning/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppExercisesIndexRoute = AppExercisesIndexRouteImport.update({
   id: '/exercises/',
   path: '/exercises/',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
+  '/app/planning/': typeof AppPlanningIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
   '/app/exercises': typeof AppExercisesIndexRoute
+  '/app/planning': typeof AppPlanningIndexRoute
   '/app/sessions': typeof AppSessionsIndexRoute
   '/app/workouts': typeof AppWorkoutsIndexRoute
   '/coach/analytics': typeof CoachAnalyticsIndexRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
+  '/app/planning/': typeof AppPlanningIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
     | '/app/exercises/'
+    | '/app/planning/'
     | '/app/sessions/'
     | '/app/workouts/'
     | '/coach/analytics/'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
     | '/app/exercises'
+    | '/app/planning'
     | '/app/sessions'
     | '/app/workouts'
     | '/coach/analytics'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
     | '/app/exercises/'
+    | '/app/planning/'
     | '/app/sessions/'
     | '/app/workouts/'
     | '/coach/analytics/'
@@ -403,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSessionsIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/planning/': {
+      id: '/app/planning/'
+      path: '/planning'
+      fullPath: '/app/planning/'
+      preLoaderRoute: typeof AppPlanningIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/exercises/': {
       id: '/app/exercises/'
       path: '/exercises'
@@ -465,6 +484,7 @@ interface AppRouteRouteChildren {
   AppWorkoutActiveRoute: typeof AppWorkoutActiveRoute
   AppWorkoutsWorkoutIdRoute: typeof AppWorkoutsWorkoutIdRoute
   AppExercisesIndexRoute: typeof AppExercisesIndexRoute
+  AppPlanningIndexRoute: typeof AppPlanningIndexRoute
   AppSessionsIndexRoute: typeof AppSessionsIndexRoute
   AppWorkoutsIndexRoute: typeof AppWorkoutsIndexRoute
 }
@@ -479,6 +499,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppWorkoutActiveRoute: AppWorkoutActiveRoute,
   AppWorkoutsWorkoutIdRoute: AppWorkoutsWorkoutIdRoute,
   AppExercisesIndexRoute: AppExercisesIndexRoute,
+  AppPlanningIndexRoute: AppPlanningIndexRoute,
   AppSessionsIndexRoute: AppSessionsIndexRoute,
   AppWorkoutsIndexRoute: AppWorkoutsIndexRoute,
 }

@@ -1,7 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Activity, Dumbbell, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
+import { WorkoutCalendar } from '@/components/schedule/WorkoutCalendar'
 import { BodyHeatmap } from '@/components/stats/BodyHeatmap'
 import { MuscleRadarChart } from '@/components/stats/MuscleRadarChart'
 import { MuscleZoneInsights } from '@/components/stats/MuscleZoneInsights'
@@ -12,7 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { PageHeader, StatCard } from '@/design-system'
+import { useCalendarData } from '@/hooks/useCalendarData'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
 import { useMyWorkouts } from '@/hooks/useWorkouts'
 
@@ -22,6 +25,7 @@ export const Route = createFileRoute('/app/stats')({
 
 function StatsPage() {
   const { data: workouts, isLoading, error } = useMyWorkouts()
+  const { markers, weeklyStreak, isLoading: calendarLoading } = useCalendarData()
   const {
     weeklyStats,
     radarData,
@@ -78,6 +82,33 @@ function StatsPage() {
             tone="accent"
             className="w-full"
           />
+
+          <Card className="rounded-2xl border-border">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="font-display font-black">Calendrier</CardTitle>
+                  <CardDescription>
+                    Jours avec seance realisee ou planifiee.
+                  </CardDescription>
+                </div>
+                <Button variant="soft" size="sm" className="rounded-full" asChild>
+                  <Link to="/app/planning">Planning</Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {calendarLoading ? (
+                <p className="text-sm text-muted-foreground">Chargement...</p>
+              ) : (
+                <WorkoutCalendar
+                  markers={markers}
+                  mode="compact"
+                  streak={weeklyStreak}
+                />
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="rounded-2xl border-border">
             <CardHeader>

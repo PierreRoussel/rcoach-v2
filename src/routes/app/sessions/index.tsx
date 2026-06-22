@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarDays, Dumbbell, Pencil, Play, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -24,7 +24,8 @@ import {
   useWorkoutTemplates,
 } from '@/hooks/useWorkoutTemplates'
 import { useMyProfile } from '@/hooks/useProfile'
-import { useMyWorkouts } from '@/hooks/useWorkouts'
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
+import { useMyWorkoutsInfinite } from '@/hooks/useWorkouts'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
@@ -112,6 +113,24 @@ function CatalogTab() {
         onConfirm={handleCreate}
         isPending={createEmpty.isPending}
       />
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <CardTitle className="font-display font-black">Planning</CardTitle>
+              <CardDescription>
+                Planifiez vos seances et suivez votre calendrier d entrainement.
+              </CardDescription>
+            </div>
+            <Button variant="soft" size="sm" className="rounded-full" asChild>
+              <Link to="/app/planning">
+                <CalendarDays className="size-4" />
+                Ouvrir
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
@@ -207,8 +226,30 @@ function CatalogTab() {
 }
 
 function HistoryTab() {
-  const { data: workouts, isLoading, error } = useMyWorkouts()
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMyWorkoutsInfinite()
   const { data: profile } = useMyProfile()
+  const { targetRef, isIntersecting } = useIntersectionObserver({
+    enabled: Boolean(hasNextPage) && !isFetchingNextPage,
+  })
+
+  const workouts = useMemo(
+    () => data?.pages.flatMap((page) => page.workouts) ?? [],
+    [data],
+  )
+  const loadedCount = workouts.length
+
+  useEffect(() => {
+    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage()
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isIntersecting])
 
   return (
     <Card className="rounded-2xl border-border">
@@ -220,7 +261,7 @@ function HistoryTab() {
           </div>
           <Pill tone="purple">
             <CalendarDays className="size-3" />
-            {workouts?.length ?? 0}
+            {hasNextPage ? `${loadedCount}+` : loadedCount}
           </Pill>
         </div>
       </CardHeader>
@@ -233,7 +274,7 @@ function HistoryTab() {
             {error instanceof Error ? error.message : 'Erreur de chargement'}
           </p>
         ) : null}
-        {!isLoading && !error && workouts?.length === 0 ? (
+        {!isLoading && !error && workouts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
             <p className="text-sm text-muted-foreground">
               Aucune seance enregistree pour le moment.
@@ -244,16 +285,29 @@ function HistoryTab() {
           </div>
         ) : null}
         <ul className="space-y-3">
-          {workouts?.map((workout) => (
+          {workouts.map((workout) => (
             <li key={workout.id}>
               <WorkoutHistoryCard
                 workout={workout}
                 profile={profile}
-                allWorkouts={workouts ?? []}
+                allWorkouts={workouts}
               />
             </li>
           ))}
         </ul>
+        {hasNextPage ? (
+          <div ref={targetRef} className="py-4 text-center">
+            {isFetchingNextPage ? (
+              <p className="text-sm text-muted-foreground">Chargement...</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {loadedCount} seance{loadedCount > 1 ? 's' : ''} affichee
+                {loadedCount > 1 ? 's' : ''}
+                {hasNextPage ? ' — faites defiler pour en voir plus' : ''}
+              </p>
+            )}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )
