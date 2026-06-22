@@ -1,28 +1,26 @@
-import { Check, Plus } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ActiveSetOptionsDrawer } from '@/components/workout/ActiveSetOptionsDrawer'
+import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
+import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { buildExerciseUnits } from '@/lib/workout/exercise-units'
 import type { ActiveExerciseEntry, ActiveSet } from '@/lib/workout/active-store'
-import { buildCircuitSteps, stepKey } from '@/lib/workout/workout-circuit'
-
-const SUPERSET_ACCENTS = [
-  'border-primary/60 bg-primary/5',
-  'border-secondary/60 bg-secondary/10',
-  'border-accent/60 bg-accent/10',
-] as const
-
-function supersetAccentClass(supersetId: number) {
-  return SUPERSET_ACCENTS[(supersetId - 1) % SUPERSET_ACCENTS.length]
-}
+import { buildCircuitSteps, findNextPendingStepIndex, stepKey } from '@/lib/workout/workout-circuit'
 
 type ActiveWorkoutCircuitProps = {
   exercises: ActiveExerciseEntry[]
   activeStepIndex: number
   rpeEnabled: boolean
+  onSelectExercise: (exerciseIndex: number) => void
+  onReorderExercises: (fromIndex: number, toIndex: number) => void
+  onRemoveExercise: (exerciseIndex: number) => void
+  onAddToSuperset: (fromIndex: number, partnerIndex: number) => void
+  onRemoveFromSuperset: (exerciseIndex: number) => void
+  onUpdateExerciseRest: (exerciseIndex: number, restSeconds: number) => void
   onUpdateSet: (
     exerciseIndex: number,
     setIndex: number,
@@ -35,6 +33,7 @@ type ActiveWorkoutCircuitProps = {
   ) => void
   onCompleteCurrentStep: () => void
   onCompleteStep: (exerciseIndex: number, setIndex: number) => void
+  onUncompleteStep: (exerciseIndex: number, setIndex: number) => void
   onAddPlannedSet: (exerciseIndex: number) => void
   onDeleteSet: (exerciseIndex: number, setIndex: number) => void
   onReorderSets: (exerciseIndex: number, fromIndex: number, toIndex: number) => void
@@ -44,17 +43,26 @@ export function ActiveWorkoutCircuit({
   exercises,
   activeStepIndex,
   rpeEnabled,
+  onSelectExercise,
+  onReorderExercises,
+  onRemoveExercise,
+  onAddToSuperset,
+  onRemoveFromSuperset,
+  onUpdateExerciseRest,
   onUpdateSet,
   onCompleteCurrentStep,
   onCompleteStep,
+  onUncompleteStep,
   onAddPlannedSet,
   onDeleteSet,
   onReorderSets,
 }: ActiveWorkoutCircuitProps) {
   const steps = buildCircuitSteps(exercises)
   const currentStep = steps[activeStepIndex] ?? null
+  const nextPendingStepIndex = findNextPendingStepIndex(steps, exercises, 0)
+  const activeExerciseIndex = currentStep?.exerciseIndex ?? 0
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const units = buildExerciseUnits(exercises)
+  const [reorderOpen, setReorderOpen] = useState(false)
   const [setOptions, setSetOptions] = useState<{
     exerciseIndex: number
     setIndex: number
@@ -72,14 +80,6 @@ export function ActiveWorkoutCircuit({
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [activeStepIndex, currentStep])
 
-  if (exercises.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Ajoutez des exercices pour demarrer le circuit.
-      </p>
-    )
-  }
-
   function renderSetRow(exerciseIndex: number, setIndex: number) {
     const exercise = exercises[exerciseIndex]
     const set = exercise?.sets[setIndex]
@@ -92,6 +92,7 @@ export function ActiveWorkoutCircuit({
     )
     const isCurrent = globalStepIndex === activeStepIndex
     const isCompleted = Boolean(set.completedAt)
+    const isNextToDo = globalStepIndex === nextPendingStepIndex && !isCompleted
 
     return (
       <div
@@ -114,16 +115,26 @@ export function ActiveWorkoutCircuit({
           <button
             type="button"
             className={cn(
-              'flex size-7 shrink-0 items-center justify-center rounded-full font-data text-xs font-bold',
-              set.setType === 'warmup'
-                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-                : 'bg-muted text-foreground',
+              'flex size-7 shrink-0 items-center justify-center rounded-full font-data text-xs font-bold transition-colors',
+              isCompleted
+                ? 'cursor-pointer bg-primary/15 text-primary hover:bg-primary/25'
+                : set.setType === 'warmup'
+                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                  : 'bg-muted text-foreground',
             )}
-            aria-label={`Options serie ${setIndex + 1}`}
-            onClick={() => setSetOptions({ exerciseIndex, setIndex })}
+            aria-label={
+              isCompleted
+                ? `Dévalider la série ${setIndex + 1}`
+                : `Options série ${setIndex + 1}`
+            }
+            onClick={() =>
+              isCompleted
+                ? onUncompleteStep(exerciseIndex, setIndex)
+                : setSetOptions({ exerciseIndex, setIndex })
+            }
           >
             {isCompleted ? (
-              <Check className="size-3.5 text-primary" />
+              <Check className="size-3.5" />
             ) : set.setType === 'warmup' ? (
               'W'
             ) : (
@@ -175,8 +186,11 @@ export function ActiveWorkoutCircuit({
             <Button
               type="button"
               size="icon"
-              variant="pill"
-              className="size-8 shrink-0 rounded-full"
+              variant={isNextToDo ? 'pill' : 'ghost'}
+              className={cn(
+                'size-8 shrink-0 rounded-full',
+                !isNextToDo && 'text-muted-foreground hover:text-foreground',
+              )}
               aria-label="Valider la serie"
               onClick={() =>
                 isCurrent
@@ -192,64 +206,67 @@ export function ActiveWorkoutCircuit({
     )
   }
 
-  function renderExerciseBlock(exerciseIndex: number) {
-    const exercise = exercises[exerciseIndex]
-    if (!exercise) {
-      return null
-    }
-
-    return (
-      <div key={exercise.exerciseId} className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate font-display font-black">{exercise.exerciseName}</p>
-            <p className="text-xs text-muted-foreground">
-              {exercise.muscleGroup ?? exercise.equipment ?? '—'}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="shrink-0 rounded-full"
-            onClick={() => onAddPlannedSet(exerciseIndex)}
-          >
-            <Plus className="size-3.5" />
-            Serie
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          {exercise.sets.map((set) => renderSetRow(exerciseIndex, set.setIndex))}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <>
-      <div className="space-y-4">
-        {units.map((unit) => {
-          if (unit.type === 'single') {
-            return renderExerciseBlock(unit.index)
+      <SortableExerciseList
+        exercises={exercises}
+        activeIndex={activeExerciseIndex}
+        onSelect={onSelectExercise}
+        onReorder={onReorderExercises}
+        onRemove={onRemoveExercise}
+        onAddToSuperset={onAddToSuperset}
+        onRemoveFromSuperset={onRemoveFromSuperset}
+        onOpenReorder={() => setReorderOpen(true)}
+        onAddSet={onAddPlannedSet}
+        showSetCount={false}
+        dragHandle="subtle"
+        showDeleteButton={false}
+        embedded
+        renderBelowTitle={(index) => {
+          const exercise = exercises[index]
+          if (!exercise) {
+            return null
           }
 
           return (
             <div
-              key={`superset-${unit.supersetId}-${unit.indices[0]}`}
-              className={cn(
-                'space-y-3 rounded-2xl border-2 border-dashed p-3',
-                supersetAccentClass(unit.supersetId),
-              )}
+              className="mt-1 flex items-center gap-2"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
             >
-              <p className="font-data text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Superset {unit.supersetId}
-              </p>
-              {unit.indices.map((exerciseIndex) => renderExerciseBlock(exerciseIndex))}
+              <Label
+                htmlFor={`rest-${exercise.exerciseId}`}
+                className="shrink-0 text-xs text-muted-foreground"
+              >
+                Repos
+              </Label>
+              <Input
+                id={`rest-${exercise.exerciseId}`}
+                type="number"
+                min={0}
+                value={exercise.defaultRestSeconds ?? 90}
+                onChange={(event) =>
+                  onUpdateExerciseRest(index, Number(event.target.value) || 0)
+                }
+                className="h-8 w-16 px-2 text-center text-sm font-data"
+              />
+              <span className="text-xs text-muted-foreground">s</span>
             </div>
           )
-        })}
-      </div>
+        }}
+        renderSetsContent={(index) => (
+          <div className="space-y-2 px-4">
+            {exercises[index]?.sets.map((set) => renderSetRow(index, set.setIndex))}
+          </div>
+        )}
+      />
+
+      <ExerciseReorderDrawer
+        open={reorderOpen}
+        onOpenChange={setReorderOpen}
+        exercises={exercises}
+        onReorder={onReorderExercises}
+      />
 
       <ActiveSetOptionsDrawer
         open={setOptions != null}

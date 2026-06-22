@@ -1,15 +1,20 @@
-import { format, parseISO } from 'date-fns'
+import { addMonths, format, parseISO, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Calendar } from '@/components/ui/calendar'
 import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
+import { Pill } from '@/design-system'
 import {
   getMarkerKind,
   type CalendarMarkers,
   type DayMarker,
 } from '@/lib/schedule/calendar-markers'
 import { cn } from '@/lib/utils'
+
+const navButtonClass =
+  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-soft-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
 export type WorkoutCalendarProps = {
   markers: CalendarMarkers
@@ -35,22 +40,32 @@ function markerDates(markers: CalendarMarkers, kinds: string[]): Date[] {
 
 function CalendarLegend() {
   return (
-    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-      <span className="inline-flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-primary" />
+    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
+        <span className="size-2 rounded-full bg-primary shadow-sm shadow-primary/40" />
         Realise
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-secondary" />
+      </Pill>
+      <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
+        <span className="size-2 rounded-full bg-secondary shadow-sm shadow-secondary/30" />
         Planifie
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-muted-foreground/50" />
+      </Pill>
+      <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+        <span className="size-2 rounded-full bg-muted-foreground/45" />
         Manque
-      </span>
+      </Pill>
     </div>
   )
 }
+
+/** Bottom dot on the day number — hidden when the day is selected. */
+const markerDot =
+  '[&_button]:before:absolute [&_button]:before:bottom-0.5 [&_button]:before:left-1/2 [&_button]:before:size-1.5 [&_button]:before:-translate-x-1/2 [&_button]:before:rounded-full [&_button]:before:content-[""]'
+
+const dayButtonWhenSelected =
+  'aria-selected:[&_button]:before:hidden aria-selected:[&_button]:bg-transparent aria-selected:[&_button]:text-inherit'
+
+const mixedDayStyle =
+  '[&.done.planned]:[&_button]:bg-gradient-to-br [&.done.planned]:[&_button]:from-soft-primary [&.done.planned]:[&_button]:to-soft-secondary/80 [&.done.planned]:[&_button]:before:w-3 [&.done.planned]:[&_button]:before:bg-gradient-to-r [&.done.planned]:[&_button]:before:from-primary [&.done.planned]:[&_button]:to-secondary'
 
 export function WorkoutCalendar({
   markers,
@@ -66,6 +81,16 @@ export function WorkoutCalendar({
 
   const currentSelected = onSelect ? selected : (selected ?? internalSelected)
 
+  const [displayMonth, setDisplayMonth] = useState(
+    () => currentSelected ?? new Date(),
+  )
+
+  useEffect(() => {
+    if (currentSelected) {
+      setDisplayMonth(currentSelected)
+    }
+  }, [currentSelected?.getFullYear(), currentSelected?.getMonth()])
+
   const modifiers = useMemo(
     () => ({
       done: markerDates(markers, ['done', 'mixed']),
@@ -74,9 +99,6 @@ export function WorkoutCalendar({
     }),
     [markers],
   )
-
-  const markerDotClass =
-    'relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:rounded-full after:content-[""]'
 
   function handleSelect(date: Date | undefined) {
     if (onSelect) {
@@ -89,50 +111,97 @@ export function WorkoutCalendar({
 
   return (
     <div className={cn('w-full space-y-3', className)}>
-      <div className="relative w-full">
-        {streak != null ? (
-          <div className="absolute right-2 top-2 z-10">
-            <WeeklyStreakIndicator streak={streak} />
+      <div
+        className={cn(
+          'relative w-full overflow-hidden rounded-3xl border border-border/70',
+          'bg-gradient-to-b from-card via-card to-soft-purple/20',
+          'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]',
+          mode === 'compact' ? 'px-2 py-3 sm:px-3' : 'px-3 py-4 sm:px-4',
+        )}
+      >
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-primary/25 to-transparent"
+          aria-hidden
+        />
+
+        <div className="relative mb-3 flex items-center justify-between gap-3 px-1">
+          <div className="flex min-w-0 items-center gap-1">
+            <button
+              type="button"
+              className={navButtonClass}
+              aria-label="Mois precedent"
+              onClick={() => setDisplayMonth((month) => subMonths(month, 1))}
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <p className="min-w-[8.5rem] truncate px-1 text-center font-display text-lg font-black capitalize tracking-tight text-foreground">
+              {format(displayMonth, 'MMMM yyyy', { locale: fr })}
+            </p>
+            <button
+              type="button"
+              className={navButtonClass}
+              aria-label="Mois suivant"
+              onClick={() => setDisplayMonth((month) => addMonths(month, 1))}
+            >
+              <ChevronRight className="size-4" />
+            </button>
           </div>
-        ) : null}
+
+          {streak != null ? (
+            <WeeklyStreakIndicator streak={streak} className="shrink-0" />
+          ) : null}
+        </div>
+
         <Calendar
           mode="single"
+          month={displayMonth}
+          onMonthChange={setDisplayMonth}
           selected={currentSelected}
           onSelect={handleSelect}
           locale={fr}
           modifiers={modifiers}
           modifiersClassNames={{
             done: cn(
-              markerDotClass,
-              'after:bg-primary aria-selected:after:hidden',
+              '[&_button]:bg-soft-primary/80 [&_button]:text-primary',
+              markerDot,
+              '[&_button]:before:bg-primary',
+              mixedDayStyle,
+              dayButtonWhenSelected,
             ),
             planned: cn(
-              markerDotClass,
-              'after:bg-secondary aria-selected:after:hidden',
+              '[&_button]:bg-soft-secondary/70 [&_button]:text-[#2d6b52]',
+              markerDot,
+              '[&_button]:before:bg-secondary',
+              mixedDayStyle,
+              dayButtonWhenSelected,
             ),
-            missed:
-              'text-muted-foreground/60 [&_button]:line-through [&_button]:decoration-muted-foreground/40',
+            missed: cn(
+              '[&_button]:text-muted-foreground/40',
+              '[&_button]:line-through [&_button]:decoration-muted-foreground/35',
+              dayButtonWhenSelected,
+            ),
           }}
           classNames={{
             today: cn(
-              'font-semibold bg-primary/10 text-foreground ring-1 ring-inset ring-primary/25',
-              '[&_button]:font-semibold',
-              'aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:ring-0',
-              'aria-selected:[&_button]:text-primary-foreground',
+              '[&_button]:ring-2 [&_button]:ring-primary/40 [&_button]:ring-offset-2 [&_button]:ring-offset-card',
+              '[&_button]:bg-soft-primary/50 [&_button]:text-primary',
+              'aria-selected:[&_button]:ring-offset-primary aria-selected:[&_button]:ring-primary-foreground/30',
+              dayButtonWhenSelected,
             ),
             selected: cn(
-              'rounded-md bg-primary text-primary-foreground ring-0',
-              '[&_button]:bg-transparent [&_button]:text-primary-foreground',
+              'rounded-full bg-primary text-primary-foreground',
+              'shadow-lg shadow-primary/35',
+              '[&_button]:bg-transparent [&_button]:font-black [&_button]:text-primary-foreground',
               '[&_button]:hover:bg-transparent [&_button]:hover:text-primary-foreground',
             ),
+            outside: cn(
+              '[&_button]:text-muted-foreground/25 [&_button]:hover:bg-transparent',
+            ),
           }}
-          className={cn(
-            'w-full rounded-2xl border border-border bg-card',
-            mode === 'compact' ? 'px-1 py-2' : 'p-2',
-            streak != null ? 'pt-10' : null,
-          )}
+          className="relative border-0 bg-transparent p-0 shadow-none"
         />
       </div>
+
       {mode === 'full' ? <CalendarLegend /> : null}
     </div>
   )

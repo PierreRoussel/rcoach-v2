@@ -2,11 +2,15 @@
 
 ## Prérequis
 
-- Android Studio (SDK 34+)
+- Android Studio (SDK 35+)
 - JDK 17
-- Emulateur telephone API 34 + emulateur Wear OS Large Round API 34 appaires
-- Build phone : `npm run build:android` puis Run sur l emulateur/device
-- Build watch : ouvrir le module `android/wear` dans Android Studio et Run sur l emulateur montre
+- **Deux APK** installes : `com.rcoach.app` (telephone) et `com.rcoach.app.wear` (montre)
+- Montre Wear OS appairee via l app Google **Wear OS** (Bluetooth actif)
+- Les deux apps signees avec la meme cle (debug OK si build local)
+
+Emulateur : telephone API 34+ + emulateur Wear OS Large Round API 34 appaires.
+Build phone : `npm run build:android` puis Run module `app`.
+Build watch : Run module `wear` sur l emulateur ou la montre physique.
 
 ## Scenarios manuels
 

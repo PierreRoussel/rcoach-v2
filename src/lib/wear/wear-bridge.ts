@@ -43,8 +43,12 @@ export async function isWearBridgeSupported() {
     return false
   }
 
-  const result = await bridge.isWatchAvailable()
-  return result.available
+  try {
+    const result = await bridge.isWatchAvailable()
+    return result.available
+  } catch {
+    return false
+  }
 }
 
 export async function publishWorkoutSnapshot(snapshot: WorkoutSnapshot) {

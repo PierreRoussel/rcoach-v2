@@ -1,12 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ListOrdered, Settings2 } from 'lucide-react'
+import { ListOrdered } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
 import { ExercisePerformancePanel } from '@/components/workout/ExercisePerformancePanel'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { RestTimerBar } from '@/components/workout/RestTimerBar'
-import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,13 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
 import { FormMessage } from '@/components/ui/form'
 import { PageHeader, Pill } from '@/design-system'
 import { useMyProfile } from '@/hooks/useProfile'
@@ -66,12 +58,16 @@ function ActiveWorkoutPage() {
     addExercise,
     removeExercise,
     reorderExercises,
+    updateExerciseDefaultRest,
+    addToSuperset,
+    removeFromSuperset,
     updatePlannedSet,
     addPlannedSet,
     removePlannedSet,
     reorderPlannedSets,
     completeCurrentStep,
     completeStep,
+    uncompleteStep,
     goToStep,
     adjustRest,
     tickRest,
@@ -82,7 +78,6 @@ function ActiveWorkoutPage() {
     getNextStepLabel,
   } = useActiveWorkoutStore()
 
-  const [programOpen, setProgramOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -177,23 +172,11 @@ function ActiveWorkoutPage() {
         </Pill>
       ) : null}
 
-      <div className="flex items-start justify-between gap-3">
-        <PageHeader
-          eyebrow="En cours"
-          title={title}
-          description={`Etape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} serie${completedCount > 1 ? 's' : ''} validee${completedCount > 1 ? 's' : ''}`}
-        />
-        <Button
-          type="button"
-          variant="soft"
-          size="sm"
-          className="shrink-0 rounded-full"
-          onClick={() => setProgramOpen(true)}
-        >
-          <Settings2 className="size-4" />
-          Programme
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="En cours"
+        title={title}
+        description={`Etape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} serie${completedCount > 1 ? 's' : ''} validee${completedCount > 1 ? 's' : ''}`}
+      />
 
       {currentExercise ? (
         <Card className="rounded-2xl border-border">
@@ -236,17 +219,33 @@ function ActiveWorkoutPage() {
             Validez les series dans l ordre qui vous convient. Les supersets alternent automatiquement.
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-3 sm:px-4">
+        <CardContent className="px-0 pb-0 sm:px-0">
           <ActiveWorkoutCircuit
             exercises={activeExercises}
             activeStepIndex={activeStepIndex}
             rpeEnabled={rpeEnabled}
+            onSelectExercise={(index) => {
+              const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
+              if (stepIndex >= 0) {
+                goToStep(stepIndex)
+              }
+            }}
+            onReorderExercises={(from, to) => void reorderExercises(from, to)}
+            onRemoveExercise={(index) => void removeExercise(index)}
+            onAddToSuperset={(from, partner) => void addToSuperset(from, partner)}
+            onRemoveFromSuperset={(index) => void removeFromSuperset(index)}
+            onUpdateExerciseRest={(index, restSeconds) =>
+              void updateExerciseDefaultRest(index, restSeconds)
+            }
             onUpdateSet={(exerciseIndex, setIndex, patch) =>
               void updatePlannedSet(exerciseIndex, setIndex, patch)
             }
             onCompleteCurrentStep={() => void completeCurrentStep()}
             onCompleteStep={(exerciseIndex, setIndex) =>
               void completeStep(exerciseIndex, setIndex)
+            }
+            onUncompleteStep={(exerciseIndex, setIndex) =>
+              void uncompleteStep(exerciseIndex, setIndex)
             }
             onAddPlannedSet={(exerciseIndex) => void addPlannedSet(exerciseIndex)}
             onDeleteSet={(exerciseIndex, setIndex) =>
@@ -258,6 +257,14 @@ function ActiveWorkoutPage() {
           />
         </CardContent>
       </Card>
+
+      <div className="flex justify-center">
+        <ExercisePicker
+          excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
+          onSelect={(exercise) => void addExercise(exercise)}
+          triggerLabel="Ajouter exercice"
+        />
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -290,36 +297,6 @@ function ActiveWorkoutPage() {
           onSkip={skipRest}
         />
       ) : null}
-
-      <Sheet open={programOpen} onOpenChange={setProgramOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
-          <SheetHeader>
-            <SheetTitle className="font-display font-black">Modifier le programme</SheetTitle>
-            <SheetDescription>
-              Reordonnez ou ajoutez des exercices. Le circuit sera recalcule.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-3 overflow-y-auto px-4 pb-6">
-            <ExercisePicker
-              excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
-              onSelect={(exercise) => void addExercise(exercise)}
-            />
-            <SortableExerciseList
-              exercises={activeExercises}
-              activeIndex={currentStep?.exerciseIndex ?? 0}
-              onSelect={(index) => {
-                const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
-                if (stepIndex >= 0) {
-                  goToStep(stepIndex)
-                }
-              }}
-              onReorder={(from, to) => void reorderExercises(from, to)}
-              onRemove={(index) => void removeExercise(index)}
-              showSetCount
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

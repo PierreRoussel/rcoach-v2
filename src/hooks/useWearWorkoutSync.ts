@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   buildIdleWorkoutSnapshot,
@@ -17,35 +17,64 @@ import {
 } from '@/lib/workout/workout-circuit'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 
+const WATCH_POLL_INTERVAL_MS = 5_000
+
 export function useWearWorkoutSync(enabled = true) {
   const [watchAvailable, setWatchAvailable] = useState(false)
+  const syncActiveRef = useRef(false)
 
   useEffect(() => {
     if (!enabled) {
+      setWatchAvailable(false)
       return
     }
 
+    let cancelled = false
     let unsubscribeCommands: (() => void) | undefined
+    let pollTimer: ReturnType<typeof setInterval> | undefined
 
-    void (async () => {
+    async function ensureWatchSync() {
       const available = await isWearBridgeSupported()
-      setWatchAvailable(available)
-
-      if (!available) {
-        return
+      if (cancelled) {
+        return available
       }
 
-      unsubscribeCommands = await subscribeToWatchCommands(handleWatchCommand)
-      await publishCurrentSnapshot()
-    })()
+      setWatchAvailable(available)
+
+      if (available && !syncActiveRef.current) {
+        unsubscribeCommands = await subscribeToWatchCommands(handleWatchCommand)
+        syncActiveRef.current = true
+        await publishCurrentSnapshot()
+      }
+
+      if (!available && syncActiveRef.current) {
+        unsubscribeCommands?.()
+        unsubscribeCommands = undefined
+        syncActiveRef.current = false
+      }
+
+      return available
+    }
+
+    void ensureWatchSync()
+    pollTimer = setInterval(() => {
+      void ensureWatchSync()
+    }, WATCH_POLL_INTERVAL_MS)
 
     const unsubscribeStore = useActiveWorkoutStore.subscribe(() => {
-      void publishCurrentSnapshot()
+      if (syncActiveRef.current) {
+        void publishCurrentSnapshot()
+      }
     })
 
     return () => {
+      cancelled = true
+      if (pollTimer) {
+        clearInterval(pollTimer)
+      }
       unsubscribeStore()
       unsubscribeCommands?.()
+      syncActiveRef.current = false
     }
   }, [enabled])
 

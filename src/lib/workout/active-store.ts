@@ -2,6 +2,11 @@ import { create } from 'zustand'
 
 import { db, type ActiveExerciseDraft, type ActiveSetDraft, type ActiveWorkoutDraft } from '@/lib/db/dexie'
 import {
+  addExerciseToSuperset,
+  cleanupSupersetAfterRemoval,
+  removeExerciseFromSuperset,
+} from '@/lib/workout/exercise-superset'
+import {
   buildCircuitSteps,
   findHighestCompletedStepIndex,
   findNextPendingStepIndex,
@@ -50,6 +55,9 @@ type ActiveWorkoutState = {
   }) => Promise<void>
   removeExercise: (exerciseIndex: number) => Promise<void>
   reorderExercises: (fromIndex: number, toIndex: number) => Promise<void>
+  updateExerciseDefaultRest: (exerciseIndex: number, restSeconds: number) => Promise<void>
+  addToSuperset: (fromIndex: number, partnerIndex: number) => Promise<void>
+  removeFromSuperset: (exerciseIndex: number) => Promise<void>
   updatePlannedSet: (
     exerciseIndex: number,
     setIndex: number,
@@ -68,6 +76,7 @@ type ActiveWorkoutState = {
     setIndex: number,
     values?: CompleteStepValues,
   ) => Promise<void>
+  uncompleteStep: (exerciseIndex: number, setIndex: number) => Promise<void>
   goToStep: (stepIndex: number) => void
   startRest: (seconds: number) => void
   adjustRest: (deltaSeconds: number) => void
@@ -278,6 +287,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         exerciseName: exercise.name,
         muscleGroup: exercise.muscle_group ?? null,
         equipment: exercise.equipment ?? null,
+        supersetId: null,
         defaultRestSeconds,
         sets: [createEmptySet(0, defaultRestSeconds)],
       },
@@ -295,7 +305,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   removeExercise: async (exerciseIndex) => {
-    const nextExercises = get().exercises.filter((_, index) => index !== exerciseIndex)
+    const nextExercises = cleanupSupersetAfterRemoval(
+      get().exercises.filter((_, index) => index !== exerciseIndex),
+    )
     const activeStepIndex = syncActiveStepIndex(nextExercises, 0)
 
     set({ exercises: nextExercises, activeStepIndex })
@@ -317,6 +329,61 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     exercises.splice(toIndex, 0, moved)
 
     const activeStepIndex = syncActiveStepIndex(exercises, 0)
+
+    set({ exercises, activeStepIndex })
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex,
+    })
+  },
+
+  updateExerciseDefaultRest: async (exerciseIndex, restSeconds) => {
+    const normalized = Math.max(0, restSeconds)
+    const exercises = get().exercises.map((exercise, index) => {
+      if (index !== exerciseIndex) {
+        return exercise
+      }
+
+      return {
+        ...exercise,
+        defaultRestSeconds: normalized,
+        sets: exercise.sets.map((set) => ({
+          ...set,
+          restSeconds: normalized,
+        })),
+      }
+    })
+
+    set({ exercises })
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex: get().activeStepIndex,
+    })
+  },
+
+  addToSuperset: async (fromIndex, partnerIndex) => {
+    const exercises = addExerciseToSuperset(get().exercises, fromIndex, partnerIndex)
+    const activeStepIndex = syncActiveStepIndex(exercises, get().activeStepIndex)
+
+    set({ exercises, activeStepIndex })
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex,
+    })
+  },
+
+  removeFromSuperset: async (exerciseIndex) => {
+    const exercises = removeExerciseFromSuperset(get().exercises, exerciseIndex)
+    const activeStepIndex = syncActiveStepIndex(exercises, get().activeStepIndex)
 
     set({ exercises, activeStepIndex })
     await persistDraft({
@@ -521,6 +588,51 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         restTargetSeconds: 0,
       })
     }
+
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex,
+    })
+  },
+
+  uncompleteStep: async (exerciseIndex, setIndex) => {
+    const targetSet = get().exercises[exerciseIndex]?.sets[setIndex]
+    if (!targetSet?.completedAt) {
+      return
+    }
+
+    const exercises = get().exercises.map((exercise, index) => {
+      if (index !== exerciseIndex) {
+        return exercise
+      }
+
+      return {
+        ...exercise,
+        sets: exercise.sets.map((set) =>
+          set.setIndex === setIndex ? { ...set, completedAt: null } : set,
+        ),
+      }
+    })
+
+    const steps = buildCircuitSteps(exercises)
+    const uncompletedStepIndex = steps.findIndex(
+      (step) => step.exerciseIndex === exerciseIndex && step.setIndex === setIndex,
+    )
+    const activeStepIndex =
+      uncompletedStepIndex >= 0
+        ? uncompletedStepIndex
+        : syncActiveStepIndex(exercises, get().activeStepIndex)
+
+    set({
+      exercises,
+      activeStepIndex,
+      isResting: false,
+      restSecondsLeft: 0,
+      restTargetSeconds: 0,
+    })
 
     await persistDraft({
       title: get().title,

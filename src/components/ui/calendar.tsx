@@ -1,64 +1,90 @@
 import * as React from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import { DayPicker } from 'react-day-picker'
+import { DayPicker, type DayProps, type WeekdayProps } from 'react-day-picker'
 
 import { cn } from '@/lib/utils'
-import { buttonVariants } from './button'
 
+const dayButtonBase =
+  'relative flex h-10 w-full items-center justify-center rounded-full p-0 font-display text-sm font-bold tabular-nums transition-all duration-200 hover:scale-[1.03] hover:bg-muted/60 active:scale-[0.98]'
+
+function CalendarWeekday({ className, children, ...props }: WeekdayProps) {
+  return (
+    <th {...props} className={cn(className)}>
+      <span className="flex h-8 w-full items-center justify-center">{children}</span>
+    </th>
+  )
+}
+
+function CalendarDay({ className, children, day: _day, modifiers: _modifiers, ...props }: DayProps) {
+  return (
+    <td {...props} className={cn(className)}>
+      {children}
+    </td>
+  )
+}
 
 function Calendar({
   className,
   classNames,
-  showOutsideDays = true,
+  components,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
   return (
     <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn('w-full p-3', className)}
+      showOutsideDays={props.showOutsideDays ?? true}
+      className={cn('w-full', className)}
       classNames={{
-        months: 'flex w-full flex-col gap-2 sm:flex-row',
-        month: 'flex w-full flex-col gap-4',
-        month_caption: 'relative flex w-full items-center justify-center pt-1',
-        caption_label: 'text-sm font-medium',
-        nav: 'flex items-center gap-1',
-        button_previous: cn(
-          buttonVariants({ variant: 'outline' }),
-          'absolute left-1 size-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-        ),
-        button_next: cn(
-          buttonVariants({ variant: 'outline' }),
-          'absolute right-1 size-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-        ),
-        month_grid: 'w-full border-collapse',
-        weekdays: 'flex w-full',
+        months: 'flex w-full flex-col',
+        month: 'flex w-full flex-col',
+        month_caption: 'hidden',
+        caption_label: 'hidden',
+        nav: 'hidden',
+        button_previous: 'hidden',
+        button_next: 'hidden',
+        month_grid:
+          'w-full table-fixed border-collapse [&_th]:p-0 [&_td]:p-0 [&_th]:text-center [&_td]:text-center',
+        weekdays: '',
         weekday:
-          'flex-1 text-center text-[0.8rem] font-normal text-muted-foreground',
-        week: 'mt-2 flex w-full',
+          'p-0 align-middle text-[0.65rem] font-bold uppercase text-muted-foreground/80',
+        weeks: '',
+        week: '',
         day: cn(
-          'group relative flex-1 p-0 text-center text-sm focus-within:relative focus-within:z-20',
+          'group/day h-11 p-0 text-center align-middle',
           props.mode === 'range'
-            ? 'first:aria-selected:rounded-l-md last:aria-selected:rounded-r-md'
-            : 'aria-selected:rounded-md',
+            ? 'first:aria-selected:rounded-l-full last:aria-selected:rounded-r-full'
+            : 'aria-selected:rounded-full',
         ),
         day_button: cn(
-          buttonVariants({ variant: 'ghost' }),
-          'mx-auto h-9 w-full max-w-9 p-0 font-normal',
-          'group-aria-selected:bg-transparent group-aria-selected:text-inherit group-aria-selected:hover:bg-transparent group-aria-selected:hover:text-inherit',
+          dayButtonBase,
+          'text-foreground',
+          'group-aria-selected/day:scale-105 group-aria-selected/day:shadow-md',
+          'group-aria-selected/day:hover:scale-105 group-aria-selected/day:hover:bg-transparent',
         ),
-        range_start: 'day-range-start rounded-l-md',
-        range_end: 'day-range-end rounded-r-md',
+        range_start: 'day-range-start',
+        range_end: 'day-range-end',
         selected:
-          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
-        today: 'bg-accent text-accent-foreground',
-        outside:
-          'day-outside text-muted-foreground aria-selected:text-muted-foreground',
-        disabled: 'text-muted-foreground opacity-50',
-        range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
+          'rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30',
+        today: 'rounded-full',
+        outside: 'day-outside opacity-100',
+        disabled: 'opacity-40',
+        range_middle: 'aria-selected:bg-soft-primary/50 aria-selected:text-primary',
         hidden: 'invisible',
         ...classNames,
       }}
       components={{
+        MonthCaption: () => null,
+        Weekday: CalendarWeekday,
+        Day: CalendarDay,
+        MonthGrid: ({ className: gridClassName, children, ...gridProps }) => (
+          <table className={gridClassName} {...gridProps}>
+            <colgroup>
+              {Array.from({ length: 7 }).map((_, index) => (
+                <col key={index} style={{ width: `${100 / 7}%` }} />
+              ))}
+            </colgroup>
+            {children}
+          </table>
+        ),
         Chevron: ({ className, orientation, ...iconProps }) => {
           const iconClassName = cn('size-4', className)
 
@@ -72,8 +98,10 @@ function Calendar({
 
           return <ChevronDown className={iconClassName} {...iconProps} />
         },
+        ...components,
       }}
       {...props}
+      hideNavigation={props.hideNavigation ?? true}
     />
   )
 }

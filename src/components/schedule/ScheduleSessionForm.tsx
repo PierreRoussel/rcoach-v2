@@ -133,55 +133,62 @@ export function ScheduleSessionForm({
   )
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="scheduleTitle">
-          Titre{selectedTemplate ? ' (optionnel)' : ''}
-        </Label>
-        <Input
-          id="scheduleTitle"
-          value={values.title}
-          onChange={(event) =>
-            setValues((current) => ({ ...current, title: event.target.value }))
-          }
-          placeholder={
-            selectedTemplate
-              ? `Par defaut : ${selectedTemplate.name}`
-              : 'Push, Legs, Cardio...'
-          }
-        />
+    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5">
+      <div className="space-y-3 rounded-2xl bg-muted/25 p-4">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+          Seance
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="scheduleTitle">
+            Titre{selectedTemplate ? ' (optionnel)' : ''}
+          </Label>
+          <Input
+            id="scheduleTitle"
+            value={values.title}
+            onChange={(event) =>
+              setValues((current) => ({ ...current, title: event.target.value }))
+            }
+            placeholder={
+              selectedTemplate
+                ? `Par defaut : ${selectedTemplate.name}`
+                : 'Push, Legs, Cardio...'
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="scheduleTemplate">Modele (optionnel)</Label>
+          <select
+            id="scheduleTemplate"
+            className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+            value={values.workoutTemplateId ?? ''}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                workoutTemplateId: event.target.value || null,
+              }))
+            }
+          >
+            <option value="">Aucun modele</option>
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="scheduleTemplate">Modele (optionnel)</Label>
-        <select
-          id="scheduleTemplate"
-          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-          value={values.workoutTemplateId ?? ''}
-          onChange={(event) =>
-            setValues((current) => ({
-              ...current,
-              workoutTemplateId: event.target.value || null,
-            }))
-          }
-        >
-          <option value="">Aucun modele</option>
-          {templates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Type</Label>
+      <div className="space-y-3 rounded-2xl bg-muted/25 p-4">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+          Recurrence
+        </p>
         <div className="flex gap-2">
           <Button
             type="button"
             size="sm"
             variant={values.recurrenceType === 'once' ? 'pill' : 'outline'}
-            className="rounded-full"
+            className="flex-1 rounded-full"
             onClick={() =>
               setValues((current) => ({ ...current, recurrenceType: 'once' }))
             }
@@ -192,7 +199,7 @@ export function ScheduleSessionForm({
             type="button"
             size="sm"
             variant={values.recurrenceType === 'weekly' ? 'pill' : 'outline'}
-            className="rounded-full"
+            className="flex-1 rounded-full"
             onClick={() =>
               setValues((current) => ({ ...current, recurrenceType: 'weekly' }))
             }
@@ -200,81 +207,85 @@ export function ScheduleSessionForm({
             Chaque semaine
           </Button>
         </div>
+
+        {values.recurrenceType === 'once' ? (
+          <div className="space-y-2">
+            <Label htmlFor="scheduledDate">Date</Label>
+            <Input
+              id="scheduledDate"
+              type="date"
+              className="h-10"
+              value={values.scheduledDate}
+              onChange={(event) =>
+                setValues((current) => ({
+                  ...current,
+                  scheduledDate: event.target.value,
+                  startDate: event.target.value,
+                }))
+              }
+            />
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label>Jours</Label>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                {WEEKDAY_LABELS.map((day) => (
+                  <Button
+                    key={day.value}
+                    type="button"
+                    size="sm"
+                    variant={values.weekdays.includes(day.value) ? 'pill' : 'outline'}
+                    className="rounded-full px-0"
+                    onClick={() => toggleWeekday(day.value)}
+                  >
+                    {day.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Debut</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  className="h-10"
+                  value={values.startDate}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      startDate: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Fin (optionnel)</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  className="h-10"
+                  value={values.endDate}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      endDate: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {values.recurrenceType === 'once' ? (
-        <div className="space-y-2">
-          <Label htmlFor="scheduledDate">Date</Label>
-          <Input
-            id="scheduledDate"
-            type="date"
-            value={values.scheduledDate}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                scheduledDate: event.target.value,
-                startDate: event.target.value,
-              }))
-            }
-          />
-        </div>
-      ) : (
-        <>
-          <div className="space-y-2">
-            <Label>Jours</Label>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAY_LABELS.map((day) => (
-                <Button
-                  key={day.value}
-                  type="button"
-                  size="sm"
-                  variant={values.weekdays.includes(day.value) ? 'pill' : 'outline'}
-                  className="rounded-full"
-                  onClick={() => toggleWeekday(day.value)}
-                >
-                  {day.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Debut</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={values.startDate}
-                onChange={(event) =>
-                  setValues((current) => ({
-                    ...current,
-                    startDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">Fin (optionnel)</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={values.endDate}
-                onChange={(event) =>
-                  setValues((current) => ({
-                    ...current,
-                    endDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className="space-y-2">
+      <div className="space-y-2 rounded-2xl bg-muted/25 p-4">
         <Label htmlFor="timeLocal">Heure (optionnel)</Label>
         <Input
           id="timeLocal"
           type="time"
+          className="h-10"
           value={values.timeLocal}
           onChange={(event) =>
             setValues((current) => ({ ...current, timeLocal: event.target.value }))

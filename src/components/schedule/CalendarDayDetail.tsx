@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { CalendarClock, Dumbbell, Play } from 'lucide-react'
+import { CalendarClock, CalendarDays, Dumbbell, Play } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,10 @@ import {
   WorkoutCalendar,
   type WorkoutCalendarProps,
 } from '@/components/schedule/WorkoutCalendar'
+import { Pill } from '@/design-system'
 import type { CalendarMarkers } from '@/lib/schedule/calendar-markers'
 import type { ScheduleOccurrence } from '@/lib/schedule/expand-occurrences'
+import { cn } from '@/lib/utils'
 
 type CalendarDayDetailProps = {
   markers: CalendarMarkers
@@ -30,31 +32,50 @@ export function CalendarDayDetail({
   isStarting = false,
 }: CalendarDayDetailProps) {
   const marker = getDayMarker(markers, date)
+  const hasContent = Boolean(marker?.workouts.length || marker?.planned.length)
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-muted/30 p-4">
-      <p className="font-display text-sm font-black text-foreground">
-        {formatDayMarkerTitle(marker, date)}
-      </p>
+    <div
+      className={cn(
+        'animate-in fade-in slide-in-from-top-2 space-y-4 rounded-2xl border border-border/70',
+        'bg-gradient-to-b from-card to-soft-purple/10 p-4 shadow-sm duration-300',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <p className="font-display text-lg font-black capitalize leading-tight text-foreground">
+            {formatDayMarkerTitle(marker, date)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {hasContent
+              ? 'Detail de la journee selectionnee'
+              : 'Aucune seance pour ce jour'}
+          </p>
+        </div>
+        <Pill tone="purple" className="shrink-0 py-1">
+          <CalendarDays className="size-3" />
+          Jour
+        </Pill>
+      </div>
 
       {marker?.workouts.length ? (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <section className="space-y-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
             Realise
           </p>
           <ul className="space-y-2">
             {marker.workouts.map((workout) => (
               <li
                 key={workout.id}
-                className="flex items-center justify-between gap-2 rounded-xl bg-card px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-soft-primary/25 px-3 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{workout.title}</p>
+                  <p className="truncate font-display font-bold">{workout.title}</p>
                   <p className="text-xs text-muted-foreground">
                     {format(parseISO(workout.started_at), 'HH:mm', { locale: fr })}
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" className="rounded-full" asChild>
+                <Button variant="pill" size="sm" className="shrink-0 rounded-full" asChild>
                   <Link to="/app/workouts/$workoutId" params={{ workoutId: workout.id }}>
                     Voir
                   </Link>
@@ -62,25 +83,25 @@ export function CalendarDayDetail({
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
       {marker?.planned.length ? (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <section className="space-y-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
             Planifie
           </p>
           <ul className="space-y-2">
             {marker.planned.map((occurrence) => (
               <li
                 key={`${occurrence.sessionId}-${occurrence.date}`}
-                className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-secondary/50 bg-card px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-secondary/35 bg-soft-secondary/35 px-3 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{occurrence.title}</p>
+                  <p className="truncate font-display font-bold">{occurrence.title}</p>
                   {occurrence.workoutTemplateName ? (
                     <p className="text-xs text-muted-foreground">
-                      Modele : {occurrence.workoutTemplateName}
+                      {occurrence.workoutTemplateName}
                     </p>
                   ) : null}
                 </div>
@@ -89,11 +110,12 @@ export function CalendarDayDetail({
                     type="button"
                     variant="pill"
                     size="sm"
+                    className="shrink-0 rounded-full"
                     disabled={isStarting}
                     onClick={() => onStartPlanned(occurrence)}
                   >
                     <Play className="size-3" />
-                    Demarrer
+                    Go
                   </Button>
                 ) : (
                   <CalendarClock className="size-4 shrink-0 text-secondary" />
@@ -101,14 +123,14 @@ export function CalendarDayDetail({
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
-      {!marker?.workouts.length && !marker?.planned.length ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Dumbbell className="size-4" />
-          Rien de prevu pour ce jour.
-        </p>
+      {!hasContent ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center">
+          <Dumbbell className="size-8 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">Rien de prevu pour ce jour.</p>
+        </div>
       ) : null}
 
       {onPlanDate ? (
@@ -116,11 +138,11 @@ export function CalendarDayDetail({
           type="button"
           variant="soft"
           size="sm"
-          className="w-full rounded-xl"
+          className="w-full rounded-full"
           onClick={() => onPlanDate(date)}
         >
           <CalendarClock className="size-4" />
-          Planifier une seance ce jour
+          Planifier une seance
         </Button>
       ) : null}
     </div>
@@ -141,6 +163,7 @@ export function WorkoutCalendarPanel({
   isStarting,
   streak,
   mode = 'compact',
+  className,
   ...calendarProps
 }: WorkoutCalendarPanelProps) {
   const [selected, setSelected] = useState<Date | undefined>(
@@ -148,7 +171,7 @@ export function WorkoutCalendarPanel({
   )
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-4', className)}>
       <WorkoutCalendar
         {...calendarProps}
         markers={markers}

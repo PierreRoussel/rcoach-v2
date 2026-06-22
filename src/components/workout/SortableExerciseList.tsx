@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, GripVertical, Link2, ListOrdered, MoreVertical, Trash2, Unlink } from 'lucide-react'
+import { ChevronDown, GripVertical, Link2, ListOrdered, MoreVertical, Plus, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -54,6 +54,8 @@ type SortableExerciseListProps = {
   onRemoveFromSuperset?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
   onOpenReorder?: () => void
+  onAddSet?: (index: number) => void
+  renderBelowTitle?: (index: number) => ReactNode
 }
 
 function supersetAccentClass(supersetId: number) {
@@ -67,6 +69,7 @@ function ExerciseActionsMenu({
   onAddToSuperset,
   onRemoveFromSuperset,
   onOpenReorder,
+  onAddSet,
 }: {
   index: number
   exercises: ActiveExerciseEntry[]
@@ -74,6 +77,7 @@ function ExerciseActionsMenu({
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
+  onAddSet?: (index: number) => void
 }) {
   const exercise = exercises[index]
   const partners = exercises
@@ -81,7 +85,7 @@ function ExerciseActionsMenu({
     .filter(({ itemIndex }) => itemIndex !== index)
   const hasSupersetActions = onAddToSuperset && onRemoveFromSuperset
 
-  if (!hasSupersetActions && !onOpenReorder && !onRemove) {
+  if (!hasSupersetActions && !onOpenReorder && !onRemove && !onAddSet) {
     return null
   }
 
@@ -105,7 +109,13 @@ function ExerciseActionsMenu({
             Changer l&apos;ordre
           </DropdownMenuItem>
         ) : null}
-        {hasSupersetActions && onOpenReorder ? <DropdownMenuSeparator /> : null}
+        {onAddSet ? (
+          <DropdownMenuItem onClick={() => onAddSet(index)}>
+            <Plus className="size-4" />
+            Ajouter une serie
+          </DropdownMenuItem>
+        ) : null}
+        {hasSupersetActions && (onOpenReorder || onAddSet) ? <DropdownMenuSeparator /> : null}
         {hasSupersetActions && partners.length > 0 ? (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
@@ -135,7 +145,7 @@ function ExerciseActionsMenu({
         ) : null}
         {onRemove ? (
           <>
-            {onOpenReorder || hasSupersetActions ? <DropdownMenuSeparator /> : null}
+            {onOpenReorder || hasSupersetActions || onAddSet ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={onRemove}
@@ -164,7 +174,9 @@ function SortableExerciseItem({
   onAddToSuperset,
   onRemoveFromSuperset,
   onOpenReorder,
+  onAddSet,
   renderSetsContent,
+  renderBelowTitle,
   supersetBadge,
 }: {
   exercise: ActiveExerciseEntry
@@ -180,7 +192,9 @@ function SortableExerciseItem({
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
+  onAddSet?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
+  renderBelowTitle?: (index: number) => ReactNode
   supersetBadge?: number
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -232,6 +246,7 @@ function SortableExerciseItem({
               </span>
             ) : null}
           </div>
+          {renderBelowTitle?.(index)}
           {showSetCount ? (
             <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
           ) : (
@@ -260,6 +275,7 @@ function SortableExerciseItem({
           onAddToSuperset={onAddToSuperset}
           onRemoveFromSuperset={onRemoveFromSuperset}
           onOpenReorder={onOpenReorder}
+          onAddSet={onAddSet}
         />
         {showDeleteButton ? (
           <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
@@ -339,6 +355,8 @@ export function SortableExerciseList({
   onRemoveFromSuperset,
   renderSetsContent,
   onOpenReorder,
+  onAddSet,
+  renderBelowTitle,
 }: SortableExerciseListProps) {
   const sensors = useSortableSensors()
 
@@ -374,7 +392,9 @@ export function SortableExerciseList({
         onAddToSuperset={onAddToSuperset}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={onOpenReorder}
+        onAddSet={onAddSet}
         renderSetsContent={renderSetsContent}
+        renderBelowTitle={renderBelowTitle}
         supersetBadge={isSplitSuperset(exercises, index)}
       />
     )

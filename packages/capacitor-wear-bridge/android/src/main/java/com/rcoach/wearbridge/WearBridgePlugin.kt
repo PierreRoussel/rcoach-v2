@@ -6,12 +6,16 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.google.android.gms.wearable.Node
+import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 
 @CapacitorPlugin(name = "WearBridge")
 class WearBridgePlugin : Plugin() {
+
+    companion object {
+        private const val WATCH_CAPABILITY = "rcoach_wear"
+    }
 
     override fun load() {
         super.load()
@@ -25,16 +29,43 @@ class WearBridgePlugin : Plugin() {
 
     @PluginMethod
     fun isWatchAvailable(call: PluginCall) {
-        val nodeClient = Wearable.getNodeClient(context)
-        nodeClient.connectedNodes
-            .addOnSuccessListener { nodes: List<Node> ->
-                val result = JSObject()
-                result.put("available", nodes.isNotEmpty())
-                call.resolve(result)
+        detectWatchAvailable { available ->
+            val result = JSObject()
+            result.put("available", available)
+            call.resolve(result)
+        }
+    }
+
+    private fun detectWatchAvailable(callback: (Boolean) -> Unit) {
+        val capabilityClient = Wearable.getCapabilityClient(context)
+        capabilityClient
+            .getCapability(WATCH_CAPABILITY, CapabilityClient.FILTER_REACHABLE)
+            .addOnSuccessListener { capabilityInfo ->
+                if (capabilityInfo.nodes.isNotEmpty()) {
+                    callback(true)
+                    return@addOnSuccessListener
+                }
+
+                capabilityClient
+                    .getCapability(WATCH_CAPABILITY, CapabilityClient.FILTER_ALL)
+                    .addOnSuccessListener { allCapabilityInfo ->
+                        if (allCapabilityInfo.nodes.isNotEmpty()) {
+                            callback(true)
+                            return@addOnSuccessListener
+                        }
+
+                        fallbackConnectedNodes(callback)
+                    }
+                    .addOnFailureListener { fallbackConnectedNodes(callback) }
             }
-            .addOnFailureListener { error ->
-                call.reject(error.message ?: "Unable to detect watch nodes")
-            }
+            .addOnFailureListener { fallbackConnectedNodes(callback) }
+    }
+
+    private fun fallbackConnectedNodes(callback: (Boolean) -> Unit) {
+        Wearable.getNodeClient(context)
+            .connectedNodes
+            .addOnSuccessListener { nodes -> callback(nodes.isNotEmpty()) }
+            .addOnFailureListener { callback(false) }
     }
 
     @PluginMethod
