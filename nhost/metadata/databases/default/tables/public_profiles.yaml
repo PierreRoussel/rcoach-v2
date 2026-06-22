@@ -37,6 +37,13 @@ array_relationships:
         table:
           name: exercises
           schema: public
+  - name: workout_templates
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: workout_templates
+          schema: public
 select_permissions:
   - role: user
     permission:
@@ -46,6 +53,7 @@ select_permissions:
         - avatar_url
         - role
         - unit_system
+        - rpe_enabled
         - created_at
       filter:
         id:
@@ -58,6 +66,7 @@ update_permissions:
         - avatar_url
         - role
         - unit_system
+        - rpe_enabled
       filter:
         id:
           _eq: X-Hasura-User-Id

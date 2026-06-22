@@ -1,0 +1,62 @@
+table:
+  name: workout_template_sets
+  schema: public
+object_relationships:
+  - name: template_exercise
+    using:
+      foreign_key_constraint_on: template_exercise_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - template_exercise_id
+        - set_index
+        - weight_kg
+        - reps
+        - rest_seconds
+      filter:
+        template_exercise:
+          template:
+            user_id:
+              _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        template_exercise:
+          template:
+            user_id:
+              _eq: X-Hasura-User-Id
+      columns:
+        - template_exercise_id
+        - set_index
+        - weight_kg
+        - reps
+        - rest_seconds
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - set_index
+        - weight_kg
+        - reps
+        - rest_seconds
+      filter:
+        template_exercise:
+          template:
+            user_id:
+              _eq: X-Hasura-User-Id
+      check:
+        template_exercise:
+          template:
+            user_id:
+              _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        template_exercise:
+          template:
+            user_id:
+              _eq: X-Hasura-User-Id

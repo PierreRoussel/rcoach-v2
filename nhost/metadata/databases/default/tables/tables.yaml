@@ -5,5 +5,8 @@
 - "!include public_program_exercises.yaml"
 - "!include public_workouts.yaml"
 - "!include public_workout_exercises.yaml"
+- "!include public_workout_templates.yaml"
+- "!include public_workout_template_exercises.yaml"
+- "!include public_workout_template_sets.yaml"
 - "!include public_sets.yaml"
 - "!include public_coach_clients.yaml"

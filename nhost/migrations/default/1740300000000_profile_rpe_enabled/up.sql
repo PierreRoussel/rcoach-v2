@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS rpe_enabled BOOLEAN NOT NULL DEFAULT false;

@@ -1,0 +1,61 @@
+table:
+  name: workout_template_exercises
+  schema: public
+object_relationships:
+  - name: template
+    using:
+      foreign_key_constraint_on: template_id
+  - name: exercise
+    using:
+      foreign_key_constraint_on: exercise_id
+array_relationships:
+  - name: workout_template_sets
+    using:
+      foreign_key_constraint_on:
+        column: template_exercise_id
+        table:
+          name: workout_template_sets
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - template_id
+        - exercise_id
+        - sort_order
+      filter:
+        template:
+          user_id:
+            _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        template:
+          user_id:
+            _eq: X-Hasura-User-Id
+      columns:
+        - template_id
+        - exercise_id
+        - sort_order
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - sort_order
+      filter:
+        template:
+          user_id:
+            _eq: X-Hasura-User-Id
+      check:
+        template:
+          user_id:
+            _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        template:
+          user_id:
+            _eq: X-Hasura-User-Id
