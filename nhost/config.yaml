@@ -1,1 +1,2 @@
 version: 3
+# Hasura CLI config — required for Nhost Git deploys (migrations + metadata).
