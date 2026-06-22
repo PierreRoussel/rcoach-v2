@@ -1,4 +1,5 @@
 import {
+  addYears,
   eachDayOfInterval,
   format,
   getISODay,
@@ -145,4 +146,25 @@ export function getTodayOccurrences(
 
 export function datesMatchWorkoutDay(workoutStartedAt: string, date: Date): boolean {
   return isSameDay(parseISO(workoutStartedAt), date)
+}
+
+export function buildNextOccurrenceByTemplateId(
+  sessions: ScheduledSession[],
+  now = new Date(),
+): Map<string, string> {
+  const today = startOfDay(now)
+  const rangeEnd = addYears(today, 2)
+  const occurrences = expandAllOccurrences(sessions, today, rangeEnd)
+  const byTemplateId = new Map<string, string>()
+
+  for (const occurrence of occurrences) {
+    if (
+      occurrence.workoutTemplateId &&
+      !byTemplateId.has(occurrence.workoutTemplateId)
+    ) {
+      byTemplateId.set(occurrence.workoutTemplateId, occurrence.date)
+    }
+  }
+
+  return byTemplateId
 }

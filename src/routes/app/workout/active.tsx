@@ -68,7 +68,10 @@ function ActiveWorkoutPage() {
     reorderExercises,
     updatePlannedSet,
     addPlannedSet,
+    removePlannedSet,
+    reorderPlannedSets,
     completeCurrentStep,
+    completeStep,
     goToStep,
     adjustRest,
     tickRest,
@@ -230,10 +233,10 @@ function ActiveWorkoutPage() {
             Circuit
           </CardTitle>
           <CardDescription>
-            Validez chaque serie dans l ordre. Les supersets alternent automatiquement.
+            Validez les series dans l ordre qui vous convient. Les supersets alternent automatiquement.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-4">
           <ActiveWorkoutCircuit
             exercises={activeExercises}
             activeStepIndex={activeStepIndex}
@@ -242,8 +245,16 @@ function ActiveWorkoutPage() {
               void updatePlannedSet(exerciseIndex, setIndex, patch)
             }
             onCompleteCurrentStep={() => void completeCurrentStep()}
+            onCompleteStep={(exerciseIndex, setIndex) =>
+              void completeStep(exerciseIndex, setIndex)
+            }
             onAddPlannedSet={(exerciseIndex) => void addPlannedSet(exerciseIndex)}
-            onGoToStep={goToStep}
+            onDeleteSet={(exerciseIndex, setIndex) =>
+              void removePlannedSet(exerciseIndex, setIndex)
+            }
+            onReorderSets={(exerciseIndex, fromIndex, toIndex) =>
+              void reorderPlannedSets(exerciseIndex, fromIndex, toIndex)
+            }
           />
         </CardContent>
       </Card>

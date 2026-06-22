@@ -1,7 +1,8 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import {
+  DELETE_WORKOUT,
   GET_WORKOUT_BY_ID,
   GET_WORKOUT_BY_ID_WITHOUT_SHARE,
   LIST_MY_WORKOUTS,
@@ -88,6 +89,28 @@ export function useWorkoutById(workoutId: string) {
         }>(nhost, GET_WORKOUT_BY_ID_WITHOUT_SHARE, { id: workoutId })
         return data.workouts_by_pk
       }
+    },
+  })
+}
+
+export function useDeleteWorkout() {
+  const { nhost } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (workoutId: string) => {
+      const data = await graphqlRequest<{
+        delete_workouts_by_pk: { id: string } | null
+      }>(nhost, DELETE_WORKOUT, { id: workoutId })
+
+      if (!data.delete_workouts_by_pk) {
+        throw new Error('Seance introuvable ou deja supprimee.')
+      }
+
+      return data.delete_workouts_by_pk
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['workouts'] })
     },
   })
 }

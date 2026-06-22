@@ -1,6 +1,4 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import { CalendarDays, Dumbbell, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -25,7 +23,10 @@ import {
 } from '@/hooks/useWorkoutTemplates'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
+import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useMyWorkoutsInfinite } from '@/hooks/useWorkouts'
+import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
+import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
@@ -82,8 +83,14 @@ function CatalogTab() {
     (state) => state.startWorkoutFromTemplate,
   )
   const { data: templates, isLoading, error } = useWorkoutTemplates()
+  const { data: scheduledResult } = useScheduledSessions()
   const deleteTemplate = useDeleteWorkoutTemplate()
   const createEmpty = useCreateEmptyWorkoutTemplate()
+
+  const nextOccurrenceByTemplateId = useMemo(
+    () => buildNextOccurrenceByTemplateId(scheduledResult?.sessions ?? []),
+    [scheduledResult?.sessions],
+  )
 
   const templatesMissing = isGraphqlTemplatesMissingError(error)
 
@@ -106,7 +113,7 @@ function CatalogTab() {
   }
 
   return (
-    <>
+    <div className="space-y-4">
       <SessionNameDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -131,8 +138,8 @@ function CatalogTab() {
           </div>
         </CardHeader>
       </Card>
-      <Card className="rounded-2xl border-border">
-        <CardHeader>
+      <Card className="gap-0 overflow-hidden rounded-2xl border-border">
+        <CardHeader className="px-4 pb-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <CardTitle className="font-display font-black">Mes modeles</CardTitle>
@@ -146,12 +153,12 @@ function CatalogTab() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="px-0 pb-0">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Chargement...</p>
+            <p className="px-4 pb-4 text-sm text-muted-foreground">Chargement...</p>
           ) : null}
           {error ? (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+            <div className="mx-4 mb-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
               <p className="text-destructive">
                 {error instanceof Error ? error.message : 'Erreur de chargement'}
               </p>
@@ -164,7 +171,7 @@ function CatalogTab() {
             </div>
           ) : null}
           {!isLoading && !error && templates?.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
+            <div className="mx-4 mb-4 rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Aucun modele pour le moment.
               </p>
@@ -173,55 +180,67 @@ function CatalogTab() {
               </Button>
             </div>
           ) : null}
-        {templates?.map((template) => (
-          <div
-            key={template.id}
-            className="rounded-2xl border border-border bg-card px-4 py-3"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-display font-black">{template.name}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Dumbbell className="size-3" />
-                  {template.workout_template_exercises.length} exercices
-                </p>
-              </div>
-              <Pill tone="secondary">
-                {format(new Date(template.updated_at), 'd MMM', { locale: fr })}
-              </Pill>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="pill"
-                size="sm"
-                onClick={() => void handleStart(template)}
-              >
-                <Play className="size-4" />
-                Demarrer
-              </Button>
-              <Button variant="soft" size="sm" asChild>
-                <Link
-                  to="/app/sessions/$templateId"
-                  params={{ templateId: template.id }}
-                >
-                  <Pencil className="size-4" />
-                  Modifier
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void deleteTemplate.mutateAsync(template.id)}
-                disabled={deleteTemplate.isPending}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-    </>
+          {templates && templates.length > 0 ? (
+            <ul className="divide-y divide-border border-t border-border">
+              {templates.map((template) => {
+                const nextOccurrenceDate = nextOccurrenceByTemplateId.get(template.id)
+
+                return (
+                  <li key={template.id}>
+                    <div className="relative w-full bg-card px-4 py-3 transition-colors hover:bg-muted/20">
+                      <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-display font-black">{template.name}</p>
+                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Dumbbell className="size-3 shrink-0" />
+                            {template.workout_template_exercises.length} exercices
+                          </p>
+                        </div>
+                        {nextOccurrenceDate ? (
+                          <Pill tone="secondary" className="shrink-0">
+                            <CalendarDays className="size-3" />
+                            {formatRelativeScheduleDate(nextOccurrenceDate)}
+                          </Pill>
+                        ) : null}
+                      </div>
+                      <div className="mt-3 flex w-full min-w-0 gap-2">
+                        <Button
+                          variant="pill"
+                          size="sm"
+                          className="min-w-0 flex-1"
+                          onClick={() => void handleStart(template)}
+                        >
+                          <Play className="size-4" />
+                          Demarrer
+                        </Button>
+                        <Button variant="soft" size="sm" className="min-w-0 flex-1" asChild>
+                          <Link
+                            to="/app/sessions/$templateId"
+                            params={{ templateId: template.id }}
+                          >
+                            <Pencil className="size-4" />
+                            Modifier
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => void deleteTemplate.mutateAsync(template.id)}
+                          disabled={deleteTemplate.isPending}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 

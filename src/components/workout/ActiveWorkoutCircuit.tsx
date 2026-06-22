@@ -1,11 +1,12 @@
 import { Check, Plus } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { ActiveSetOptionsDrawer } from '@/components/workout/ActiveSetOptionsDrawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
-import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+import type { ActiveExerciseEntry, ActiveSet } from '@/lib/workout/active-store'
 import { buildCircuitSteps, stepKey } from '@/lib/workout/workout-circuit'
 
 const SUPERSET_ACCENTS = [
@@ -25,11 +26,18 @@ type ActiveWorkoutCircuitProps = {
   onUpdateSet: (
     exerciseIndex: number,
     setIndex: number,
-    patch: { weightKg?: number | null; reps?: number | null; rpe?: number | null },
+    patch: {
+      weightKg?: number | null
+      reps?: number | null
+      rpe?: number | null
+      setType?: ActiveSet['setType']
+    },
   ) => void
   onCompleteCurrentStep: () => void
+  onCompleteStep: (exerciseIndex: number, setIndex: number) => void
   onAddPlannedSet: (exerciseIndex: number) => void
-  onGoToStep: (stepIndex: number) => void
+  onDeleteSet: (exerciseIndex: number, setIndex: number) => void
+  onReorderSets: (exerciseIndex: number, fromIndex: number, toIndex: number) => void
 }
 
 export function ActiveWorkoutCircuit({
@@ -38,13 +46,22 @@ export function ActiveWorkoutCircuit({
   rpeEnabled,
   onUpdateSet,
   onCompleteCurrentStep,
+  onCompleteStep,
   onAddPlannedSet,
-  onGoToStep,
+  onDeleteSet,
+  onReorderSets,
 }: ActiveWorkoutCircuitProps) {
   const steps = buildCircuitSteps(exercises)
   const currentStep = steps[activeStepIndex] ?? null
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const units = buildExerciseUnits(exercises)
+  const [setOptions, setSetOptions] = useState<{
+    exerciseIndex: number
+    setIndex: number
+  } | null>(null)
+
+  const selectedExercise =
+    setOptions != null ? exercises[setOptions.exerciseIndex] ?? null : null
 
   useEffect(() => {
     if (!currentStep) {
@@ -85,7 +102,7 @@ export function ActiveWorkoutCircuit({
           }
         }}
         className={cn(
-          'rounded-xl border px-3 py-2 transition-colors',
+          'w-full rounded-xl border px-2 py-2 transition-colors',
           isCurrent
             ? 'border-primary bg-soft-primary/50 ring-1 ring-primary/30'
             : isCompleted
@@ -93,53 +110,59 @@ export function ActiveWorkoutCircuit({
               : 'border-border bg-card',
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-1.5">
           <button
             type="button"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-data text-xs font-bold"
-            onClick={() => {
-              if (globalStepIndex >= 0) {
-                onGoToStep(globalStepIndex)
-              }
-            }}
+            className={cn(
+              'flex size-7 shrink-0 items-center justify-center rounded-full font-data text-xs font-bold',
+              set.setType === 'warmup'
+                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                : 'bg-muted text-foreground',
+            )}
+            aria-label={`Options serie ${setIndex + 1}`}
+            onClick={() => setSetOptions({ exerciseIndex, setIndex })}
           >
-            {isCompleted ? <Check className="size-4 text-primary" /> : setIndex + 1}
+            {isCompleted ? (
+              <Check className="size-3.5 text-primary" />
+            ) : set.setType === 'warmup' ? (
+              'W'
+            ) : (
+              setIndex + 1
+            )}
           </button>
 
-          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
-            <Input
-              inputMode="decimal"
-              placeholder="kg"
-              value={set.weightKg ?? ''}
-              disabled={isCompleted && !isCurrent}
-              className="h-8 text-sm"
-              onChange={(event) =>
-                onUpdateSet(exerciseIndex, setIndex, {
-                  weightKg: event.target.value ? Number(event.target.value) : null,
-                })
-              }
-            />
-            <Input
-              inputMode="numeric"
-              placeholder="reps"
-              value={set.reps ?? ''}
-              disabled={isCompleted && !isCurrent}
-              className="h-8 text-sm"
-              onChange={(event) =>
-                onUpdateSet(exerciseIndex, setIndex, {
-                  reps: event.target.value ? Number(event.target.value) : null,
-                })
-              }
-            />
-          </div>
+          <Input
+            inputMode="decimal"
+            placeholder="kg"
+            value={set.weightKg ?? ''}
+            disabled={isCompleted}
+            className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
+            onChange={(event) =>
+              onUpdateSet(exerciseIndex, setIndex, {
+                weightKg: event.target.value ? Number(event.target.value) : null,
+              })
+            }
+          />
+          <Input
+            inputMode="numeric"
+            placeholder="reps"
+            value={set.reps ?? ''}
+            disabled={isCompleted}
+            className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
+            onChange={(event) =>
+              onUpdateSet(exerciseIndex, setIndex, {
+                reps: event.target.value ? Number(event.target.value) : null,
+              })
+            }
+          />
 
           {rpeEnabled ? (
             <Input
               inputMode="decimal"
               placeholder="RPE"
               value={set.rpe ?? ''}
-              disabled={isCompleted && !isCurrent}
-              className="h-8 w-14 text-sm"
+              disabled={isCompleted}
+              className="h-9 w-11 shrink-0 px-1 text-center text-sm font-data"
               onChange={(event) =>
                 onUpdateSet(exerciseIndex, setIndex, {
                   rpe: event.target.value ? Number(event.target.value) : null,
@@ -148,15 +171,20 @@ export function ActiveWorkoutCircuit({
             />
           ) : null}
 
-          {isCurrent ? (
+          {!isCompleted ? (
             <Button
               type="button"
-              size="sm"
+              size="icon"
               variant="pill"
-              className="shrink-0 rounded-full"
-              onClick={onCompleteCurrentStep}
+              className="size-8 shrink-0 rounded-full"
+              aria-label="Valider la serie"
+              onClick={() =>
+                isCurrent
+                  ? onCompleteCurrentStep()
+                  : onCompleteStep(exerciseIndex, setIndex)
+              }
             >
-              Valider
+              <Check className="size-4" />
             </Button>
           ) : null}
         </div>
@@ -199,27 +227,46 @@ export function ActiveWorkoutCircuit({
   }
 
   return (
-    <div className="space-y-4">
-      {units.map((unit) => {
-        if (unit.type === 'single') {
-          return renderExerciseBlock(unit.index)
-        }
+    <>
+      <div className="space-y-4">
+        {units.map((unit) => {
+          if (unit.type === 'single') {
+            return renderExerciseBlock(unit.index)
+          }
 
-        return (
-          <div
-            key={`superset-${unit.supersetId}-${unit.indices[0]}`}
-            className={cn(
-              'space-y-3 rounded-2xl border-2 border-dashed p-3',
-              supersetAccentClass(unit.supersetId),
-            )}
-          >
-            <p className="font-data text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Superset {unit.supersetId}
-            </p>
-            {unit.indices.map((exerciseIndex) => renderExerciseBlock(exerciseIndex))}
-          </div>
-        )
-      })}
-    </div>
+          return (
+            <div
+              key={`superset-${unit.supersetId}-${unit.indices[0]}`}
+              className={cn(
+                'space-y-3 rounded-2xl border-2 border-dashed p-3',
+                supersetAccentClass(unit.supersetId),
+              )}
+            >
+              <p className="font-data text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Superset {unit.supersetId}
+              </p>
+              {unit.indices.map((exerciseIndex) => renderExerciseBlock(exerciseIndex))}
+            </div>
+          )
+        })}
+      </div>
+
+      <ActiveSetOptionsDrawer
+        open={setOptions != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSetOptions(null)
+          }
+        }}
+        exercise={selectedExercise}
+        exerciseIndex={setOptions?.exerciseIndex ?? null}
+        selectedSetIndex={setOptions?.setIndex ?? null}
+        onDeleteSet={onDeleteSet}
+        onReorderSets={onReorderSets}
+        onUpdateSetType={(exerciseIndex, setIndex, setType) =>
+          onUpdateSet(exerciseIndex, setIndex, { setType })
+        }
+      />
+    </>
   )
 }

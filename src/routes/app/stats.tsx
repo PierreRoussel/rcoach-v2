@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { Activity, Dumbbell, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import { WorkoutCalendar } from '@/components/schedule/WorkoutCalendar'
+import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { BodyHeatmap } from '@/components/stats/BodyHeatmap'
 import { MuscleRadarChart } from '@/components/stats/MuscleRadarChart'
 import { MuscleZoneInsights } from '@/components/stats/MuscleZoneInsights'
@@ -101,7 +101,7 @@ function StatsPage() {
               {calendarLoading ? (
                 <p className="text-sm text-muted-foreground">Chargement...</p>
               ) : (
-                <WorkoutCalendar
+                <WorkoutCalendarPanel
                   markers={markers}
                   mode="compact"
                   streak={weeklyStreak}

@@ -140,15 +140,19 @@ export function WorkoutCalendarPanel({
   onPlanDate,
   isStarting,
   streak,
+  mode = 'compact',
   ...calendarProps
 }: WorkoutCalendarPanelProps) {
-  const [selected, setSelected] = useState<Date | undefined>(new Date())
+  const [selected, setSelected] = useState<Date | undefined>(
+    mode === 'full' ? new Date() : undefined,
+  )
 
   return (
     <div className="space-y-3">
       <WorkoutCalendar
         {...calendarProps}
         markers={markers}
+        mode={mode}
         streak={streak}
         selected={selected}
         onSelect={setSelected}

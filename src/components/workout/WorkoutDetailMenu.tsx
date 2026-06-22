@@ -1,9 +1,18 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { BookmarkPlus, CalendarClock, Link2, MoreVertical } from 'lucide-react'
+import { BookmarkPlus, CalendarClock, Link2, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
-import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +30,20 @@ import {
   useEnableWorkoutShare,
   useTemplateBySourceWorkout,
 } from '@/hooks/useWorkoutSharing'
+import { useDeleteWorkout } from '@/hooks/useWorkouts'
+import { cn } from '@/lib/utils'
+
+const DIALOG_CLOSE_MS = 200
+
+function openDeleteDialogAfterMenuClose(
+  setMenuOpen: (open: boolean) => void,
+  setDeleteDialogOpen: (open: boolean) => void,
+) {
+  setMenuOpen(false)
+  window.requestAnimationFrame(() => {
+    setDeleteDialogOpen(true)
+  })
+}
 
 type WorkoutMenuData = (WorkoutDetail | WorkoutSummary) & {
   share_token?: string | null
@@ -43,8 +66,10 @@ export function WorkoutDetailMenu({
   )
   const enableShare = useEnableWorkoutShare()
   const createTemplate = useCreateTemplateFromWorkout()
+  const deleteWorkout = useDeleteWorkout()
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [currentShareToken, setCurrentShareToken] = useState(
@@ -101,7 +126,28 @@ export function WorkoutDetailMenu({
     }
   }
 
-  const isBusy = enableShare.isPending || createTemplate.isPending
+  async function handleDelete() {
+    setError(null)
+
+    try {
+      await deleteWorkout.mutateAsync(workout.id)
+      setDeleteDialogOpen(false)
+      setMenuOpen(false)
+
+      window.setTimeout(() => {
+        void navigate({ to: '/app/sessions', search: { tab: 'history' } })
+      }, DIALOG_CLOSE_MS)
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Impossible de supprimer la seance.',
+      )
+    }
+  }
+
+  const isBusy =
+    enableShare.isPending || createTemplate.isPending || deleteWorkout.isPending
 
   return (
     <div
@@ -164,6 +210,18 @@ export function WorkoutDetailMenu({
               Enregistrer comme modele
             </DropdownMenuItem>
           )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={isBusy}
+            className="text-destructive focus:text-destructive"
+            onSelect={(event) => {
+              event.preventDefault()
+              openDeleteDialogAfterMenuClose(setMenuOpen, setDeleteDialogOpen)
+            }}
+          >
+            <Trash2 className="size-4" />
+            Supprimer la seance
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -177,8 +235,16 @@ export function WorkoutDetailMenu({
           {message}
         </p>
       ) : null}
-      {!compact && error ? (
-        <p className="max-w-56 text-right text-xs text-destructive">{error}</p>
+      {error ? (
+        <p
+          className={
+            compact
+              ? 'max-w-32 truncate text-right text-xs text-destructive'
+              : 'max-w-56 text-right text-xs text-destructive'
+          }
+        >
+          {error}
+        </p>
       ) : null}
 
       <SessionNameDialog
@@ -192,6 +258,34 @@ export function WorkoutDetailMenu({
         confirmLabel="Enregistrer"
         defaultName={workout.title}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette seance ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              « {workout.title} » sera retire de votre historique. Cette action est
+              irreversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteWorkout.isPending}>
+              Annuler
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={deleteWorkout.isPending}
+              className={cn(
+                buttonVariants(),
+                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+              )}
+              onClick={() => void handleDelete()}
+            >
+              {deleteWorkout.isPending ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildCircuitSteps,
+  findHighestCompletedStepIndex,
   findNextPendingStepIndex,
   getStepRestSeconds,
   isIntraSupersetTransition,
@@ -130,5 +131,22 @@ describe('workout-circuit', () => {
     exercises[0]!.sets[1]!.completedAt = '2026-01-01T00:00:01.000Z'
     expect(findNextPendingStepIndex(steps, exercises, 0)).toBeNull()
     expect(isWorkoutComplete(steps, exercises)).toBe(true)
+  })
+
+  it('tracks highest completed step for out-of-order progress', () => {
+    const exercises = [
+      {
+        ...makeExercise('a', 'Squat', 3),
+        sets: [
+          { setIndex: 0, completedAt: null, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt: null, weightKg: 50, reps: 5 },
+          { setIndex: 2, completedAt: '2026-01-01T00:00:00.000Z', weightKg: 50, reps: 5 },
+        ],
+      },
+    ]
+    const steps = buildCircuitSteps(exercises)
+
+    expect(findHighestCompletedStepIndex(steps, exercises)).toBe(2)
+    expect(findNextPendingStepIndex(steps, exercises, 2)).toBeNull()
   })
 })

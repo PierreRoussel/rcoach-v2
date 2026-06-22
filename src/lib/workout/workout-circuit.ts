@@ -71,6 +71,26 @@ export function isStepCompleted(
   return Boolean(exercises[step.exerciseIndex]?.sets[step.setIndex]?.completedAt)
 }
 
+export function findHighestCompletedStepIndex(
+  steps: CircuitStep[],
+  exercises: CircuitExercise[],
+): number {
+  let highest = -1
+
+  for (let index = 0; index < steps.length; index += 1) {
+    const step = steps[index]
+    if (!step) {
+      continue
+    }
+
+    if (isStepCompleted(exercises, step)) {
+      highest = index
+    }
+  }
+
+  return highest
+}
+
 export function findNextPendingStepIndex(
   steps: CircuitStep[],
   exercises: CircuitExercise[],

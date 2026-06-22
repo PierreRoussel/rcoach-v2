@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { db, type ActiveExerciseDraft, type ActiveSetDraft, type ActiveWorkoutDraft } from '@/lib/db/dexie'
 import {
   buildCircuitSteps,
+  findHighestCompletedStepIndex,
   findNextPendingStepIndex,
   getStepRestSeconds,
   getStepLabel,
@@ -55,6 +56,12 @@ type ActiveWorkoutState = {
     patch: Partial<ActiveSet>,
   ) => Promise<void>
   addPlannedSet: (exerciseIndex: number) => Promise<void>
+  removePlannedSet: (exerciseIndex: number, setIndex: number) => Promise<void>
+  reorderPlannedSets: (
+    exerciseIndex: number,
+    fromIndex: number,
+    toIndex: number,
+  ) => Promise<void>
   completeCurrentStep: (values?: CompleteStepValues) => Promise<void>
   completeStep: (
     exerciseIndex: number,
@@ -84,6 +91,33 @@ function createEmptySet(setIndex: number, defaultRestSeconds: number): ActiveSet
   }
 }
 
+function reindexExerciseSets(sets: ActiveSet[]): ActiveSet[] {
+  return sets.map((set, index) => ({ ...set, setIndex: index }))
+}
+
+async function applyExerciseSetsChange(
+  get: () => ActiveWorkoutState,
+  set: (partial: Partial<ActiveWorkoutState>) => void,
+  exerciseIndex: number,
+  nextSets: ActiveSet[],
+) {
+  const exercises = get().exercises.map((exercise, index) =>
+    index === exerciseIndex
+      ? { ...exercise, sets: reindexExerciseSets(nextSets) }
+      : exercise,
+  )
+  const activeStepIndex = syncActiveStepIndex(exercises, get().activeStepIndex)
+
+  set({ exercises, activeStepIndex })
+  await persistDraft({
+    title: get().title,
+    startedAt: get().startedAt,
+    defaultRestSeconds: get().defaultRestSeconds,
+    exercises,
+    activeStepIndex,
+  })
+}
+
 async function persistDraft(state: PersistableState) {
   if (!state.startedAt) {
     return
@@ -104,7 +138,11 @@ function syncActiveStepIndex(
   preferredIndex = 0,
 ): number {
   const steps = buildCircuitSteps(exercises)
-  const pending = findNextPendingStepIndex(steps, exercises, preferredIndex)
+  const anchor = Math.max(
+    preferredIndex,
+    findHighestCompletedStepIndex(steps, exercises),
+  )
+  const pending = findNextPendingStepIndex(steps, exercises, anchor)
 
   if (pending != null) {
     return pending
@@ -349,6 +387,32 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
   },
 
+  removePlannedSet: async (exerciseIndex, setIndex) => {
+    const exercise = get().exercises[exerciseIndex]
+    if (!exercise || exercise.sets.length <= 1) {
+      return
+    }
+
+    const nextSets = exercise.sets.filter((set) => set.setIndex !== setIndex)
+    await applyExerciseSetsChange(get, set, exerciseIndex, nextSets)
+  },
+
+  reorderPlannedSets: async (exerciseIndex, fromIndex, toIndex) => {
+    const exercise = get().exercises[exerciseIndex]
+    if (!exercise || fromIndex === toIndex) {
+      return
+    }
+
+    const sets = [...exercise.sets]
+    const [moved] = sets.splice(fromIndex, 1)
+    if (!moved) {
+      return
+    }
+
+    sets.splice(toIndex, 0, moved)
+    await applyExerciseSetsChange(get, set, exerciseIndex, sets)
+  },
+
   goToStep: (stepIndex) => {
     const steps = buildCircuitSteps(get().exercises)
     if (stepIndex < 0 || stepIndex >= steps.length) {
@@ -375,6 +439,11 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   completeStep: async (exerciseIndex, setIndex, values) => {
+    const targetSet = get().exercises[exerciseIndex]?.sets[setIndex]
+    if (!targetSet || targetSet.completedAt) {
+      return
+    }
+
     const now = new Date().toISOString()
     const exercises = get().exercises.map((exercise, index) => {
       if (index !== exerciseIndex) {
@@ -402,10 +471,18 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     const steps = buildCircuitSteps(exercises)
     const completedStep = { exerciseIndex, setIndex }
-    const currentStepIndex = steps.findIndex(
+    const completedStepIndex = steps.findIndex(
       (step) => step.exerciseIndex === exerciseIndex && step.setIndex === setIndex,
     )
-    const nextStepIndex = findNextPendingStepIndex(steps, exercises, currentStepIndex + 1)
+    const syncedStepIndex = syncActiveStepIndex(
+      exercises,
+      completedStepIndex >= 0 ? completedStepIndex : get().activeStepIndex,
+    )
+    const nextStepIndex = findNextPendingStepIndex(
+      steps,
+      exercises,
+      completedStepIndex >= 0 ? completedStepIndex + 1 : syncedStepIndex,
+    )
     const nextStep = nextStepIndex != null ? steps[nextStepIndex] ?? null : null
     const restSeconds = getStepRestSeconds(
       exercises,
@@ -414,18 +491,23 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       get().defaultRestSeconds,
     )
 
+    let activeStepIndex = syncedStepIndex
+
     if (nextStepIndex == null || isWorkoutComplete(steps, exercises)) {
+      activeStepIndex = Math.max(steps.length - 1, 0)
       set({
         exercises,
-        activeStepIndex: Math.max(steps.length - 1, 0),
+        activeStepIndex,
         isResting: false,
         restSecondsLeft: 0,
         restTargetSeconds: 0,
       })
     } else if (restSeconds > 0) {
+      activeStepIndex =
+        completedStepIndex >= 0 ? completedStepIndex : get().activeStepIndex
       set({
         exercises,
-        activeStepIndex: currentStepIndex >= 0 ? currentStepIndex : get().activeStepIndex,
+        activeStepIndex,
         isResting: true,
         restSecondsLeft: restSeconds,
         restTargetSeconds: restSeconds,
@@ -433,7 +515,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     } else {
       set({
         exercises,
-        activeStepIndex: nextStepIndex,
+        activeStepIndex,
         isResting: false,
         restSecondsLeft: 0,
         restTargetSeconds: 0,
@@ -445,7 +527,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
-      activeStepIndex: get().activeStepIndex,
+      activeStepIndex,
     })
   },
 

@@ -61,10 +61,10 @@ export function WorkoutCalendar({
   streak,
 }: WorkoutCalendarProps) {
   const [internalSelected, setInternalSelected] = useState<Date | undefined>(
-    selected ?? new Date(),
+    onSelect ? selected : (selected ?? new Date()),
   )
 
-  const currentSelected = selected ?? internalSelected
+  const currentSelected = onSelect ? selected : (selected ?? internalSelected)
 
   const modifiers = useMemo(
     () => ({
@@ -76,11 +76,15 @@ export function WorkoutCalendar({
   )
 
   const markerDotClass =
-    'after:absolute after:bottom-0.5 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:rounded-full after:ring-2 after:ring-background'
+    'relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:rounded-full after:content-[""]'
 
   function handleSelect(date: Date | undefined) {
+    if (onSelect) {
+      onSelect(date)
+      return
+    }
+
     setInternalSelected(date)
-    onSelect?.(date)
   }
 
   return (
@@ -98,21 +102,14 @@ export function WorkoutCalendar({
         locale={fr}
         modifiers={modifiers}
         modifiersClassNames={{
-          done: cn(
-            'relative',
-            markerDotClass,
-            'after:bg-primary aria-selected:after:bg-primary-foreground',
-          ),
-          planned: cn(
-            'relative',
-            markerDotClass,
-            'after:bg-secondary aria-selected:after:bg-primary-foreground',
-          ),
+          done: cn(markerDotClass, 'after:bg-primary aria-selected:after:hidden'),
+          planned: cn(markerDotClass, 'after:bg-secondary aria-selected:after:hidden'),
           missed: 'text-muted-foreground/60 line-through decoration-muted-foreground/40',
         }}
         classNames={{
+          cell: 'relative flex-1 p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:rounded-md [&:has([aria-selected])]:bg-transparent',
           day_today:
-            'font-semibold bg-primary/10 text-foreground ring-1 ring-inset ring-primary/25',
+            'font-semibold bg-primary/10 text-foreground ring-1 ring-inset ring-primary/25 aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:ring-0',
           day_selected:
             'bg-primary text-primary-foreground ring-0 hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
         }}

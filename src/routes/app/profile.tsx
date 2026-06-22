@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { PageHeader, ThemeSetting } from '@/design-system'
-import { WorkoutCalendar } from '@/components/schedule/WorkoutCalendar'
+import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -243,7 +243,11 @@ function ProfilePage() {
           {calendarLoading ? (
             <p className="text-sm text-muted-foreground">Chargement...</p>
           ) : (
-            <WorkoutCalendar markers={markers} mode="compact" streak={weeklyStreak} />
+            <WorkoutCalendarPanel
+              markers={markers}
+              mode="compact"
+              streak={weeklyStreak}
+            />
           )}
         </CardContent>
       </Card>

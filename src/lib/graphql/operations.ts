@@ -608,6 +608,14 @@ export const ENABLE_WORKOUT_SHARE = `
   }
 `
 
+export const DELETE_WORKOUT = `
+  mutation DeleteWorkout($id: uuid!) {
+    delete_workouts_by_pk(id: $id) {
+      id
+    }
+  }
+`
+
 export const GET_TEMPLATE_BY_SOURCE_WORKOUT = `
   query TemplateBySourceWorkout($workoutId: uuid!) {
     workout_templates(
@@ -631,6 +639,8 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
       workout_template_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
+        superset_id
+        default_rest_seconds
         exercise {
           id
           name
@@ -659,6 +669,8 @@ export const GET_WORKOUT_TEMPLATE = `
       workout_template_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
+        superset_id
+        default_rest_seconds
         exercise {
           id
           name
