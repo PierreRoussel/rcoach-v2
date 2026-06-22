@@ -84,11 +84,21 @@ export function WorkoutDetailMenu({
   }
 
   async function handleSaveAsTemplate(name: string) {
-    const template = await createTemplate.mutateAsync({ workout, name })
-    await navigate({
-      to: '/app/sessions/$templateId',
-      params: { templateId: template.id },
-    })
+    setError(null)
+    try {
+      const template = await createTemplate.mutateAsync({ workout, name })
+      await navigate({
+        to: '/app/sessions/$templateId',
+        params: { templateId: template.id },
+      })
+    } catch (saveError) {
+      const message =
+        saveError instanceof Error
+          ? saveError.message
+          : 'Impossible d enregistrer le modele.'
+      setError(message)
+      throw saveError
+    }
   }
 
   const isBusy = enableShare.isPending || createTemplate.isPending

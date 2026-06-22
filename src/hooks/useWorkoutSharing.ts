@@ -1,19 +1,20 @@
+import type { NhostClient } from '@nhost/nhost-js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { DEFAULT_GLOBAL_REST_SECONDS } from '@/hooks/useWorkoutTemplates'
 import {
+  DELETE_WORKOUT_TEMPLATE,
   ENABLE_WORKOUT_SHARE,
   GET_SHARED_WORKOUT_BY_TOKEN,
   GET_TEMPLATE_BY_SOURCE_WORKOUT,
-  INSERT_WORKOUT_TEMPLATE,
   type SharedWorkoutDetail,
   type WorkoutDetail,
   type WorkoutSummary,
-  type WorkoutTemplate,
 } from '@/lib/graphql/operations'
 import { publicGraphqlRequest } from '@/lib/graphql/public-request'
 import { graphqlRequest } from '@/lib/graphql/request'
-import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
+import { isGraphqlMissingFieldError, toTemplateDeployError } from '@/lib/graphql/schema-errors'
+import { insertWorkoutTemplateWithFallbacks } from '@/lib/workout/insert-workout-template'
 import { buildWorkoutShareUrl } from '@/lib/workout/share-url'
 import { insertTemplateExercises } from '@/lib/workout/insert-template-exercises'
 import { workoutToTemplateExercises } from '@/lib/workout/workout-to-template'
@@ -109,36 +110,24 @@ export function useCreateTemplateFromWorkout() {
     }) => {
       const exercises = workoutToTemplateExercises(workout, defaultRestSeconds)
 
-      let template: WorkoutTemplate
-
-      try {
-        const data = await graphqlRequest<{
-          insert_workout_templates_one: WorkoutTemplate
-        }>(nhost, INSERT_WORKOUT_TEMPLATE, {
-          object: {
-            name,
-            default_rest_seconds: defaultRestSeconds,
-            source_workout_id: workout.id,
-          },
-        })
-        template = data.insert_workout_templates_one
-      } catch (error) {
-        if (!isGraphqlMissingFieldError(error, 'source_workout_id')) {
-          throw error
-        }
-
-        const data = await graphqlRequest<{
-          insert_workout_templates_one: WorkoutTemplate
-        }>(nhost, INSERT_WORKOUT_TEMPLATE, {
-          object: {
-            name,
-            default_rest_seconds: defaultRestSeconds,
-          },
-        })
-        template = data.insert_workout_templates_one
+      if (exercises.length === 0) {
+        throw new Error('Cette seance ne contient aucun exercice a convertir.')
       }
 
-      await insertTemplateExercises(nhost, template.id, exercises)
+      const template = await insertWorkoutTemplateWithFallbacks(nhost, {
+        name,
+        defaultRestSeconds,
+        sourceWorkoutId: workout.id,
+      })
+
+      try {
+        await insertTemplateExercises(nhost, template.id, exercises, defaultRestSeconds)
+      } catch (error) {
+        await graphqlRequest(nhost, DELETE_WORKOUT_TEMPLATE, { id: template.id }).catch(
+          () => undefined,
+        )
+        throw toTemplateDeployError(error)
+      }
 
       return template
     },

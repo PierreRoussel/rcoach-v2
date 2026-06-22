@@ -6,6 +6,14 @@ type GraphQLResponse<T> = {
   errors?: Array<{ message: string }>
 }
 
+function formatGraphqlErrors(errors: Array<{ message: string }> | undefined) {
+  if (!errors?.length) {
+    return null
+  }
+
+  return errors.map((entry) => entry.message).join(', ')
+}
+
 export async function graphqlRequest<T>(
   nhost: NhostClient,
   query: string,
@@ -17,11 +25,20 @@ export async function graphqlRequest<T>(
       variables,
     })
 
-    return response.body.data as T
+    const formattedErrors = formatGraphqlErrors(response.body.errors)
+    if (formattedErrors) {
+      throw new Error(formattedErrors)
+    }
+
+    if (response.body.data == null) {
+      throw new Error('Reponse GraphQL vide.')
+    }
+
+    return response.body.data
   } catch (error) {
     if (error instanceof FetchError) {
       const body = error.body as GraphQLResponse<unknown>
-      throw new Error(body.errors?.[0]?.message ?? error.message)
+      throw new Error(formatGraphqlErrors(body.errors) ?? error.message)
     }
 
     throw error

@@ -12,6 +12,36 @@ export function isGraphqlMissingFieldError(
   )
 }
 
+export function isGraphqlDatabaseError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
+
+  return (
+    message.includes('database query error') ||
+    message.includes('not-null violation') ||
+    message.includes('constraint-violation') ||
+    message.includes('foreign key violation') ||
+    message.includes('does not exist')
+  )
+}
+
+export function toTemplateDeployError(error: unknown): Error {
+  if (!(error instanceof Error)) {
+    return new Error('Impossible d enregistrer le modele.')
+  }
+
+  if (isGraphqlDatabaseError(error)) {
+    return new Error(
+      `${error.message} — Verifiez que les migrations Nhost (workout_templates, workout_template_sets) sont deployees.`,
+    )
+  }
+
+  return error
+}
+
 const SCHEDULE_GRAPHQL_FIELDS = [
   'scheduled_sessions',
   'insert_scheduled_sessions_one',

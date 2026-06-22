@@ -52,6 +52,7 @@ update_permissions:
       columns:
         - name
         - default_rest_seconds
+        - source_workout_id
         - updated_at
       filter:
         user_id:

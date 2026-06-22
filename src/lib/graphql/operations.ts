@@ -715,6 +715,18 @@ export const UPDATE_WORKOUT_TEMPLATE = `
   }
 `
 
+export const UPDATE_WORKOUT_TEMPLATE_SOURCE = `
+  mutation UpdateWorkoutTemplateSource($id: uuid!, $sourceWorkoutId: uuid!) {
+    update_workout_templates_by_pk(
+      pk_columns: { id: $id }
+      _set: { source_workout_id: $sourceWorkoutId }
+    ) {
+      id
+      source_workout_id
+    }
+  }
+`
+
 export const DELETE_WORKOUT_TEMPLATE_EXERCISES = `
   mutation DeleteWorkoutTemplateExercises($templateId: uuid!) {
     delete_workout_template_exercises(
@@ -744,6 +756,16 @@ export const INSERT_WORKOUT_TEMPLATE_EXERCISES = `
           rest_seconds
         }
       }
+    }
+  }
+`
+
+export const INSERT_WORKOUT_TEMPLATE_SETS = `
+  mutation InsertWorkoutTemplateSets(
+    $objects: [workout_template_sets_insert_input!]!
+  ) {
+    insert_workout_template_sets(objects: $objects) {
+      affected_rows
     }
   }
 `
