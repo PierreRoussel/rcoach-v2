@@ -36,14 +36,15 @@ function Calendar({
           'flex-1 text-center text-[0.8rem] font-normal text-muted-foreground',
         week: 'mt-2 flex w-full',
         day: cn(
-          'relative flex-1 p-0 text-center text-sm focus-within:relative focus-within:z-20',
+          'group relative flex-1 p-0 text-center text-sm focus-within:relative focus-within:z-20',
           props.mode === 'range'
-            ? '[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md'
-            : '[&:has([aria-selected])]:rounded-md',
+            ? 'first:aria-selected:rounded-l-md last:aria-selected:rounded-r-md'
+            : 'aria-selected:rounded-md',
         ),
         day_button: cn(
           buttonVariants({ variant: 'ghost' }),
-          'mx-auto h-9 w-full max-w-9 p-0 font-normal aria-selected:opacity-100',
+          'mx-auto h-9 w-full max-w-9 p-0 font-normal',
+          'group-aria-selected:bg-transparent group-aria-selected:text-inherit group-aria-selected:hover:bg-transparent group-aria-selected:hover:text-inherit',
         ),
         range_start: 'day-range-start rounded-l-md',
         range_end: 'day-range-end rounded-r-md',

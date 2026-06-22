@@ -96,29 +96,42 @@ export function WorkoutCalendar({
           </div>
         ) : null}
         <Calendar
-        mode="single"
-        selected={currentSelected}
-        onSelect={handleSelect}
-        locale={fr}
-        modifiers={modifiers}
-        modifiersClassNames={{
-          done: cn(markerDotClass, 'after:bg-primary aria-selected:after:hidden'),
-          planned: cn(markerDotClass, 'after:bg-secondary aria-selected:after:hidden'),
-          missed: 'text-muted-foreground/60 line-through decoration-muted-foreground/40',
-        }}
-        classNames={{
-          cell: 'relative flex-1 p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:rounded-md [&:has([aria-selected])]:bg-transparent',
-          day_today:
-            'font-semibold bg-primary/10 text-foreground ring-1 ring-inset ring-primary/25 aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:ring-0',
-          day_selected:
-            'bg-primary text-primary-foreground ring-0 hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
-        }}
-        className={cn(
-          'w-full rounded-2xl border border-border bg-card',
-          mode === 'compact' ? 'px-1 py-2' : 'p-2',
-          streak != null ? 'pt-10' : null,
-        )}
-      />
+          mode="single"
+          selected={currentSelected}
+          onSelect={handleSelect}
+          locale={fr}
+          modifiers={modifiers}
+          modifiersClassNames={{
+            done: cn(
+              markerDotClass,
+              'after:bg-primary aria-selected:after:hidden',
+            ),
+            planned: cn(
+              markerDotClass,
+              'after:bg-secondary aria-selected:after:hidden',
+            ),
+            missed:
+              'text-muted-foreground/60 [&_button]:line-through [&_button]:decoration-muted-foreground/40',
+          }}
+          classNames={{
+            today: cn(
+              'font-semibold bg-primary/10 text-foreground ring-1 ring-inset ring-primary/25',
+              '[&_button]:font-semibold',
+              'aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:ring-0',
+              'aria-selected:[&_button]:text-primary-foreground',
+            ),
+            selected: cn(
+              'rounded-md bg-primary text-primary-foreground ring-0',
+              '[&_button]:bg-transparent [&_button]:text-primary-foreground',
+              '[&_button]:hover:bg-transparent [&_button]:hover:text-primary-foreground',
+            ),
+          }}
+          className={cn(
+            'w-full rounded-2xl border border-border bg-card',
+            mode === 'compact' ? 'px-1 py-2' : 'p-2',
+            streak != null ? 'pt-10' : null,
+          )}
+        />
       </div>
       {mode === 'full' ? <CalendarLegend /> : null}
     </div>
