@@ -15,9 +15,7 @@ import {
 } from '@/components/ui/card'
 import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
-  DEFAULT_GLOBAL_REST_SECONDS,
   addExerciseToSuperset,
   cleanupSupersetAfterRemoval,
   exerciseToDraft,
@@ -26,51 +24,24 @@ import {
 } from '@/hooks/useWorkoutTemplates'
 import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
 type TemplateEditorFormProps = {
   initialName?: string
   initialExercises?: TemplateExerciseDraft[]
-  initialDefaultRestSeconds?: number
   isSaving?: boolean
-  onSave: (
-    name: string,
-    defaultRestSeconds: number,
-    exercises: TemplateExerciseDraft[],
-  ) => Promise<void>
-  onStart?: (
-    name: string,
-    defaultRestSeconds: number,
-    exercises: TemplateExerciseDraft[],
-  ) => Promise<void>
-}
-
-function toActiveEntries(exercises: TemplateExerciseDraft[]): ActiveExerciseEntry[] {
-  return exercises.map((exercise) => ({
-    exerciseId: exercise.exerciseId,
-    exerciseName: exercise.exerciseName,
-    muscleGroup: exercise.muscleGroup,
-    equipment: exercise.equipment,
-    supersetId: exercise.supersetId,
-    sets: exercise.sets.map((set) => ({
-      setIndex: set.setIndex,
-      setType: 'normal' as const,
-      weightKg: set.weightKg,
-      reps: set.reps,
-      restSeconds: set.usesGlobalRest ? null : set.restSeconds,
-    })),
-  }))
+  onSave: (name: string, exercises: TemplateExerciseDraft[]) => Promise<void>
+  onStart?: (name: string, exercises: TemplateExerciseDraft[]) => Promise<void>
 }
 
 export function TemplateEditorForm({
   initialName = '',
   initialExercises = [],
-  initialDefaultRestSeconds = DEFAULT_GLOBAL_REST_SECONDS,
   isSaving = false,
   onSave,
   onStart,
 }: TemplateEditorFormProps) {
   const [name, setName] = useState(initialName)
-  const [defaultRestSeconds, setDefaultRestSeconds] = useState(initialDefaultRestSeconds)
   const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
   const [activeIndex, setActiveIndex] = useState(0)
   const [reorderOpen, setReorderOpen] = useState(false)
@@ -80,23 +51,9 @@ export function TemplateEditorForm({
   useEffect(() => {
     setName(initialName)
     setExercises(initialExercises)
-    setDefaultRestSeconds(initialDefaultRestSeconds)
-  }, [initialName, initialExercises, initialDefaultRestSeconds])
+  }, [initialName, initialExercises])
 
-  const activeEntries = toActiveEntries(exercises)
-
-  function handleGlobalRestChange(value: number) {
-    const next = Math.max(0, value)
-    setDefaultRestSeconds(next)
-    setExercises((current) =>
-      current.map((exercise) => ({
-        ...exercise,
-        sets: exercise.sets.map((set) =>
-          set.usesGlobalRest ? { ...set, restSeconds: next } : set,
-        ),
-      })),
-    )
-  }
+  const activeEntries: ActiveExerciseEntry[] = templateExercisesToActive(exercises)
 
   function handleAddExercise(exercise: Exercise) {
     if (exercises.some((item) => item.exerciseId === exercise.id)) {
@@ -159,7 +116,7 @@ export function TemplateEditorForm({
     }
 
     try {
-      await onSave(trimmedName, defaultRestSeconds, exercises)
+      await onSave(trimmedName, exercises)
       setMessage('Seance sauvegardee.')
     } catch (saveError) {
       setError(
@@ -189,7 +146,7 @@ export function TemplateEditorForm({
     }
 
     try {
-      await onStart(trimmedName, defaultRestSeconds, exercises)
+      await onStart(trimmedName, exercises)
     } catch (startError) {
       setError(
         startError instanceof Error
@@ -246,23 +203,6 @@ export function TemplateEditorForm({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex max-w-xs items-center gap-2">
-            <Label htmlFor="defaultRest" className="shrink-0 text-sm">
-              Repos defaut
-            </Label>
-            <Input
-              id="defaultRest"
-              type="number"
-              min={0}
-              value={defaultRestSeconds}
-              onChange={(event) =>
-                handleGlobalRestChange(Number(event.target.value) || 0)
-              }
-              className="h-8"
-            />
-            <span className="text-xs text-muted-foreground">s</span>
-          </div>
-
           <SortableExerciseList
             exercises={activeEntries}
             activeIndex={activeIndex}
@@ -277,7 +217,6 @@ export function TemplateEditorForm({
             renderSetsContent={(index) => (
               <TemplateExerciseSetsEditor
                 exercise={exercises[index]!}
-                defaultRestSeconds={defaultRestSeconds}
                 onChange={(exercise) => handleUpdateExercise(index, exercise)}
               />
             )}

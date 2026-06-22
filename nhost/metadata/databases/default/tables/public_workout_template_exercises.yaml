@@ -25,6 +25,7 @@ select_permissions:
         - exercise_id
         - sort_order
         - superset_id
+        - default_rest_seconds
       filter:
         template:
           user_id:
@@ -41,12 +42,14 @@ insert_permissions:
         - exercise_id
         - sort_order
         - superset_id
+        - default_rest_seconds
 update_permissions:
   - role: user
     permission:
       columns:
         - sort_order
         - superset_id
+        - default_rest_seconds
       filter:
         template:
           user_id:

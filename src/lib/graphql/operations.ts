@@ -51,6 +51,7 @@ export type WorkoutTemplateExercise = {
   id: string
   sort_order: number
   superset_id?: number | null
+  default_rest_seconds?: number
   exercise: Exercise
   workout_template_sets: WorkoutTemplateSet[]
 }

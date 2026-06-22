@@ -3,6 +3,7 @@ export function buildTemplateExerciseInsertObjects(
   exercises: Array<{
     exerciseId: string
     supersetId: number | null
+    defaultRestSeconds: number
     sets: Array<{
       setIndex: number
       weightKg: number | null
@@ -11,10 +12,10 @@ export function buildTemplateExerciseInsertObjects(
       usesGlobalRest: boolean
     }>
   }>,
-  defaultRestSeconds: number,
-  options?: { includeSupersetId?: boolean },
+  options?: { includeSupersetId?: boolean; includeDefaultRestSeconds?: boolean },
 ) {
   const includeSupersetId = options?.includeSupersetId ?? true
+  const includeDefaultRestSeconds = options?.includeDefaultRestSeconds ?? true
 
   return exercises.map((exercise, sortOrder) => {
     const object: Record<string, unknown> = {
@@ -26,13 +27,19 @@ export function buildTemplateExerciseInsertObjects(
           set_index: set.setIndex,
           weight_kg: set.weightKg,
           reps: set.reps,
-          rest_seconds: set.usesGlobalRest ? defaultRestSeconds : set.restSeconds,
+          rest_seconds: set.usesGlobalRest
+            ? exercise.defaultRestSeconds
+            : set.restSeconds,
         })),
       },
     }
 
     if (includeSupersetId && exercise.supersetId != null) {
       object.superset_id = exercise.supersetId
+    }
+
+    if (includeDefaultRestSeconds) {
+      object.default_rest_seconds = exercise.defaultRestSeconds
     }
 
     return object

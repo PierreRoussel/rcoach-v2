@@ -3,7 +3,6 @@ import type { TemplateExerciseDraft } from '@/hooks/useWorkoutTemplates'
 
 export function templateExercisesToActive(
   exercises: TemplateExerciseDraft[],
-  defaultRestSeconds: number,
 ): ActiveExerciseEntry[] {
   return exercises.map((exercise) => ({
     exerciseId: exercise.exerciseId,
@@ -16,7 +15,9 @@ export function templateExercisesToActive(
       setType: 'normal' as const,
       weightKg: set.weightKg,
       reps: set.reps,
-      restSeconds: set.usesGlobalRest ? defaultRestSeconds : set.restSeconds,
+      restSeconds: set.usesGlobalRest
+        ? exercise.defaultRestSeconds
+        : set.restSeconds,
     })),
   }))
 }

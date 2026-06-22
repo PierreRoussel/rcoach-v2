@@ -135,12 +135,7 @@ export function useCreateTemplateFromWorkout() {
         template = data.insert_workout_templates_one
       }
 
-      await insertTemplateExercises(
-        nhost,
-        template.id,
-        exercises,
-        defaultRestSeconds,
-      )
+      await insertTemplateExercises(nhost, template.id, exercises)
 
       return template
     },

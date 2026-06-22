@@ -16,6 +16,7 @@ import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { PageHeader, Pill } from '@/design-system'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
 import {
+  DEFAULT_GLOBAL_REST_SECONDS,
   isGraphqlTemplatesMissingError,
   templateToDraft,
   useCreateEmptyWorkoutTemplate,
@@ -97,8 +98,8 @@ function CatalogTab() {
     const draft = templateToDraft(template)
     await startWorkoutFromTemplate(
       template.name,
-      templateExercisesToActive(draft.exercises, draft.defaultRestSeconds),
-      draft.defaultRestSeconds,
+      templateExercisesToActive(draft.exercises),
+      DEFAULT_GLOBAL_REST_SECONDS,
     )
     await navigate({ to: '/app/workout/active' })
   }

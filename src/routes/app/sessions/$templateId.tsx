@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { TemplateEditorForm } from '@/components/workout/TemplateEditorForm'
 import { Button } from '@/components/ui/button'
 import {
+  DEFAULT_GLOBAL_REST_SECONDS,
   templateToDraft,
   useSaveWorkoutTemplate,
   useWorkoutTemplate,
@@ -33,32 +34,30 @@ function EditSessionTemplatePage() {
 
   async function handleSave(
     name: string,
-    defaultRestSeconds: number,
     exercises: TemplateExerciseDraft[],
   ) {
     await saveTemplate.mutateAsync({
       templateId,
       name,
-      defaultRestSeconds,
+      defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
       exercises,
     })
   }
 
   async function handleStart(
     name: string,
-    defaultRestSeconds: number,
     exercises: TemplateExerciseDraft[],
   ) {
     await saveTemplate.mutateAsync({
       templateId,
       name,
-      defaultRestSeconds,
+      defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
       exercises,
     })
     await startWorkoutFromTemplate(
       name,
-      templateExercisesToActive(exercises, defaultRestSeconds),
-      defaultRestSeconds,
+      templateExercisesToActive(exercises),
+      DEFAULT_GLOBAL_REST_SECONDS,
     )
     await navigate({ to: '/app/workout/active' })
   }
@@ -87,7 +86,6 @@ function EditSessionTemplatePage() {
         key={`${template.id}-${template.updated_at}`}
         initialName={template.name}
         initialExercises={initial.exercises}
-        initialDefaultRestSeconds={initial.defaultRestSeconds}
         isSaving={saveTemplate.isPending}
         onSave={handleSave}
         onStart={handleStart}

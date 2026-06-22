@@ -12,6 +12,7 @@ export function workoutToTemplateExercises(
     muscleGroup: entry.exercise.muscle_group,
     equipment: entry.exercise.equipment,
     supersetId: null,
+    defaultRestSeconds,
     sets: entry.sets.map((set) => ({
       setIndex: set.set_index,
       weightKg: set.weight_kg,

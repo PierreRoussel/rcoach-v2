@@ -28,6 +28,7 @@ export type TemplateExerciseDraft = {
   muscleGroup: string | null
   equipment: string | null
   supersetId: number | null
+  defaultRestSeconds: number
   sets: TemplateSetDraft[]
 }
 
@@ -76,26 +77,31 @@ export function useWorkoutTemplate(templateId: string) {
 
 export function templateToDraft(
   template: WorkoutTemplate,
-): { defaultRestSeconds: number; exercises: TemplateExerciseDraft[] } {
-  const defaultRestSeconds =
+): { exercises: TemplateExerciseDraft[] } {
+  const templateDefaultRestSeconds =
     template.default_rest_seconds ?? DEFAULT_GLOBAL_REST_SECONDS
 
   return {
-    defaultRestSeconds,
-    exercises: template.workout_template_exercises.map((entry) => ({
-      exerciseId: entry.exercise.id,
-      exerciseName: entry.exercise.name,
-      muscleGroup: entry.exercise.muscle_group,
-      equipment: entry.exercise.equipment,
-      supersetId: entry.superset_id ?? null,
-      sets: (entry.workout_template_sets ?? []).map((set) => ({
-        setIndex: set.set_index,
-        weightKg: set.weight_kg,
-        reps: set.reps,
-        restSeconds: set.rest_seconds,
-        usesGlobalRest: set.rest_seconds === defaultRestSeconds,
-      })),
-    })),
+    exercises: template.workout_template_exercises.map((entry) => {
+      const exerciseDefaultRestSeconds =
+        entry.default_rest_seconds ?? templateDefaultRestSeconds
+
+      return {
+        exerciseId: entry.exercise.id,
+        exerciseName: entry.exercise.name,
+        muscleGroup: entry.exercise.muscle_group,
+        equipment: entry.exercise.equipment,
+        supersetId: entry.superset_id ?? null,
+        defaultRestSeconds: exerciseDefaultRestSeconds,
+        sets: (entry.workout_template_sets ?? []).map((set) => ({
+          setIndex: set.set_index,
+          weightKg: set.weight_kg,
+          reps: set.reps,
+          restSeconds: set.rest_seconds,
+          usesGlobalRest: set.rest_seconds === exerciseDefaultRestSeconds,
+        })),
+      }
+    }),
   }
 }
 
@@ -125,12 +131,7 @@ export function useCreateWorkoutTemplate() {
       const template = data.insert_workout_templates_one
 
       if (exercises.length > 0) {
-        await insertTemplateExercises(
-          nhost,
-          template.id,
-          exercises,
-          defaultRestSeconds,
-        )
+        await insertTemplateExercises(nhost, template.id, exercises)
       }
 
       return template
@@ -185,12 +186,7 @@ export function useSaveWorkoutTemplate() {
         templateId,
       })
       if (exercises.length > 0) {
-        await insertTemplateExercises(
-          nhost,
-          templateId,
-          exercises,
-          defaultRestSeconds,
-        )
+        await insertTemplateExercises(nhost, templateId, exercises)
       }
     },
     onSuccess: async (_data, variables) => {
@@ -223,6 +219,7 @@ export function exerciseToDraft(exercise: Exercise): TemplateExerciseDraft {
     muscleGroup: exercise.muscle_group,
     equipment: exercise.equipment,
     supersetId: null,
+    defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
     sets: [],
   }
 }
@@ -308,12 +305,31 @@ export function cleanupSupersetAfterRemoval(
 export function createTemplateSet(
   setIndex: number,
   defaultRestSeconds: number,
+  inherited?: Pick<TemplateSetDraft, 'weightKg' | 'reps'>,
 ): TemplateSetDraft {
   return {
     setIndex,
-    weightKg: null,
-    reps: null,
+    weightKg: inherited?.weightKg ?? null,
+    reps: inherited?.reps ?? null,
     restSeconds: defaultRestSeconds,
     usesGlobalRest: true,
   }
+}
+
+export function inheritSetValues(
+  sets: TemplateSetDraft[],
+): Pick<TemplateSetDraft, 'weightKg' | 'reps'> {
+  const last = sets[sets.length - 1]
+  if (last && (last.weightKg != null || last.reps != null)) {
+    return { weightKg: last.weightKg, reps: last.reps }
+  }
+
+  const firstWithValues = sets.find(
+    (set) => set.weightKg != null || set.reps != null,
+  )
+  if (firstWithValues) {
+    return { weightKg: firstWithValues.weightKg, reps: firstWithValues.reps }
+  }
+
+  return { weightKg: null, reps: null }
 }
