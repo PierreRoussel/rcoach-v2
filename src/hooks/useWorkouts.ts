@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import {
+  GET_WORKOUT_BY_ID,
   LIST_MY_WORKOUTS,
+  type WorkoutDetail,
   type WorkoutSummary,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
@@ -21,6 +23,21 @@ export function useMyWorkouts() {
       )
 
       return data.workouts
+    },
+  })
+}
+
+export function useWorkoutById(workoutId: string) {
+  const { nhost, isAuthenticated } = useAuth()
+
+  return useQuery({
+    queryKey: ['workouts', workoutId],
+    enabled: isAuthenticated && Boolean(workoutId),
+    queryFn: async () => {
+      const data = await graphqlRequest<{
+        workouts_by_pk: WorkoutDetail | null
+      }>(nhost, GET_WORKOUT_BY_ID, { id: workoutId })
+      return data.workouts_by_pk
     },
   })
 }

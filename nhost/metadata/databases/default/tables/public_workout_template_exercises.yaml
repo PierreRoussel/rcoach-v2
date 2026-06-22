@@ -24,6 +24,7 @@ select_permissions:
         - template_id
         - exercise_id
         - sort_order
+        - superset_id
       filter:
         template:
           user_id:
@@ -39,11 +40,13 @@ insert_permissions:
         - template_id
         - exercise_id
         - sort_order
+        - superset_id
 update_permissions:
   - role: user
     permission:
       columns:
         - sort_order
+        - superset_id
       filter:
         template:
           user_id:

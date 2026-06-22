@@ -12,18 +12,22 @@ export type ActiveWorkoutDraft = {
   id: 'current'
   title: string
   startedAt: string
+  defaultRestSeconds?: number
   exercises: Array<{
     exerciseId: string
     exerciseName: string
     muscleGroup?: string | null
     equipment?: string | null
+    supersetId?: number | null
     sets: Array<{
       setIndex: number
       setType: 'normal' | 'warmup' | 'failure'
       weightKg: number | null
       reps: number | null
+      restSeconds?: number | null
       durationSeconds?: number | null
       distanceKm?: number | null
+      rpe?: number | null
     }>
   }>
 }

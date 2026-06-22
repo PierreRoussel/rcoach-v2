@@ -75,6 +75,8 @@ import { ThemeProvider, useTheme, PageHeader, Pill } from '@/design-system'
 - Seance active ergonomique : picker, drag & drop, types de serie (normal/warmup/failure)
 - Rappel performance seance precedente par exercice
 - Suggestions de surcharge progressive adaptees au type d exercice (charge, poids du corps, cardio, tempo)
+- Catalogue de seances (`/app/sessions`) : modeles reutilisables (nom + exercices ordonnes), creation sans demarrer
+- Historique detaille (`/app/workouts/$id`) avec redirection depuis l ancien index
 
 ### Coach ERP
 

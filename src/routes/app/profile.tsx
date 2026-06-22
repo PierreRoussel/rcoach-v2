@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -12,8 +23,10 @@ import {
 import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { PageHeader, ThemeToggle } from '@/design-system'
+import { Switch } from '@/components/ui/switch'
+import { PageHeader, ThemeSetting } from '@/design-system'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
+import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/app/profile')({
   component: ProfilePage,
@@ -107,19 +120,106 @@ function ProfileEditor({
   )
 }
 
+function RpePreferenceToggle({
+  profile,
+}: {
+  profile: NonNullable<ReturnType<typeof useMyProfile>['data']>
+}) {
+  const updateProfile = useUpdateProfile()
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function handleToggle(checked: boolean) {
+    setMessage(null)
+
+    try {
+      await updateProfile.mutateAsync({
+        profileId: profile.id,
+        changes: { rpe_enabled: checked },
+      })
+      setMessage(checked ? 'Suivi RPE active.' : 'Suivi RPE desactive.')
+    } catch (saveError) {
+      setMessage(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Impossible de mettre a jour la preference.',
+      )
+    }
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="space-y-1">
+        <Label htmlFor="rpeEnabled">Suivi du RPE</Label>
+        <p className="text-xs text-muted-foreground">
+          Evaluez l&apos;effort percu de 1 a 10 (par pas de 0.5) a chaque set
+          pendant vos seances.
+        </p>
+        {message ? <FormMessage>{message}</FormMessage> : null}
+      </div>
+      <Switch
+        id="rpeEnabled"
+        checked={profile.rpe_enabled}
+        disabled={updateProfile.isPending}
+        onCheckedChange={(checked) => void handleToggle(checked)}
+      />
+    </div>
+  )
+}
+
+function LogoutSection() {
+  const { nhost } = useAuth()
+
+  async function handleSignOut() {
+    const session = nhost.getUserSession()
+    if (session?.refreshTokenId) {
+      await nhost.auth.signOut({ refreshToken: session.refreshTokenId })
+    }
+    window.location.href = '/auth/login'
+  }
+
+  return (
+    <Card className="rounded-2xl border-border">
+      <CardHeader>
+        <CardTitle className="font-display font-black">Session</CardTitle>
+        <CardDescription>Deconnectez-vous de votre compte sur cet appareil.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="outline" className="w-full rounded-xl">
+              Se deconnecter
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Se deconnecter ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Voulez-vous vraiment vous deconnecter ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void handleSignOut()}>
+                Se deconnecter
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
+  )
+}
+
 function ProfilePage() {
   const { data: profile, isLoading, error } = useMyProfile()
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <PageHeader
-          eyebrow="Compte"
-          title="Profil"
-          description="Informations du compte et preferences d'affichage."
-        />
-        <ThemeToggle />
-      </div>
+      <PageHeader
+        eyebrow="Compte"
+        title="Profil"
+        description="Informations du compte et preferences d'affichage."
+      />
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
@@ -143,6 +243,31 @@ function ProfilePage() {
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
+          <CardTitle className="font-display font-black">Entrainement</CardTitle>
+          <CardDescription>
+            Preferences liees au suivi de vos seances.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {profile ? <RpePreferenceToggle key={profile.id} profile={profile} /> : null}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <CardTitle className="font-display font-black">Apparence</CardTitle>
+          <CardDescription>
+            Choisissez le theme d&apos;affichage de l&apos;application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label>Theme</Label>
+          <ThemeSetting />
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
           <CardTitle className="font-display font-black">Import</CardTitle>
           <CardDescription>
             Importer un export CSV depuis Hevy.
@@ -154,6 +279,8 @@ function ProfilePage() {
           </Button>
         </CardContent>
       </Card>
+
+      <LogoutSection />
     </div>
   )
 }

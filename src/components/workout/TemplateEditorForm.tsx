@@ -1,0 +1,297 @@
+import { useEffect, useState } from 'react'
+import { Play, Save } from 'lucide-react'
+
+import { ExercisePicker } from '@/components/workout/ExercisePicker'
+import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import { TemplateExerciseSetsEditor } from '@/components/workout/TemplateExerciseSetsEditor'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  DEFAULT_GLOBAL_REST_SECONDS,
+  addExerciseToSuperset,
+  cleanupSupersetAfterRemoval,
+  exerciseToDraft,
+  removeExerciseFromSuperset,
+  type TemplateExerciseDraft,
+} from '@/hooks/useWorkoutTemplates'
+import type { Exercise } from '@/lib/graphql/operations'
+import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+
+type TemplateEditorFormProps = {
+  initialName?: string
+  initialExercises?: TemplateExerciseDraft[]
+  initialDefaultRestSeconds?: number
+  isSaving?: boolean
+  onSave: (
+    name: string,
+    defaultRestSeconds: number,
+    exercises: TemplateExerciseDraft[],
+  ) => Promise<void>
+  onStart?: (
+    name: string,
+    defaultRestSeconds: number,
+    exercises: TemplateExerciseDraft[],
+  ) => Promise<void>
+}
+
+function toActiveEntries(exercises: TemplateExerciseDraft[]): ActiveExerciseEntry[] {
+  return exercises.map((exercise) => ({
+    exerciseId: exercise.exerciseId,
+    exerciseName: exercise.exerciseName,
+    muscleGroup: exercise.muscleGroup,
+    equipment: exercise.equipment,
+    supersetId: exercise.supersetId,
+    sets: exercise.sets.map((set) => ({
+      setIndex: set.setIndex,
+      setType: 'normal' as const,
+      weightKg: set.weightKg,
+      reps: set.reps,
+      restSeconds: set.usesGlobalRest ? null : set.restSeconds,
+    })),
+  }))
+}
+
+export function TemplateEditorForm({
+  initialName = '',
+  initialExercises = [],
+  initialDefaultRestSeconds = DEFAULT_GLOBAL_REST_SECONDS,
+  isSaving = false,
+  onSave,
+  onStart,
+}: TemplateEditorFormProps) {
+  const [name, setName] = useState(initialName)
+  const [defaultRestSeconds, setDefaultRestSeconds] = useState(initialDefaultRestSeconds)
+  const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setName(initialName)
+    setExercises(initialExercises)
+    setDefaultRestSeconds(initialDefaultRestSeconds)
+  }, [initialName, initialExercises, initialDefaultRestSeconds])
+
+  const activeExercise = exercises[activeIndex]
+
+  function handleGlobalRestChange(value: number) {
+    const next = Math.max(0, value)
+    setDefaultRestSeconds(next)
+    setExercises((current) =>
+      current.map((exercise) => ({
+        ...exercise,
+        sets: exercise.sets.map((set) =>
+          set.usesGlobalRest ? { ...set, restSeconds: next } : set,
+        ),
+      })),
+    )
+  }
+
+  function handleAddExercise(exercise: Exercise) {
+    if (exercises.some((item) => item.exerciseId === exercise.id)) {
+      return
+    }
+
+    const next = [...exercises, exerciseToDraft(exercise)]
+    setExercises(next)
+    setActiveIndex(next.length - 1)
+  }
+
+  function handleReorder(from: number, to: number) {
+    const next = [...exercises]
+    const [moved] = next.splice(from, 1)
+    if (!moved) {
+      return
+    }
+    next.splice(to, 0, moved)
+    setExercises(next)
+
+    if (activeIndex === from) {
+      setActiveIndex(to)
+    } else if (from < activeIndex && to >= activeIndex) {
+      setActiveIndex(activeIndex - 1)
+    } else if (from > activeIndex && to <= activeIndex) {
+      setActiveIndex(activeIndex + 1)
+    }
+  }
+
+  function handleRemove(index: number) {
+    const next = cleanupSupersetAfterRemoval(
+      exercises.filter((_, itemIndex) => itemIndex !== index),
+    )
+    setExercises(next)
+    setActiveIndex(Math.min(activeIndex, Math.max(next.length - 1, 0)))
+  }
+
+  function handleAddToSuperset(fromIndex: number, partnerIndex: number) {
+    setExercises((current) => addExerciseToSuperset(current, fromIndex, partnerIndex))
+  }
+
+  function handleRemoveFromSuperset(index: number) {
+    setExercises((current) => removeExerciseFromSuperset(current, index))
+  }
+
+  function handleUpdateExercise(index: number, exercise: TemplateExerciseDraft) {
+    setExercises((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? exercise : item)),
+    )
+  }
+
+  async function handleSave() {
+    setError(null)
+    setMessage(null)
+
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      setError('Indiquez un nom pour la seance.')
+      return
+    }
+
+    try {
+      await onSave(trimmedName, defaultRestSeconds, exercises)
+      setMessage('Seance sauvegardee.')
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Impossible de sauvegarder la seance.',
+      )
+    }
+  }
+
+  async function handleStart() {
+    if (!onStart) {
+      return
+    }
+
+    setError(null)
+    setMessage(null)
+
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      setError('Indiquez un nom pour la seance.')
+      return
+    }
+    if (exercises.length === 0) {
+      setError('Ajoutez au moins un exercice.')
+      return
+    }
+
+    try {
+      await onStart(trimmedName, defaultRestSeconds, exercises)
+    } catch (startError) {
+      setError(
+        startError instanceof Error
+          ? startError.message
+          : 'Impossible de demarrer la seance.',
+      )
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="sticky top-0 z-10 -mx-1 space-y-3 rounded-2xl border border-border bg-background/95 p-3 backdrop-blur">
+        <Input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Nom de la seance"
+          className="h-10 border-0 bg-transparent px-1 font-display text-lg font-black shadow-none focus-visible:ring-0"
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="pill"
+            size="sm"
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+          >
+            <Save className="size-4" />
+            {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+          </Button>
+          {onStart ? (
+            <Button
+              variant="soft"
+              size="sm"
+              onClick={() => void handleStart()}
+              disabled={isSaving}
+            >
+              <Play className="size-4" />
+              Demarrer
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="font-display font-black">Exercices</CardTitle>
+              <CardDescription>{exercises.length} exercice(s)</CardDescription>
+            </div>
+            <ExercisePicker
+              onSelect={handleAddExercise}
+              excludeIds={exercises.map((exercise) => exercise.exerciseId)}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex max-w-xs items-center gap-2">
+            <Label htmlFor="defaultRest" className="shrink-0 text-sm">
+              Repos defaut
+            </Label>
+            <Input
+              id="defaultRest"
+              type="number"
+              min={0}
+              value={defaultRestSeconds}
+              onChange={(event) =>
+                handleGlobalRestChange(Number(event.target.value) || 0)
+              }
+              className="h-8"
+            />
+            <span className="text-xs text-muted-foreground">s</span>
+          </div>
+
+          <SortableExerciseList
+            exercises={toActiveEntries(exercises)}
+            activeIndex={activeIndex}
+            onSelect={setActiveIndex}
+            onReorder={handleReorder}
+            onRemove={handleRemove}
+            onAddToSuperset={handleAddToSuperset}
+            onRemoveFromSuperset={handleRemoveFromSuperset}
+            showSetCount
+            dragHandle="subtle"
+          />
+
+          {activeExercise ? (
+            <div className="rounded-2xl border border-border bg-soft-primary/20 p-4">
+              <p className="mb-3 font-display font-black">{activeExercise.exerciseName}</p>
+              <TemplateExerciseSetsEditor
+                exercise={activeExercise}
+                defaultRestSeconds={defaultRestSeconds}
+                onChange={(exercise) => handleUpdateExercise(activeIndex, exercise)}
+              />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {message ? <FormMessage>{message}</FormMessage> : null}
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  )
+}

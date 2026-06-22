@@ -5,6 +5,7 @@ mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
     avatar_url
     role
     unit_system
+    rpe_enabled
     created_at
   }
 }

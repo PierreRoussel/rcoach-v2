@@ -1,6 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Activity, Dumbbell, TrendingUp } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
+import { BodyHeatmap } from '@/components/stats/BodyHeatmap'
+import { MuscleRadarChart } from '@/components/stats/MuscleRadarChart'
+import { MuscleZoneInsights } from '@/components/stats/MuscleZoneInsights'
 import {
   Card,
   CardContent,
@@ -9,8 +13,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageHeader, StatCard } from '@/design-system'
-import { useMyWorkouts, useWorkoutStats } from '@/hooks/useWorkouts'
-import { Activity, TrendingUp } from 'lucide-react'
+import { useDetailedStats } from '@/hooks/useDetailedStats'
+import { useMyWorkouts } from '@/hooks/useWorkouts'
 
 export const Route = createFileRoute('/app/stats')({
   component: StatsPage,
@@ -18,17 +22,24 @@ export const Route = createFileRoute('/app/stats')({
 
 function StatsPage() {
   const { data: workouts, isLoading, error } = useMyWorkouts()
-  const weeklyStats = useWorkoutStats(workouts)
+  const {
+    weeklyStats,
+    radarData,
+    bodyIntensities,
+    topByZone,
+    totalVolume,
+    totalSessions,
+    activeZones,
+  } = useDetailedStats(workouts)
 
-  const totalVolume = weeklyStats.reduce((sum, point) => sum + point.volume, 0)
-  const totalSessions = workouts?.length ?? 0
+  const hasData = (workouts?.length ?? 0) > 0
 
   return (
     <div className="space-y-4">
       <PageHeader
         eyebrow="Progression"
         title="Statistiques"
-        description="Volume hebdomadaire et nombre de seances enregistrees."
+        description="Volume, repartition musculaire et niveau de force par zone."
       />
 
       {isLoading ? (
@@ -59,6 +70,15 @@ function StatsPage() {
             />
           </div>
 
+          <StatCard
+            icon={<Dumbbell className="size-4 text-primary" />}
+            value={String(activeZones)}
+            label="Zones actives"
+            sub="groupes musculaires travailles"
+            tone="accent"
+            className="w-full"
+          />
+
           <Card className="rounded-2xl border-border">
             <CardHeader>
               <CardTitle className="font-display font-black">
@@ -78,9 +98,7 @@ function StatsPage() {
                         dataKey="week"
                         tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                       />
-                      <YAxis
-                        tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-                      />
+                      <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
                       <Tooltip
                         contentStyle={{
                           background: 'var(--card)',
@@ -100,6 +118,54 @@ function StatsPage() {
               )}
             </CardContent>
           </Card>
+
+          {hasData ? (
+            <>
+              <Card className="rounded-2xl border-border">
+                <CardHeader>
+                  <CardTitle className="font-display font-black">
+                    Carte musculaire
+                  </CardTitle>
+                  <CardDescription>
+                    Zones les plus sollicitees (volume relatif) — plus fonce = plus
+                    travaille.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BodyHeatmap intensities={bodyIntensities} />
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-border">
+                <CardHeader>
+                  <CardTitle className="font-display font-black">
+                    Profil en etoile
+                  </CardTitle>
+                  <CardDescription>
+                    Comparaison relative des zones musculaires les plus entrainees.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <MuscleRadarChart data={radarData} />
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-border">
+                <CardHeader>
+                  <CardTitle className="font-display font-black">
+                    Exercice phare par zone
+                  </CardTitle>
+                  <CardDescription>
+                    L&apos;exo le plus utilise par muscle, avec estimation de percentile
+                    de force (1RM estime vs repères population).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <MuscleZoneInsights zones={topByZone} />
+                </CardContent>
+              </Card>
+            </>
+          ) : null}
         </>
       ) : null}
     </div>

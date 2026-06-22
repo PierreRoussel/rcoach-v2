@@ -9,12 +9,18 @@ export type ActiveExerciseEntry = ActiveWorkoutDraft['exercises'][number]
 type ActiveWorkoutState = {
   title: string
   startedAt: string | null
+  defaultRestSeconds: number
   exercises: ActiveExerciseEntry[]
   activeExerciseIndex: number
   restSecondsLeft: number
   isResting: boolean
   hydrate: () => Promise<void>
   startWorkout: (title: string) => Promise<void>
+  startWorkoutFromTemplate: (
+    title: string,
+    exercises: ActiveExerciseEntry[],
+    defaultRestSeconds?: number,
+  ) => Promise<void>
   addExercise: (exercise: {
     id: string
     name: string
@@ -32,7 +38,7 @@ type ActiveWorkoutState = {
 }
 
 async function persistDraft(
-  state: Pick<ActiveWorkoutState, 'title' | 'startedAt' | 'exercises'>,
+  state: Pick<ActiveWorkoutState, 'title' | 'startedAt' | 'exercises' | 'defaultRestSeconds'>,
 ) {
   if (!state.startedAt) {
     return
@@ -42,6 +48,7 @@ async function persistDraft(
     id: 'current',
     title: state.title,
     startedAt: state.startedAt,
+    defaultRestSeconds: state.defaultRestSeconds,
     exercises: state.exercises,
   })
 }
@@ -49,6 +56,7 @@ async function persistDraft(
 export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   title: '',
   startedAt: null,
+  defaultRestSeconds: 90,
   exercises: [],
   activeExerciseIndex: 0,
   restSecondsLeft: 0,
@@ -63,6 +71,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title: draft.title,
       startedAt: draft.startedAt,
+      defaultRestSeconds: draft.defaultRestSeconds ?? 90,
       exercises: draft.exercises,
       activeExerciseIndex: 0,
     })
@@ -73,12 +82,28 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title,
       startedAt,
+      defaultRestSeconds: 90,
       exercises: [],
       activeExerciseIndex: 0,
       restSecondsLeft: 0,
       isResting: false,
     })
-    await persistDraft({ title, startedAt, exercises: [] })
+    await persistDraft({ title, startedAt, defaultRestSeconds: 90, exercises: [] })
+  },
+
+  startWorkoutFromTemplate: async (title, exercises, defaultRestSeconds = 90) => {
+    const startedAt = new Date().toISOString()
+
+    set({
+      title,
+      startedAt,
+      defaultRestSeconds,
+      exercises,
+      activeExerciseIndex: 0,
+      restSecondsLeft: 0,
+      isResting: false,
+    })
+    await persistDraft({ title, startedAt, defaultRestSeconds, exercises })
   },
 
   addExercise: async (exercise) => {
@@ -104,6 +129,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
       exercises: nextExercises,
     })
   },
@@ -115,6 +141,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
       exercises: nextExercises,
     })
   },
@@ -140,6 +167,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
       exercises,
     })
   },
@@ -170,6 +198,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
       exercises,
     })
   },
@@ -205,6 +234,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title: '',
       startedAt: null,
+      defaultRestSeconds: 90,
       exercises: [],
       activeExerciseIndex: 0,
       restSecondsLeft: 0,
@@ -219,6 +249,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title: '',
       startedAt: null,
+      defaultRestSeconds: 90,
       exercises: [],
       activeExerciseIndex: 0,
       restSecondsLeft: 0,

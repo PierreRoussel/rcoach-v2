@@ -30,6 +30,19 @@ select_permissions:
         workout:
           user_id:
             _eq: X-Hasura-User-Id
+  - role: public
+    permission:
+      columns:
+        - id
+        - workout_id
+        - exercise_id
+        - sort_order
+        - superset_id
+        - notes
+      filter:
+        workout:
+          share_token:
+            _is_null: false
 insert_permissions:
   - role: user
     permission:

@@ -1,0 +1,138 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  type DragEndEvent,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical } from 'lucide-react'
+
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+
+type ExerciseReorderDrawerProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  exercises: ActiveExerciseEntry[]
+  onReorder: (from: number, to: number) => void
+}
+
+function ReorderItem({
+  exercise,
+  index,
+}: {
+  exercise: ActiveExerciseEntry
+  index: number
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: exercise.exerciseId })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={cn(
+        'flex items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5',
+        isDragging && 'opacity-70 shadow-md',
+      )}
+    >
+      <button
+        type="button"
+        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+        aria-label="Reordonner"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-4" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-display font-black">{exercise.exerciseName}</p>
+        <p className="text-xs text-muted-foreground">
+          {exercise.sets.length} serie{exercise.sets.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+      <span className="shrink-0 font-data text-xs text-muted-foreground">
+        {index + 1}
+      </span>
+    </div>
+  )
+}
+
+export function ExerciseReorderDrawer({
+  open,
+  onOpenChange,
+  exercises,
+  onReorder,
+}: ExerciseReorderDrawerProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    const oldIndex = exercises.findIndex((item) => item.exerciseId === active.id)
+    const newIndex = exercises.findIndex((item) => item.exerciseId === over.id)
+    if (oldIndex < 0 || newIndex < 0) {
+      return
+    }
+
+    onReorder(oldIndex, newIndex)
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle className="font-display font-black">
+            Reorganiser les exercices
+          </SheetTitle>
+          <SheetDescription>
+            Glissez les exercices pour changer leur ordre dans la seance.
+          </SheetDescription>
+        </SheetHeader>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={exercises.map((exercise) => exercise.exerciseId)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2 overflow-y-auto px-4 pb-6">
+              {exercises.map((exercise, index) => (
+                <ReorderItem key={exercise.exerciseId} exercise={exercise} index={index} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </SheetContent>
+    </Sheet>
+  )
+}

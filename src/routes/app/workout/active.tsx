@@ -17,6 +17,7 @@ import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
+import { useMyProfile } from '@/hooks/useProfile'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
@@ -29,9 +30,12 @@ export const Route = createFileRoute('/app/workout/active')({
 function ActiveWorkoutPage() {
   const { nhost } = useAuth()
   const navigate = useNavigate()
+  const { data: profile } = useMyProfile()
+  const rpeEnabled = profile?.rpe_enabled ?? false
   const {
     title,
     startedAt,
+    defaultRestSeconds,
     exercises: activeExercises,
     activeExerciseIndex,
     restSecondsLeft,
@@ -52,6 +56,7 @@ function ActiveWorkoutPage() {
   const [workoutTitle, setWorkoutTitle] = useState('Seance libre')
   const [weightKg, setWeightKg] = useState('')
   const [reps, setReps] = useState('')
+  const [rpe, setRpe] = useState('')
   const [setType, setSetType] = useState<'normal' | 'warmup' | 'failure'>('normal')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -93,15 +98,19 @@ function ActiveWorkoutPage() {
     }
 
     setError(null)
+
     await addSet(activeExerciseIndex, {
       setType,
       weightKg: weightKg ? Number(weightKg) : null,
       reps: reps ? Number(reps) : null,
+      restSeconds: defaultRestSeconds,
+      rpe: rpeEnabled && rpe ? Number(rpe) : null,
     })
     setWeightKg('')
     setReps('')
+    setRpe('')
     setSetType('normal')
-    startRest(90)
+    startRest(defaultRestSeconds)
   }
 
   async function handleFinish() {
@@ -135,12 +144,13 @@ function ActiveWorkoutPage() {
             setType: set.setType,
             weightKg: set.weightKg,
             reps: set.reps,
+            rpe: set.rpe ?? null,
           })),
         })),
       })
 
       setMessage('Seance enregistree.')
-      await navigate({ to: '/app/workouts' })
+      await navigate({ to: '/app/sessions', search: { tab: 'history' } })
     } catch (finishError) {
       setError(
         finishError instanceof Error
@@ -251,7 +261,7 @@ function ActiveWorkoutPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid gap-3 ${rpeEnabled ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
                 <Label htmlFor="weight">Poids (kg)</Label>
                 <Input
@@ -270,6 +280,21 @@ function ActiveWorkoutPage() {
                   onChange={(event) => setReps(event.target.value)}
                 />
               </div>
+              {rpeEnabled ? (
+                <div className="space-y-2">
+                  <Label htmlFor="rpe">RPE</Label>
+                  <Input
+                    id="rpe"
+                    inputMode="decimal"
+                    min={1}
+                    max={10}
+                    step={0.5}
+                    placeholder="1-10"
+                    value={rpe}
+                    onChange={(event) => setRpe(event.target.value)}
+                  />
+                </div>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -291,6 +316,7 @@ function ActiveWorkoutPage() {
                 <li key={set.setIndex}>
                   Set {set.setIndex + 1} ({set.setType}) — {set.weightKg ?? '—'} kg x{' '}
                   {set.reps ?? '—'} reps
+                  {set.rpe != null ? ` · RPE ${set.rpe}` : ''}
                 </li>
               ))}
             </ul>

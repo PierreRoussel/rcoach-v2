@@ -1,17 +1,18 @@
 import { Link } from '@tanstack/react-router'
-import { Activity, BarChart2, UserRound } from 'lucide-react'
+import { Activity, BarChart2, List, UserRound } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
 const items = [
   { to: '/app', label: 'Home', icon: Activity, exact: true },
+  { to: '/app/sessions', label: 'Seances', icon: List, exact: false },
   { to: '/app/stats', label: 'Stats', icon: BarChart2, exact: false },
   { to: '/app/profile', label: 'Profil', icon: UserRound, exact: false },
 ] as const
 
 export function AppBottomNav() {
   return (
-    <nav className="sticky bottom-0 grid grid-cols-3 border-t border-border bg-card/95 px-2 py-2 text-xs backdrop-blur">
+    <nav className="sticky bottom-0 grid grid-cols-4 border-t border-border bg-card/95 px-2 py-2 text-xs backdrop-blur">
       {items.map((item) => (
         <Link
           key={item.to}

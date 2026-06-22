@@ -8,7 +8,9 @@ const REQUIRED_ROOT_FIELDS = [
   'profiles',
   'exercises',
   'workouts',
+  'workout_templates',
   'insert_workouts_one',
+  'insert_workout_templates_one',
 ]
 
 async function main() {

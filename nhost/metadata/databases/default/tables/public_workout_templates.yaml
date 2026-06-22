@@ -23,6 +23,7 @@ select_permissions:
         - created_at
         - updated_at
         - default_rest_seconds
+        - source_workout_id
       filter:
         user_id:
           _eq: X-Hasura-User-Id
@@ -37,6 +38,7 @@ insert_permissions:
       columns:
         - name
         - default_rest_seconds
+        - source_workout_id
 update_permissions:
   - role: user
     permission:

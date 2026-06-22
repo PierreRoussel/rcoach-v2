@@ -58,6 +58,15 @@ select_permissions:
       filter:
         id:
           _eq: X-Hasura-User-Id
+  - role: public
+    permission:
+      columns:
+        - id
+        - display_name
+      filter:
+        workouts:
+          share_token:
+            _is_null: false
 update_permissions:
   - role: user
     permission:

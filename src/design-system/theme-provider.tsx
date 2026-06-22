@@ -14,13 +14,16 @@ import {
   type ThemeId,
 } from '@/design-system/themes'
 
-type ColorMode = 'light' | 'dark'
+export type ColorModePreference = 'light' | 'dark' | 'system'
+export type ResolvedColorMode = 'light' | 'dark'
 
 type ThemeContextValue = {
   themeId: ThemeId
-  colorMode: ColorMode
+  colorModePreference: ColorModePreference
+  colorMode: ResolvedColorMode
   setThemeId: (themeId: ThemeId) => void
-  setColorMode: (mode: ColorMode) => void
+  setColorModePreference: (mode: ColorModePreference) => void
+  setColorMode: (mode: ResolvedColorMode) => void
   toggleColorMode: () => void
   availableThemes: typeof themes
 }
@@ -29,36 +32,56 @@ const STORAGE_KEY = 'rcoach-theme'
 
 type StoredThemePreferences = {
   themeId: ThemeId
-  colorMode: ColorMode
+  colorModePreference: ColorModePreference
+}
+
+function resolveColorMode(preference: ColorModePreference): ResolvedColorMode {
+  if (preference === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  }
+
+  return preference
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 function readStoredPreferences(): StoredThemePreferences {
   if (typeof window === 'undefined') {
-    return { themeId: defaultThemeId, colorMode: 'light' }
+    return { themeId: defaultThemeId, colorModePreference: 'light' }
   }
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) {
-      return { themeId: defaultThemeId, colorMode: 'light' }
+      return { themeId: defaultThemeId, colorModePreference: 'light' }
     }
 
-    const parsed = JSON.parse(raw) as Partial<StoredThemePreferences>
+    const parsed = JSON.parse(raw) as Partial<
+      StoredThemePreferences & { colorMode?: ResolvedColorMode }
+    >
     const themeId =
       parsed.themeId && themeIds.includes(parsed.themeId)
         ? parsed.themeId
         : defaultThemeId
-    const colorMode = parsed.colorMode === 'dark' ? 'dark' : 'light'
 
-    return { themeId, colorMode }
+    const legacyColorMode = parsed.colorMode
+    const colorModePreference =
+      parsed.colorModePreference === 'dark' ||
+      parsed.colorModePreference === 'system'
+        ? parsed.colorModePreference
+        : legacyColorMode === 'dark'
+          ? 'dark'
+          : 'light'
+
+    return { themeId, colorModePreference }
   } catch {
-    return { themeId: defaultThemeId, colorMode: 'light' }
+    return { themeId: defaultThemeId, colorModePreference: 'light' }
   }
 }
 
-function applyThemeToDocument(themeId: ThemeId, colorMode: ColorMode) {
+function applyThemeToDocument(themeId: ThemeId, colorMode: ResolvedColorMode) {
   const root = document.documentElement
   root.dataset.theme = themeId
   root.classList.toggle('dark', colorMode === 'dark')
@@ -69,31 +92,55 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<StoredThemePreferences>(
     readStoredPreferences,
   )
+  const [resolvedColorMode, setResolvedColorMode] = useState<ResolvedColorMode>(
+    () => resolveColorMode(preferences.colorModePreference),
+  )
 
   useEffect(() => {
-    applyThemeToDocument(preferences.themeId, preferences.colorMode)
+    const nextColorMode = resolveColorMode(preferences.colorModePreference)
+    setResolvedColorMode(nextColorMode)
+    applyThemeToDocument(preferences.themeId, nextColorMode)
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
+
+    if (preferences.colorModePreference !== 'system') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      const systemColorMode = resolveColorMode('system')
+      setResolvedColorMode(systemColorMode)
+      applyThemeToDocument(preferences.themeId, systemColorMode)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [preferences])
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       themeId: preferences.themeId,
-      colorMode: preferences.colorMode,
+      colorModePreference: preferences.colorModePreference,
+      colorMode: resolvedColorMode,
       setThemeId: (themeId) => {
         setPreferences((current) => ({ ...current, themeId }))
       },
+      setColorModePreference: (colorModePreference) => {
+        setPreferences((current) => ({ ...current, colorModePreference }))
+      },
       setColorMode: (colorMode) => {
-        setPreferences((current) => ({ ...current, colorMode }))
+        setPreferences((current) => ({ ...current, colorModePreference: colorMode }))
       },
       toggleColorMode: () => {
         setPreferences((current) => ({
           ...current,
-          colorMode: current.colorMode === 'dark' ? 'light' : 'dark',
+          colorModePreference:
+            resolvedColorMode === 'dark' ? 'light' : 'dark',
         }))
       },
       availableThemes: themes,
     }),
-    [preferences],
+    [preferences, resolvedColorMode],
   )
 
   return (

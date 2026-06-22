@@ -23,6 +23,23 @@ select_permissions:
           workout:
             user_id:
               _eq: X-Hasura-User-Id
+  - role: public
+    permission:
+      columns:
+        - id
+        - workout_exercise_id
+        - set_index
+        - set_type
+        - weight_kg
+        - reps
+        - distance_km
+        - duration_seconds
+        - rpe
+      filter:
+        workout_exercise:
+          workout:
+            share_token:
+              _is_null: false
 insert_permissions:
   - role: user
     permission:

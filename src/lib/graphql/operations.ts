@@ -4,6 +4,7 @@ export type Profile = {
   avatar_url: string | null
   role: 'athlete' | 'coach' | 'both'
   unit_system: 'kg' | 'lb'
+  rpe_enabled: boolean
   created_at: string
 }
 
@@ -20,22 +21,83 @@ export type WorkoutSummary = {
   title: string
   started_at: string
   ended_at: string | null
+  share_token?: string | null
   workout_exercises: Array<{
     id: string
-    exercise: { name: string; muscle_group: string | null }
+    exercise: {
+      id: string
+      name: string
+      muscle_group: string | null
+      equipment: string | null
+    }
     sets: Array<{
       set_index: number
       weight_kg: number | null
       reps: number | null
       set_type: string
+      rpe: number | null
     }>
   }>
+}
+
+export type WorkoutTemplateSet = {
+  set_index: number
+  weight_kg: number | null
+  reps: number | null
+  rest_seconds: number
+}
+
+export type WorkoutTemplateExercise = {
+  id: string
+  sort_order: number
+  superset_id?: number | null
+  exercise: Exercise
+  workout_template_sets: WorkoutTemplateSet[]
+}
+
+export type WorkoutTemplate = {
+  id: string
+  name: string
+  created_at: string
+  updated_at: string
+  default_rest_seconds: number
+  source_workout_id?: string | null
+  workout_template_exercises: WorkoutTemplateExercise[]
+}
+
+export type WorkoutDetail = Omit<WorkoutSummary, 'workout_exercises'> & {
+  notes: string | null
+  share_token?: string | null
+  workout_exercises: Array<{
+    id: string
+    sort_order: number
+    exercise: {
+      id: string
+      name: string
+      muscle_group: string | null
+      equipment: string | null
+    }
+    sets: Array<{
+      set_index: number
+      weight_kg: number | null
+      reps: number | null
+      set_type: string
+      duration_seconds: number | null
+      distance_km: number | null
+      rpe: number | null
+    }>
+  }>
+}
+
+export type SharedWorkoutDetail = WorkoutDetail & {
+  user: { display_name: string } | null
 }
 
 export type ProfileUpdateInput = {
   display_name?: string
   unit_system?: 'kg' | 'lb'
   role?: 'athlete' | 'coach' | 'both'
+  rpe_enabled?: boolean
 }
 
 export const UPDATE_MY_PROFILE = `
@@ -46,6 +108,7 @@ export const UPDATE_MY_PROFILE = `
       avatar_url
       role
       unit_system
+      rpe_enabled
       created_at
     }
   }
@@ -58,17 +121,21 @@ export const LIST_MY_WORKOUTS = `
       title
       started_at
       ended_at
+      share_token
       workout_exercises {
         id
         exercise {
+          id
           name
           muscle_group
+          equipment
         }
         sets {
           set_index
           weight_kg
           reps
           set_type
+          rpe
         }
       }
     }
@@ -83,6 +150,7 @@ export const GET_MY_PROFILE = `
       avatar_url
       role
       unit_system
+      rpe_enabled
       created_at
     }
   }
@@ -412,6 +480,233 @@ export const LIST_CLIENT_WORKOUTS = `
           set_type
         }
       }
+    }
+  }
+`
+
+export const GET_WORKOUT_BY_ID = `
+  query GetWorkoutById($id: uuid!) {
+    workouts_by_pk(id: $id) {
+      id
+      title
+      started_at
+      ended_at
+      notes
+      share_token
+      workout_exercises(order_by: { sort_order: asc }) {
+        id
+        sort_order
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        sets(order_by: { set_index: asc }) {
+          set_index
+          weight_kg
+          reps
+          set_type
+          duration_seconds
+          distance_km
+          rpe
+        }
+      }
+    }
+  }
+`
+
+export const GET_SHARED_WORKOUT_BY_TOKEN = `
+  query GetSharedWorkoutByToken($token: uuid!) {
+    workouts(where: { share_token: { _eq: $token } }, limit: 1) {
+      id
+      title
+      started_at
+      ended_at
+      notes
+      share_token
+      user {
+        display_name
+      }
+      workout_exercises(order_by: { sort_order: asc }) {
+        id
+        sort_order
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        sets(order_by: { set_index: asc }) {
+          set_index
+          weight_kg
+          reps
+          set_type
+          duration_seconds
+          distance_km
+          rpe
+        }
+      }
+    }
+  }
+`
+
+export const ENABLE_WORKOUT_SHARE = `
+  mutation EnableWorkoutShare($id: uuid!, $shareToken: uuid!) {
+    update_workouts_by_pk(
+      pk_columns: { id: $id }
+      _set: { share_token: $shareToken }
+    ) {
+      id
+      share_token
+    }
+  }
+`
+
+export const GET_TEMPLATE_BY_SOURCE_WORKOUT = `
+  query TemplateBySourceWorkout($workoutId: uuid!) {
+    workout_templates(
+      where: { source_workout_id: { _eq: $workoutId } }
+      limit: 1
+    ) {
+      id
+      name
+    }
+  }
+`
+
+export const LIST_MY_WORKOUT_TEMPLATES = `
+  query ListMyWorkoutTemplates {
+    workout_templates(order_by: { updated_at: desc }) {
+      id
+      name
+      created_at
+      updated_at
+      default_rest_seconds
+      workout_template_exercises(order_by: { sort_order: asc }) {
+        id
+        sort_order
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        workout_template_sets(order_by: { set_index: asc }) {
+          set_index
+          weight_kg
+          reps
+          rest_seconds
+        }
+      }
+    }
+  }
+`
+
+export const GET_WORKOUT_TEMPLATE = `
+  query GetWorkoutTemplate($id: uuid!) {
+    workout_templates_by_pk(id: $id) {
+      id
+      name
+      created_at
+      updated_at
+      default_rest_seconds
+      workout_template_exercises(order_by: { sort_order: asc }) {
+        id
+        sort_order
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        workout_template_sets(order_by: { set_index: asc }) {
+          set_index
+          weight_kg
+          reps
+          rest_seconds
+        }
+      }
+    }
+  }
+`
+
+export const INSERT_WORKOUT_TEMPLATE = `
+  mutation InsertWorkoutTemplate($object: workout_templates_insert_input!) {
+    insert_workout_templates_one(object: $object) {
+      id
+      name
+      workout_template_exercises {
+        id
+        sort_order
+        exercise {
+          id
+          name
+        }
+      }
+    }
+  }
+`
+
+export const UPDATE_WORKOUT_TEMPLATE = `
+  mutation UpdateWorkoutTemplate(
+    $id: uuid!
+    $name: String!
+    $defaultRestSeconds: Int!
+  ) {
+    update_workout_templates_by_pk(
+      pk_columns: { id: $id }
+      _set: {
+        name: $name
+        default_rest_seconds: $defaultRestSeconds
+        updated_at: "now()"
+      }
+    ) {
+      id
+      name
+      default_rest_seconds
+      updated_at
+    }
+  }
+`
+
+export const DELETE_WORKOUT_TEMPLATE_EXERCISES = `
+  mutation DeleteWorkoutTemplateExercises($templateId: uuid!) {
+    delete_workout_template_exercises(
+      where: { template_id: { _eq: $templateId } }
+    ) {
+      affected_rows
+    }
+  }
+`
+
+export const INSERT_WORKOUT_TEMPLATE_EXERCISES = `
+  mutation InsertWorkoutTemplateExercises(
+    $objects: [workout_template_exercises_insert_input!]!
+  ) {
+    insert_workout_template_exercises(objects: $objects) {
+      returning {
+        id
+        sort_order
+        exercise {
+          id
+          name
+        }
+        workout_template_sets {
+          set_index
+          weight_kg
+          reps
+          rest_seconds
+        }
+      }
+    }
+  }
+`
+
+export const DELETE_WORKOUT_TEMPLATE = `
+  mutation DeleteWorkoutTemplate($id: uuid!) {
+    delete_workout_templates_by_pk(id: $id) {
+      id
     }
   }
 `

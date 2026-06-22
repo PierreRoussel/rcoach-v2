@@ -27,6 +27,7 @@ select_permissions:
         - started_at
         - ended_at
         - notes
+        - share_token
         - created_at
       filter:
         _or:
@@ -38,6 +39,18 @@ select_permissions:
                   _eq: X-Hasura-User-Id
                 status:
                   _eq: active
+  - role: public
+    permission:
+      columns:
+        - id
+        - title
+        - started_at
+        - ended_at
+        - notes
+        - share_token
+      filter:
+        share_token:
+          _is_null: false
 insert_permissions:
   - role: user
     permission:
@@ -61,6 +74,7 @@ update_permissions:
         - started_at
         - ended_at
         - notes
+        - share_token
       filter:
         user_id:
           _eq: X-Hasura-User-Id
