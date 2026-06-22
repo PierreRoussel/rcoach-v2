@@ -28,6 +28,13 @@ select_permissions:
       filter:
         user_id:
           _eq: X-Hasura-User-Id
+  - role: public
+    permission:
+      columns:
+        - id
+      filter:
+        id:
+          _is_null: true
 insert_permissions:
   - role: user
     permission:

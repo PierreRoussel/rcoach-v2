@@ -1,0 +1,1 @@
+-- Ensure migration: no automatic rollback.
