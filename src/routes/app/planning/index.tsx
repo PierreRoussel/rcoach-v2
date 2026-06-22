@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarPlus, Flame, ListChecks } from 'lucide-react'
 import { useState } from 'react'
 
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
+import { ScheduleDeployNotice } from '@/components/schedule/ScheduleDeployNotice'
 import { ScheduledSessionRow } from '@/components/schedule/ScheduledSessionRow'
 import {
   ScheduleSessionForm,
@@ -13,7 +14,6 @@ import { Button } from '@/components/ui/button'
 import { PageHeader, Pill } from '@/design-system'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import {
-  SCHEDULE_NOT_DEPLOYED_MESSAGE,
   useCreateScheduledSession,
   useDeleteScheduledSession,
   useScheduledSessions,
@@ -155,11 +155,7 @@ function PlanningPage() {
         </div>
       </section>
 
-      {scheduleMissing ? (
-        <div className="rounded-2xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-          {SCHEDULE_NOT_DEPLOYED_MESSAGE} Le calendrier affiche deja vos seances realisees.
-        </div>
-      ) : null}
+      {scheduleMissing ? <ScheduleDeployNotice /> : null}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement du calendrier...</p>

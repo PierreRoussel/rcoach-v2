@@ -12,6 +12,7 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import {
   isGraphqlScheduleMissingError,
+  stripNullishFields,
   toScheduleDeployError,
 } from '@/lib/graphql/schema-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -70,10 +71,13 @@ export function useCreateScheduledSession() {
         const data = await graphqlRequest<{
           insert_scheduled_sessions_one: ScheduledSessionRecord
         }>(nhost, INSERT_SCHEDULED_SESSION, {
-          object: {
-            ...input,
-            updated_at: new Date().toISOString(),
-          },
+          object: stripNullishFields(
+            {
+              ...input,
+              is_active: input.is_active ?? true,
+            },
+            ['workout_template_id', 'weekdays', 'scheduled_date', 'time_local', 'end_date'],
+          ),
         })
 
         return data.insert_scheduled_sessions_one

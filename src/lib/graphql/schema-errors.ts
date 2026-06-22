@@ -6,9 +6,11 @@ export function isGraphqlMissingFieldError(
     return false
   }
 
+  const message = error.message
+
   return (
-    error.message.includes(`'${fieldName}'`) &&
-    error.message.includes('not found')
+    message.includes(`field '${fieldName}' not found in type:`) ||
+    message.includes(`type '${fieldName}' not found`)
   )
 }
 
@@ -63,6 +65,12 @@ export function isGraphqlScheduleMissingError(error: unknown): boolean {
 export function toScheduleDeployError(error: unknown): Error {
   if (isGraphqlScheduleMissingError(error)) {
     return new Error(SCHEDULE_NOT_DEPLOYED_MESSAGE)
+  }
+
+  if (error instanceof Error && isGraphqlDatabaseError(error)) {
+    return new Error(
+      `${error.message} — Verifiez les champs envoyes (recurrence, jours, dates).`,
+    )
   }
 
   return error instanceof Error ? error : new Error(String(error))
