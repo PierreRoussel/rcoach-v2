@@ -48,6 +48,8 @@ type SortableExerciseListProps = {
   onRemove: (index: number) => void
   showSetCount?: boolean
   dragHandle?: 'subtle' | 'default'
+  showDeleteButton?: boolean
+  embedded?: boolean
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
@@ -61,12 +63,14 @@ function supersetAccentClass(supersetId: number) {
 function ExerciseActionsMenu({
   index,
   exercises,
+  onRemove,
   onAddToSuperset,
   onRemoveFromSuperset,
   onOpenReorder,
 }: {
   index: number
   exercises: ActiveExerciseEntry[]
+  onRemove?: () => void
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
@@ -77,7 +81,7 @@ function ExerciseActionsMenu({
     .filter(({ itemIndex }) => itemIndex !== index)
   const hasSupersetActions = onAddToSuperset && onRemoveFromSuperset
 
-  if (!hasSupersetActions && !onOpenReorder) {
+  if (!hasSupersetActions && !onOpenReorder && !onRemove) {
     return null
   }
 
@@ -129,6 +133,18 @@ function ExerciseActionsMenu({
             </DropdownMenuItem>
           </>
         ) : null}
+        {onRemove ? (
+          <>
+            {onOpenReorder || hasSupersetActions ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={onRemove}
+            >
+              <Trash2 className="size-4" />
+              Supprimer l&apos;exercice
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -143,6 +159,8 @@ function SortableExerciseItem({
   onRemove,
   showSetCount,
   dragHandle,
+  showDeleteButton,
+  embedded,
   onAddToSuperset,
   onRemoveFromSuperset,
   onOpenReorder,
@@ -157,6 +175,8 @@ function SortableExerciseItem({
   onRemove: () => void
   showSetCount: boolean
   dragHandle: 'subtle' | 'default'
+  showDeleteButton: boolean
+  embedded: boolean
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
@@ -181,13 +201,14 @@ function SortableExerciseItem({
         transition,
       }}
       className={cn(
-        'group rounded-2xl border',
+        'group w-full rounded-2xl border',
+        embedded ? 'rounded-none border-x-0 border-t-0 first:border-t' : null,
         isActive ? 'border-primary bg-soft-primary/60' : 'border-border bg-card',
         inSuperset && !isActive && accent,
         isDragging && 'opacity-70 shadow-md',
       )}
     >
-      <div className="flex items-center gap-2 px-3 py-2">
+      <div className={cn('flex w-full items-center gap-2 py-2', embedded ? 'px-4' : 'px-3')}>
         <button
           type="button"
           className={cn(
@@ -235,16 +256,24 @@ function SortableExerciseItem({
         <ExerciseActionsMenu
           index={index}
           exercises={exercises}
+          onRemove={showDeleteButton ? undefined : onRemove}
           onAddToSuperset={onAddToSuperset}
           onRemoveFromSuperset={onRemoveFromSuperset}
           onOpenReorder={onOpenReorder}
         />
-        <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
-          <Trash2 className="size-4" />
-        </Button>
+        {showDeleteButton ? (
+          <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
+            <Trash2 className="size-4" />
+          </Button>
+        ) : null}
       </div>
       {hasSetsSection ? (
-        <CollapsibleContent className="border-t border-border/60 px-3 py-3">
+        <CollapsibleContent
+          className={cn(
+            'border-t border-border/60 py-3',
+            embedded ? 'px-0' : 'px-3',
+          )}
+        >
           {renderSetsContent(index)}
         </CollapsibleContent>
       ) : null}
@@ -304,6 +333,8 @@ export function SortableExerciseList({
   onRemove,
   showSetCount = true,
   dragHandle = 'default',
+  showDeleteButton = true,
+  embedded = false,
   onAddToSuperset,
   onRemoveFromSuperset,
   renderSetsContent,
@@ -338,6 +369,8 @@ export function SortableExerciseList({
         onRemove={() => onRemove(index)}
         showSetCount={showSetCount}
         dragHandle={dragHandle}
+        showDeleteButton={showDeleteButton}
+        embedded={embedded}
         onAddToSuperset={onAddToSuperset}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={onOpenReorder}
@@ -369,7 +402,7 @@ export function SortableExerciseList({
         items={exercises.map((exercise) => exercise.exerciseId)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-2">
+        <div className={cn('space-y-2', embedded && 'space-y-0')}>
           {units.map((unit) => {
             if (unit.type === 'single') {
               return renderItem(unit.index)
@@ -379,11 +412,12 @@ export function SortableExerciseList({
               <div
                 key={`superset-${unit.supersetId}-${unit.indices[0]}`}
                 className={cn(
-                  'space-y-2 rounded-2xl border-2 border-dashed p-2',
+                  'space-y-0 rounded-2xl border-2 border-dashed',
+                  embedded ? 'border-x-0' : 'space-y-2 p-2',
                   supersetAccentClass(unit.supersetId),
                 )}
               >
-                <p className="px-1 font-data text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <p className="px-4 font-data text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Superset {unit.supersetId}
                 </p>
                 {unit.indices.map((index) => renderItem(index))}

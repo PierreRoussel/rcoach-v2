@@ -17,30 +17,35 @@ type InsertedTemplateExercise = {
   sort_order: number
 }
 
-type ExerciseInsertOptions = {
+type TemplateInsertOptions = {
   includeSupersetId?: boolean
   includeDefaultRestSeconds?: boolean
+  includeSetType?: boolean
 }
 
-const FULL_EXERCISE_INSERT_OPTIONS: ExerciseInsertOptions = {
+const FULL_TEMPLATE_INSERT_OPTIONS: TemplateInsertOptions = {
   includeSupersetId: true,
   includeDefaultRestSeconds: true,
+  includeSetType: true,
 }
 
 function buildExerciseRows(
   templateId: string,
   exercises: TemplateExerciseInsertInput,
-  options?: ExerciseInsertOptions,
+  options?: TemplateInsertOptions,
 ) {
   return buildTemplateExerciseInsertObjects(templateId, exercises, options).map(
-    ({ workout_template_sets: _sets, ...exercise }) => exercise,
+    ({ workout_template_sets, ...exercise }) => {
+      void workout_template_sets
+      return exercise
+    },
   )
 }
 
 function buildNestedExerciseRows(
   templateId: string,
   exercises: TemplateExerciseInsertInput,
-  options?: ExerciseInsertOptions,
+  options?: TemplateInsertOptions,
 ) {
   return buildTemplateExerciseInsertObjects(templateId, exercises, options).map(
     (exercise) => {
@@ -50,6 +55,7 @@ function buildNestedExerciseRows(
           weight_kg: number | null
           reps: number | null
           rest_seconds: number
+          set_type?: string
         }>
       }
 
@@ -70,6 +76,7 @@ function buildSetRows(
   insertedExercises: InsertedTemplateExercise[],
   exercises: TemplateExerciseInsertInput,
   defaultRestSeconds: number,
+  options?: TemplateInsertOptions,
 ) {
   const insertedBySortOrder = new Map(
     insertedExercises.map((exercise) => [exercise.sort_order, exercise]),
@@ -81,6 +88,7 @@ function buildSetRows(
     weight_kg: number | null
     reps: number | null
     rest_seconds: number
+    set_type?: string
   }> = []
 
   for (let sortOrder = 0; sortOrder < exercises.length; sortOrder += 1) {
@@ -100,13 +108,19 @@ function buildSetRows(
         ),
       )
 
-      rows.push({
+      const row: (typeof rows)[number] = {
         template_exercise_id: inserted.id,
         set_index: set.setIndex,
         weight_kg: set.weightKg,
         reps: set.reps,
         rest_seconds: restSeconds,
-      })
+      }
+
+      if (options?.includeSetType) {
+        row.set_type = set.setType ?? 'normal'
+      }
+
+      rows.push(row)
     }
   }
 
@@ -117,7 +131,7 @@ async function insertExercises(
   nhost: NhostClient,
   templateId: string,
   exercises: TemplateExerciseInsertInput,
-  options?: ExerciseInsertOptions,
+  options?: TemplateInsertOptions,
 ) {
   const data = await graphqlRequest<{
     insert_workout_template_exercises: {
@@ -134,7 +148,7 @@ async function insertExercisesWithNestedSets(
   nhost: NhostClient,
   templateId: string,
   exercises: TemplateExerciseInsertInput,
-  options?: ExerciseInsertOptions,
+  options?: TemplateInsertOptions,
 ) {
   await graphqlRequest(nhost, INSERT_WORKOUT_TEMPLATE_EXERCISES, {
     objects: buildNestedExerciseRows(templateId, exercises, options),
@@ -146,8 +160,14 @@ async function insertSets(
   insertedExercises: InsertedTemplateExercise[],
   exercises: TemplateExerciseInsertInput,
   defaultRestSeconds: number,
+  options?: TemplateInsertOptions,
 ) {
-  const objects = buildSetRows(insertedExercises, exercises, defaultRestSeconds)
+  const objects = buildSetRows(
+    insertedExercises,
+    exercises,
+    defaultRestSeconds,
+    options,
+  )
   if (objects.length === 0) {
     return
   }
@@ -155,10 +175,10 @@ async function insertSets(
   await graphqlRequest(nhost, INSERT_WORKOUT_TEMPLATE_SETS, { objects })
 }
 
-function degradeExerciseInsertOptions(
+function degradeTemplateInsertOptions(
   error: unknown,
-  options: ExerciseInsertOptions,
-): ExerciseInsertOptions | null {
+  options: TemplateInsertOptions,
+): TemplateInsertOptions | null {
   if (
     options.includeDefaultRestSeconds &&
     isGraphqlMissingFieldError(error, 'default_rest_seconds')
@@ -170,26 +190,28 @@ function degradeExerciseInsertOptions(
     return { ...options, includeSupersetId: false }
   }
 
+  if (options.includeSetType && isGraphqlMissingFieldError(error, 'set_type')) {
+    return { ...options, includeSetType: false }
+  }
+
   return null
 }
 
 async function insertWithDegradingOptions(
-  attempt: (
-    options: ExerciseInsertOptions,
-  ) => Promise<void>,
-  initialOptions: ExerciseInsertOptions = FULL_EXERCISE_INSERT_OPTIONS,
+  attempt: (options: TemplateInsertOptions) => Promise<void>,
+  initialOptions: TemplateInsertOptions = FULL_TEMPLATE_INSERT_OPTIONS,
 ) {
   let options = { ...initialOptions }
   let lastError: unknown
 
-  for (let attemptIndex = 0; attemptIndex < 4; attemptIndex += 1) {
+  for (let attemptIndex = 0; attemptIndex < 5; attemptIndex += 1) {
     try {
       await attempt(options)
       return
     } catch (error) {
       lastError = error
 
-      const nextOptions = degradeExerciseInsertOptions(error, options)
+      const nextOptions = degradeTemplateInsertOptions(error, options)
       if (!nextOptions) {
         break
       }
@@ -210,9 +232,9 @@ async function insertWithFlatSets(
   try {
     await insertWithDegradingOptions(async (options) => {
       const inserted = await insertExercises(nhost, templateId, exercises, options)
-      await insertSets(nhost, inserted, exercises, defaultRestSeconds)
+      await insertSets(nhost, inserted, exercises, defaultRestSeconds, options)
     })
-  } catch (error) {
+  } catch {
     await insertWithDegradingOptions(async (options) => {
       await insertExercisesWithNestedSets(nhost, templateId, exercises, options)
     })

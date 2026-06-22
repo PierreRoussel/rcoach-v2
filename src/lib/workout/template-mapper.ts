@@ -13,7 +13,7 @@ export function templateExercisesToActive(
     defaultRestSeconds: exercise.defaultRestSeconds,
     sets: exercise.sets.map((set, index) => ({
       setIndex: index,
-      setType: 'normal' as const,
+      setType: set.setType ?? 'normal',
       weightKg: set.weightKg,
       reps: set.reps,
       restSeconds: set.usesGlobalRest

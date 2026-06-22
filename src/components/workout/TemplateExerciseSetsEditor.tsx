@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
+import { SetOptionsDrawer } from '@/components/workout/SetOptionsDrawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils'
 import {
   createTemplateSet,
   inheritSetValues,
+  reindexTemplateSets,
   type TemplateExerciseDraft,
   type TemplateSetDraft,
 } from '@/hooks/useWorkoutTemplates'
@@ -38,6 +40,7 @@ export function TemplateExerciseSetsEditor({
   const [propagatePrompt, setPropagatePrompt] = useState<PropagatePrompt | null>(
     null,
   )
+  const [selectedSetIndex, setSelectedSetIndex] = useState<number | null>(null)
   const focusSnapshot = useRef<FocusSnapshot | null>(null)
 
   function updateSets(nextSets: TemplateSetDraft[]) {
@@ -75,12 +78,42 @@ export function TemplateExerciseSetsEditor({
     ])
   }
 
-  function handleRemoveSet(index: number) {
+  function handleRemoveSet(setIndex: number) {
     setPropagatePrompt(null)
+    if (exercise.sets.length <= 1) {
+      return
+    }
+
     updateSets(
-      exercise.sets
-        .filter((_, setIndex) => setIndex !== index)
-        .map((set, setIndex) => ({ ...set, setIndex })),
+      reindexTemplateSets(
+        exercise.sets.filter((set) => set.setIndex !== setIndex),
+      ),
+    )
+  }
+
+  function handleReorderSets(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) {
+      return
+    }
+
+    const sets = [...exercise.sets]
+    const [moved] = sets.splice(fromIndex, 1)
+    if (!moved) {
+      return
+    }
+
+    sets.splice(toIndex, 0, moved)
+    updateSets(reindexTemplateSets(sets))
+  }
+
+  function handleUpdateSetType(
+    setIndex: number,
+    setType: NonNullable<TemplateSetDraft['setType']>,
+  ) {
+    updateSets(
+      exercise.sets.map((set) =>
+        set.setIndex === setIndex ? { ...set, setType } : set,
+      ),
     )
   }
 
@@ -151,7 +184,7 @@ export function TemplateExerciseSetsEditor({
   }
 
   const defaultRestControl = (
-    <div className="flex max-w-xs items-center gap-2">
+    <div className="flex w-full max-w-xs items-center gap-2 px-4">
       <Label htmlFor={`defaultRest-${exercise.exerciseId}`} className="shrink-0 text-sm">
         Repos par defaut
       </Label>
@@ -173,7 +206,7 @@ export function TemplateExerciseSetsEditor({
     return (
       <div className="space-y-3">
         {defaultRestControl}
-        <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
+        <div className="mx-4 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
           <p className="text-sm text-muted-foreground">Aucune serie planifiee.</p>
           <Button variant="soft" size="sm" className="mt-3" onClick={handleAddSet}>
             <Plus className="size-4" />
@@ -188,99 +221,101 @@ export function TemplateExerciseSetsEditor({
     <div className="space-y-3">
       {defaultRestControl}
       <div className="space-y-2">
-        <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2rem] gap-2 px-1 text-xs font-semibold text-muted-foreground">
+        <div className="grid w-full grid-cols-[2rem_1fr_1fr_1fr] gap-2 px-4 text-xs font-semibold text-muted-foreground">
           <span>#</span>
           <span>kg</span>
           <span>reps</span>
           <span>repos</span>
-          <span />
         </div>
         {exercise.sets.map((set, index) => (
-          <div key={set.setIndex} className="space-y-1">
-            <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2rem] items-center gap-2">
-              <span className="font-data text-xs text-muted-foreground">
-                {index + 1}
-              </span>
-              <Input
-                type="number"
-                inputMode="decimal"
-                placeholder="—"
-                value={set.weightKg ?? ''}
-                onFocus={() => handleFieldFocus(index, 'weightKg', set.weightKg)}
-                onChange={(event) =>
-                  updateSet(index, {
-                    weightKg: event.target.value
-                      ? Number(event.target.value)
-                      : null,
-                  })
-                }
-                onBlur={(event) =>
-                  handleFieldBlur(
-                    index,
-                    'weightKg',
-                    event.target.value ? Number(event.target.value) : null,
-                  )
-                }
-                className="h-8"
-              />
-              <Input
-                type="number"
-                inputMode="numeric"
-                placeholder="—"
-                value={set.reps ?? ''}
-                onFocus={() => handleFieldFocus(index, 'reps', set.reps)}
-                onChange={(event) =>
-                  updateSet(index, {
-                    reps: event.target.value ? Number(event.target.value) : null,
-                  })
-                }
-                onBlur={(event) =>
-                  handleFieldBlur(
-                    index,
-                    'reps',
-                    event.target.value ? Number(event.target.value) : null,
-                  )
-                }
-                className="h-8"
-              />
-              <Input
-                type="number"
-                inputMode="numeric"
-                value={
-                  set.usesGlobalRest
-                    ? exercise.defaultRestSeconds
-                    : set.restSeconds
-                }
-                onChange={(event) => {
-                  const value =
-                    Number(event.target.value) || exercise.defaultRestSeconds
-                  updateSet(index, {
-                    restSeconds: value,
-                    usesGlobalRest: value === exercise.defaultRestSeconds,
-                  })
-                }}
-                onFocus={() => {
-                  if (set.usesGlobalRest) {
-                    updateSet(index, { usesGlobalRest: false })
+          <div key={set.setIndex} className="w-full space-y-1">
+            <div className="w-full rounded-xl border border-border bg-card px-4 py-2">
+              <div className="flex w-full items-center gap-1.5">
+                <button
+                  type="button"
+                  className={cn(
+                    'flex size-7 shrink-0 items-center justify-center rounded-full font-data text-xs font-bold',
+                    set.setType === 'warmup'
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                      : 'bg-muted text-foreground',
+                  )}
+                  aria-label={`Options serie ${index + 1}`}
+                  onClick={() => setSelectedSetIndex(index)}
+                >
+                  {set.setType === 'warmup' ? 'W' : index + 1}
+                </button>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="—"
+                  value={set.weightKg ?? ''}
+                  onFocus={() => handleFieldFocus(index, 'weightKg', set.weightKg)}
+                  onChange={(event) =>
+                    updateSet(index, {
+                      weightKg: event.target.value
+                        ? Number(event.target.value)
+                        : null,
+                    })
                   }
-                }}
-                className={cn(
-                  'h-8',
-                  set.usesGlobalRest && 'text-muted-foreground opacity-60',
-                )}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8"
-                onClick={() => handleRemoveSet(index)}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+                  onBlur={(event) =>
+                    handleFieldBlur(
+                      index,
+                      'weightKg',
+                      event.target.value ? Number(event.target.value) : null,
+                    )
+                  }
+                  className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="—"
+                  value={set.reps ?? ''}
+                  onFocus={() => handleFieldFocus(index, 'reps', set.reps)}
+                  onChange={(event) =>
+                    updateSet(index, {
+                      reps: event.target.value ? Number(event.target.value) : null,
+                    })
+                  }
+                  onBlur={(event) =>
+                    handleFieldBlur(
+                      index,
+                      'reps',
+                      event.target.value ? Number(event.target.value) : null,
+                    )
+                  }
+                  className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={
+                    set.usesGlobalRest
+                      ? exercise.defaultRestSeconds
+                      : set.restSeconds
+                  }
+                  onChange={(event) => {
+                    const value =
+                      Number(event.target.value) || exercise.defaultRestSeconds
+                    updateSet(index, {
+                      restSeconds: value,
+                      usesGlobalRest: value === exercise.defaultRestSeconds,
+                    })
+                  }}
+                  onFocus={() => {
+                    if (set.usesGlobalRest) {
+                      updateSet(index, { usesGlobalRest: false })
+                    }
+                  }}
+                  className={cn(
+                    'h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data',
+                    set.usesGlobalRest && 'text-muted-foreground opacity-60',
+                  )}
+                />
+              </div>
             </div>
             {propagatePrompt?.setIndex === index ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-soft-secondary/50 px-2 py-1.5 text-xs">
+              <div className="mx-4 flex flex-wrap items-center gap-2 rounded-lg bg-soft-secondary/50 px-2 py-1.5 text-xs">
                 <span>{formatPropagateMessage(propagatePrompt)}</span>
                 <button
                   type="button"
@@ -302,11 +337,28 @@ export function TemplateExerciseSetsEditor({
             ) : null}
           </div>
         ))}
-        <Button variant="outline" size="sm" className="mt-2" onClick={handleAddSet}>
-          <Plus className="size-4" />
-          Serie
-        </Button>
+        <div className="px-4">
+          <Button variant="outline" size="sm" className="mt-2" onClick={handleAddSet}>
+            <Plus className="size-4" />
+            Serie
+          </Button>
+        </div>
       </div>
+
+      <SetOptionsDrawer
+        open={selectedSetIndex != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedSetIndex(null)
+          }
+        }}
+        exerciseName={exercise.exerciseName}
+        sets={exercise.sets}
+        selectedSetIndex={selectedSetIndex}
+        onDeleteSet={handleRemoveSet}
+        onReorderSets={handleReorderSets}
+        onUpdateSetType={handleUpdateSetType}
+      />
     </div>
   )
 }

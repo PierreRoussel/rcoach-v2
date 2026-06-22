@@ -45,6 +45,7 @@ export type WorkoutTemplateSet = {
   weight_kg: number | null
   reps: number | null
   rest_seconds: number
+  set_type?: string
 }
 
 export type WorkoutTemplateExercise = {
@@ -652,6 +653,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
           weight_kg
           reps
           rest_seconds
+          set_type
         }
       }
     }
@@ -682,6 +684,7 @@ export const GET_WORKOUT_TEMPLATE = `
           weight_kg
           reps
           rest_seconds
+          set_type
         }
       }
     }

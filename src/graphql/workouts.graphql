@@ -151,6 +151,7 @@ query ListMyWorkoutTemplates {
         weight_kg
         reps
         rest_seconds
+        set_type
       }
     }
   }
@@ -177,6 +178,7 @@ query GetWorkoutTemplate($id: uuid!) {
         weight_kg
         reps
         rest_seconds
+        set_type
       }
     }
   }

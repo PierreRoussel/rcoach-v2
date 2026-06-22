@@ -210,7 +210,7 @@ export function TemplateEditorForm({
             />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-0 pb-0">
           <SortableExerciseList
             exercises={activeEntries}
             activeIndex={activeIndex}
@@ -221,6 +221,8 @@ export function TemplateEditorForm({
             onRemoveFromSuperset={handleRemoveFromSuperset}
             showSetCount
             dragHandle="subtle"
+            showDeleteButton={false}
+            embedded
             onOpenReorder={() => setReorderOpen(true)}
             renderSetsContent={(index) => (
               <TemplateExerciseSetsEditor
@@ -230,12 +232,14 @@ export function TemplateEditorForm({
             )}
           />
 
-          <ExerciseReorderDrawer
-            open={reorderOpen}
-            onOpenChange={setReorderOpen}
-            exercises={activeEntries}
-            onReorder={handleReorder}
-          />
+          <div className="px-4 pb-4">
+            <ExerciseReorderDrawer
+              open={reorderOpen}
+              onOpenChange={setReorderOpen}
+              exercises={activeEntries}
+              onReorder={handleReorder}
+            />
+          </div>
         </CardContent>
       </Card>
 

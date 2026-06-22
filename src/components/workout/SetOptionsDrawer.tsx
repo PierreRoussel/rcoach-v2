@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -126,21 +126,17 @@ export function SetOptionsDrawer({
   onUpdateSetType,
 }: SetOptionsDrawerProps) {
   const sensors = useSortableSensors()
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(selectedSetIndex)
-
-  useEffect(() => {
-    if (open) {
-      setSelectedIndex(selectedSetIndex)
-    }
-  }, [open, selectedSetIndex])
-
+  const [localSelectedIndex, setLocalSelectedIndex] = useState<number | null>(null)
+  const selectedIndex = open ? (localSelectedIndex ?? selectedSetIndex) : null
   const selectedSet = selectedIndex != null ? sets[selectedIndex] : null
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setLocalSelectedIndex(null)
       restorePointerInteraction()
     }
-  }, [open])
+    onOpenChange(next)
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -155,21 +151,22 @@ export function SetOptionsDrawer({
     }
 
     onReorderSets(oldIndex, newIndex)
-    setSelectedIndex((current) => {
-      if (current == null) {
+    setLocalSelectedIndex((current) => {
+      const baseIndex = current ?? selectedSetIndex
+      if (baseIndex == null) {
         return current
       }
 
-      if (current === oldIndex) {
+      if (baseIndex === oldIndex) {
         return newIndex
       }
 
-      if (oldIndex < current && newIndex >= current) {
-        return current - 1
+      if (oldIndex < baseIndex && newIndex >= baseIndex) {
+        return baseIndex - 1
       }
 
-      if (oldIndex > current && newIndex <= current) {
-        return current + 1
+      if (oldIndex > baseIndex && newIndex <= baseIndex) {
+        return baseIndex + 1
       }
 
       return current
@@ -187,7 +184,7 @@ export function SetOptionsDrawer({
     }
 
     onDeleteSet(setIndex)
-    onOpenChange(false)
+    handleOpenChange(false)
   }
 
   function toggleWarmup() {
@@ -202,15 +199,7 @@ export function SetOptionsDrawer({
   }
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next)
-        if (!next) {
-          restorePointerInteraction()
-        }
-      }}
-    >
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
         <SheetHeader>
           <SheetTitle className="font-display font-black">

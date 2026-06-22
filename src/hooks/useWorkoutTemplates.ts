@@ -14,8 +14,11 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { insertTemplateExercises } from '@/lib/workout/insert-template-exercises'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
+export type TemplateSetType = 'normal' | 'warmup' | 'failure'
+
 export type TemplateSetDraft = {
   setIndex: number
+  setType?: TemplateSetType
   weightKg: number | null
   reps: number | null
   restSeconds: number
@@ -95,6 +98,7 @@ export function templateToDraft(
         defaultRestSeconds: exerciseDefaultRestSeconds,
         sets: (entry.workout_template_sets ?? []).map((set) => ({
           setIndex: set.set_index,
+          setType: normalizeTemplateSetType(set.set_type),
           weightKg: set.weight_kg,
           reps: set.reps,
           restSeconds: set.rest_seconds,
@@ -305,10 +309,11 @@ export function cleanupSupersetAfterRemoval(
 export function createTemplateSet(
   setIndex: number,
   defaultRestSeconds: number,
-  inherited?: Pick<TemplateSetDraft, 'weightKg' | 'reps'>,
+  inherited?: Pick<TemplateSetDraft, 'weightKg' | 'reps' | 'setType'>,
 ): TemplateSetDraft {
   return {
     setIndex,
+    setType: inherited?.setType ?? 'normal',
     weightKg: inherited?.weightKg ?? null,
     reps: inherited?.reps ?? null,
     restSeconds: defaultRestSeconds,
@@ -318,18 +323,38 @@ export function createTemplateSet(
 
 export function inheritSetValues(
   sets: TemplateSetDraft[],
-): Pick<TemplateSetDraft, 'weightKg' | 'reps'> {
+): Pick<TemplateSetDraft, 'weightKg' | 'reps' | 'setType'> {
   const last = sets[sets.length - 1]
   if (last && (last.weightKg != null || last.reps != null)) {
-    return { weightKg: last.weightKg, reps: last.reps }
+    return {
+      weightKg: last.weightKg,
+      reps: last.reps,
+      setType: last.setType ?? 'normal',
+    }
   }
 
   const firstWithValues = sets.find(
     (set) => set.weightKg != null || set.reps != null,
   )
   if (firstWithValues) {
-    return { weightKg: firstWithValues.weightKg, reps: firstWithValues.reps }
+    return {
+      weightKg: firstWithValues.weightKg,
+      reps: firstWithValues.reps,
+      setType: firstWithValues.setType ?? 'normal',
+    }
   }
 
-  return { weightKg: null, reps: null }
+  return { weightKg: null, reps: null, setType: 'normal' }
+}
+
+export function reindexTemplateSets(sets: TemplateSetDraft[]): TemplateSetDraft[] {
+  return sets.map((set, index) => ({ ...set, setIndex: index }))
+}
+
+function normalizeTemplateSetType(value: string | null | undefined): TemplateSetType {
+  if (value === 'warmup' || value === 'failure') {
+    return value
+  }
+
+  return 'normal'
 }

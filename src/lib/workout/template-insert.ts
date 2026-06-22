@@ -6,16 +6,22 @@ export function buildTemplateExerciseInsertObjects(
     defaultRestSeconds: number
     sets: Array<{
       setIndex: number
+      setType?: 'normal' | 'warmup' | 'failure'
       weightKg: number | null
       reps: number | null
       restSeconds: number
       usesGlobalRest: boolean
     }>
   }>,
-  options?: { includeSupersetId?: boolean; includeDefaultRestSeconds?: boolean },
+  options?: {
+    includeSupersetId?: boolean
+    includeDefaultRestSeconds?: boolean
+    includeSetType?: boolean
+  },
 ) {
   const includeSupersetId = options?.includeSupersetId ?? false
   const includeDefaultRestSeconds = options?.includeDefaultRestSeconds ?? false
+  const includeSetType = options?.includeSetType ?? false
 
   return exercises.map((exercise, sortOrder) => {
     const object: Record<string, unknown> = {
@@ -23,14 +29,22 @@ export function buildTemplateExerciseInsertObjects(
       exercise_id: exercise.exerciseId,
       sort_order: sortOrder,
       workout_template_sets: {
-        data: exercise.sets.map((set) => ({
-          set_index: set.setIndex,
-          weight_kg: set.weightKg,
-          reps: set.reps,
-          rest_seconds: set.usesGlobalRest
-            ? exercise.defaultRestSeconds
-            : set.restSeconds,
-        })),
+        data: exercise.sets.map((set) => {
+          const row: Record<string, unknown> = {
+            set_index: set.setIndex,
+            weight_kg: set.weightKg,
+            reps: set.reps,
+            rest_seconds: set.usesGlobalRest
+              ? exercise.defaultRestSeconds
+              : set.restSeconds,
+          }
+
+          if (includeSetType) {
+            row.set_type = set.setType ?? 'normal'
+          }
+
+          return row
+        }),
       },
     }
 
