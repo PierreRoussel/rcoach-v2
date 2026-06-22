@@ -2,7 +2,7 @@
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 3    package="com.rcoach.wearbridge" >
 4
-5    <uses-sdk android:minSdkVersion="24" />
+5    <uses-sdk android:minSdkVersion="26" />
 6
 7    <uses-permission android:name="android.permission.VIBRATE" />
 7-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-wear-bridge\android\src\main\AndroidManifest.xml:2:5-66

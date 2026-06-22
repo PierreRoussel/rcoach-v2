@@ -57,16 +57,6 @@ function CalendarLegend() {
   )
 }
 
-/** Bottom dot on the day number — hidden when the day is selected. */
-const markerDot =
-  '[&_button]:before:absolute [&_button]:before:bottom-0.5 [&_button]:before:left-1/2 [&_button]:before:size-1.5 [&_button]:before:-translate-x-1/2 [&_button]:before:rounded-full [&_button]:before:content-[""]'
-
-const dayButtonWhenSelected =
-  'aria-selected:[&_button]:before:hidden aria-selected:[&_button]:bg-transparent aria-selected:[&_button]:text-inherit'
-
-const mixedDayStyle =
-  '[&.done.planned]:[&_button]:bg-gradient-to-br [&.done.planned]:[&_button]:from-soft-primary [&.done.planned]:[&_button]:to-soft-secondary/80 [&.done.planned]:[&_button]:before:w-3 [&.done.planned]:[&_button]:before:bg-gradient-to-r [&.done.planned]:[&_button]:before:from-primary [&.done.planned]:[&_button]:to-secondary'
-
 export function WorkoutCalendar({
   markers,
   mode = 'compact',
@@ -96,6 +86,7 @@ export function WorkoutCalendar({
       done: markerDates(markers, ['done', 'mixed']),
       planned: markerDates(markers, ['planned', 'mixed']),
       missed: markerDates(markers, ['missed']),
+      mixed: markerDates(markers, ['mixed']),
     }),
     [markers],
   )
@@ -124,8 +115,9 @@ export function WorkoutCalendar({
           aria-hidden
         />
 
-        <div className="relative mb-3 flex items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-1">
+        <div className="relative mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
+          <div aria-hidden />
+          <div className="flex items-center gap-1">
             <button
               type="button"
               className={navButtonClass}
@@ -134,7 +126,7 @@ export function WorkoutCalendar({
             >
               <ChevronLeft className="size-4" />
             </button>
-            <p className="min-w-[8.5rem] truncate px-1 text-center font-display text-lg font-black capitalize tracking-tight text-foreground">
+            <p className="min-w-[7.5rem] truncate px-1 text-center font-display text-lg font-black capitalize tracking-tight text-foreground sm:min-w-[8.5rem]">
               {format(displayMonth, 'MMMM yyyy', { locale: fr })}
             </p>
             <button
@@ -147,9 +139,11 @@ export function WorkoutCalendar({
             </button>
           </div>
 
-          {streak != null ? (
-            <WeeklyStreakIndicator streak={streak} className="shrink-0" />
-          ) : null}
+          <div className="flex justify-end">
+            {streak != null ? (
+              <WeeklyStreakIndicator streak={streak} />
+            ) : null}
+          </div>
         </div>
 
         <Calendar
@@ -160,44 +154,6 @@ export function WorkoutCalendar({
           onSelect={handleSelect}
           locale={fr}
           modifiers={modifiers}
-          modifiersClassNames={{
-            done: cn(
-              '[&_button]:bg-soft-primary/80 [&_button]:text-primary',
-              markerDot,
-              '[&_button]:before:bg-primary',
-              mixedDayStyle,
-              dayButtonWhenSelected,
-            ),
-            planned: cn(
-              '[&_button]:bg-soft-secondary/70 [&_button]:text-[#2d6b52]',
-              markerDot,
-              '[&_button]:before:bg-secondary',
-              mixedDayStyle,
-              dayButtonWhenSelected,
-            ),
-            missed: cn(
-              '[&_button]:text-muted-foreground/40',
-              '[&_button]:line-through [&_button]:decoration-muted-foreground/35',
-              dayButtonWhenSelected,
-            ),
-          }}
-          classNames={{
-            today: cn(
-              '[&_button]:ring-2 [&_button]:ring-primary/40 [&_button]:ring-offset-2 [&_button]:ring-offset-card',
-              '[&_button]:bg-soft-primary/50 [&_button]:text-primary',
-              'aria-selected:[&_button]:ring-offset-primary aria-selected:[&_button]:ring-primary-foreground/30',
-              dayButtonWhenSelected,
-            ),
-            selected: cn(
-              'rounded-full bg-primary text-primary-foreground',
-              'shadow-lg shadow-primary/35',
-              '[&_button]:bg-transparent [&_button]:font-black [&_button]:text-primary-foreground',
-              '[&_button]:hover:bg-transparent [&_button]:hover:text-primary-foreground',
-            ),
-            outside: cn(
-              '[&_button]:text-muted-foreground/25 [&_button]:hover:bg-transparent',
-            ),
-          }}
           className="relative border-0 bg-transparent p-0 shadow-none"
         />
       </div>

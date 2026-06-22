@@ -4,4 +4,5 @@
     <string name="title_activity_main">RCoach</string>
     <string name="package_name">com.rcoach.app</string>
     <string name="custom_url_scheme">com.rcoach.app</string>
+    <string name="health_connect_privacy_policy_url">https://rcoach.app/privacy</string>
 </resources>

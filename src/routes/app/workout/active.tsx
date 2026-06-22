@@ -21,6 +21,7 @@ import { useMyProfile } from '@/hooks/useProfile'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
+import { pushWorkoutSession } from '@/lib/health/push-workout-session'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import {
   buildCircuitSteps,
@@ -51,6 +52,7 @@ function ActiveWorkoutPage() {
     startedAt,
     exercises: activeExercises,
     activeStepIndex,
+    lastCompletedStep,
     restSecondsLeft,
     restTargetSeconds,
     isResting,
@@ -65,7 +67,6 @@ function ActiveWorkoutPage() {
     addPlannedSet,
     removePlannedSet,
     reorderPlannedSets,
-    completeCurrentStep,
     completeStep,
     uncompleteStep,
     goToStep,
@@ -122,21 +123,29 @@ function ActiveWorkoutPage() {
       }
 
       const validatedExercises = getValidatedExercisesForSync(draft.exercises)
+      const endedAt = new Date().toISOString()
 
-      await syncWorkoutDraft(nhost, {
-        title: draft.title,
-        startedAt: draft.startedAt,
-        exercises: validatedExercises.map((exercise) => ({
-          exerciseId: exercise.exerciseId,
-          sets: exercise.sets.map((set) => ({
-            setIndex: set.setIndex,
-            setType: set.setType ?? 'normal',
-            weightKg: set.weightKg,
-            reps: set.reps,
-            rpe: set.rpe ?? null,
+      try {
+        await syncWorkoutDraft(nhost, {
+          title: draft.title,
+          startedAt: draft.startedAt,
+          exercises: validatedExercises.map((exercise) => ({
+            exerciseId: exercise.exerciseId,
+            sets: exercise.sets.map((set) => ({
+              setIndex: set.setIndex,
+              setType: set.setType ?? 'normal',
+              weightKg: set.weightKg,
+              reps: set.reps,
+              rpe: set.rpe ?? null,
+            })),
           })),
-        })),
-      })
+        })
+      } catch (syncError) {
+        void pushWorkoutSession(draft, endedAt).catch(() => undefined)
+        throw syncError
+      }
+
+      void pushWorkoutSession(draft, endedAt).catch(() => undefined)
 
       setMessage('Seance enregistree.')
       await navigate({ to: '/app/sessions', search: { tab: 'history' } })
@@ -222,7 +231,7 @@ function ActiveWorkoutPage() {
         <CardContent className="px-0 pb-0 sm:px-0">
           <ActiveWorkoutCircuit
             exercises={activeExercises}
-            activeStepIndex={activeStepIndex}
+            lastCompletedStep={lastCompletedStep}
             rpeEnabled={rpeEnabled}
             onSelectExercise={(index) => {
               const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
@@ -240,7 +249,6 @@ function ActiveWorkoutPage() {
             onUpdateSet={(exerciseIndex, setIndex, patch) =>
               void updatePlannedSet(exerciseIndex, setIndex, patch)
             }
-            onCompleteCurrentStep={() => void completeCurrentStep()}
             onCompleteStep={(exerciseIndex, setIndex) =>
               void completeStep(exerciseIndex, setIndex)
             }

@@ -13,7 +13,7 @@ import {
 import {
   buildCircuitSteps,
   getStepLabel,
-  findNextPendingStepIndex,
+  findNextStepIndexAfter,
 } from '@/lib/workout/workout-circuit'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 
@@ -82,7 +82,7 @@ export function useWearWorkoutSync(enabled = true) {
     const state = useActiveWorkoutStore.getState()
     const steps = buildCircuitSteps(state.exercises)
     const currentStep = steps[state.activeStepIndex] ?? null
-    const nextIndex = findNextPendingStepIndex(steps, state.exercises, state.activeStepIndex + 1)
+    const nextIndex = findNextStepIndexAfter(steps, state.exercises, state.lastCompletedStep)
     const nextStepLabel = getStepLabel(
       state.exercises,
       nextIndex != null ? steps[nextIndex] ?? null : null,

@@ -3,17 +3,23 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ActiveSetOptionsDrawer } from '@/components/workout/ActiveSetOptionsDrawer'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
+import { RpeSelect } from '@/components/workout/RpeSelect'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import type { ActiveExerciseEntry, ActiveSet } from '@/lib/workout/active-store'
-import { buildCircuitSteps, findNextPendingStepIndex, stepKey } from '@/lib/workout/workout-circuit'
+import {
+  buildCircuitSteps,
+  findNextStepIndexAfter,
+  stepKey,
+  type CircuitStep,
+} from '@/lib/workout/workout-circuit'
 
 type ActiveWorkoutCircuitProps = {
   exercises: ActiveExerciseEntry[]
-  activeStepIndex: number
+  lastCompletedStep: CircuitStep | null
   rpeEnabled: boolean
   onSelectExercise: (exerciseIndex: number) => void
   onReorderExercises: (fromIndex: number, toIndex: number) => void
@@ -31,7 +37,6 @@ type ActiveWorkoutCircuitProps = {
       setType?: ActiveSet['setType']
     },
   ) => void
-  onCompleteCurrentStep: () => void
   onCompleteStep: (exerciseIndex: number, setIndex: number) => void
   onUncompleteStep: (exerciseIndex: number, setIndex: number) => void
   onAddPlannedSet: (exerciseIndex: number) => void
@@ -41,7 +46,7 @@ type ActiveWorkoutCircuitProps = {
 
 export function ActiveWorkoutCircuit({
   exercises,
-  activeStepIndex,
+  lastCompletedStep,
   rpeEnabled,
   onSelectExercise,
   onReorderExercises,
@@ -50,7 +55,6 @@ export function ActiveWorkoutCircuit({
   onRemoveFromSuperset,
   onUpdateExerciseRest,
   onUpdateSet,
-  onCompleteCurrentStep,
   onCompleteStep,
   onUncompleteStep,
   onAddPlannedSet,
@@ -58,10 +62,12 @@ export function ActiveWorkoutCircuit({
   onReorderSets,
 }: ActiveWorkoutCircuitProps) {
   const steps = buildCircuitSteps(exercises)
-  const currentStep = steps[activeStepIndex] ?? null
-  const nextPendingStepIndex = findNextPendingStepIndex(steps, exercises, 0)
-  const activeExerciseIndex = currentStep?.exerciseIndex ?? 0
+  const nextPendingStepIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
+  const targetStep =
+    nextPendingStepIndex != null ? steps[nextPendingStepIndex] ?? null : null
+  const activeExerciseIndex = targetStep?.exerciseIndex ?? 0
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const hasAutoScrolledRef = useRef(false)
   const [reorderOpen, setReorderOpen] = useState(false)
   const [setOptions, setSetOptions] = useState<{
     exerciseIndex: number
@@ -72,13 +78,18 @@ export function ActiveWorkoutCircuit({
     setOptions != null ? exercises[setOptions.exerciseIndex] ?? null : null
 
   useEffect(() => {
-    if (!currentStep) {
+    if (!targetStep || hasAutoScrolledRef.current) {
       return
     }
 
-    const node = stepRefs.current.get(stepKey(currentStep))
-    node?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [activeStepIndex, currentStep])
+    const node = stepRefs.current.get(stepKey(targetStep))
+    if (!node) {
+      return
+    }
+
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    hasAutoScrolledRef.current = true
+  }, [nextPendingStepIndex, targetStep])
 
   function renderSetRow(exerciseIndex: number, setIndex: number) {
     const exercise = exercises[exerciseIndex]
@@ -90,7 +101,6 @@ export function ActiveWorkoutCircuit({
     const globalStepIndex = steps.findIndex(
       (step) => step.exerciseIndex === exerciseIndex && step.setIndex === setIndex,
     )
-    const isCurrent = globalStepIndex === activeStepIndex
     const isCompleted = Boolean(set.completedAt)
     const isNextToDo = globalStepIndex === nextPendingStepIndex && !isCompleted
 
@@ -104,7 +114,7 @@ export function ActiveWorkoutCircuit({
         }}
         className={cn(
           'w-full rounded-xl border px-2 py-2 transition-colors',
-          isCurrent
+          isNextToDo
             ? 'border-primary bg-soft-primary/50 ring-1 ring-primary/30'
             : isCompleted
               ? 'border-border/60 bg-muted/20 opacity-80'
@@ -168,16 +178,11 @@ export function ActiveWorkoutCircuit({
           />
 
           {rpeEnabled ? (
-            <Input
-              inputMode="decimal"
-              placeholder="RPE"
-              value={set.rpe ?? ''}
+            <RpeSelect
+              value={set.rpe}
               disabled={isCompleted}
-              className="h-9 w-11 shrink-0 px-1 text-center text-sm font-data"
-              onChange={(event) =>
-                onUpdateSet(exerciseIndex, setIndex, {
-                  rpe: event.target.value ? Number(event.target.value) : null,
-                })
+              onChange={(rpe) =>
+                onUpdateSet(exerciseIndex, setIndex, { rpe })
               }
             />
           ) : null}
@@ -192,11 +197,7 @@ export function ActiveWorkoutCircuit({
                 !isNextToDo && 'text-muted-foreground hover:text-foreground',
               )}
               aria-label="Valider la serie"
-              onClick={() =>
-                isCurrent
-                  ? onCompleteCurrentStep()
-                  : onCompleteStep(exerciseIndex, setIndex)
-              }
+              onClick={() => onCompleteStep(exerciseIndex, setIndex)}
             >
               <Check className="size-4" />
             </Button>

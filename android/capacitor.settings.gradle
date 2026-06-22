@@ -5,5 +5,8 @@ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
 
+include ':rcoach-capacitor-health-connect'
+project(':rcoach-capacitor-health-connect').projectDir = new File('../packages/capacitor-health-connect/android')
+
 include ':rcoach-capacitor-wear-bridge'
 project(':rcoach-capacitor-wear-bridge').projectDir = new File('../packages/capacitor-wear-bridge/android')

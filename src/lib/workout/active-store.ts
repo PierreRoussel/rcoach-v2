@@ -8,11 +8,12 @@ import {
 } from '@/lib/workout/exercise-superset'
 import {
   buildCircuitSteps,
-  findHighestCompletedStepIndex,
-  findNextPendingStepIndex,
+  findLastCompletedStep,
+  findNextStepIndexAfter,
   getStepRestSeconds,
   getStepLabel,
   isWorkoutComplete,
+  resolveLastCompletedStep,
   type CircuitStep,
 } from '@/lib/workout/workout-circuit'
 
@@ -28,7 +29,12 @@ type CompleteStepValues = {
 
 type PersistableState = Pick<
   ActiveWorkoutState,
-  'title' | 'startedAt' | 'defaultRestSeconds' | 'exercises' | 'activeStepIndex'
+  | 'title'
+  | 'startedAt'
+  | 'defaultRestSeconds'
+  | 'exercises'
+  | 'activeStepIndex'
+  | 'lastCompletedStep'
 >
 
 type ActiveWorkoutState = {
@@ -37,6 +43,7 @@ type ActiveWorkoutState = {
   defaultRestSeconds: number
   exercises: ActiveExerciseEntry[]
   activeStepIndex: number
+  lastCompletedStep: CircuitStep | null
   restSecondsLeft: number
   restTargetSeconds: number
   isResting: boolean
@@ -115,15 +122,19 @@ async function applyExerciseSetsChange(
       ? { ...exercise, sets: reindexExerciseSets(nextSets) }
       : exercise,
   )
-  const activeStepIndex = syncActiveStepIndex(exercises, get().activeStepIndex)
+  const { activeStepIndex, lastCompletedStep } = syncWorkoutProgress(
+    exercises,
+    get().lastCompletedStep,
+  )
 
-  set({ exercises, activeStepIndex })
+  set({ exercises, activeStepIndex, lastCompletedStep })
   await persistDraft({
     title: get().title,
     startedAt: get().startedAt,
     defaultRestSeconds: get().defaultRestSeconds,
     exercises,
     activeStepIndex,
+    lastCompletedStep,
   })
 }
 
@@ -138,32 +149,37 @@ async function persistDraft(state: PersistableState) {
     startedAt: state.startedAt,
     defaultRestSeconds: state.defaultRestSeconds,
     activeStepIndex: state.activeStepIndex,
+    lastCompletedStep: state.lastCompletedStep,
     exercises: state.exercises,
   })
 }
 
-function syncActiveStepIndex(
+function syncWorkoutProgress(
   exercises: ActiveExerciseEntry[],
-  preferredIndex = 0,
-): number {
+  storedLastCompleted: CircuitStep | null,
+  preferLastCompleted?: CircuitStep | null,
+): { activeStepIndex: number; lastCompletedStep: CircuitStep | null } {
   const steps = buildCircuitSteps(exercises)
-  const anchor = Math.max(
-    preferredIndex,
-    findHighestCompletedStepIndex(steps, exercises),
-  )
-  const pending = findNextPendingStepIndex(steps, exercises, anchor)
+  const lastCompletedStep =
+    preferLastCompleted ??
+    resolveLastCompletedStep(exercises, storedLastCompleted)
+  const nextIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
 
-  if (pending != null) {
-    return pending
+  return {
+    lastCompletedStep,
+    activeStepIndex: nextIndex ?? Math.max(steps.length - 1, 0),
   }
+}
 
-  return Math.max(steps.length - 1, 0)
+function syncAfterExerciseStructureChange(exercises: ActiveExerciseEntry[]) {
+  const lastCompletedStep = findLastCompletedStep(exercises)
+  return syncWorkoutProgress(exercises, lastCompletedStep, lastCompletedStep)
 }
 
 function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<ActiveWorkoutState>) => void) {
-  const { exercises, activeStepIndex } = get()
+  const { exercises, lastCompletedStep } = get()
   const steps = buildCircuitSteps(exercises)
-  const nextIndex = findNextPendingStepIndex(steps, exercises, activeStepIndex + 1)
+  const nextIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
 
   if (nextIndex == null) {
     set({ isResting: false, restSecondsLeft: 0, restTargetSeconds: 0 })
@@ -183,6 +199,7 @@ function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<
     defaultRestSeconds: get().defaultRestSeconds,
     exercises: get().exercises,
     activeStepIndex: nextIndex,
+    lastCompletedStep: get().lastCompletedStep,
   })
 }
 
@@ -192,6 +209,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   defaultRestSeconds: 90,
   exercises: [],
   activeStepIndex: 0,
+  lastCompletedStep: null,
   restSecondsLeft: 0,
   restTargetSeconds: 0,
   isResting: false,
@@ -205,7 +223,11 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   getNextStepLabel: () => {
     const steps = buildCircuitSteps(get().exercises)
-    const nextIndex = findNextPendingStepIndex(steps, get().exercises, get().activeStepIndex + 1)
+    const nextIndex = findNextStepIndexAfter(
+      steps,
+      get().exercises,
+      get().lastCompletedStep,
+    )
     return getStepLabel(get().exercises, nextIndex != null ? steps[nextIndex] ?? null : null)
   },
 
@@ -216,7 +238,15 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
 
     const exercises = draft.exercises
-    const activeStepIndex = syncActiveStepIndex(exercises, draft.activeStepIndex ?? 0)
+    const lastCompletedStep = resolveLastCompletedStep(
+      exercises,
+      draft.lastCompletedStep ?? null,
+    )
+    const { activeStepIndex } = syncWorkoutProgress(
+      exercises,
+      lastCompletedStep,
+      lastCompletedStep,
+    )
 
     set({
       title: draft.title,
@@ -224,6 +254,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: draft.defaultRestSeconds ?? 90,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
@@ -238,6 +269,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: 90,
       exercises: [],
       activeStepIndex: 0,
+      lastCompletedStep: null,
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
@@ -248,12 +280,13 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: 90,
       exercises: [],
       activeStepIndex: 0,
+      lastCompletedStep: null,
     })
   },
 
   startWorkoutFromTemplate: async (title, exercises, defaultRestSeconds = 90) => {
     const startedAt = new Date().toISOString()
-    const activeStepIndex = syncActiveStepIndex(exercises, 0)
+    const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
     set({
       title,
@@ -261,6 +294,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
@@ -271,6 +305,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -292,15 +327,17 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         sets: [createEmptySet(0, defaultRestSeconds)],
       },
     ]
-    const activeStepIndex = syncActiveStepIndex(nextExercises, get().activeStepIndex)
+    const { activeStepIndex, lastCompletedStep } =
+      syncAfterExerciseStructureChange(nextExercises)
 
-    set({ exercises: nextExercises, activeStepIndex })
+    set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises: nextExercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -308,15 +345,17 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const nextExercises = cleanupSupersetAfterRemoval(
       get().exercises.filter((_, index) => index !== exerciseIndex),
     )
-    const activeStepIndex = syncActiveStepIndex(nextExercises, 0)
+    const { activeStepIndex, lastCompletedStep } =
+      syncAfterExerciseStructureChange(nextExercises)
 
-    set({ exercises: nextExercises, activeStepIndex })
+    set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises: nextExercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -328,15 +367,16 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
     exercises.splice(toIndex, 0, moved)
 
-    const activeStepIndex = syncActiveStepIndex(exercises, 0)
+    const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
-    set({ exercises, activeStepIndex })
+    set({ exercises, activeStepIndex, lastCompletedStep })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -364,34 +404,37 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
     })
   },
 
   addToSuperset: async (fromIndex, partnerIndex) => {
     const exercises = addExerciseToSuperset(get().exercises, fromIndex, partnerIndex)
-    const activeStepIndex = syncActiveStepIndex(exercises, get().activeStepIndex)
+    const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
-    set({ exercises, activeStepIndex })
+    set({ exercises, activeStepIndex, lastCompletedStep })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
   removeFromSuperset: async (exerciseIndex) => {
     const exercises = removeExerciseFromSuperset(get().exercises, exerciseIndex)
-    const activeStepIndex = syncActiveStepIndex(exercises, get().activeStepIndex)
+    const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
-    set({ exercises, activeStepIndex })
+    set({ exercises, activeStepIndex, lastCompletedStep })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -416,6 +459,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
     })
   },
 
@@ -451,6 +495,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
     })
   },
 
@@ -493,6 +538,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: get().defaultRestSeconds,
       exercises: get().exercises,
       activeStepIndex: stepIndex,
+      lastCompletedStep: get().lastCompletedStep,
     })
   },
 
@@ -538,18 +584,11 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     const steps = buildCircuitSteps(exercises)
     const completedStep = { exerciseIndex, setIndex }
+    const lastCompletedStep = completedStep
     const completedStepIndex = steps.findIndex(
       (step) => step.exerciseIndex === exerciseIndex && step.setIndex === setIndex,
     )
-    const syncedStepIndex = syncActiveStepIndex(
-      exercises,
-      completedStepIndex >= 0 ? completedStepIndex : get().activeStepIndex,
-    )
-    const nextStepIndex = findNextPendingStepIndex(
-      steps,
-      exercises,
-      completedStepIndex >= 0 ? completedStepIndex + 1 : syncedStepIndex,
-    )
+    const nextStepIndex = findNextStepIndexAfter(steps, exercises, completedStep)
     const nextStep = nextStepIndex != null ? steps[nextStepIndex] ?? null : null
     const restSeconds = getStepRestSeconds(
       exercises,
@@ -558,12 +597,13 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       get().defaultRestSeconds,
     )
 
-    let activeStepIndex = syncedStepIndex
+    let activeStepIndex = nextStepIndex ?? Math.max(steps.length - 1, 0)
 
-    if (nextStepIndex == null || isWorkoutComplete(steps, exercises)) {
+    if (nextStepIndex == null || isWorkoutComplete(steps, exercises, lastCompletedStep)) {
       activeStepIndex = Math.max(steps.length - 1, 0)
       set({
         exercises,
+        lastCompletedStep,
         activeStepIndex,
         isResting: false,
         restSecondsLeft: 0,
@@ -574,6 +614,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         completedStepIndex >= 0 ? completedStepIndex : get().activeStepIndex
       set({
         exercises,
+        lastCompletedStep,
         activeStepIndex,
         isResting: true,
         restSecondsLeft: restSeconds,
@@ -582,6 +623,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     } else {
       set({
         exercises,
+        lastCompletedStep,
         activeStepIndex,
         isResting: false,
         restSecondsLeft: 0,
@@ -595,6 +637,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -617,17 +660,12 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       }
     })
 
-    const steps = buildCircuitSteps(exercises)
-    const uncompletedStepIndex = steps.findIndex(
-      (step) => step.exerciseIndex === exerciseIndex && step.setIndex === setIndex,
-    )
-    const activeStepIndex =
-      uncompletedStepIndex >= 0
-        ? uncompletedStepIndex
-        : syncActiveStepIndex(exercises, get().activeStepIndex)
+    const lastCompletedStep = findLastCompletedStep(exercises)
+    const { activeStepIndex } = syncWorkoutProgress(exercises, null, lastCompletedStep)
 
     set({
       exercises,
+      lastCompletedStep,
       activeStepIndex,
       isResting: false,
       restSecondsLeft: 0,
@@ -640,6 +678,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: get().defaultRestSeconds,
       exercises,
       activeStepIndex,
+      lastCompletedStep,
     })
   },
 
@@ -701,6 +740,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: 90,
       exercises: [],
       activeStepIndex: 0,
+      lastCompletedStep: null,
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
@@ -717,6 +757,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       defaultRestSeconds: 90,
       exercises: [],
       activeStepIndex: 0,
+      lastCompletedStep: null,
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,

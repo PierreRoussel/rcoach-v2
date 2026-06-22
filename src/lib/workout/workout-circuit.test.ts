@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildCircuitSteps,
-  findHighestCompletedStepIndex,
+  findLastCompletedStep,
   findNextPendingStepIndex,
+  findNextStepIndexAfter,
   getStepRestSeconds,
   isIntraSupersetTransition,
   isWorkoutComplete,
@@ -129,24 +130,121 @@ describe('workout-circuit', () => {
     expect(isWorkoutComplete(steps, exercises)).toBe(false)
 
     exercises[0]!.sets[1]!.completedAt = '2026-01-01T00:00:01.000Z'
-    expect(findNextPendingStepIndex(steps, exercises, 0)).toBeNull()
-    expect(isWorkoutComplete(steps, exercises)).toBe(true)
+    expect(
+      findNextStepIndexAfter(steps, exercises, { exerciseIndex: 0, setIndex: 1 }),
+    ).toBeNull()
+    expect(
+      isWorkoutComplete(steps, exercises, { exerciseIndex: 0, setIndex: 1 }),
+    ).toBe(true)
   })
 
-  it('tracks highest completed step for out-of-order progress', () => {
+  it('finds the most recently completed set', () => {
     const exercises = [
       {
-        ...makeExercise('a', 'Squat', 3),
+        ...makeExercise('a', 'Squat', 2),
         sets: [
-          { setIndex: 0, completedAt: null, weightKg: 50, reps: 5 },
+          { setIndex: 0, completedAt: '2026-01-01T00:00:00.000Z', weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt: '2026-01-01T00:00:02.000Z', weightKg: 50, reps: 5 },
+        ],
+      },
+      {
+        ...makeExercise('b', 'Bench', 2),
+        sets: [
+          { setIndex: 0, completedAt: '2026-01-01T00:00:01.000Z', weightKg: 50, reps: 5 },
           { setIndex: 1, completedAt: null, weightKg: 50, reps: 5 },
-          { setIndex: 2, completedAt: '2026-01-01T00:00:00.000Z', weightKg: 50, reps: 5 },
+        ],
+      },
+    ]
+
+    expect(findLastCompletedStep(exercises)).toEqual({ exerciseIndex: 0, setIndex: 1 })
+  })
+
+  it('continues from the last validated set instead of earlier pending sets', () => {
+    const completedAt = '2026-01-01T00:00:00.000Z'
+    const exercises = [
+      makeExercise('a', 'Squat', 2),
+      makeExercise('b', 'Bench', 2),
+      {
+        ...makeExercise('c', 'Row', 4),
+        sets: [
+          { setIndex: 0, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 2, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 3, completedAt: null, weightKg: 50, reps: 5 },
+        ],
+      },
+      {
+        ...makeExercise('d', 'Curl', 3),
+        sets: [
+          { setIndex: 0, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt: null, weightKg: 50, reps: 5 },
+          { setIndex: 2, completedAt: null, weightKg: 50, reps: 5 },
         ],
       },
     ]
     const steps = buildCircuitSteps(exercises)
+    const lastCompleted = { exerciseIndex: 3, setIndex: 0 }
 
-    expect(findHighestCompletedStepIndex(steps, exercises)).toBe(2)
-    expect(findNextPendingStepIndex(steps, exercises, 2)).toBeNull()
+    expect(findNextStepIndexAfter(steps, exercises, lastCompleted)).toBe(9)
+    expect(steps[9]).toEqual({ exerciseIndex: 3, setIndex: 1 })
+  })
+
+  it('continues superset alternation after completing a set', () => {
+    const exercises = [
+      {
+        ...makeExercise('a', 'Bench', 2, { supersetId: 1 }),
+        sets: [
+          { setIndex: 0, completedAt: '2026-01-01T00:00:00.000Z', weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt: null, weightKg: 50, reps: 5 },
+        ],
+      },
+      makeExercise('b', 'Row', 2, { supersetId: 1 }),
+    ]
+    const steps = buildCircuitSteps(exercises)
+
+    expect(
+      findNextStepIndexAfter(steps, exercises, { exerciseIndex: 0, setIndex: 0 }),
+    ).toBe(1)
+    expect(steps[1]).toEqual({ exerciseIndex: 1, setIndex: 0 })
+  })
+
+  it('returns skipped sets once the forward path from the last validation is exhausted', () => {
+    const completedAt = '2026-01-01T00:00:00.000Z'
+    const exercises = [
+      {
+        ...makeExercise('a', 'Squat', 2),
+        sets: [
+          { setIndex: 0, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt, weightKg: 50, reps: 5 },
+        ],
+      },
+      {
+        ...makeExercise('b', 'Bench', 2),
+        sets: [
+          { setIndex: 0, completedAt: null, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt: null, weightKg: 50, reps: 5 },
+        ],
+      },
+      {
+        ...makeExercise('c', 'Row', 2),
+        sets: [
+          { setIndex: 0, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt, weightKg: 50, reps: 5 },
+        ],
+      },
+      {
+        ...makeExercise('d', 'Curl', 2),
+        sets: [
+          { setIndex: 0, completedAt, weightKg: 50, reps: 5 },
+          { setIndex: 1, completedAt, weightKg: 50, reps: 5 },
+        ],
+      },
+    ]
+    const steps = buildCircuitSteps(exercises)
+    const lastCompleted = { exerciseIndex: 3, setIndex: 1 }
+
+    expect(findNextStepIndexAfter(steps, exercises, lastCompleted)).toBe(2)
+    expect(steps[2]).toEqual({ exerciseIndex: 1, setIndex: 0 })
+    expect(isWorkoutComplete(steps, exercises, lastCompleted)).toBe(false)
   })
 })

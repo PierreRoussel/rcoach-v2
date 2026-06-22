@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Dumbbell, History, Upload } from 'lucide-react'
+import { Dumbbell, History } from 'lucide-react'
 
 import { RecentWorkoutsFeed } from '@/components/workout/RecentWorkoutsFeed'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,7 @@ function AppHomePage() {
         <PageHeader
           eyebrow="Athlete"
           title="Move with joy"
-          description="Lancez une seance, suivez votre progression et importez vos donnees Hevy."
+          description="Lancez une seance et suivez votre progression."
         />
         <div className="mt-4 flex flex-wrap gap-2">
           <Button variant="pill" asChild>
@@ -37,12 +37,6 @@ function AppHomePage() {
             <Link to="/app/exercises">
               <Dumbbell className="size-4" />
               Catalogue
-            </Link>
-          </Button>
-          <Button variant="outline" className="rounded-full" asChild>
-            <Link to="/app/import">
-              <Upload className="size-4" />
-              Import Hevy
             </Link>
           </Button>
         </div>

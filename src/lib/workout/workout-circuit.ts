@@ -71,24 +71,53 @@ export function isStepCompleted(
   return Boolean(exercises[step.exerciseIndex]?.sets[step.setIndex]?.completedAt)
 }
 
-export function findHighestCompletedStepIndex(
-  steps: CircuitStep[],
-  exercises: CircuitExercise[],
-): number {
-  let highest = -1
+export function findStepIndex(steps: CircuitStep[], step: CircuitStep): number {
+  return steps.findIndex(
+    (candidate) =>
+      candidate.exerciseIndex === step.exerciseIndex &&
+      candidate.setIndex === step.setIndex,
+  )
+}
 
-  for (let index = 0; index < steps.length; index += 1) {
-    const step = steps[index]
-    if (!step) {
+export function findLastCompletedStep(
+  exercises: CircuitExercise[],
+): CircuitStep | null {
+  let lastStep: CircuitStep | null = null
+  let lastCompletedAt = ''
+
+  for (let exerciseIndex = 0; exerciseIndex < exercises.length; exerciseIndex += 1) {
+    const exercise = exercises[exerciseIndex]
+    if (!exercise) {
       continue
     }
 
-    if (isStepCompleted(exercises, step)) {
-      highest = index
+    for (const set of exercise.sets) {
+      if (!set.completedAt) {
+        continue
+      }
+
+      if (!lastStep || set.completedAt > lastCompletedAt) {
+        lastCompletedAt = set.completedAt
+        lastStep = { exerciseIndex, setIndex: set.setIndex }
+      }
     }
   }
 
-  return highest
+  return lastStep
+}
+
+export function resolveLastCompletedStep(
+  exercises: CircuitExercise[],
+  stored: CircuitStep | null | undefined,
+): CircuitStep | null {
+  if (stored) {
+    const set = exercises[stored.exerciseIndex]?.sets[stored.setIndex]
+    if (set?.completedAt) {
+      return stored
+    }
+  }
+
+  return findLastCompletedStep(exercises)
 }
 
 export function findNextPendingStepIndex(
@@ -96,7 +125,7 @@ export function findNextPendingStepIndex(
   exercises: CircuitExercise[],
   fromIndex = 0,
 ): number | null {
-  for (let index = fromIndex; index < steps.length; index += 1) {
+  for (let index = Math.max(0, fromIndex); index < steps.length; index += 1) {
     const step = steps[index]
     if (!step) {
       continue
@@ -105,6 +134,36 @@ export function findNextPendingStepIndex(
     if (!isStepCompleted(exercises, step)) {
       return index
     }
+  }
+
+  return null
+}
+
+export function hasPendingSets(exercises: CircuitExercise[]): boolean {
+  return exercises.some((exercise) =>
+    exercise.sets.some((set) => !set.completedAt),
+  )
+}
+
+export function findNextStepIndexAfter(
+  steps: CircuitStep[],
+  exercises: CircuitExercise[],
+  afterStep: CircuitStep | null,
+): number | null {
+  if (!afterStep) {
+    return findNextPendingStepIndex(steps, exercises, 0)
+  }
+
+  const afterIndex = findStepIndex(steps, afterStep)
+  const forwardFrom = afterIndex < 0 ? 0 : afterIndex + 1
+  const nextForward = findNextPendingStepIndex(steps, exercises, forwardFrom)
+
+  if (nextForward != null) {
+    return nextForward
+  }
+
+  if (hasPendingSets(exercises)) {
+    return findNextPendingStepIndex(steps, exercises, 0)
   }
 
   return null
@@ -165,12 +224,13 @@ export function getStepRestSeconds(
 export function isWorkoutComplete(
   steps: CircuitStep[],
   exercises: CircuitExercise[],
+  lastCompletedStep: CircuitStep | null = null,
 ): boolean {
   if (steps.length === 0) {
     return false
   }
 
-  return findNextPendingStepIndex(steps, exercises, 0) == null
+  return findNextStepIndexAfter(steps, exercises, lastCompletedStep) == null
 }
 
 export function countCompletedSets(exercises: CircuitExercise[]): number {

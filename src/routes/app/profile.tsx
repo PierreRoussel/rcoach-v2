@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   AlertDialog,
@@ -29,6 +29,16 @@ import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import {
+  getHealthConnectAvailability,
+  getHealthConnectPermissionStatus,
+  openHealthConnectSettings,
+  requestHealthConnectPermissions,
+} from '@/lib/health/health-connect-bridge'
+import {
+  isHealthConnectSyncEnabled,
+  setHealthConnectSyncEnabled,
+} from '@/lib/health/health-connect-preferences'
 import { Capacitor } from '@capacitor/core'
 
 export const Route = createFileRoute('/app/profile')({
@@ -120,6 +130,114 @@ function ProfileEditor({
       </Button>
       {message ? <FormMessage>{message}</FormMessage> : null}
     </>
+  )
+}
+
+function HealthConnectPreferenceToggle() {
+  const healthConnectAndroid =
+    Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+  const [enabled, setEnabled] = useState(() => isHealthConnectSyncEnabled())
+  const [message, setMessage] = useState<string | null>(null)
+  const [statusLabel, setStatusLabel] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!healthConnectAndroid) {
+      return
+    }
+
+    void (async () => {
+      const availability = await getHealthConnectAvailability()
+      if (availability === 'NotInstalled') {
+        setStatusLabel('Health Connect doit etre installe depuis le Play Store.')
+        return
+      }
+
+      if (availability !== 'Available') {
+        setStatusLabel('Health Connect n est pas disponible sur cet appareil.')
+        return
+      }
+
+      const permissions = await getHealthConnectPermissionStatus()
+      if (enabled && !permissions.granted) {
+        setStatusLabel('Autorisations requises pour enregistrer vos seances.')
+      } else if (enabled) {
+        setStatusLabel('Vos seances terminees seront envoyees vers Health Connect.')
+      } else {
+        setStatusLabel(null)
+      }
+    })()
+  }, [enabled, healthConnectAndroid])
+
+  if (!healthConnectAndroid) {
+    return null
+  }
+
+  async function handleToggle(checked: boolean) {
+    setMessage(null)
+
+    if (!checked) {
+      setHealthConnectSyncEnabled(false)
+      setEnabled(false)
+      setStatusLabel(null)
+      setMessage('Synchronisation Health Connect desactivee.')
+      return
+    }
+
+    const availability = await getHealthConnectAvailability()
+    if (availability === 'NotInstalled') {
+      setMessage('Installez Health Connect depuis le Play Store, puis reessayez.')
+      return
+    }
+
+    if (availability !== 'Available') {
+      setMessage('Health Connect n est pas disponible sur cet appareil.')
+      return
+    }
+
+    const permissionResult = await requestHealthConnectPermissions()
+    if (!permissionResult.granted) {
+      setMessage('Autorisations refusees. Vous pouvez les modifier dans Health Connect.')
+      setHealthConnectSyncEnabled(false)
+      setEnabled(false)
+      return
+    }
+
+    setHealthConnectSyncEnabled(true)
+    setEnabled(true)
+    setStatusLabel('Vos seances terminees seront envoyees vers Health Connect.')
+    setMessage('Synchronisation Health Connect activee.')
+  }
+
+  return (
+    <div className="space-y-3 border-t border-border pt-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <Label htmlFor="healthConnectEnabled">Health Connect</Label>
+          <p className="text-xs text-muted-foreground">
+            Envoyer vos seances de musculation vers Health Connect (Google) a la fin
+            de chaque seance.
+          </p>
+          {statusLabel ? (
+            <p className="text-xs text-muted-foreground">{statusLabel}</p>
+          ) : null}
+          {message ? <FormMessage>{message}</FormMessage> : null}
+        </div>
+        <Switch
+          id="healthConnectEnabled"
+          checked={enabled}
+          onCheckedChange={(checked) => void handleToggle(checked)}
+        />
+      </div>
+      <Button
+        type="button"
+        variant="soft"
+        size="sm"
+        className="rounded-full"
+        onClick={() => void openHealthConnectSettings()}
+      >
+        Gerer dans Health Connect
+      </Button>
+    </div>
   )
 }
 
@@ -279,8 +397,9 @@ function ProfilePage() {
             Preferences liees au suivi de vos seances.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {profile ? <RpePreferenceToggle key={profile.id} profile={profile} /> : null}
+          <HealthConnectPreferenceToggle />
         </CardContent>
       </Card>
 

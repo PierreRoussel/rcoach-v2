@@ -36,6 +36,10 @@ export type ActiveWorkoutDraft = {
   startedAt: string
   defaultRestSeconds?: number
   activeStepIndex?: number
+  lastCompletedStep?: {
+    exerciseIndex: number
+    setIndex: number
+  } | null
   exercises: ActiveExerciseDraft[]
 }
 
