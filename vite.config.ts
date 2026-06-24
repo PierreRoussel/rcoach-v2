@@ -48,6 +48,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@rcoach/capacitor-health-connect': path.resolve(
+        __dirname,
+        './packages/capacitor-health-connect/src/index.ts',
+      ),
       '@rcoach/capacitor-wear-bridge': path.resolve(
         __dirname,
         './packages/capacitor-wear-bridge/src/index.ts',
