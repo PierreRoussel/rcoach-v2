@@ -17,8 +17,8 @@ export default defineConfig({
         name: 'RCoach',
         short_name: 'RCoach',
         description: 'Coach sportif et suivi athlete',
-        theme_color: '#ff6b9d',
-        background_color: '#f5f3ff',
+        theme_color: '#D4789A',
+        background_color: '#F7F5FB',
         display: 'standalone',
         start_url: '/app',
         icons: [
