@@ -98,13 +98,26 @@ function PlanningPage() {
       id: template.id,
       name: template.name,
     }))
-    const title = resolveScheduleTitle(values, templateOptions)
+    const title = resolveScheduleTitle(
+      {
+        title: values.title,
+        workoutTemplateId: values.workoutTemplateId,
+        workoutTemplateIdB: values.workoutTemplateIdB,
+        recurrenceType: values.recurrenceType,
+      },
+      templateOptions,
+    )
+
+    const isRecurring =
+      values.recurrenceType === 'weekly' || values.recurrenceType === 'aba'
 
     const payload = {
       title,
       workout_template_id: values.workoutTemplateId,
+      workout_template_id_b:
+        values.recurrenceType === 'aba' ? values.workoutTemplateIdB : null,
       recurrence_type: values.recurrenceType,
-      weekdays: values.recurrenceType === 'weekly' ? values.weekdays : null,
+      weekdays: isRecurring ? values.weekdays : null,
       scheduled_date:
         values.recurrenceType === 'once' ? values.scheduledDate : null,
       time_local: values.timeLocal ? `${values.timeLocal}:00` : null,
@@ -210,7 +223,7 @@ function PlanningPage() {
               {editing ? 'Modifier la planification' : 'Nouvelle planification'}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Titre libre ou modele, ponctuel ou jours fixes de la semaine.
+              Titre libre ou modele, ponctuel, hebdomadaire ou alternance ABA.
             </p>
           </div>
           <ScheduleSessionForm

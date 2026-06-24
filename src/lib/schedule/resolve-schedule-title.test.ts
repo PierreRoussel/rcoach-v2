@@ -28,4 +28,18 @@ describe('resolveScheduleTitle', () => {
       resolveScheduleTitle({ title: '  ', workoutTemplateId: null }, templates),
     ).toBe('')
   })
+
+  it('joins both template names for aba recurrence', () => {
+    expect(
+      resolveScheduleTitle(
+        {
+          title: '',
+          workoutTemplateId: 'tpl-1',
+          workoutTemplateIdB: 'tpl-2',
+          recurrenceType: 'aba',
+        },
+        templates,
+      ),
+    ).toBe('Fullbody A / Push Day')
+  })
 })

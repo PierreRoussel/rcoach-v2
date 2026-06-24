@@ -21,6 +21,8 @@ export function ScheduledSessionRow({
   onDelete,
 }: ScheduledSessionRowProps) {
   const isWeekly = session.recurrence_type === 'weekly'
+  const isAba = session.recurrence_type === 'aba'
+  const isRecurring = isWeekly || isAba
 
   return (
     <article
@@ -35,9 +37,11 @@ export function ScheduledSessionRow({
         className={cn(
           'absolute inset-y-0 left-0 w-1',
           session.is_active
-            ? isWeekly
-              ? 'bg-secondary'
-              : 'bg-primary'
+            ? isAba
+              ? 'bg-accent'
+              : isWeekly
+                ? 'bg-secondary'
+                : 'bg-primary'
             : 'bg-muted-foreground/30',
         )}
       />
@@ -46,8 +50,16 @@ export function ScheduledSessionRow({
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-display text-base font-black">{session.title}</p>
-            <Pill tone={isWeekly ? 'secondary' : 'primary'} className="py-0.5 text-[0.6rem] uppercase">
-              {isWeekly ? (
+            <Pill
+              tone={isAba ? 'accent' : isWeekly ? 'secondary' : 'primary'}
+              className="py-0.5 text-[0.6rem] uppercase"
+            >
+              {isAba ? (
+                <>
+                  <Repeat className="size-2.5" />
+                  ABA
+                </>
+              ) : isRecurring ? (
                 <>
                   <Repeat className="size-2.5" />
                   Recurrent
@@ -60,7 +72,7 @@ export function ScheduledSessionRow({
 
           <p className="text-xs leading-relaxed text-muted-foreground">
             {describeScheduledSession(session)}
-            {session.workout_template?.name
+            {!isAba && session.workout_template?.name
               ? ` · ${session.workout_template.name}`
               : ''}
           </p>

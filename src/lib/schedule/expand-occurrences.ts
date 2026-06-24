@@ -10,11 +10,14 @@ import {
   startOfDay,
 } from 'date-fns'
 
+export type ScheduleRecurrenceType = 'once' | 'weekly' | 'aba'
+
 export type ScheduledSession = {
   id: string
   title: string
   workout_template_id: string | null
-  recurrence_type: 'once' | 'weekly'
+  workout_template_id_b?: string | null
+  recurrence_type: ScheduleRecurrenceType
   weekdays: number[] | null
   scheduled_date: string | null
   time_local: string | null
@@ -22,6 +25,7 @@ export type ScheduledSession = {
   end_date: string | null
   is_active: boolean
   workout_template?: { id: string; name: string } | null
+  workout_template_b?: { id: string; name: string } | null
 }
 
 export type ScheduleOccurrence = {
@@ -51,6 +55,101 @@ function isWithinRuleBounds(date: Date, session: ScheduledSession): boolean {
   }
 
   return true
+}
+
+function matchesWeekdays(day: Date, weekdays: number[]): boolean {
+  return weekdays.includes(getISODay(day))
+}
+
+/** 1-based occurrence index from start_date through `date` (inclusive). */
+export function countSessionOccurrencesUpTo(
+  session: Pick<ScheduledSession, 'start_date' | 'end_date' | 'weekdays'>,
+  date: Date,
+): number {
+  const weekdays = session.weekdays ?? []
+  if (weekdays.length === 0) {
+    return 0
+  }
+
+  const start = parseDateOnly(session.start_date)
+  const end = startOfDay(date)
+
+  if (isBefore(end, start)) {
+    return 0
+  }
+
+  let count = 0
+
+  for (const day of eachDayOfInterval({ start, end })) {
+    if (!matchesWeekdays(day, weekdays) || !isWithinRuleBounds(day, session)) {
+      continue
+    }
+
+    count++
+  }
+
+  return count
+}
+
+function resolveAlternatingTemplate(
+  session: ScheduledSession,
+  occurrenceIndex: number,
+): { templateId: string | null; templateName: string | null } {
+  const useTemplateA = occurrenceIndex % 2 === 1
+
+  if (useTemplateA) {
+    return {
+      templateId: session.workout_template_id,
+      templateName: session.workout_template?.name ?? null,
+    }
+  }
+
+  return {
+    templateId: session.workout_template_id_b ?? null,
+    templateName: session.workout_template_b?.name ?? null,
+  }
+}
+
+function expandRecurringOccurrences(
+  session: ScheduledSession,
+  rangeStart: Date,
+  rangeEnd: Date,
+  resolveTemplate: (
+    session: ScheduledSession,
+    occurrenceIndex: number,
+  ) => { templateId: string | null; templateName: string | null },
+): ScheduleOccurrence[] {
+  const weekdays = session.weekdays ?? []
+  if (weekdays.length === 0) {
+    return []
+  }
+
+  const weekdaySet = new Set(weekdays)
+  const occurrences: ScheduleOccurrence[] = []
+
+  for (const day of eachDayOfInterval({
+    start: startOfDay(rangeStart),
+    end: startOfDay(rangeEnd),
+  })) {
+    if (!weekdaySet.has(getISODay(day)) || !isWithinRuleBounds(day, session)) {
+      continue
+    }
+
+    const occurrenceIndex = countSessionOccurrencesUpTo(session, day)
+    const { templateId, templateName } = resolveTemplate(session, occurrenceIndex)
+    const fallbackTitle = session.title || 'Seance planifiee'
+
+    occurrences.push({
+      date: format(day, 'yyyy-MM-dd'),
+      sessionId: session.id,
+      title: templateName || fallbackTitle,
+      workoutTemplateId: templateId,
+      workoutTemplateName: templateName,
+      timeLocal: session.time_local,
+    })
+  }
+
+  return occurrences
 }
 
 export function expandSessionOccurrences(
@@ -86,25 +185,19 @@ export function expandSessionOccurrences(
   }
 
   if (session.recurrence_type === 'weekly' && session.weekdays?.length) {
-    const weekdaySet = new Set(session.weekdays)
+    return expandRecurringOccurrences(session, rangeStart, rangeEnd, () => ({
+      templateId: session.workout_template_id,
+      templateName: session.workout_template?.name ?? null,
+    }))
+  }
 
-    for (const day of eachDayOfInterval({
-      start: startOfDay(rangeStart),
-      end: startOfDay(rangeEnd),
-    })) {
-      if (!weekdaySet.has(getISODay(day)) || !isWithinRuleBounds(day, session)) {
-        continue
-      }
-
-      occurrences.push({
-        date: format(day, 'yyyy-MM-dd'),
-        sessionId: session.id,
-        title: session.title || templateName || 'Seance planifiee',
-        workoutTemplateId: session.workout_template_id,
-        workoutTemplateName: templateName,
-        timeLocal: session.time_local,
-      })
-    }
+  if (session.recurrence_type === 'aba' && session.weekdays?.length) {
+    return expandRecurringOccurrences(
+      session,
+      rangeStart,
+      rangeEnd,
+      resolveAlternatingTemplate,
+    )
   }
 
   return occurrences

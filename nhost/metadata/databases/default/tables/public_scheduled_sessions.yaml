@@ -8,6 +8,9 @@ object_relationships:
   - name: workout_template
     using:
       foreign_key_constraint_on: workout_template_id
+  - name: workout_template_b
+    using:
+      foreign_key_constraint_on: workout_template_id_b
 select_permissions:
   - role: user
     permission:
@@ -16,6 +19,7 @@ select_permissions:
         - user_id
         - title
         - workout_template_id
+        - workout_template_id_b
         - recurrence_type
         - weekdays
         - scheduled_date
@@ -46,6 +50,7 @@ insert_permissions:
       columns:
         - title
         - workout_template_id
+        - workout_template_id_b
         - recurrence_type
         - weekdays
         - scheduled_date
@@ -59,6 +64,7 @@ update_permissions:
       columns:
         - title
         - workout_template_id
+        - workout_template_id_b
         - recurrence_type
         - weekdays
         - scheduled_date

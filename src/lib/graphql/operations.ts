@@ -797,7 +797,8 @@ export type ScheduledSessionRecord = {
   id: string
   title: string
   workout_template_id: string | null
-  recurrence_type: 'once' | 'weekly'
+  workout_template_id_b?: string | null
+  recurrence_type: 'once' | 'weekly' | 'aba'
   weekdays: number[] | null
   scheduled_date: string | null
   time_local: string | null
@@ -807,12 +808,14 @@ export type ScheduledSessionRecord = {
   created_at: string
   updated_at: string
   workout_template?: { id: string; name: string } | null
+  workout_template_b?: { id: string; name: string } | null
 }
 
 export type ScheduledSessionInput = {
   title: string
   workout_template_id?: string | null
-  recurrence_type: 'once' | 'weekly'
+  workout_template_id_b?: string | null
+  recurrence_type: 'once' | 'weekly' | 'aba'
   weekdays?: number[] | null
   scheduled_date?: string | null
   time_local?: string | null
@@ -830,6 +833,7 @@ export const LIST_MY_SCHEDULED_SESSIONS = `
       id
       title
       workout_template_id
+      workout_template_id_b
       recurrence_type
       weekdays
       scheduled_date
@@ -840,6 +844,10 @@ export const LIST_MY_SCHEDULED_SESSIONS = `
       created_at
       updated_at
       workout_template {
+        id
+        name
+      }
+      workout_template_b {
         id
         name
       }
@@ -853,6 +861,7 @@ export const LIST_ALL_MY_SCHEDULED_SESSIONS = `
       id
       title
       workout_template_id
+      workout_template_id_b
       recurrence_type
       weekdays
       scheduled_date
@@ -866,6 +875,10 @@ export const LIST_ALL_MY_SCHEDULED_SESSIONS = `
         id
         name
       }
+      workout_template_b {
+        id
+        name
+      }
     }
   }
 `
@@ -876,6 +889,7 @@ export const INSERT_SCHEDULED_SESSION = `
       id
       title
       workout_template_id
+      workout_template_id_b
       recurrence_type
       weekdays
       scheduled_date
@@ -884,6 +898,10 @@ export const INSERT_SCHEDULED_SESSION = `
       end_date
       is_active
       workout_template {
+        id
+        name
+      }
+      workout_template_b {
         id
         name
       }
@@ -900,6 +918,7 @@ export const UPDATE_SCHEDULED_SESSION = `
       id
       title
       workout_template_id
+      workout_template_id_b
       recurrence_type
       weekdays
       scheduled_date
@@ -909,6 +928,10 @@ export const UPDATE_SCHEDULED_SESSION = `
       is_active
       updated_at
       workout_template {
+        id
+        name
+      }
+      workout_template_b {
         id
         name
       }

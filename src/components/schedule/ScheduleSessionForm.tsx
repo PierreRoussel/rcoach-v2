@@ -21,7 +21,8 @@ const WEEKDAY_LABELS = [
 export type ScheduleFormValues = {
   title: string
   workoutTemplateId: string | null
-  recurrenceType: 'once' | 'weekly'
+  workoutTemplateIdB: string | null
+  recurrenceType: 'once' | 'weekly' | 'aba'
   weekdays: number[]
   scheduledDate: string
   startDate: string
@@ -52,6 +53,7 @@ function defaultValues(
     return {
       title: editing.title,
       workoutTemplateId: editing.workout_template_id,
+      workoutTemplateIdB: editing.workout_template_id_b ?? null,
       recurrenceType: editing.recurrence_type,
       weekdays: editing.weekdays ?? [],
       scheduledDate: editing.scheduled_date ?? format(today, 'yyyy-MM-dd'),
@@ -64,6 +66,7 @@ function defaultValues(
   return {
     title: initialTitle ?? '',
     workoutTemplateId: initialTemplateId ?? null,
+    workoutTemplateIdB: null,
     recurrenceType: 'once',
     weekdays: [],
     scheduledDate: format(today, 'yyyy-MM-dd'),
@@ -92,6 +95,10 @@ export function ScheduleSessionForm({
     setValues(defaultValues(initialDate, editing, initialTemplateId, initialTitle))
   }, [initialDate, editing, initialTemplateId, initialTitle])
 
+  const isRecurring =
+    values.recurrenceType === 'weekly' || values.recurrenceType === 'aba'
+  const isAba = values.recurrenceType === 'aba'
+
   function toggleWeekday(day: number) {
     setValues((current) => ({
       ...current,
@@ -105,20 +112,47 @@ export function ScheduleSessionForm({
     event.preventDefault()
     setError(null)
 
-    const resolvedTitle = resolveScheduleTitle(values, templates)
+    const resolvedTitle = resolveScheduleTitle(
+      {
+        title: values.title,
+        workoutTemplateId: values.workoutTemplateId,
+        workoutTemplateIdB: values.workoutTemplateIdB,
+        recurrenceType: values.recurrenceType,
+      },
+      templates,
+    )
 
-    if (!resolvedTitle) {
+    if (!resolvedTitle && !isAba) {
       setError('Indiquez un titre ou selectionnez un modele.')
       return
     }
 
-    if (values.recurrenceType === 'weekly' && values.weekdays.length === 0) {
+    if (isRecurring && values.weekdays.length === 0) {
       setError('Selectionnez au moins un jour.')
       return
     }
 
+    if (isAba) {
+      if (!values.workoutTemplateId || !values.workoutTemplateIdB) {
+        setError('Selectionnez les deux modeles A et B.')
+        return
+      }
+
+      if (values.workoutTemplateId === values.workoutTemplateIdB) {
+        setError('Les deux modeles doivent etre differents.')
+        return
+      }
+    }
+
     try {
-      await onSubmit({ ...values, title: resolvedTitle })
+      await onSubmit({
+        ...values,
+        title:
+          resolvedTitle ||
+          `${templates.find((entry) => entry.id === values.workoutTemplateId)?.name ?? 'A'} / ${
+            templates.find((entry) => entry.id === values.workoutTemplateIdB)?.name ?? 'B'
+          }`,
+      })
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -140,7 +174,7 @@ export function ScheduleSessionForm({
         </p>
         <div className="space-y-2">
           <Label htmlFor="scheduleTitle">
-            Titre{selectedTemplate ? ' (optionnel)' : ''}
+            Titre{selectedTemplate && !isAba ? ' (optionnel)' : isAba ? ' (optionnel)' : ''}
           </Label>
           <Input
             id="scheduleTitle"
@@ -149,48 +183,101 @@ export function ScheduleSessionForm({
               setValues((current) => ({ ...current, title: event.target.value }))
             }
             placeholder={
-              selectedTemplate
-                ? `Par defaut : ${selectedTemplate.name}`
-                : 'Push, Legs, Cardio...'
+              isAba
+                ? 'Par defaut : Push / Pull'
+                : selectedTemplate
+                  ? `Par defaut : ${selectedTemplate.name}`
+                  : 'Push, Legs, Cardio...'
             }
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="scheduleTemplate">Modele (optionnel)</Label>
-          <select
-            id="scheduleTemplate"
-            className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-            value={values.workoutTemplateId ?? ''}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                workoutTemplateId: event.target.value || null,
-              }))
-            }
-          >
-            <option value="">Aucun modele</option>
-            {templates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isAba ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="scheduleTemplateA">Modele A</Label>
+              <select
+                id="scheduleTemplateA"
+                className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+                value={values.workoutTemplateId ?? ''}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    workoutTemplateId: event.target.value || null,
+                  }))
+                }
+              >
+                <option value="">Choisir le modele A</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scheduleTemplateB">Modele B</Label>
+              <select
+                id="scheduleTemplateB"
+                className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+                value={values.workoutTemplateIdB ?? ''}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    workoutTemplateIdB: event.target.value || null,
+                  }))
+                }
+              >
+                <option value="">Choisir le modele B</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="scheduleTemplate">Modele (optionnel)</Label>
+            <select
+              id="scheduleTemplate"
+              className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+              value={values.workoutTemplateId ?? ''}
+              onChange={(event) =>
+                setValues((current) => ({
+                  ...current,
+                  workoutTemplateId: event.target.value || null,
+                }))
+              }
+            >
+              <option value="">Aucun modele</option>
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 rounded-2xl bg-muted/25 p-4">
         <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
           Recurrence
         </p>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <Button
             type="button"
             size="sm"
             variant={values.recurrenceType === 'once' ? 'pill' : 'outline'}
-            className="flex-1 rounded-full"
+            className="rounded-full px-2"
             onClick={() =>
-              setValues((current) => ({ ...current, recurrenceType: 'once' }))
+              setValues((current) => ({
+                ...current,
+                recurrenceType: 'once',
+                workoutTemplateIdB: null,
+              }))
             }
           >
             Une fois
@@ -199,14 +286,39 @@ export function ScheduleSessionForm({
             type="button"
             size="sm"
             variant={values.recurrenceType === 'weekly' ? 'pill' : 'outline'}
-            className="flex-1 rounded-full"
+            className="rounded-full px-2"
             onClick={() =>
-              setValues((current) => ({ ...current, recurrenceType: 'weekly' }))
+              setValues((current) => ({
+                ...current,
+                recurrenceType: 'weekly',
+                workoutTemplateIdB: null,
+              }))
             }
           >
-            Chaque semaine
+            Hebdo
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={values.recurrenceType === 'aba' ? 'pill' : 'outline'}
+            className="rounded-full px-2"
+            onClick={() =>
+              setValues((current) => ({
+                ...current,
+                recurrenceType: 'aba',
+              }))
+            }
+          >
+            ABA
           </Button>
         </div>
+
+        {isAba ? (
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Alterne les modeles A et B sur les jours choisis, sans rupture de
+            sequence (ABABAB...).
+          </p>
+        ) : null}
 
         {values.recurrenceType === 'once' ? (
           <div className="space-y-2">
@@ -225,7 +337,7 @@ export function ScheduleSessionForm({
               }
             />
           </div>
-        ) : (
+        ) : isRecurring ? (
           <>
             <div className="space-y-2">
               <Label>Jours</Label>
@@ -277,7 +389,7 @@ export function ScheduleSessionForm({
               </div>
             </div>
           </>
-        )}
+        ) : null}
       </div>
 
       <div className="space-y-2 rounded-2xl bg-muted/25 p-4">
@@ -319,6 +431,12 @@ export function describeScheduledSession(session: ScheduledSessionRecord): strin
   )
     .map((day) => day.label)
     .join(', ')
+
+  if (session.recurrence_type === 'aba') {
+    const nameA = session.workout_template?.name ?? 'A'
+    const nameB = session.workout_template_b?.name ?? 'B'
+    return `Alterne ${labels || 'chaque semaine'} · ${nameA} / ${nameB}`
+  }
 
   return `Chaque ${labels || 'semaine'}`
 }

@@ -76,7 +76,7 @@ export function useCreateScheduledSession() {
               ...input,
               is_active: input.is_active ?? true,
             },
-            ['workout_template_id', 'weekdays', 'scheduled_date', 'time_local', 'end_date'],
+            ['workout_template_id', 'workout_template_id_b', 'weekdays', 'scheduled_date', 'time_local', 'end_date'],
           ),
         })
 
