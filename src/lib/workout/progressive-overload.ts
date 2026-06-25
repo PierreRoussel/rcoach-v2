@@ -5,6 +5,7 @@ export type SetSnapshot = {
   set_type: string
   weight_kg: number | null
   reps: number | null
+  rpe?: number | null
   duration_seconds?: number | null
   distance_km?: number | null
 }
@@ -98,6 +99,35 @@ function bestWorkingSet(sets: SetSnapshot[]) {
   })
 }
 
+function formatRpeSuffix(rpe: number | null | undefined): string {
+  if (rpe == null) {
+    return ''
+  }
+
+  const value = Number.isInteger(rpe) ? String(rpe) : String(rpe)
+  return ` @ ${value}`
+}
+
+export function formatLastSessionReference(best: SetSnapshot): string {
+  if (best.weight_kg != null && best.reps != null) {
+    return `${best.weight_kg} kg x ${best.reps}${formatRpeSuffix(best.rpe)}`
+  }
+
+  if (best.reps != null) {
+    return `${best.reps} reps${formatRpeSuffix(best.rpe)}`
+  }
+
+  if (best.duration_seconds != null) {
+    return `${best.duration_seconds}s${formatRpeSuffix(best.rpe)}`
+  }
+
+  if (best.distance_km != null) {
+    return `${best.distance_km} km${formatRpeSuffix(best.rpe)}`
+  }
+
+  return ''
+}
+
 export function summarizePerformance(
   workoutTitle: string,
   startedAt: string,
@@ -121,6 +151,7 @@ export function suggestProgressiveOverload(
 
   const kind = classifyExercise(exercise)
   const best = last.bestSet
+  const lastSession = formatLastSessionReference(best)
 
   switch (kind) {
     case 'weighted': {
@@ -134,7 +165,7 @@ export function suggestProgressiveOverload(
         const increment = weight >= 80 ? 5 : 2.5
         return {
           kind,
-          message: `Derniere seance : ${weight} kg x ${reps}. Essayer ${weight + increment} kg x ${Math.max(reps - 1, 6)} reps.`,
+          message: `Derniere seance : ${lastSession}. Essayer ${weight + increment} kg x ${Math.max(reps - 1, 6)} reps.`,
           suggestedWeightKg: weight + increment,
           suggestedReps: Math.max(reps - 1, 6),
           suggestedDurationSeconds: null,
@@ -144,7 +175,7 @@ export function suggestProgressiveOverload(
 
       return {
         kind,
-        message: `Derniere seance : ${weight} kg x ${reps}. Viser ${weight} kg x ${reps + 1} reps.`,
+        message: `Derniere seance : ${lastSession}. Viser ${weight} kg x ${reps + 1} reps.`,
         suggestedWeightKg: weight,
         suggestedReps: reps + 1,
         suggestedDurationSeconds: null,
@@ -160,7 +191,7 @@ export function suggestProgressiveOverload(
 
       return {
         kind,
-        message: `Derniere seance : ${reps} reps. Viser ${reps + 1} a ${reps + 2} reps.`,
+        message: `Derniere seance : ${lastSession}. Viser ${reps + 1} a ${reps + 2} reps.`,
         suggestedWeightKg: best.weight_kg,
         suggestedReps: reps + 1,
         suggestedDurationSeconds: null,
@@ -173,7 +204,7 @@ export function suggestProgressiveOverload(
       return {
         kind,
         message: reps
-          ? `Derniere seance : ${reps} reps band. Ajouter 1-2 reps ou une tension superieure.`
+          ? `Derniere seance : ${lastSession}. Ajouter 1-2 reps ou une tension superieure.`
           : 'Augmenter legerement la tension ou les reps.',
         suggestedWeightKg: null,
         suggestedReps: reps ? reps + 1 : null,
@@ -188,7 +219,7 @@ export function suggestProgressiveOverload(
       if (distance != null) {
         return {
           kind,
-          message: `Derniere seance : ${distance} km. Viser +0.2 km a allure similaire.`,
+          message: `Derniere seance : ${lastSession}. Viser +0.2 km a allure similaire.`,
           suggestedWeightKg: null,
           suggestedReps: null,
           suggestedDurationSeconds: duration,
@@ -199,7 +230,7 @@ export function suggestProgressiveOverload(
       if (duration != null) {
         return {
           kind,
-          message: `Derniere seance : ${Math.round(duration / 60)} min. Viser +2 min.`,
+          message: `Derniere seance : ${lastSession}. Viser +2 min.`,
           suggestedWeightKg: null,
           suggestedReps: null,
           suggestedDurationSeconds: duration + 120,
@@ -218,7 +249,7 @@ export function suggestProgressiveOverload(
 
       return {
         kind,
-        message: `Derniere seance : ${duration}s. Viser ${duration + 10}s.`,
+        message: `Derniere seance : ${lastSession}. Viser ${duration + 10}s.`,
         suggestedWeightKg: null,
         suggestedReps: null,
         suggestedDurationSeconds: duration + 10,
@@ -229,4 +260,41 @@ export function suggestProgressiveOverload(
     default:
       return null
   }
+}
+
+export function isWorkingSet(set: { setType?: string }) {
+  return (set.setType ?? 'normal') !== 'warmup'
+}
+
+type OverloadSetFields = {
+  setType?: string
+  weightKg?: number | null
+  reps?: number | null
+  durationSeconds?: number | null
+  distanceKm?: number | null
+}
+
+export function applyOverloadToWorkingSets<T extends OverloadSetFields>(
+  sets: T[],
+  suggestion: OverloadSuggestion,
+): T[] {
+  return sets.map((set) => {
+    if (!isWorkingSet(set)) {
+      return set
+    }
+
+    return {
+      ...set,
+      ...(suggestion.suggestedWeightKg != null
+        ? { weightKg: suggestion.suggestedWeightKg }
+        : {}),
+      ...(suggestion.suggestedReps != null ? { reps: suggestion.suggestedReps } : {}),
+      ...(suggestion.suggestedDurationSeconds != null
+        ? { durationSeconds: suggestion.suggestedDurationSeconds }
+        : {}),
+      ...(suggestion.suggestedDistanceKm != null
+        ? { distanceKm: suggestion.suggestedDistanceKm }
+        : {}),
+    }
+  })
 }

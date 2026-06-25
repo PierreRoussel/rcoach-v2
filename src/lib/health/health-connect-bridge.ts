@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 
-import type { HealthConnectAvailability } from '@rcoach/capacitor-health-connect'
+import type { HealthConnectAvailability, HeartRateSummary } from '@rcoach/capacitor-health-connect'
 
 type HealthConnectPluginLike = {
   isAvailable(): Promise<{ status: HealthConnectAvailability }>
@@ -13,6 +13,10 @@ type HealthConnectPluginLike = {
     endTime: string
     exerciseType?: 'STRENGTH_TRAINING'
   }): Promise<void>
+  readHeartRateSummary(options: {
+    startTime: string
+    endTime: string
+  }): Promise<HeartRateSummary>
   openHealthConnectSettings(): Promise<void>
 }
 
@@ -111,6 +115,22 @@ export async function writeHealthConnectExerciseSession(options: {
   }
 
   await plugin.writeExerciseSession(options)
+}
+
+export async function readHeartRateSummaryFromBridge(
+  startTime: string,
+  endTime: string,
+): Promise<HeartRateSummary> {
+  const plugin = await loadHealthConnectPlugin()
+  if (!plugin) {
+    return { sampleCount: 0 }
+  }
+
+  try {
+    return await plugin.readHeartRateSummary({ startTime, endTime })
+  } catch {
+    return { sampleCount: 0 }
+  }
 }
 
 export async function openHealthConnectSettings() {

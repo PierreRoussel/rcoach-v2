@@ -2,9 +2,11 @@ import { Link } from '@tanstack/react-router'
 
 import { BrandLogo } from '@/design-system'
 import { useCalendarData } from '@/hooks/useCalendarData'
+import { useActiveWorkoutElapsed } from '@/hooks/useActiveWorkoutElapsed'
 import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { formatTodayReminderMessage } from '@/lib/schedule/today-reminders'
+import { getWorkoutEncouragementMessage } from '@/lib/workout/workout-encouragement'
 
 function getFirstName(displayName: string | null | undefined): string | null {
   if (!displayName?.trim()) {
@@ -46,11 +48,18 @@ type AppWelcomeHeaderProps = {
 
 export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
   const startedAt = useActiveWorkoutStore((state) => state.startedAt)
+  const workoutTitle = useActiveWorkoutStore((state) => state.title)
+  const exercises = useActiveWorkoutStore((state) => state.exercises)
+  const lastCompletedStep = useActiveWorkoutStore((state) => state.lastCompletedStep)
+  const elapsed = useActiveWorkoutElapsed(startedAt)
   const { workouts, todayReminders } = useCalendarData()
   const { startPlannedSession, isStarting } = useStartPlannedSession()
 
   const firstName = getFirstName(displayName)
   const greeting = firstName ? `Bonjour ${firstName} 👋` : 'Bonjour 👋'
+  const encouragement = startedAt
+    ? getWorkoutEncouragementMessage(exercises, lastCompletedStep)
+    : null
 
   const mostRecentWorkout = workouts[0]
   const todayMessage = formatTodayReminderMessage(todayReminders)
@@ -60,46 +69,55 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
     <div className="flex min-w-0 flex-1 items-center gap-3">
       <BrandLogo compact />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-sm font-black text-foreground">
-          {greeting}
-        </p>
-        {todayMessage && primaryReminder ? (
-          <p className="truncate text-xs text-muted-foreground">
-            {todayMessage} —{' '}
-            <button
-              type="button"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-              disabled={isStarting}
-              onClick={() => void startPlannedSession(primaryReminder)}
-            >
-              Demarrer
-            </button>
-            {' · '}
-            <Link
-              to="/app/planning"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-            >
-              Planning
-            </Link>
-          </p>
-        ) : startedAt ? (
-          <p className="truncate text-xs text-muted-foreground">
-            Seance en cours —{' '}
-            <Link
-              to="/app/workout/active"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-            >
-              Reprendre
-            </Link>
-          </p>
-        ) : mostRecentWorkout ? (
-          <p className="truncate text-xs text-muted-foreground">
-            {formatLastSessionMessage(mostRecentWorkout.started_at)}
-          </p>
+        {startedAt ? (
+          <>
+            <p className="truncate font-display text-sm font-black text-foreground">
+              <Link
+                to="/app/workout/active"
+                className="hover:text-primary"
+              >
+                {workoutTitle.trim() || 'Seance en cours'}
+              </Link>
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {elapsed}
+              {encouragement ? ` · ${encouragement}` : null}
+            </p>
+          </>
         ) : (
-          <p className="truncate text-xs text-muted-foreground">
-            Pret pour votre premiere seance ?
-          </p>
+          <>
+            <p className="truncate font-display text-sm font-black text-foreground">
+              {greeting}
+            </p>
+            {todayMessage && primaryReminder ? (
+              <p className="truncate text-xs text-muted-foreground">
+                {todayMessage} —{' '}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                  disabled={isStarting}
+                  onClick={() => void startPlannedSession(primaryReminder)}
+                >
+                  Demarrer
+                </button>
+                {' · '}
+                <Link
+                  to="/app/planning"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Planning
+                </Link>
+              </p>
+            ) : mostRecentWorkout ? (
+              <p className="truncate text-xs text-muted-foreground">
+                {formatLastSessionMessage(mostRecentWorkout.started_at)}
+              </p>
+            ) : (
+              <p className="truncate text-xs text-muted-foreground">
+                Pret pour votre premiere seance ?
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

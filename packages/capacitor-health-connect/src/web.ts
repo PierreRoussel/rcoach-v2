@@ -3,6 +3,8 @@ import { WebPlugin } from '@capacitor/core'
 import type {
   HealthConnectAvailability,
   HealthConnectPlugin,
+  HeartRateSummary,
+  ReadHeartRateSummaryOptions,
   WriteExerciseSessionOptions,
 } from './definitions'
 
@@ -21,6 +23,12 @@ export class HealthConnectWeb extends WebPlugin implements HealthConnectPlugin {
 
   async writeExerciseSession(_options: WriteExerciseSessionOptions): Promise<void> {
     return
+  }
+
+  async readHeartRateSummary(
+    _options: ReadHeartRateSummaryOptions,
+  ): Promise<HeartRateSummary> {
+    return { sampleCount: 0 }
   }
 
   async openHealthConnectSettings(): Promise<void> {

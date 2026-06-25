@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 
 import { ThemeProvider } from '@/design-system'
 import { AuthProvider } from '@/lib/nhost/AuthProvider'
+import { resolveViewTransitionTypes } from '@/lib/router/view-transition-types'
 import { routeTree } from '@/routeTree.gen'
 
 import './index.css'
@@ -21,6 +22,10 @@ const queryClient = new QueryClient({
 const router = createRouter({
   routeTree,
   context: {},
+  defaultViewTransition: {
+    types: ({ fromLocation, toLocation }) =>
+      resolveViewTransitionTypes(fromLocation?.pathname, toLocation.pathname),
+  },
 })
 
 declare module '@tanstack/react-router' {

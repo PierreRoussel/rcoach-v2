@@ -1,7 +1,9 @@
+import { useNavigate } from '@tanstack/react-router'
 import { Trophy } from 'lucide-react'
 
 import { Pill } from '@/design-system'
 import type { TopExerciseByZone } from '@/lib/stats/analytics'
+import { cn } from '@/lib/utils'
 
 type MuscleZoneInsightsProps = {
   zones: TopExerciseByZone[]
@@ -20,6 +22,79 @@ function percentileTone(percentile: number): 'primary' | 'secondary' | 'accent' 
   return 'default'
 }
 
+function ZoneInsightCard({ zone }: { zone: TopExerciseByZone }) {
+  const navigate = useNavigate()
+  const isClickable = Boolean(zone.exerciseId)
+
+  const content = (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {zone.label}
+          </p>
+          <p className="font-display font-black text-foreground">{zone.exerciseName}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {zone.sets} sets · {Math.round(zone.volume).toLocaleString('fr-FR')} kg·reps
+          </p>
+        </div>
+
+        {zone.strength ? (
+          <div className="text-right">
+            <Pill tone={percentileTone(zone.strength.percentile)}>
+              <Trophy className="size-3" />
+              {zone.strength.percentile}e percentile
+            </Pill>
+            <p className="mt-2 text-xs font-semibold text-primary">
+              {zone.strength.tierLabel}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              1RM est. {zone.strength.oneRmKg} kg
+              {zone.strength.isEstimated ? ' · repere zone' : ''}
+            </p>
+          </div>
+        ) : (
+          <Pill tone="default">Force N/A</Pill>
+        )}
+      </div>
+
+      {zone.strength ? (
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${zone.strength.percentile}%` }}
+          />
+        </div>
+      ) : null}
+    </>
+  )
+
+  if (!isClickable) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-4">{content}</div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        'w-full rounded-2xl border border-border bg-card p-4 text-left',
+        'transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+      )}
+      onClick={() =>
+        void navigate({
+          to: '/app/stats/exercises/$exerciseId',
+          params: { exerciseId: zone.exerciseId! },
+          search: { from: 'featured' },
+        })
+      }
+    >
+      {content}
+    </button>
+  )
+}
+
 export function MuscleZoneInsights({ zones }: MuscleZoneInsightsProps) {
   if (zones.length === 0) {
     return (
@@ -32,49 +107,7 @@ export function MuscleZoneInsights({ zones }: MuscleZoneInsightsProps) {
   return (
     <div className="space-y-3">
       {zones.map((zone) => (
-        <div
-          key={zone.muscle}
-          className="rounded-2xl border border-border bg-card p-4"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {zone.label}
-              </p>
-              <p className="font-display font-black text-foreground">{zone.exerciseName}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {zone.sets} sets · {Math.round(zone.volume).toLocaleString('fr-FR')} kg·reps
-              </p>
-            </div>
-
-            {zone.strength ? (
-              <div className="text-right">
-                <Pill tone={percentileTone(zone.strength.percentile)}>
-                  <Trophy className="size-3" />
-                  {zone.strength.percentile}e percentile
-                </Pill>
-                <p className="mt-2 text-xs font-semibold text-primary">
-                  {zone.strength.tierLabel}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  1RM est. {zone.strength.oneRmKg} kg
-                  {zone.strength.isEstimated ? ' · repere zone' : ''}
-                </p>
-              </div>
-            ) : (
-              <Pill tone="default">Force N/A</Pill>
-            )}
-          </div>
-
-          {zone.strength ? (
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${zone.strength.percentile}%` }}
-              />
-            </div>
-          ) : null}
-        </div>
+        <ZoneInsightCard key={zone.muscle} zone={zone} />
       ))}
     </div>
   )

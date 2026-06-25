@@ -3,7 +3,7 @@ import { Dumbbell, History } from 'lucide-react'
 
 import { RecentWorkoutsFeed } from '@/components/workout/RecentWorkoutsFeed'
 import { Button } from '@/components/ui/button'
-import { PageHeader } from '@/design-system'
+import { AnimateIn, PageHeader, StaggerGroup } from '@/design-system'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 
 export const Route = createFileRoute('/app/')({
@@ -15,13 +15,15 @@ function AppHomePage() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-3xl bg-gradient-hero border border-border p-5">
-        <PageHeader
-          eyebrow="Athlete"
-          title="Move with joy"
-          description="Lancez une seance et suivez votre progression."
-        />
-        <div className="mt-4 flex flex-wrap gap-2">
+      <AnimateIn as="section" className="rounded-3xl border border-border bg-gradient-hero-animated p-5">
+        <StaggerGroup baseDelay={80}>
+          <PageHeader
+            eyebrow="Athlete"
+            title="Move with joy"
+            description="Lancez une seance et suivez votre progression."
+          />
+        </StaggerGroup>
+        <StaggerGroup baseDelay={160} className="mt-4 flex flex-wrap gap-2">
           <Button variant="pill" asChild>
             <Link to="/app/workout/active">
               {startedAt ? 'Reprendre la seance' : 'Demarrer une seance'}
@@ -39,10 +41,12 @@ function AppHomePage() {
               Catalogue
             </Link>
           </Button>
-        </div>
-      </section>
+        </StaggerGroup>
+      </AnimateIn>
 
-      <RecentWorkoutsFeed limit={5} showViewAll />
+      <AnimateIn delay={400}>
+        <RecentWorkoutsFeed limit={5} showViewAll />
+      </AnimateIn>
     </div>
   )
 }

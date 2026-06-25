@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ActiveSetOptionsDrawer } from '@/components/workout/ActiveSetOptionsDrawer'
+import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
 import { RpeSelect } from '@/components/workout/RpeSelect'
@@ -21,15 +22,23 @@ import {
   getLastSetSummary,
   type TemplateSetHistory,
 } from '@/lib/workout/template-set-history'
+import type { OverloadSuggestion } from '@/lib/workout/progressive-overload'
 
 type ActiveWorkoutCircuitProps = {
   exercises: ActiveExerciseEntry[]
   lastCompletedStep: CircuitStep | null
   rpeEnabled: boolean
+  showLastSetColumn?: boolean
   templateSetHistory?: TemplateSetHistory
   onSelectExercise: (exerciseIndex: number) => void
   onReorderExercises: (fromIndex: number, toIndex: number) => void
   onRemoveExercise: (exerciseIndex: number) => void
+  onReplaceExercise: (exerciseIndex: number, exercise: {
+    id: string
+    name: string
+    muscle_group?: string | null
+    equipment?: string | null
+  }) => void
   onAddToSuperset: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset: (exerciseIndex: number) => void
   onUpdateExerciseRest: (exerciseIndex: number, restSeconds: number) => void
@@ -48,16 +57,22 @@ type ActiveWorkoutCircuitProps = {
   onAddPlannedSet: (exerciseIndex: number) => void
   onDeleteSet: (exerciseIndex: number, setIndex: number) => void
   onReorderSets: (exerciseIndex: number, fromIndex: number, toIndex: number) => void
+  onApplyOverloadSuggestion?: (
+    exerciseIndex: number,
+    suggestion: OverloadSuggestion,
+  ) => void
 }
 
 export function ActiveWorkoutCircuit({
   exercises,
   lastCompletedStep,
   rpeEnabled,
+  showLastSetColumn = false,
   templateSetHistory,
   onSelectExercise,
   onReorderExercises,
   onRemoveExercise,
+  onReplaceExercise,
   onAddToSuperset,
   onRemoveFromSuperset,
   onUpdateExerciseRest,
@@ -67,6 +82,7 @@ export function ActiveWorkoutCircuit({
   onAddPlannedSet,
   onDeleteSet,
   onReorderSets,
+  onApplyOverloadSuggestion,
 }: ActiveWorkoutCircuitProps) {
   const steps = buildCircuitSteps(exercises)
   const nextPendingStepIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
@@ -110,9 +126,10 @@ export function ActiveWorkoutCircuit({
     )
     const isCompleted = Boolean(set.completedAt)
     const isNextToDo = globalStepIndex === nextPendingStepIndex && !isCompleted
-    const lastSetSummary = templateSetHistory
-      ? getLastSetSummary(templateSetHistory, exercise.exerciseId, set.setIndex)
-      : null
+    const lastSetSummary =
+      showLastSetColumn && templateSetHistory
+        ? getLastSetSummary(templateSetHistory, exercise.exerciseId, set.setIndex)
+        : null
 
     return (
       <div
@@ -162,7 +179,7 @@ export function ActiveWorkoutCircuit({
             )}
           </button>
 
-          {templateSetHistory ? (
+          {showLastSetColumn ? (
             <div className="min-w-[4.25rem] max-w-[5.5rem] shrink-0 basis-[22%]">
               <LastSetPerformanceHint summary={lastSetSummary} />
             </div>
@@ -231,6 +248,7 @@ export function ActiveWorkoutCircuit({
         onSelect={onSelectExercise}
         onReorder={onReorderExercises}
         onRemove={onRemoveExercise}
+        onReplace={onReplaceExercise}
         onAddToSuperset={onAddToSuperset}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={() => setReorderOpen(true)}
@@ -271,11 +289,54 @@ export function ActiveWorkoutCircuit({
             </div>
           )
         }}
-        renderSetsContent={(index) => (
-          <div className="w-full divide-y divide-border/60">
-            {exercises[index]?.sets.map((set) => renderSetRow(index, set.setIndex))}
-          </div>
-        )}
+        renderSetsContent={(index) => {
+          const exercise = exercises[index]
+          if (!exercise) {
+            return null
+          }
+
+          return (
+            <div className="w-full space-y-2 px-4">
+              <ExerciseOverloadHint
+                compact
+                exercise={{
+                  id: exercise.exerciseId,
+                  name: exercise.exerciseName,
+                  equipment: exercise.equipment ?? null,
+                }}
+                onApply={
+                  onApplyOverloadSuggestion
+                    ? (suggestion) => onApplyOverloadSuggestion(index, suggestion)
+                    : undefined
+                }
+              />
+              <div className="w-full divide-y divide-border/60">
+                <div
+                  className={cn(
+                    'grid w-full gap-1.5 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+                    showLastSetColumn
+                      ? rpeEnabled
+                        ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_2.5rem_2rem]'
+                        : 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_2rem]'
+                      : rpeEnabled
+                        ? 'grid-cols-[2rem_1fr_1fr_2.5rem_2rem]'
+                        : 'grid-cols-[2rem_1fr_1fr_2rem]',
+                  )}
+                >
+                  <span>#</span>
+                  {showLastSetColumn ? <span>Dern.</span> : null}
+                  <span>kg</span>
+                  <span>reps</span>
+                  {rpeEnabled ? <span>RPE</span> : null}
+                  <span aria-hidden className="sr-only">
+                    Valider
+                  </span>
+                </div>
+                {exercise.sets.map((set) => renderSetRow(index, set.setIndex))}
+              </div>
+            </div>
+          )
+        }}
       />
 
       <ExerciseReorderDrawer

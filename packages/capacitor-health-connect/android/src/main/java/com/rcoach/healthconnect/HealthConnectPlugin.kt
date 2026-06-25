@@ -7,7 +7,10 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.time.TimeRangeFilter
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -27,11 +30,16 @@ class HealthConnectPlugin : Plugin() {
     private var permissionCall: PluginCall? = null
     private var permissionLauncher: ActivityResultLauncher<Set<String>>? = null
 
-    private val exercisePermissions: Set<String> by lazy {
+    private val healthPermissions: Set<String> by lazy {
         setOf(
             HealthPermission.getWritePermission(ExerciseSessionRecord::class),
             HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+            HealthPermission.getReadPermission(HeartRateRecord::class),
         )
+    }
+
+    private val heartRateReadPermission: String by lazy {
+        HealthPermission.getReadPermission(HeartRateRecord::class)
     }
 
     override fun load() {
@@ -47,7 +55,7 @@ class HealthConnectPlugin : Plugin() {
             }
 
             val result = JSObject()
-            result.put("granted", granted.containsAll(exercisePermissions))
+            result.put("granted", granted.containsAll(healthPermissions))
             call.resolve(result)
         }
     }
@@ -73,7 +81,7 @@ class HealthConnectPlugin : Plugin() {
                 val client = HealthConnectClient.getOrCreate(context)
                 val granted = client.permissionController.getGrantedPermissions()
                 val result = JSObject()
-                result.put("granted", granted.containsAll(exercisePermissions))
+                result.put("granted", granted.containsAll(healthPermissions))
                 call.resolve(result)
             } catch (error: Exception) {
                 call.reject(error.message ?: "Unable to read Health Connect permissions")
@@ -95,7 +103,7 @@ class HealthConnectPlugin : Plugin() {
         }
 
         permissionCall = call
-        launcher.launch(exercisePermissions)
+        launcher.launch(healthPermissions)
     }
 
     @PluginMethod
@@ -120,7 +128,7 @@ class HealthConnectPlugin : Plugin() {
             try {
                 val client = HealthConnectClient.getOrCreate(context)
                 val granted = client.permissionController.getGrantedPermissions()
-                if (!granted.containsAll(exercisePermissions)) {
+                if (!granted.containsAll(healthPermissions)) {
                     call.reject("Health Connect exercise permissions are not granted")
                     return@launch
                 }
@@ -152,6 +160,102 @@ class HealthConnectPlugin : Plugin() {
                 call.resolve()
             } catch (error: Exception) {
                 call.reject(error.message ?: "Unable to write exercise session")
+            }
+        }
+    }
+
+    @PluginMethod
+    fun readHeartRateSummary(call: PluginCall) {
+        val startTime = call.getString("startTime")
+        val endTime = call.getString("endTime")
+
+        if (startTime.isNullOrBlank() || endTime.isNullOrBlank()) {
+            call.reject("startTime and endTime are required")
+            return
+        }
+
+        if (!isHealthConnectReady()) {
+            val result = JSObject()
+            result.put("sampleCount", 0)
+            call.resolve(result)
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val client = HealthConnectClient.getOrCreate(context)
+                val granted = client.permissionController.getGrantedPermissions()
+
+                if (!granted.contains(heartRateReadPermission)) {
+                    val result = JSObject()
+                    result.put("sampleCount", 0)
+                    call.resolve(result)
+                    return@launch
+                }
+
+                val startInstant = Instant.parse(startTime)
+                val endInstant = Instant.parse(endTime)
+                if (!endInstant.isAfter(startInstant)) {
+                    val result = JSObject()
+                    result.put("sampleCount", 0)
+                    call.resolve(result)
+                    return@launch
+                }
+
+                val response = withContext(Dispatchers.IO) {
+                    client.readRecords(
+                        ReadRecordsRequest(
+                            recordType = HeartRateRecord::class,
+                            timeRangeFilter = TimeRangeFilter.between(startInstant, endInstant),
+                        ),
+                    )
+                }
+
+                var weightedSum = 0.0
+                var totalWeightSeconds = 0.0
+                var maxBpm = 0L
+                var sampleCount = 0
+
+                for (record in response.records) {
+                    val heartRateRecord = record as HeartRateRecord
+                    val samples = heartRateRecord.samples
+
+                    for (index in samples.indices) {
+                        val sample = samples[index]
+                        val bpm = sample.beatsPerMinute.toLong()
+                        maxBpm = maxOf(maxBpm, bpm)
+                        sampleCount += 1
+
+                        val sampleStart = sample.time
+                        val sampleEnd = if (index < samples.lastIndex) {
+                            samples[index + 1].time
+                        } else {
+                            heartRateRecord.endTime
+                        }
+
+                        val durationSeconds = java.time.Duration
+                            .between(sampleStart, sampleEnd)
+                            .seconds
+                            .coerceAtLeast(1)
+
+                        weightedSum += bpm * durationSeconds
+                        totalWeightSeconds += durationSeconds.toDouble()
+                    }
+                }
+
+                val result = JSObject()
+                result.put("sampleCount", sampleCount)
+
+                if (sampleCount > 0 && totalWeightSeconds > 0) {
+                    result.put("avgBpm", kotlin.math.round(weightedSum / totalWeightSeconds).toInt())
+                    result.put("maxBpm", maxBpm.toInt())
+                }
+
+                call.resolve(result)
+            } catch (_: Exception) {
+                val result = JSObject()
+                result.put("sampleCount", 0)
+                call.resolve(result)
             }
         }
     }

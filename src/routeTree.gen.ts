@@ -32,6 +32,7 @@ import { Route as AppWorkoutsWorkoutIdRouteImport } from './routes/app/workouts/
 import { Route as AppWorkoutActiveRouteImport } from './routes/app/workout/active'
 import { Route as AppSessionsNewRouteImport } from './routes/app/sessions/new'
 import { Route as AppSessionsTemplateIdRouteImport } from './routes/app/sessions/$templateId'
+import { Route as AppStatsExercisesExerciseIdRouteImport } from './routes/app/stats/exercises/$exerciseId'
 
 const CoachRouteRoute = CoachRouteRouteImport.update({
   id: '/coach',
@@ -148,6 +149,12 @@ const AppSessionsTemplateIdRoute = AppSessionsTemplateIdRouteImport.update({
   path: '/sessions/$templateId',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppStatsExercisesExerciseIdRoute =
+  AppStatsExercisesExerciseIdRouteImport.update({
+    id: '/exercises/$exerciseId',
+    path: '/exercises/$exerciseId',
+    getParentRoute: () => AppStatsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -155,7 +162,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof CoachRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
   '/app/profile': typeof AppProfileRoute
-  '/app/stats': typeof AppStatsRoute
+  '/app/stats': typeof AppStatsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
@@ -173,12 +180,13 @@ export interface FileRoutesByFullPath {
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
+  '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/import': typeof AppImportRoute
   '/app/profile': typeof AppProfileRoute
-  '/app/stats': typeof AppStatsRoute
+  '/app/stats': typeof AppStatsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app': typeof AppIndexRoute
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/coach/analytics': typeof CoachAnalyticsIndexRoute
   '/coach/clients': typeof CoachClientsIndexRoute
   '/coach/programs': typeof CoachProgramsIndexRoute
+  '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -204,7 +213,7 @@ export interface FileRoutesById {
   '/coach': typeof CoachRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
   '/app/profile': typeof AppProfileRoute
-  '/app/stats': typeof AppStatsRoute
+  '/app/stats': typeof AppStatsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
@@ -222,6 +231,7 @@ export interface FileRoutesById {
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
+  '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
+    | '/app/stats/exercises/$exerciseId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/coach/analytics'
     | '/coach/clients'
     | '/coach/programs'
+    | '/app/stats/exercises/$exerciseId'
   id:
     | '__root__'
     | '/'
@@ -297,6 +309,7 @@ export interface FileRouteTypes {
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
+    | '/app/stats/exercises/$exerciseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -471,13 +484,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSessionsTemplateIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/stats/exercises/$exerciseId': {
+      id: '/app/stats/exercises/$exerciseId'
+      path: '/exercises/$exerciseId'
+      fullPath: '/app/stats/exercises/$exerciseId'
+      preLoaderRoute: typeof AppStatsExercisesExerciseIdRouteImport
+      parentRoute: typeof AppStatsRoute
+    }
   }
 }
+
+interface AppStatsRouteChildren {
+  AppStatsExercisesExerciseIdRoute: typeof AppStatsExercisesExerciseIdRoute
+}
+
+const AppStatsRouteChildren: AppStatsRouteChildren = {
+  AppStatsExercisesExerciseIdRoute: AppStatsExercisesExerciseIdRoute,
+}
+
+const AppStatsRouteWithChildren = AppStatsRoute._addFileChildren(
+  AppStatsRouteChildren,
+)
 
 interface AppRouteRouteChildren {
   AppImportRoute: typeof AppImportRoute
   AppProfileRoute: typeof AppProfileRoute
-  AppStatsRoute: typeof AppStatsRoute
+  AppStatsRoute: typeof AppStatsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppSessionsTemplateIdRoute: typeof AppSessionsTemplateIdRoute
   AppSessionsNewRoute: typeof AppSessionsNewRoute
@@ -492,7 +524,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppImportRoute: AppImportRoute,
   AppProfileRoute: AppProfileRoute,
-  AppStatsRoute: AppStatsRoute,
+  AppStatsRoute: AppStatsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppSessionsTemplateIdRoute: AppSessionsTemplateIdRoute,
   AppSessionsNewRoute: AppSessionsNewRoute,

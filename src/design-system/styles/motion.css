@@ -1,0 +1,106 @@
+/* Route view transitions (View Transitions API types) */
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@keyframes vt-slide-to-left {
+  to {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes vt-slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes vt-slide-to-right {
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+html:active-view-transition-type(slide-left)::view-transition-old(root) {
+  animation: 250ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide-to-left;
+}
+
+html:active-view-transition-type(slide-left)::view-transition-new(root) {
+  animation: 250ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide-from-right;
+}
+
+html:active-view-transition-type(slide-right)::view-transition-old(root) {
+  animation: 250ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide-to-right;
+}
+
+html:active-view-transition-type(slide-right)::view-transition-new(root) {
+  animation: 250ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide-from-left;
+}
+
+html:active-view-transition-type(fade)::view-transition-old(root) {
+  animation: 200ms ease both vt-fade-out;
+}
+
+html:active-view-transition-type(fade)::view-transition-new(root) {
+  animation: 200ms ease both vt-fade-in;
+}
+
+/* Hero tile — subtle gradient drift */
+
+@keyframes hero-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.bg-gradient-hero-animated {
+  background: linear-gradient(
+    135deg,
+    var(--soft-primary) 0%,
+    var(--muted) 35%,
+    var(--soft-secondary) 65%,
+    var(--soft-primary) 100%
+  );
+  background-size: 200% 200%;
+  animation: hero-gradient-shift 10s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .bg-gradient-hero-animated {
+    background: var(--gradient-hero);
+    background-size: auto;
+    animation: none;
+  }
+}

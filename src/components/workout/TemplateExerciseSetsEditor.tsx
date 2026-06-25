@@ -1,20 +1,18 @@
 import { useRef, useState } from 'react'
-import { Plus } from 'lucide-react'
 
 import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
+import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 import { SetOptionsDrawer } from '@/components/workout/SetOptionsDrawer'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  createTemplateSet,
-  inheritSetValues,
   reindexTemplateSets,
   type TemplateExerciseDraft,
   type TemplateSetDraft,
 } from '@/hooks/useWorkoutTemplates'
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
 import { cn } from '@/lib/utils'
+import { applyOverloadToWorkingSets } from '@/lib/workout/progressive-overload'
 import { getLastSetSummary } from '@/lib/workout/template-set-history'
 
 type TemplateExerciseSetsEditorProps = {
@@ -75,18 +73,6 @@ export function TemplateExerciseSetsEditor({
         set.usesGlobalRest ? { ...set, restSeconds: next } : set,
       ),
     })
-  }
-
-  function handleAddSet() {
-    const inherited = inheritSetValues(exercise.sets)
-    updateSets([
-      ...exercise.sets,
-      createTemplateSet(
-        exercise.sets.length,
-        exercise.defaultRestSeconds,
-        inherited,
-      ),
-    ])
   }
 
   function handleRemoveSet(setIndex: number) {
@@ -217,12 +203,24 @@ export function TemplateExerciseSetsEditor({
     return (
       <div className="space-y-3">
         {defaultRestControl}
+        <div className="px-3">
+          <ExerciseOverloadHint
+            compact
+            exercise={{
+              id: exercise.exerciseId,
+              name: exercise.exerciseName,
+              equipment: exercise.equipment,
+            }}
+            onApply={(suggestion) =>
+              onChange({
+                ...exercise,
+                sets: applyOverloadToWorkingSets(exercise.sets, suggestion),
+              })
+            }
+          />
+        </div>
         <div className="mx-3 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
           <p className="text-sm text-muted-foreground">Aucune serie planifiee.</p>
-          <Button variant="soft" size="sm" className="mt-3" onClick={handleAddSet}>
-            <Plus className="size-4" />
-            Ajouter une serie
-          </Button>
         </div>
       </div>
     )
@@ -231,6 +229,22 @@ export function TemplateExerciseSetsEditor({
   return (
     <div className="space-y-3">
       {defaultRestControl}
+      <div className="px-3">
+        <ExerciseOverloadHint
+          compact
+          exercise={{
+            id: exercise.exerciseId,
+            name: exercise.exerciseName,
+            equipment: exercise.equipment,
+          }}
+          onApply={(suggestion) =>
+            onChange({
+              ...exercise,
+              sets: applyOverloadToWorkingSets(exercise.sets, suggestion),
+            })
+          }
+        />
+      </div>
       <div className="space-y-0">
         <div
           className={cn(
@@ -367,12 +381,6 @@ export function TemplateExerciseSetsEditor({
             ) : null}
           </div>
         ))}
-        <div className="px-3 pt-2">
-          <Button variant="outline" size="sm" className="mt-2" onClick={handleAddSet}>
-            <Plus className="size-4" />
-            Serie
-          </Button>
-        </div>
       </div>
 
       <SetOptionsDrawer

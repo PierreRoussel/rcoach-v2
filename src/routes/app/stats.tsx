@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Activity, Dumbbell, TrendingUp } from 'lucide-react'
+import { createFileRoute, Link, Outlet, useMatchRoute, useNavigate } from '@tanstack/react-router'
+import { Activity, Dumbbell, Search, TrendingUp } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { BodyHeatmap } from '@/components/stats/BodyHeatmap'
+import { ExerciseSearchDrawer } from '@/components/stats/ExerciseSearchDrawer'
 import { MuscleRadarChart } from '@/components/stats/MuscleRadarChart'
 import { MuscleZoneInsights } from '@/components/stats/MuscleZoneInsights'
 import {
@@ -15,17 +17,43 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PageHeader, StatCard } from '@/design-system'
+import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
-import { useMyWorkouts } from '@/hooks/useWorkouts'
+import { useExerciseCatalogStats } from '@/hooks/useExerciseCatalogStats'
+
+type StatsSearch = {
+  scrollTo?: 'featured'
+}
 
 export const Route = createFileRoute('/app/stats')({
+  validateSearch: (search: Record<string, unknown>): StatsSearch => {
+    if (search.scrollTo === 'featured') {
+      return { scrollTo: 'featured' }
+    }
+
+    return {}
+  },
   component: StatsPage,
 })
 
 function StatsPage() {
-  const { data: workouts, isLoading, error } = useMyWorkouts()
+  const matchRoute = useMatchRoute()
+  const navigate = useNavigate()
+  const { scrollTo } = Route.useSearch()
+  const featuredSectionRef = useRef<HTMLElement>(null)
+  const isExerciseDetail = matchRoute({ to: '/app/stats/exercises/$exerciseId' })
+  const {
+    workouts,
+    isLoading,
+    error,
+    isFetchingMore,
+    isCapped,
+    fetchNextPage,
+  } = useAllMyWorkouts()
   const { markers, weeklyStreak, isLoading: calendarLoading } = useCalendarData()
+  const exerciseCatalog = useExerciseCatalogStats(workouts)
+  const [searchOpen, setSearchOpen] = useState(false)
   const {
     weeklyStats,
     radarData,
@@ -36,14 +64,37 @@ function StatsPage() {
     activeZones,
   } = useDetailedStats(workouts)
 
-  const hasData = (workouts?.length ?? 0) > 0
+  const hasData = workouts.length > 0
+
+  useEffect(() => {
+    if (isExerciseDetail || scrollTo !== 'featured') {
+      return
+    }
+
+    const section = featuredSectionRef.current
+    if (!section) {
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+
+    void navigate({ to: '/app/stats', search: {}, replace: true })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [isExerciseDetail, navigate, scrollTo])
+
+  if (isExerciseDetail) {
+    return <Outlet />
+  }
 
   return (
     <div className="space-y-4">
       <PageHeader
         eyebrow="Progression"
         title="Statistiques"
-        description="Volume, repartition musculaire et niveau de force par zone."
+        description="Volume, repartition musculaire et progression par exercice."
       />
 
       {isLoading ? (
@@ -81,6 +132,12 @@ function StatsPage() {
             sub="groupes musculaires travailles"
             tone="accent"
             className="w-full"
+          />
+
+          <ExerciseSearchDrawer
+            catalog={exerciseCatalog}
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
           />
 
           <Card className="rounded-2xl border-border">
@@ -181,18 +238,52 @@ function StatsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-border">
+              <Card
+                ref={featuredSectionRef}
+                id="stats-featured-exercises"
+                className="rounded-2xl border-border scroll-mt-20"
+              >
                 <CardHeader>
-                  <CardTitle className="font-display font-black">
-                    Exercice phare par zone
-                  </CardTitle>
-                  <CardDescription>
-                    L&apos;exo le plus utilise par muscle, avec estimation de percentile
-                    de force (1RM estime vs repères population).
-                  </CardDescription>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="font-display font-black">
+                        Exercice phare par zone
+                      </CardTitle>
+                      <CardDescription>
+                        L&apos;exo le plus utilise par muscle, avec estimation de percentile
+                        de force (1RM estime vs repères population).
+                      </CardDescription>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="soft"
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setSearchOpen(true)}
+                    >
+                      <Search className="size-4" />
+                      Autre
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <MuscleZoneInsights zones={topByZone} />
+                  {isFetchingMore ? (
+                    <p className="text-xs text-muted-foreground">
+                      Chargement de l&apos;historique...
+                    </p>
+                  ) : null}
+                  {isCapped ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => void fetchNextPage()}
+                    >
+                      Charger plus d&apos;historique
+                    </Button>
+                  ) : null}
                 </CardContent>
               </Card>
             </>

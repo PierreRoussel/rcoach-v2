@@ -19,13 +19,16 @@ import { Input } from '@/components/ui/input'
 import {
   addExerciseToSuperset,
   cleanupSupersetAfterRemoval,
+  createTemplateSet,
   exerciseToDraft,
+  inheritSetValues,
   removeExerciseFromSuperset,
   type TemplateExerciseDraft,
 } from '@/hooks/useWorkoutTemplates'
 import { useMyProfile } from '@/hooks/useProfile'
 import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+import { replaceTemplateExercise } from '@/lib/workout/replace-exercise'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
 type TemplateEditorFormProps = {
@@ -95,6 +98,41 @@ export function TemplateEditorForm({
     )
     setExercises(next)
     setActiveIndex(Math.min(activeIndex, Math.max(next.length - 1, 0)))
+  }
+
+  function handleReplace(index: number, exercise: Exercise) {
+    if (exercises.some((item, itemIndex) => itemIndex !== index && item.exerciseId === exercise.id)) {
+      return
+    }
+
+    setExercises((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? replaceTemplateExercise(item, exercise) : item,
+      ),
+    )
+  }
+
+  function handleAddSet(exerciseIndex: number) {
+    setExercises((current) =>
+      current.map((exercise, index) => {
+        if (index !== exerciseIndex) {
+          return exercise
+        }
+
+        const inherited = inheritSetValues(exercise.sets)
+        return {
+          ...exercise,
+          sets: [
+            ...exercise.sets,
+            createTemplateSet(
+              exercise.sets.length,
+              exercise.defaultRestSeconds,
+              inherited,
+            ),
+          ],
+        }
+      }),
+    )
   }
 
   function handleAddToSuperset(fromIndex: number, partnerIndex: number) {
@@ -220,6 +258,7 @@ export function TemplateEditorForm({
             onSelect={setActiveIndex}
             onReorder={handleReorder}
             onRemove={handleRemove}
+            onReplace={handleReplace}
             onAddToSuperset={handleAddToSuperset}
             onRemoveFromSuperset={handleRemoveFromSuperset}
             showSetCount
@@ -227,6 +266,7 @@ export function TemplateEditorForm({
             showDeleteButton={false}
             embedded
             onOpenReorder={() => setReorderOpen(true)}
+            onAddSet={handleAddSet}
             renderSetsContent={(index) => (
               <TemplateExerciseSetsEditor
                 exercise={exercises[index]!}

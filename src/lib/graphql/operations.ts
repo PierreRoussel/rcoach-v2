@@ -233,7 +233,10 @@ export const INSERT_EXERCISE = `
 export const GET_LAST_EXERCISE_PERFORMANCE = `
   query GetLastExercisePerformance($exerciseId: uuid!) {
     workout_exercises(
-      where: { exercise_id: { _eq: $exerciseId } }
+      where: {
+        exercise_id: { _eq: $exerciseId }
+        workout: { ended_at: { _is_null: false } }
+      }
       order_by: { workout: { started_at: desc } }
       limit: 1
     ) {

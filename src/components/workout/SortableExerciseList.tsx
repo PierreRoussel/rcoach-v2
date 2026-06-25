@@ -5,9 +5,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, GripVertical, Link2, ListOrdered, MoreVertical, Plus, Trash2, Unlink } from 'lucide-react'
+import { ChevronDown, GripVertical, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 
+import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -32,6 +34,7 @@ import {
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
+import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 
 const SUPERSET_ACCENTS = [
@@ -55,6 +58,7 @@ type SortableExerciseListProps = {
   renderSetsContent?: (index: number) => ReactNode
   onOpenReorder?: () => void
   onAddSet?: (index: number) => void
+  onReplace?: (index: number, exercise: Exercise) => void
   renderBelowTitle?: (index: number) => ReactNode
 }
 
@@ -69,7 +73,7 @@ function ExerciseActionsMenu({
   onAddToSuperset,
   onRemoveFromSuperset,
   onOpenReorder,
-  onAddSet,
+  onReplaceRequest,
 }: {
   index: number
   exercises: ActiveExerciseEntry[]
@@ -77,7 +81,7 @@ function ExerciseActionsMenu({
   onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
-  onAddSet?: (index: number) => void
+  onReplaceRequest?: (index: number) => void
 }) {
   const exercise = exercises[index]
   const partners = exercises
@@ -85,7 +89,7 @@ function ExerciseActionsMenu({
     .filter(({ itemIndex }) => itemIndex !== index)
   const hasSupersetActions = onAddToSuperset && onRemoveFromSuperset
 
-  if (!hasSupersetActions && !onOpenReorder && !onRemove && !onAddSet) {
+  if (!hasSupersetActions && !onOpenReorder && !onRemove && !onReplaceRequest) {
     return null
   }
 
@@ -109,13 +113,15 @@ function ExerciseActionsMenu({
             Changer l&apos;ordre
           </DropdownMenuItem>
         ) : null}
-        {onAddSet ? (
-          <DropdownMenuItem onClick={() => onAddSet(index)}>
-            <Plus className="size-4" />
-            Ajouter une serie
+        {onReplaceRequest ? (
+          <DropdownMenuItem onClick={() => onReplaceRequest(index)}>
+            <Replace className="size-4" />
+            Remplacer
           </DropdownMenuItem>
         ) : null}
-        {hasSupersetActions && (onOpenReorder || onAddSet) ? <DropdownMenuSeparator /> : null}
+        {hasSupersetActions && (onOpenReorder || onReplaceRequest) ? (
+          <DropdownMenuSeparator />
+        ) : null}
         {hasSupersetActions && partners.length > 0 ? (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
@@ -145,7 +151,9 @@ function ExerciseActionsMenu({
         ) : null}
         {onRemove ? (
           <>
-            {onOpenReorder || hasSupersetActions || onAddSet ? <DropdownMenuSeparator /> : null}
+            {onOpenReorder || hasSupersetActions || onReplaceRequest ? (
+              <DropdownMenuSeparator />
+            ) : null}
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={onRemove}
@@ -175,6 +183,7 @@ function SortableExerciseItem({
   onRemoveFromSuperset,
   onOpenReorder,
   onAddSet,
+  onReplaceRequest,
   renderSetsContent,
   renderBelowTitle,
   supersetBadge,
@@ -193,6 +202,7 @@ function SortableExerciseItem({
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
   onAddSet?: (index: number) => void
+  onReplaceRequest?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
   renderBelowTitle?: (index: number) => ReactNode
   supersetBadge?: number
@@ -275,7 +285,7 @@ function SortableExerciseItem({
           onAddToSuperset={onAddToSuperset}
           onRemoveFromSuperset={onRemoveFromSuperset}
           onOpenReorder={onOpenReorder}
-          onAddSet={onAddSet}
+          onReplaceRequest={onReplaceRequest}
         />
         {showDeleteButton ? (
           <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
@@ -291,6 +301,19 @@ function SortableExerciseItem({
           )}
         >
           {renderSetsContent(index)}
+          {onAddSet ? (
+            <div className={cn('pt-2', embedded ? 'px-4' : 'px-0')}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAddSet(index)}
+              >
+                <Plus className="size-4" />
+                Ajouter une serie
+              </Button>
+            </div>
+          ) : null}
         </CollapsibleContent>
       ) : null}
     </div>
@@ -356,9 +379,24 @@ export function SortableExerciseList({
   renderSetsContent,
   onOpenReorder,
   onAddSet,
+  onReplace,
   renderBelowTitle,
 }: SortableExerciseListProps) {
   const sensors = useSortableSensors()
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
+
+  function handleReplaceRequest(index: number) {
+    setReplaceIndex(index)
+  }
+
+  function handleReplaceSelect(exercise: Exercise) {
+    if (replaceIndex == null || !onReplace) {
+      return
+    }
+
+    onReplace(replaceIndex, exercise)
+    setReplaceIndex(null)
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -393,6 +431,7 @@ export function SortableExerciseList({
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={onOpenReorder}
         onAddSet={onAddSet}
+        onReplaceRequest={onReplace ? handleReplaceRequest : undefined}
         renderSetsContent={renderSetsContent}
         renderBelowTitle={renderBelowTitle}
         supersetBadge={isSplitSuperset(exercises, index)}
@@ -446,6 +485,24 @@ export function SortableExerciseList({
           })}
         </div>
       </SortableContext>
+
+      {onReplace && replaceIndex != null ? (
+        <ExercisePicker
+          hideTrigger
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setReplaceIndex(null)
+            }
+          }}
+          dialogTitle="Remplacer l'exercice"
+          dialogDescription={`Choisissez un exercice pour remplacer ${exercises[replaceIndex]?.exerciseName ?? 'cet exercice'}. Les series planifiees sont conservees.`}
+          excludeIds={exercises
+            .filter((_, index) => index !== replaceIndex)
+            .map((exercise) => exercise.exerciseId)}
+          onSelect={handleReplaceSelect}
+        />
+      ) : null}
     </DndContext>
   )
 }

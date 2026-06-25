@@ -20,15 +20,27 @@ type ExercisePickerProps = {
   onSelect: (exercise: Exercise) => void
   excludeIds?: string[]
   triggerLabel?: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
+  dialogTitle?: string
+  dialogDescription?: string
 }
 
 export function ExercisePicker({
   onSelect,
   excludeIds = [],
   triggerLabel = 'Ajouter un exercice',
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  hideTrigger = false,
+  dialogTitle = 'Catalogue',
+  dialogDescription = 'Recherchez un exercice public ou personnel.',
 }: ExercisePickerProps) {
   const { data: exercises = [], isLoading } = useAllExercises()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
   const [query, setQuery] = useState('')
   const [muscleGroup, setMuscleGroup] = useState<string>('all')
 
@@ -39,18 +51,18 @@ export function ExercisePicker({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="soft" className="rounded-full">
-          <Plus className="size-4" />
-          {triggerLabel}
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger ? (
+        <DialogTrigger asChild>
+          <Button type="button" variant="soft" className="rounded-full">
+            <Plus className="size-4" />
+            {triggerLabel}
+          </Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display font-black">Catalogue</DialogTitle>
-          <DialogDescription>
-            Recherchez un exercice public ou personnel.
-          </DialogDescription>
+          <DialogTitle className="font-display font-black">{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="relative">

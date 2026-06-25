@@ -25,6 +25,10 @@ function formatRpeValue(rpe: number): string {
   return Number.isInteger(rpe) ? String(rpe) : String(rpe)
 }
 
+function hasMeaningfulWeight(weight: number | null): boolean {
+  return weight != null && weight > 0
+}
+
 export function formatSetPerformanceSummary(
   set: SetPerformanceInput,
   options?: { includeRpe?: boolean },
@@ -33,7 +37,7 @@ export function formatSetPerformanceSummary(
   const reps = set.reps ?? null
   const includeRpe = options?.includeRpe ?? true
 
-  if (reps != null && weight != null) {
+  if (reps != null && hasMeaningfulWeight(weight)) {
     const base = `${reps}x${weight}kg`
     if (includeRpe && set.rpe != null) {
       return `${base} @${formatRpeValue(set.rpe)}`
@@ -60,10 +64,14 @@ export function formatSetPerformanceSummary(
   }
 
   if (reps != null) {
-    return `${reps} reps`
+    const base = `${reps} reps`
+    if (includeRpe && set.rpe != null) {
+      return `${base} @${formatRpeValue(set.rpe)}`
+    }
+    return base
   }
 
-  if (weight != null) {
+  if (hasMeaningfulWeight(weight)) {
     return `${weight}kg`
   }
 

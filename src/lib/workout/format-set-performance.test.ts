@@ -22,6 +22,14 @@ describe('formatSetPerformanceSummary', () => {
       ),
     ).toBe('5x54kg')
   })
+
+  it('shows reps for bodyweight sets without meaningful load', () => {
+    expect(formatSetPerformanceSummary({ reps: 10, weight_kg: null })).toBe('10 reps')
+    expect(formatSetPerformanceSummary({ reps: 10, weight_kg: 0 })).toBe('10 reps')
+    expect(
+      formatSetPerformanceSummary({ reps: 8, weight_kg: 0, rpe: 7 }),
+    ).toBe('8 reps @7')
+  })
 })
 
 describe('pickLastMatchingWorkout', () => {

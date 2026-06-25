@@ -75,6 +75,7 @@ export function useLastExercisePerformance(exerciseId: string | undefined) {
             set_type: string
             weight_kg: number | null
             reps: number | null
+            rpe: number | null
             duration_seconds: number | null
             distance_km: number | null
           }>

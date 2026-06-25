@@ -11,32 +11,7 @@ import {
 } from '@/components/ui/card'
 import { Pill } from '@/design-system'
 import type { WorkoutDetail } from '@/lib/graphql/operations'
-
-function formatSetPerformance(set: {
-  weight_kg: number | null
-  reps: number | null
-  duration_seconds: number | null
-  distance_km: number | null
-  rpe: number | null
-}) {
-  let performance: string
-
-  if (set.weight_kg != null && set.reps != null) {
-    performance = `${set.weight_kg} kg x ${set.reps}`
-  } else if (set.duration_seconds != null) {
-    performance = `${set.duration_seconds}s`
-  } else if (set.distance_km != null) {
-    performance = `${set.distance_km} km`
-  } else {
-    performance = '—'
-  }
-
-  if (set.rpe != null) {
-    performance += ` · RPE ${set.rpe}`
-  }
-
-  return performance
-}
+import { formatSetPerformanceSummary } from '@/lib/workout/format-set-performance'
 
 type WorkoutDetailContentProps = {
   workout: WorkoutDetail
@@ -117,7 +92,7 @@ export function WorkoutDetailContent({
                         {set.set_type !== 'normal' ? ` · ${set.set_type}` : ''}
                       </span>
                       <span className="font-medium">
-                        {formatSetPerformance(set)}
+                        {formatSetPerformanceSummary(set) ?? '—'}
                       </span>
                     </li>
                   ))}

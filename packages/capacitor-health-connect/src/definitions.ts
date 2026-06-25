@@ -13,10 +13,22 @@ export interface WriteExerciseSessionOptions {
   exerciseType?: ExerciseType
 }
 
+export interface ReadHeartRateSummaryOptions {
+  startTime: string
+  endTime: string
+}
+
+export interface HeartRateSummary {
+  avgBpm?: number
+  maxBpm?: number
+  sampleCount: number
+}
+
 export interface HealthConnectPlugin {
   isAvailable(): Promise<{ status: HealthConnectAvailability }>
   getPermissionStatus(): Promise<{ granted: boolean }>
   requestHealthPermissions(): Promise<{ granted: boolean }>
   writeExerciseSession(options: WriteExerciseSessionOptions): Promise<void>
+  readHeartRateSummary(options: ReadHeartRateSummaryOptions): Promise<HeartRateSummary>
   openHealthConnectSettings(): Promise<void>
 }

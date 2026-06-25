@@ -29,6 +29,7 @@ export type RadarMusclePoint = {
 export type TopExerciseByZone = {
   muscle: MuscleGroup
   label: string
+  exerciseId: string | null
   exerciseName: string
   sets: number
   volume: number
@@ -38,6 +39,7 @@ export type TopExerciseByZone = {
 }
 
 type ExerciseAccumulator = {
+  exerciseId: string
   name: string
   sets: number
   volume: number
@@ -123,7 +125,8 @@ export function computeTopExerciseByZone(
     for (const entry of workout.workout_exercises) {
       const muscle = normalizeMuscleGroup(entry.exercise.muscle_group)
       const exerciseMap = byMuscle.get(muscle) ?? new Map<string, ExerciseAccumulator>()
-      const current = exerciseMap.get(entry.exercise.name) ?? {
+      const current = exerciseMap.get(entry.exercise.id) ?? {
+        exerciseId: entry.exercise.id,
         name: entry.exercise.name,
         sets: 0,
         volume: 0,
@@ -147,7 +150,7 @@ export function computeTopExerciseByZone(
         }
       }
 
-      exerciseMap.set(entry.exercise.name, current)
+      exerciseMap.set(entry.exercise.id, current)
       byMuscle.set(muscle, exerciseMap)
     }
   }
@@ -165,6 +168,7 @@ export function computeTopExerciseByZone(
       return {
         muscle,
         label: MUSCLE_GROUP_LABELS[muscle],
+        exerciseId: null,
         exerciseName: '—',
         sets: 0,
         volume: 0,
@@ -177,6 +181,7 @@ export function computeTopExerciseByZone(
     return {
       muscle,
       label: MUSCLE_GROUP_LABELS[muscle],
+      exerciseId: top.exerciseId,
       exerciseName: top.name,
       sets: top.sets,
       volume: top.volume,

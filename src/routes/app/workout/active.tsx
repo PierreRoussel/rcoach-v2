@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ListOrdered } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
-import { ExercisePerformancePanel } from '@/components/workout/ExercisePerformancePanel'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { RestTimerBar } from '@/components/workout/RestTimerBar'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
+import {
+  WorkoutRecapDialog,
+  type WorkoutRecapData,
+} from '@/components/workout/WorkoutRecapDialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -20,16 +23,28 @@ import { PageHeader, Pill } from '@/design-system'
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
+import { useMyWorkouts } from '@/hooks/useWorkouts'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { pushWorkoutSession } from '@/lib/health/push-workout-session'
+import { readHeartRateSummary } from '@/lib/health/read-heart-rate-summary'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import {
+  computeDraftVolume,
+  detectWorkoutPersonalRecords,
+  draftToWorkoutSummary,
+} from '@/lib/stats/workout-metrics'
 import {
   buildCircuitSteps,
   countCompletedSets,
   getValidatedExercisesForSync,
 } from '@/lib/workout/workout-circuit'
+import { buildExerciseSetHistoryFromWorkouts } from '@/lib/workout/template-set-history'
+import {
+  applyOverloadToWorkingSets,
+  isWorkingSet,
+} from '@/lib/workout/progressive-overload'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 
 export const Route = createFileRoute('/app/workout/active')({
@@ -48,6 +63,7 @@ function ActiveWorkoutPage() {
   const { nhost } = useAuth()
   const navigate = useNavigate()
   const { data: profile } = useMyProfile()
+  const { data: allWorkouts } = useMyWorkouts()
   const rpeEnabled = profile?.rpe_enabled ?? false
   const {
     title,
@@ -62,6 +78,7 @@ function ActiveWorkoutPage() {
     hydrate,
     addExercise,
     removeExercise,
+    replaceExercise,
     reorderExercises,
     updateExerciseDefaultRest,
     addToSuperset,
@@ -78,13 +95,15 @@ function ActiveWorkoutPage() {
     skipRest,
     finishWorkout,
     cancelWorkout,
-    getCurrentStep,
     getNextStepLabel,
   } = useActiveWorkoutStore()
 
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [recapOpen, setRecapOpen] = useState(false)
+  const [recapData, setRecapData] = useState<WorkoutRecapData | null>(null)
+  const [isRecapFlow, setIsRecapFlow] = useState(false)
 
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
@@ -93,10 +112,25 @@ function ActiveWorkoutPage() {
     effectiveTemplateId,
     { includeRpe: rpeEnabled },
   )
+  const setHistory = useMemo(() => {
+    if (effectiveTemplateId) {
+      return templateSetHistory
+    }
 
-  const currentStep = getCurrentStep()
-  const currentExercise =
-    currentStep != null ? activeExercises[currentStep.exerciseIndex] : null
+    return buildExerciseSetHistoryFromWorkouts(
+      activeExercises.map((exercise) => exercise.exerciseId),
+      allWorkouts ?? [],
+      { includeRpe: rpeEnabled },
+    )
+  }, [
+    activeExercises,
+    allWorkouts,
+    effectiveTemplateId,
+    rpeEnabled,
+    templateSetHistory,
+  ])
+  const showLastSetColumn = activeExercises.length > 0
+
   const steps = buildCircuitSteps(activeExercises)
   const completedCount = countCompletedSets(activeExercises)
 
@@ -122,6 +156,7 @@ function ActiveWorkoutPage() {
     }
 
     setIsSaving(true)
+    setIsRecapFlow(true)
     setError(null)
     setMessage(null)
 
@@ -134,6 +169,8 @@ function ActiveWorkoutPage() {
 
       const validatedExercises = getValidatedExercisesForSync(draft.exercises)
       const endedAt = new Date().toISOString()
+
+      const heartRatePromise = readHeartRateSummary(draft.startedAt, endedAt)
 
       try {
         await syncWorkoutDraft(nhost, {
@@ -158,9 +195,28 @@ function ActiveWorkoutPage() {
 
       void pushWorkoutSession(draft, endedAt).catch(() => undefined)
 
-      setMessage('Seance enregistree.')
-      await navigate({ to: '/app/sessions', search: { tab: 'history' } })
+      const heartRate = await heartRatePromise
+      const workoutSummary = draftToWorkoutSummary(
+        {
+          title: draft.title,
+          startedAt: draft.startedAt,
+          exercises: validatedExercises,
+        },
+        endedAt,
+      )
+
+      setRecapData({
+        title: draft.title,
+        startedAt: draft.startedAt,
+        endedAt,
+        volumeKg: computeDraftVolume(validatedExercises),
+        completedSets: completedCount,
+        records: detectWorkoutPersonalRecords(workoutSummary, allWorkouts ?? []),
+        heartRate,
+      })
+      setRecapOpen(true)
     } catch (finishError) {
+      setIsRecapFlow(false)
       setError(
         finishError instanceof Error
           ? finishError.message
@@ -171,7 +227,7 @@ function ActiveWorkoutPage() {
     }
   }
 
-  if (!startedAt) {
+  if (!startedAt && !isRecapFlow) {
     return (
       <div className="space-y-4">
         <PageHeader
@@ -181,6 +237,36 @@ function ActiveWorkoutPage() {
         />
         <StartWorkoutForm initialTemplateId={initialTemplateId} />
       </div>
+    )
+  }
+
+  if (!startedAt && isRecapFlow) {
+    return (
+      <>
+        <div className="space-y-4">
+          <PageHeader
+            eyebrow="Seance terminee"
+            title={recapData?.title ?? 'Seance'}
+            description={
+              isSaving ? 'Enregistrement en cours...' : 'Consultez votre recap ci-dessous.'
+            }
+          />
+        </div>
+        <WorkoutRecapDialog
+          open={recapOpen}
+          onOpenChange={(open) => {
+            setRecapOpen(open)
+            if (!open) {
+              setIsRecapFlow(false)
+            }
+          }}
+          recap={recapData}
+          onContinue={() => {
+            setIsRecapFlow(false)
+            void navigate({ to: '/app/sessions', search: { tab: 'history' } })
+          }}
+        />
+      </>
     )
   }
 
@@ -198,37 +284,6 @@ function ActiveWorkoutPage() {
         description={`Etape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} serie${completedCount > 1 ? 's' : ''} validee${completedCount > 1 ? 's' : ''}`}
       />
 
-      {currentExercise ? (
-        <Card className="rounded-2xl border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="font-display text-base font-black">
-              Surcharge — {currentExercise.exerciseName}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ExercisePerformancePanel
-              exercise={{
-                id: currentExercise.exerciseId,
-                name: currentExercise.exerciseName,
-                equipment: currentExercise.equipment ?? null,
-              }}
-              onApplySuggestion={(suggestion) => {
-                if (!currentStep) {
-                  return
-                }
-
-                void updatePlannedSet(currentStep.exerciseIndex, currentStep.setIndex, {
-                  weightKg:
-                    suggestion.suggestedWeightKg ?? currentExercise.sets[currentStep.setIndex]?.weightKg ?? null,
-                  reps:
-                    suggestion.suggestedReps ?? currentExercise.sets[currentStep.setIndex]?.reps ?? null,
-                })
-              }}
-            />
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-display font-black">
@@ -244,7 +299,8 @@ function ActiveWorkoutPage() {
             exercises={activeExercises}
             lastCompletedStep={lastCompletedStep}
             rpeEnabled={rpeEnabled}
-            templateSetHistory={effectiveTemplateId ? templateSetHistory : undefined}
+            templateSetHistory={showLastSetColumn ? setHistory : undefined}
+            showLastSetColumn={showLastSetColumn}
             onSelectExercise={(index) => {
               const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
               if (stepIndex >= 0) {
@@ -253,6 +309,9 @@ function ActiveWorkoutPage() {
             }}
             onReorderExercises={(from, to) => void reorderExercises(from, to)}
             onRemoveExercise={(index) => void removeExercise(index)}
+            onReplaceExercise={(exerciseIndex, exercise) =>
+              void replaceExercise(exerciseIndex, exercise)
+            }
             onAddToSuperset={(from, partner) => void addToSuperset(from, partner)}
             onRemoveFromSuperset={(index) => void removeFromSuperset(index)}
             onUpdateExerciseRest={(index, restSeconds) =>
@@ -274,6 +333,28 @@ function ActiveWorkoutPage() {
             onReorderSets={(exerciseIndex, fromIndex, toIndex) =>
               void reorderPlannedSets(exerciseIndex, fromIndex, toIndex)
             }
+            onApplyOverloadSuggestion={(exerciseIndex, suggestion) => {
+              const exercise = activeExercises[exerciseIndex]
+              if (!exercise) {
+                return
+              }
+
+              const updatedSets = applyOverloadToWorkingSets(exercise.sets, suggestion)
+              updatedSets.forEach((set, setIndex) => {
+                if (!isWorkingSet(set)) {
+                  return
+                }
+
+                void updatePlannedSet(exerciseIndex, setIndex, {
+                  weightKg: set.weightKg,
+                  reps: set.reps,
+                  ...(set.durationSeconds != null
+                    ? { durationSeconds: set.durationSeconds }
+                    : {}),
+                  ...(set.distanceKm != null ? { distanceKm: set.distanceKm } : {}),
+                })
+              })
+            }}
           />
         </CardContent>
       </Card>

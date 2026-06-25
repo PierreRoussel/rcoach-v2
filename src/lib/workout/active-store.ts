@@ -6,6 +6,7 @@ import {
   cleanupSupersetAfterRemoval,
   removeExerciseFromSuperset,
 } from '@/lib/workout/exercise-superset'
+import { replaceActiveExercise } from '@/lib/workout/replace-exercise'
 import {
   playRestCompleteBeep,
   warmUpRestTimerAudio,
@@ -68,6 +69,15 @@ type ActiveWorkoutState = {
     equipment?: string | null
   }) => Promise<void>
   removeExercise: (exerciseIndex: number) => Promise<void>
+  replaceExercise: (
+    exerciseIndex: number,
+    exercise: {
+      id: string
+      name: string
+      muscle_group?: string | null
+      equipment?: string | null
+    },
+  ) => Promise<void>
   reorderExercises: (fromIndex: number, toIndex: number) => Promise<void>
   updateExerciseDefaultRest: (exerciseIndex: number, restSeconds: number) => Promise<void>
   addToSuperset: (fromIndex: number, partnerIndex: number) => Promise<void>
@@ -374,6 +384,37 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   removeExercise: async (exerciseIndex) => {
     const nextExercises = cleanupSupersetAfterRemoval(
       get().exercises.filter((_, index) => index !== exerciseIndex),
+    )
+    const { activeStepIndex, lastCompletedStep } =
+      syncAfterExerciseStructureChange(nextExercises)
+
+    set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
+    await persistDraft({
+      title: get().title,
+      startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises: nextExercises,
+      activeStepIndex,
+      lastCompletedStep,
+    })
+  },
+
+  replaceExercise: async (exerciseIndex, exercise) => {
+    const current = get().exercises[exerciseIndex]
+    if (!current || current.exerciseId === exercise.id) {
+      return
+    }
+
+    if (
+      get().exercises.some(
+        (entry, index) => index !== exerciseIndex && entry.exerciseId === exercise.id,
+      )
+    ) {
+      return
+    }
+
+    const nextExercises = get().exercises.map((entry, index) =>
+      index === exerciseIndex ? replaceActiveExercise(entry, exercise) : entry,
     )
     const { activeStepIndex, lastCompletedStep } =
       syncAfterExerciseStructureChange(nextExercises)

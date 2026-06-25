@@ -91,6 +91,58 @@ export function buildTemplateSetHistory(
   return history
 }
 
+export function buildExerciseSetHistoryFromWorkouts(
+  exerciseIds: string[],
+  workouts: Array<{
+    started_at: string
+    workout_exercises: Array<{
+      exercise: { id: string }
+      sets: HistoricalSet[]
+    }>
+  }>,
+  options?: { includeRpe?: boolean },
+): TemplateSetHistory {
+  const history: TemplateSetHistory = new Map()
+  const pending = new Set(exerciseIds)
+
+  if (pending.size === 0) {
+    return history
+  }
+
+  const sortedWorkouts = [...workouts].sort(
+    (left, right) =>
+      new Date(right.started_at).getTime() - new Date(left.started_at).getTime(),
+  )
+
+  for (const workout of sortedWorkouts) {
+    for (const entry of workout.workout_exercises) {
+      const exerciseId = entry.exercise.id
+      if (!pending.has(exerciseId)) {
+        continue
+      }
+
+      const setsByIndex = new Map<number, string>()
+      for (const set of entry.sets) {
+        const summary = formatSetPerformanceSummary(set, options)
+        if (summary) {
+          setsByIndex.set(set.set_index, summary)
+        }
+      }
+
+      if (setsByIndex.size > 0) {
+        history.set(exerciseId, setsByIndex)
+        pending.delete(exerciseId)
+      }
+    }
+
+    if (pending.size === 0) {
+      break
+    }
+  }
+
+  return history
+}
+
 export function getLastSetSummary(
   history: TemplateSetHistory,
   exerciseId: string,

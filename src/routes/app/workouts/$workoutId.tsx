@@ -19,36 +19,11 @@ import {
   countWorkoutPersonalRecords,
   formatWorkoutDuration,
 } from '@/lib/stats/workout-metrics'
+import { formatSetPerformanceSummary } from '@/lib/workout/format-set-performance'
 
 export const Route = createFileRoute('/app/workouts/$workoutId')({
   component: WorkoutDetailPage,
 })
-
-function formatSetPerformance(set: {
-  weight_kg: number | null
-  reps: number | null
-  duration_seconds: number | null
-  distance_km: number | null
-  rpe: number | null
-}) {
-  let performance: string
-
-  if (set.weight_kg != null && set.reps != null) {
-    performance = `${set.weight_kg} kg x ${set.reps}`
-  } else if (set.duration_seconds != null) {
-    performance = `${set.duration_seconds}s`
-  } else if (set.distance_km != null) {
-    performance = `${set.distance_km} km`
-  } else {
-    performance = '—'
-  }
-
-  if (set.rpe != null) {
-    performance += ` · RPE ${set.rpe}`
-  }
-
-  return performance
-}
 
 function WorkoutDetailPage() {
   const { workoutId } = Route.useParams()
@@ -137,7 +112,7 @@ function WorkoutDetailPage() {
                         {set.set_type !== 'normal' ? ` · ${set.set_type}` : ''}
                       </span>
                       <span className="font-medium">
-                        {formatSetPerformance(set)}
+                        {formatSetPerformanceSummary(set) ?? '—'}
                       </span>
                     </li>
                   ))}
