@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { History, UtensilsCrossed } from 'lucide-react'
+import { History, Target, UtensilsCrossed } from 'lucide-react'
 
+import { GoalsHomeSummaryTile } from '@/components/goals/GoalsHomeSummaryTile'
 import { RecentWorkoutsFeed } from '@/components/workout/RecentWorkoutsFeed'
 import { MotivationHomeNotificationTile } from '@/components/social/MotivationHomeNotificationTile'
 import { NutritionHomeSummaryTile } from '@/components/nutrition/NutritionHomeSummaryTile'
@@ -38,6 +39,12 @@ function AppHomePage() {
             </Link>
           </Button>
           <Button variant="soft" asChild>
+            <Link to="/app/goals">
+              <Target className="size-4" />
+              Objectif
+            </Link>
+          </Button>
+          <Button variant="soft" asChild>
             <Link to="/app/sessions">
               <History className="size-4" />
               Mes séances
@@ -50,6 +57,10 @@ function AppHomePage() {
 
       <AnimateIn delay={320}>
         <NutritionHomeSummaryTile />
+      </AnimateIn>
+
+      <AnimateIn delay={380}>
+        <GoalsHomeSummaryTile />
       </AnimateIn>
 
       <AnimateIn delay={440}>

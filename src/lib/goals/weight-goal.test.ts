@@ -5,6 +5,8 @@ import {
   inferWeightGoalType,
   milestoneStepFromProgress,
   progressKgSinceStart,
+  projectWeightGoalCompletion,
+  remainingKgToTarget,
   shouldSuggestCalorieUpdate,
   suggestCalorieTarget,
 } from '@/lib/goals/weight-goal'
@@ -70,9 +72,9 @@ describe('progress and milestones', () => {
     expect(milestoneStepFromProgress(progress, 'gain')).toBe(2)
   })
 
-  it('adjusts weight in 500g steps', () => {
-    expect(adjustWeightKg(79, -1)).toBe(78.5)
-    expect(adjustWeightKg(79, 1)).toBe(79.5)
+  it('adjusts weight in 100g steps', () => {
+    expect(adjustWeightKg(79, -1)).toBe(78.9)
+    expect(adjustWeightKg(79, 1)).toBe(79.1)
   })
 })
 
@@ -83,5 +85,71 @@ describe('calorie suggestion', () => {
     expect(suggestion).not.toBeNull()
     expect(suggestion!.suggestedCalories).toBeLessThan(baseSettings.daily_calorie_target)
     expect(shouldSuggestCalorieUpdate(suggestion)).toBe(true)
+  })
+})
+
+describe('projectWeightGoalCompletion', () => {
+  const loseGoal = {
+    goal_type: 'lose' as const,
+    current_weight_kg: 80,
+    target_weight_kg: 78,
+  }
+
+  it('projects completion date from caloric deficit', () => {
+    const settings = {
+      ...baseSettings,
+      daily_calorie_target: 2000,
+      tdee_calculated: 2500,
+      weight_kg: 80,
+      goal: 'lose' as const,
+    }
+
+    const projection = projectWeightGoalCompletion(
+      loseGoal,
+      settings,
+      new Date('2026-01-01T00:00:00.000Z'),
+    )
+
+    expect(projection).not.toBeNull()
+    expect(projection!.remainingKg).toBe(2)
+    expect(projection!.weeklyRateKg).toBeCloseTo(0.4545, 3)
+    expect(projection!.projectedDate).not.toBeNull()
+  })
+
+  it('returns reached when target is met', () => {
+    const projection = projectWeightGoalCompletion(
+      {
+        goal_type: 'lose',
+        current_weight_kg: 78,
+        target_weight_kg: 78,
+      },
+      baseSettings,
+    )
+
+    expect(projection?.isReached).toBe(true)
+    expect(projection?.remainingKg).toBe(0)
+  })
+
+  it('returns null for maintain goals', () => {
+    expect(
+      projectWeightGoalCompletion(
+        {
+          goal_type: 'maintain',
+          current_weight_kg: 80,
+          target_weight_kg: 80,
+        },
+        baseSettings,
+      ),
+    ).toBeNull()
+  })
+
+  it('computes remaining weight to target', () => {
+    expect(
+      remainingKgToTarget({
+        goal_type: 'lose',
+        current_weight_kg: 80,
+        target_weight_kg: 78,
+      }),
+    ).toBe(2)
   })
 })

@@ -25,6 +25,7 @@ import { Route as CoachAnalyticsIndexRouteImport } from './routes/coach/analytic
 import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/index'
 import { Route as AppSessionsIndexRouteImport } from './routes/app/sessions/index'
 import { Route as AppPlanningIndexRouteImport } from './routes/app/planning/index'
+import { Route as AppGoalsIndexRouteImport } from './routes/app/goals/index'
 import { Route as AppFriendsIndexRouteImport } from './routes/app/friends/index'
 import { Route as AppExercisesIndexRouteImport } from './routes/app/exercises/index'
 import { Route as AppDietIndexRouteImport } from './routes/app/diet/index'
@@ -118,6 +119,11 @@ const AppSessionsIndexRoute = AppSessionsIndexRouteImport.update({
 const AppPlanningIndexRoute = AppPlanningIndexRouteImport.update({
   id: '/planning/',
   path: '/planning/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
+  id: '/goals/',
+  path: '/goals/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppFriendsIndexRoute = AppFriendsIndexRouteImport.update({
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/app/diet/': typeof AppDietIndexRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/friends/': typeof AppFriendsIndexRoute
+  '/app/goals/': typeof AppGoalsIndexRoute
   '/app/planning/': typeof AppPlanningIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/app/diet': typeof AppDietIndexRoute
   '/app/exercises': typeof AppExercisesIndexRoute
   '/app/friends': typeof AppFriendsIndexRoute
+  '/app/goals': typeof AppGoalsIndexRoute
   '/app/planning': typeof AppPlanningIndexRoute
   '/app/sessions': typeof AppSessionsIndexRoute
   '/app/workouts': typeof AppWorkoutsIndexRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/app/diet/': typeof AppDietIndexRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/friends/': typeof AppFriendsIndexRoute
+  '/app/goals/': typeof AppGoalsIndexRoute
   '/app/planning/': typeof AppPlanningIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/app/diet/'
     | '/app/exercises/'
     | '/app/friends/'
+    | '/app/goals/'
     | '/app/planning/'
     | '/app/sessions/'
     | '/app/workouts/'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/app/diet'
     | '/app/exercises'
     | '/app/friends'
+    | '/app/goals'
     | '/app/planning'
     | '/app/sessions'
     | '/app/workouts'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/app/diet/'
     | '/app/exercises/'
     | '/app/friends/'
+    | '/app/goals/'
     | '/app/planning/'
     | '/app/sessions/'
     | '/app/workouts/'
@@ -507,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPlanningIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/goals/': {
+      id: '/app/goals/'
+      path: '/goals'
+      fullPath: '/app/goals/'
+      preLoaderRoute: typeof AppGoalsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/friends/': {
       id: '/app/friends/'
       path: '/friends'
@@ -634,6 +653,7 @@ interface AppRouteRouteChildren {
   AppDietIndexRoute: typeof AppDietIndexRoute
   AppExercisesIndexRoute: typeof AppExercisesIndexRoute
   AppFriendsIndexRoute: typeof AppFriendsIndexRoute
+  AppGoalsIndexRoute: typeof AppGoalsIndexRoute
   AppPlanningIndexRoute: typeof AppPlanningIndexRoute
   AppSessionsIndexRoute: typeof AppSessionsIndexRoute
   AppWorkoutsIndexRoute: typeof AppWorkoutsIndexRoute
@@ -655,6 +675,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDietIndexRoute: AppDietIndexRoute,
   AppExercisesIndexRoute: AppExercisesIndexRoute,
   AppFriendsIndexRoute: AppFriendsIndexRoute,
+  AppGoalsIndexRoute: AppGoalsIndexRoute,
   AppPlanningIndexRoute: AppPlanningIndexRoute,
   AppSessionsIndexRoute: AppSessionsIndexRoute,
   AppWorkoutsIndexRoute: AppWorkoutsIndexRoute,

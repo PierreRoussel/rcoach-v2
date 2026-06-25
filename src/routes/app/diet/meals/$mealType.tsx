@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { z } from 'zod'
 
 import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
+import { MealEntryDetailDrawer } from '@/components/nutrition/MealEntryDetailDrawer'
 import { MealEntryRow } from '@/components/nutrition/MealEntryRow'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,7 @@ function MealDetailPage() {
   const { data: daySummary } = useNutritionDay(date, settings)
   const { updateEntry, deleteEntry } = useMealLogMutations()
   const [editingEntry, setEditingEntry] = useState<MealLogEntry | null>(null)
+  const [detailEntry, setDetailEntry] = useState<MealLogEntry | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const meal = daySummary?.meals.find((item) => item.mealType === mealType)
@@ -183,6 +185,7 @@ function MealDetailPage() {
                     calories={Number(entry.calories)}
                     quantityG={entry.quantity_g}
                     servings={entry.servings}
+                    onSelect={() => setDetailEntry(entry)}
                     onEdit={() => setEditingEntry(entry)}
                     onDelete={() => void handleDeleteEntry(entry.id)}
                   />
@@ -200,6 +203,24 @@ function MealDetailPage() {
           </Link>
         </Button>
       </div>
+
+      <MealEntryDetailDrawer
+        open={Boolean(detailEntry)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailEntry(null)
+          }
+        }}
+        entry={detailEntry}
+        onEdit={
+          detailEntry
+            ? () => {
+                setEditingEntry(detailEntry)
+                setDetailEntry(null)
+              }
+            : undefined
+        }
+      />
 
       <PortionPickerSheet
         open={Boolean(editingEntry)}

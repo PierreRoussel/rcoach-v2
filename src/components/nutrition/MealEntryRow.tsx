@@ -10,6 +10,7 @@ type MealEntryRowProps = {
   calories: number
   quantityG: number | null
   servings: number | null
+  onSelect?: () => void
   onEdit?: () => void
   onDelete?: () => void
   className?: string
@@ -33,11 +34,19 @@ export function MealEntryRow({
   calories,
   quantityG,
   servings,
+  onSelect,
   onEdit,
   onDelete,
   className,
 }: MealEntryRowProps) {
   const meta = [brand, formatQuantity(quantityG, servings)].filter(Boolean).join(' · ')
+
+  const mainContent = (
+    <>
+      <div className="truncate font-display text-sm font-bold text-foreground">{name}</div>
+      {meta ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</div> : null}
+    </>
+  )
 
   return (
     <div
@@ -46,14 +55,31 @@ export function MealEntryRow({
         className,
       )}
     >
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-display text-sm font-bold text-foreground">{name}</div>
-        {meta ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</div> : null}
-      </div>
+      {onSelect ? (
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-lg"
+          onClick={onSelect}
+        >
+          {mainContent}
+        </button>
+      ) : (
+        <div className="min-w-0 flex-1">{mainContent}</div>
+      )}
 
-      <div className="shrink-0 rounded-lg bg-muted px-2.5 py-1 text-xs font-bold tabular-nums text-foreground">
-        {Math.round(calories)} Cal
-      </div>
+      {onSelect ? (
+        <button
+          type="button"
+          className="shrink-0 rounded-lg bg-muted px-2.5 py-1 text-xs font-bold tabular-nums text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          onClick={onSelect}
+        >
+          {Math.round(calories)} Cal
+        </button>
+      ) : (
+        <div className="shrink-0 rounded-lg bg-muted px-2.5 py-1 text-xs font-bold tabular-nums text-foreground">
+          {Math.round(calories)} Cal
+        </div>
+      )}
 
       <div className="flex shrink-0 items-center gap-0.5">
         {onEdit ? (

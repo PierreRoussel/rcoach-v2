@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Flame, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -17,18 +16,6 @@ export function WeightMilestoneOverlay({
   goalLabel,
   onClose,
 }: WeightMilestoneOverlayProps) {
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      onClose()
-    }, 3200)
-
-    return () => window.clearTimeout(timer)
-  }, [open, onClose])
-
   if (!open) {
     return null
   }

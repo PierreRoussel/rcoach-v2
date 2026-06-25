@@ -12,8 +12,8 @@ import {
   type ExerciseStatsDrawerTarget,
 } from '@/components/stats/ExerciseStatsDrawer'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RestSecondsInput } from '@/components/workout/RestSecondsInput'
 import { cn } from '@/lib/utils'
 import type { ActiveExerciseEntry, ActiveSet } from '@/lib/workout/active-store'
 import {
@@ -295,14 +295,10 @@ export function ActiveWorkoutCircuit({
               >
                 Repos
               </Label>
-              <Input
+              <RestSecondsInput
                 id={`rest-${exercise.exerciseId}`}
-                type="number"
-                min={0}
                 value={exercise.defaultRestSeconds ?? 90}
-                onChange={(event) =>
-                  onUpdateExerciseRest(index, Number(event.target.value) || 0)
-                }
+                onCommit={(seconds) => onUpdateExerciseRest(index, seconds)}
                 className="h-8 w-16 px-2 text-center text-sm font-data"
               />
               <span className="text-xs text-muted-foreground">s</span>

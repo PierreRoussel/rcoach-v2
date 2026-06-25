@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
 import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 import { SetOptionsDrawer } from '@/components/workout/SetOptionsDrawer'
+import { RestSecondsInput } from '@/components/workout/RestSecondsInput'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -185,14 +186,10 @@ export function TemplateExerciseSetsEditor({
       <Label htmlFor={`defaultRest-${exercise.exerciseId}`} className="shrink-0 text-sm">
         Repos par défaut
       </Label>
-      <Input
+      <RestSecondsInput
         id={`defaultRest-${exercise.exerciseId}`}
-        type="number"
-        min={0}
         value={exercise.defaultRestSeconds}
-        onChange={(event) =>
-          handleDefaultRestChange(Number(event.target.value) || 0)
-        }
+        onCommit={handleDefaultRestChange}
         className="h-8"
       />
       <span className="text-xs text-muted-foreground">s</span>

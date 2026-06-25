@@ -1256,6 +1256,47 @@ export const DELETE_WEIGHT_GOAL = `
   }
 `
 
+export type WeightEntry = {
+  id: string
+  user_id: string
+  weight_kg: number
+  logged_at: string
+  source: string
+}
+
+export type WeightEntryInput = {
+  weight_kg: number
+  logged_at?: string
+  source?: string
+}
+
+export const LIST_WEIGHT_ENTRIES = `
+  query ListWeightEntries($userId: uuid!) {
+    weight_entries(
+      where: { user_id: { _eq: $userId } }
+      order_by: { logged_at: asc }
+    ) {
+      id
+      user_id
+      weight_kg
+      logged_at
+      source
+    }
+  }
+`
+
+export const INSERT_WEIGHT_ENTRY = `
+  mutation InsertWeightEntry($object: weight_entries_insert_input!) {
+    insert_weight_entries_one(object: $object) {
+      id
+      user_id
+      weight_kg
+      logged_at
+      source
+    }
+  }
+`
+
 export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
   query ListMealLogEntriesForRange($from: date!, $to: date!) {
     meal_log_entries(
