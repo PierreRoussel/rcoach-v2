@@ -21,6 +21,8 @@
     "verify:graphql": "node scripts/verify-graphql-schema.mjs",
     "verify:routes": "npm run build && node scripts/verify-routes.mjs",
     "filter:off-france": "node scripts/filter-off-france-jsonl.mjs",
+    "filter:off-france:fast": "node scripts/filter-off-france-jsonl-fast.mjs",
+    "test:off-france-filter": "node scripts/test-off-france-filter-fast.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "build:android": "npm run build && npx cap sync android && node scripts/patch-android-agp.mjs",

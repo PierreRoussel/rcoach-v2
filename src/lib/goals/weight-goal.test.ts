@@ -7,6 +7,7 @@ import {
   milestoneStepFromProgress,
   progressKgSinceStart,
   projectWeightGoalCompletion,
+  resolveGoalChartProjection,
   remainingKgToTarget,
   shouldSuggestCalorieUpdate,
   suggestCalorieTarget,
@@ -194,5 +195,61 @@ describe('projectWeightGoalCompletion', () => {
         target_weight_kg: 78,
       }),
     ).toBe(2)
+  })
+})
+
+describe('resolveGoalChartProjection', () => {
+  it('uses nutrition projection when available', () => {
+    const now = new Date('2026-06-25T12:00:00Z')
+    const settings = {
+      ...baseSettings,
+      daily_calorie_target: 2000,
+      tdee_calculated: 2500,
+      weight_kg: 80,
+      goal: 'lose' as const,
+    }
+    const nutritionProjection = projectWeightGoalCompletion(
+      {
+        goal_type: 'lose',
+        current_weight_kg: 80,
+        target_weight_kg: 75,
+      },
+      settings,
+      now,
+    )
+
+    const chartProjection = resolveGoalChartProjection(
+      {
+        goal_type: 'lose',
+        current_weight_kg: 80,
+        target_weight_kg: 75,
+      },
+      nutritionProjection,
+      now,
+    )
+
+    expect(chartProjection?.isEstimate).toBe(false)
+    expect(chartProjection?.projectedDate).toEqual(
+      nutritionProjection?.projectedDate,
+    )
+  })
+
+  it('falls back to a default weekly rate when nutrition projection is missing', () => {
+    const now = new Date('2026-06-25T12:00:00Z')
+    const chartProjection = resolveGoalChartProjection(
+      {
+        goal_type: 'lose',
+        current_weight_kg: 80,
+        target_weight_kg: 75,
+      },
+      null,
+      now,
+    )
+
+    expect(chartProjection?.isEstimate).toBe(true)
+    expect(chartProjection?.weeklyRateKg).toBeGreaterThan(0)
+    expect(chartProjection?.projectedDate.getTime()).toBeGreaterThan(
+      now.getTime(),
+    )
   })
 })

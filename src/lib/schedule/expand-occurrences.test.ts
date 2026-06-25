@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   countSessionOccurrencesUpTo,
   expandSessionOccurrences,
+  getNextScheduledOccurrence,
   type ScheduledSession,
 } from '@/lib/schedule/expand-occurrences'
 
@@ -93,5 +94,46 @@ describe('expandSessionOccurrences aba', () => {
     )
 
     expect(sequence.join('')).toBe('ABABABABAB')
+  })
+})
+
+describe('getNextScheduledOccurrence', () => {
+  it('returns the earliest upcoming occurrence from today', () => {
+    const sessions = [
+      baseSession({
+        id: 'weekly',
+        recurrence_type: 'weekly',
+        weekdays: [3, 5],
+        start_date: '2026-06-01',
+      }),
+    ]
+
+    const next = getNextScheduledOccurrence(sessions, {
+      now: new Date('2026-06-25T12:00:00'),
+    })
+
+    expect(next?.date).toBe('2026-06-26')
+  })
+
+  it('skips today when a workout was already completed today', () => {
+    const sessions = [
+      baseSession({
+        recurrence_type: 'weekly',
+        weekdays: [4],
+        start_date: '2026-06-01',
+      }),
+    ]
+
+    const next = getNextScheduledOccurrence(sessions, {
+      now: new Date('2026-06-25T12:00:00'),
+      completedWorkouts: [
+        {
+          started_at: '2026-06-25T08:00:00.000Z',
+          ended_at: '2026-06-25T09:00:00.000Z',
+        },
+      ],
+    })
+
+    expect(next?.date).toBe('2026-07-02')
   })
 })

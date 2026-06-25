@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { createReadStream, createWriteStream } from 'node:fs'
+import { createReadStream, createWriteStream, existsSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import { finished } from 'node:stream/promises'
 import { createGunzip, createGzip } from 'node:zlib'
 import { parseArgs } from 'node:util'
+import { dirname, resolve } from 'node:path'
 
-import { filterOffFranceLiteLine } from '../src/lib/nutrition/off-france-filter.ts'
+import { filterOffFranceLiteLine } from './lib/off-france-filter.mjs'
 
 const PROGRESS_EVERY_LINES = 100_000
 
@@ -73,11 +74,29 @@ function createOutputStream(outputPath, gzipOut) {
   return gzipOut ? fileStream.pipe(createGzip()) : fileStream
 }
 
+function resolveExistingPath(rawPath, label) {
+  const absolutePath = resolve(rawPath)
+  if (!existsSync(absolutePath)) {
+    throw new Error(`${label} introuvable: ${absolutePath}`)
+  }
+  return absolutePath
+}
+
+function ensureOutputDirectory(outputPath) {
+  const outputDir = dirname(resolve(outputPath))
+  if (!existsSync(outputDir)) {
+    throw new Error(`Dossier de sortie introuvable: ${outputDir}`)
+  }
+}
+
 async function main() {
   const { inputPath, outputPath, gzipIn, gzipOut } = resolveArgs()
+  const resolvedInputPath = resolveExistingPath(inputPath, 'Fichier source')
+  ensureOutputDirectory(outputPath)
+  const resolvedOutputPath = resolve(outputPath)
 
-  const inputStream = createInputStream(inputPath, gzipIn)
-  const outputStream = createOutputStream(outputPath, gzipOut)
+  const inputStream = createInputStream(resolvedInputPath, gzipIn)
+  const outputStream = createOutputStream(resolvedOutputPath, gzipOut)
   const lineReader = createInterface({
     input: inputStream,
     crlfDelay: Infinity,
@@ -123,8 +142,8 @@ async function main() {
   console.error(
     [
       '[off-filter] Done.',
-      `Input: ${inputPath}`,
-      `Output: ${outputPath}`,
+      `Input: ${resolvedInputPath}`,
+      `Output: ${resolvedOutputPath}`,
       `Lines read: ${stats.totalLines.toLocaleString('fr-FR')}`,
       `Kept: ${stats.kept.toLocaleString('fr-FR')}`,
       `Skipped: ${stats.skipped.toLocaleString('fr-FR')}`,
@@ -134,6 +153,16 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('[off-filter] Failed:', error instanceof Error ? error.message : error)
+  if (error instanceof Error) {
+    console.error('[off-filter] Failed:', error.message)
+    if ('code' in error && error.code === 'ENOENT') {
+      console.error(
+        'Verifiez le chemin du fichier source. Exemple:',
+        'node scripts/filter-off-france-jsonl.mjs -i E:/off/openfoodfacts-products.jsonl -o E:/off/off-france-lite.jsonl',
+      )
+    }
+  } else {
+    console.error('[off-filter] Failed:', error)
+  }
   process.exit(1)
 })

@@ -1,21 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
+  addWeeks,
   eachWeekOfInterval,
-  endOfMonth,
   endOfWeek,
   format,
   max as maxDate,
   min as minDate,
   parseISO,
   startOfDay,
-  startOfMonth,
   startOfWeek,
+  subWeeks,
 } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import {
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   Tooltip,
   XAxis,
@@ -25,6 +25,8 @@ import {
 import type { WeightEntry } from '@/lib/graphql/operations'
 import {
   formatWeightKg,
+  resolveGoalChartProjection,
+  type GoalChartProjection,
   type WeightGoal,
   type WeightGoalProjection,
 } from '@/lib/goals/weight-goal'
@@ -50,17 +52,14 @@ const WEEK_OPTS = { weekStartsOn: 1 as const }
 const VISIBLE_WEEKS = 9
 const CHART_HEIGHT = 288
 const Y_AXIS_WIDTH = 40
-const CHART_MARGIN_TOP = 8
-const CHART_MARGIN_RIGHT = 56
-const CHART_MARGIN_BOTTOM = 24
-const MIN_WEEK_WIDTH = 28
+const CHART_MARGIN = { top: 12, right: 56, left: 4, bottom: 28 }
+const MIN_WEEK_WIDTH = 32
 
 function buildWeightByWeek(entries: WeightEntry[]) {
   const buckets = new Map<string, number[]>()
 
   for (const entry of entries) {
-    const weekStart = startOfWeek(parseISO(entry.logged_at), WEEK_OPTS)
-    const weekKey = format(weekStart, 'yyyy-MM-dd')
+    const weekKey = format(startOfWeek(parseISO(entry.logged_at), WEEK_OPTS), 'yyyy-MM-dd')
     const weights = buckets.get(weekKey) ?? []
     weights.push(Number(entry.weight_kg))
     buckets.set(weekKey, weights)
@@ -78,77 +77,87 @@ function buildWeightByWeek(entries: WeightEntry[]) {
 function buildWeeklyRange(
   entries: WeightEntry[],
   goal: WeightGoal,
-  projection: WeightGoalProjection | null,
+  chartProjection: GoalChartProjection | null,
 ) {
-  const dates: Date[] = [startOfDay(parseISO(goal.created_at))]
+  const today = startOfDay(new Date())
+  const currentWeek = startOfWeek(today, WEEK_OPTS)
+  const halfWindow = Math.floor(VISIBLE_WEEKS / 2)
 
-  for (const entry of entries) {
-    dates.push(startOfDay(parseISO(entry.logged_at)))
+  let rangeStart = subWeeks(currentWeek, halfWindow)
+  let rangeEnd = addWeeks(currentWeek, VISIBLE_WEEKS - halfWindow - 1)
+
+  const dataDates = [
+    startOfDay(parseISO(goal.created_at)),
+    ...entries.map((entry) => startOfDay(parseISO(entry.logged_at))),
+    today,
+  ]
+
+  if (chartProjection?.projectedDate) {
+    dataDates.push(startOfDay(chartProjection.projectedDate))
   }
 
-  if (projection?.projectedDate) {
-    dates.push(startOfDay(projection.projectedDate))
+  rangeStart = minDate([
+    rangeStart,
+    startOfWeek(minDate(dataDates), WEEK_OPTS),
+  ])
+  rangeEnd = maxDate([
+    rangeEnd,
+    endOfWeek(maxDate(dataDates), WEEK_OPTS),
+  ])
+
+  if (chartProjection?.projectedDate) {
+    const projectedWeekEnd = endOfWeek(chartProjection.projectedDate, WEEK_OPTS)
+    if (projectedWeekEnd > rangeEnd) {
+      rangeEnd = projectedWeekEnd
+    }
   }
-
-  dates.push(startOfDay(new Date()))
-
-  const rangeStart = startOfWeek(startOfMonth(minDate(dates)), WEEK_OPTS)
-  const rangeEnd = endOfWeek(endOfMonth(maxDate(dates)), WEEK_OPTS)
 
   return eachWeekOfInterval({ start: rangeStart, end: rangeEnd }, WEEK_OPTS)
 }
 
-function applyProjectionToWeeklyRows(
+function applyProjectionCurve(
   rows: WeeklyChartRow[],
   goal: WeightGoal,
-  projection: WeightGoalProjection | null,
-  lastEntryWeekKey: string,
-  lastEntryWeight: number,
+  chartProjection: GoalChartProjection | null,
 ) {
-  const projectedWeekStart = projection?.projectedDate
-    ? startOfWeek(projection.projectedDate, WEEK_OPTS)
-    : null
-  const projectedWeekKey = projectedWeekStart
-    ? format(projectedWeekStart, 'yyyy-MM-dd')
-    : null
-
-  const showProjection =
-    projectedWeekKey != null &&
-    !projection?.isReached &&
-    (projection?.weeklyRateKg ?? 0) > 0
-
-  if (!showProjection) {
+  if (!chartProjection) {
     return rows
   }
 
-  const lastIndex = rows.findIndex((row) => row.weekKey === lastEntryWeekKey)
-  const projectedIndex = rows.findIndex((row) => row.weekKey === projectedWeekKey)
+  const startWeekKey = format(startOfWeek(new Date(), WEEK_OPTS), 'yyyy-MM-dd')
+  const endWeekKey = format(
+    startOfWeek(chartProjection.projectedDate, WEEK_OPTS),
+    'yyyy-MM-dd',
+  )
 
-  if (lastIndex < 0 || projectedIndex < 0 || projectedIndex <= lastIndex) {
-    return rows
+  let startIndex = rows.findIndex((row) => row.weekKey === startWeekKey)
+  let endIndex = rows.findIndex((row) => row.weekKey === endWeekKey)
+
+  if (startIndex < 0) {
+    startIndex = rows.length - 1
   }
+
+  if (endIndex < 0) {
+    endIndex = rows.length - 1
+  }
+
+  if (endIndex <= startIndex) {
+    endIndex = Math.min(rows.length - 1, startIndex + 1)
+  }
+
+  const startWeight = goal.current_weight_kg
+  const endWeight = goal.target_weight_kg
 
   return rows.map((row, index) => {
-    if (index < lastIndex || index > projectedIndex) {
+    if (index < startIndex || index > endIndex) {
       return row
     }
 
-    if (index === lastIndex) {
-      return { ...row, projected: lastEntryWeight }
-    }
+    const progress = (index - startIndex) / (endIndex - startIndex)
+    const projected =
+      Math.round((startWeight + (endWeight - startWeight) * progress) * 10) / 10
 
-    if (index === projectedIndex) {
-      return { ...row, projected: goal.target_weight_kg }
-    }
-
-    const progress = (index - lastIndex) / (projectedIndex - lastIndex)
-    const interpolated =
-      lastEntryWeight + (goal.target_weight_kg - lastEntryWeight) * progress
-
-    return {
-      ...row,
-      projected: Math.round(interpolated * 10) / 10,
-    }
+    return { ...row, projected }
   })
 }
 
@@ -156,16 +165,8 @@ function buildWeeklyChartData(
   weeks: Date[],
   weightByWeek: Map<string, number>,
   goal: WeightGoal,
-  projection: WeightGoalProjection | null,
+  chartProjection: GoalChartProjection | null,
 ): WeeklyChartRow[] {
-  const lastEntryWeekKey =
-    weightByWeek.size > 0
-      ? [...weightByWeek.keys()].sort().at(-1)!
-      : format(startOfWeek(parseISO(goal.created_at), WEEK_OPTS), 'yyyy-MM-dd')
-
-  const lastEntryWeight =
-    weightByWeek.get(lastEntryWeekKey) ?? goal.current_weight_kg
-
   const rows = weeks.map((weekStart, index) => {
     const weekKey = format(weekStart, 'yyyy-MM-dd')
     const weekEnd = endOfWeek(weekStart, WEEK_OPTS)
@@ -184,19 +185,10 @@ function buildWeeklyChartData(
     }
   })
 
-  return applyProjectionToWeeklyRows(
-    rows,
-    goal,
-    projection,
-    lastEntryWeekKey,
-    lastEntryWeight,
-  )
+  return applyProjectionCurve(rows, goal, chartProjection)
 }
 
-function buildYDomain(
-  entries: WeightEntry[],
-  goal: WeightGoal,
-): [number, number] {
+function buildYDomain(entries: WeightEntry[], goal: WeightGoal): [number, number] {
   const weights = [
     ...entries.map((entry) => Number(entry.weight_kg)),
     goal.target_weight_kg,
@@ -204,9 +196,7 @@ function buildYDomain(
     goal.start_weight_kg,
   ]
 
-  const minWeight = Math.min(...weights) - 1
-  const maxWeight = Math.max(...weights) + 1
-  return [minWeight, maxWeight]
+  return [Math.min(...weights) - 1, Math.max(...weights) + 1]
 }
 
 function buildYAxisTicks(min: number, max: number, count = 4) {
@@ -220,14 +210,10 @@ function buildYAxisTicks(min: number, max: number, count = 4) {
   )
 }
 
-function formatYAxisTick(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1)
-}
-
 function WeightYAxis({ domain }: { domain: [number, number] }) {
   const [min, max] = domain
   const ticks = buildYAxisTicks(min, max)
-  const plotHeight = CHART_HEIGHT - CHART_MARGIN_TOP - CHART_MARGIN_BOTTOM
+  const plotHeight = CHART_HEIGHT - CHART_MARGIN.top - CHART_MARGIN.bottom
 
   return (
     <div
@@ -237,7 +223,7 @@ function WeightYAxis({ domain }: { domain: [number, number] }) {
     >
       {ticks.map((tick) => {
         const ratio = ticks.length === 1 ? 0 : (tick - min) / (max - min)
-        const top = CHART_MARGIN_TOP + plotHeight - ratio * plotHeight
+        const top = CHART_MARGIN.top + plotHeight - ratio * plotHeight
 
         return (
           <span
@@ -245,7 +231,7 @@ function WeightYAxis({ domain }: { domain: [number, number] }) {
             className="absolute right-0 -translate-y-1/2 text-[10px] leading-none tabular-nums text-muted-foreground"
             style={{ top }}
           >
-            {formatYAxisTick(tick)}
+            {Number.isInteger(tick) ? String(tick) : tick.toFixed(1)}
           </span>
         )
       })}
@@ -295,21 +281,23 @@ export function WeightProgressChart({
   const viewportRef = useRef<HTMLDivElement>(null)
   const [weekWidth, setWeekWidth] = useState(MIN_WEEK_WIDTH)
 
+  const chartProjection = useMemo(
+    () => resolveGoalChartProjection(goal, projection),
+    [goal, projection],
+  )
   const weightByWeek = useMemo(() => buildWeightByWeek(entries), [entries])
   const weeks = useMemo(
-    () => buildWeeklyRange(entries, goal, projection),
-    [entries, goal, projection],
+    () => buildWeeklyRange(entries, goal, chartProjection),
+    [entries, goal, chartProjection],
   )
   const chartData = useMemo(
-    () => buildWeeklyChartData(weeks, weightByWeek, goal, projection),
-    [weeks, weightByWeek, goal, projection],
+    () => buildWeeklyChartData(weeks, weightByWeek, goal, chartProjection),
+    [weeks, weightByWeek, goal, chartProjection],
   )
   const yDomain = useMemo(() => buildYDomain(entries, goal), [entries, goal])
 
-  const plotWidth = Math.max(
-    weeks.length * weekWidth,
-    weekWidth * VISIBLE_WEEKS,
-  )
+  const plotWidth = Math.max(weeks.length * weekWidth, weekWidth * VISIBLE_WEEKS)
+  const hasProjection = chartData.some((row) => row.projected != null)
 
   useEffect(() => {
     const node = viewportRef.current
@@ -348,7 +336,7 @@ export function WeightProgressChart({
   }
 
   return (
-    <div className={cn('flex w-full overflow-hidden', className)}>
+    <div className={cn('flex w-full', className)}>
       <WeightYAxis domain={yDomain} />
 
       <div
@@ -356,16 +344,11 @@ export function WeightProgressChart({
         className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:thin]"
       >
         <div style={{ width: plotWidth, height: CHART_HEIGHT }}>
-          <LineChart
+          <ComposedChart
             width={plotWidth}
             height={CHART_HEIGHT}
             data={chartData}
-            margin={{
-              top: CHART_MARGIN_TOP,
-              right: CHART_MARGIN_RIGHT,
-              left: 0,
-              bottom: CHART_MARGIN_BOTTOM,
-            }}
+            margin={CHART_MARGIN}
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -378,9 +361,9 @@ export function WeightProgressChart({
               tickLine={false}
               axisLine={{ stroke: 'var(--border)' }}
               tick={(props) => <MonthTick {...props} chartData={chartData} />}
-              height={32}
+              height={36}
             />
-            <YAxis hide domain={yDomain} width={0} />
+            <YAxis domain={yDomain} hide width={0} />
             <Tooltip
               labelFormatter={(_, payload) => {
                 const row = payload?.[0]?.payload as WeeklyChartRow | undefined
@@ -409,35 +392,37 @@ export function WeightProgressChart({
               strokeWidth={2}
               ifOverflow="extendDomain"
               label={{
-                value: `Cible ${formatWeightKg(goal.target_weight_kg)}`,
+                value: `Objectif ${formatWeightKg(goal.target_weight_kg)}`,
                 position: 'insideTopRight',
                 fill: 'var(--chart-2)',
                 fontSize: 11,
                 fontWeight: 600,
               }}
             />
+            {hasProjection ? (
+              <Line
+                type="linear"
+                dataKey="projected"
+                stroke="var(--chart-2)"
+                strokeWidth={2}
+                strokeDasharray="6 4"
+                dot={{ r: 3, fill: 'var(--chart-2)' }}
+                activeDot={{ r: 5 }}
+                connectNulls
+                isAnimationActive={false}
+              />
+            ) : null}
             <Line
-              type="monotone"
+              type="linear"
               dataKey="actual"
               stroke="var(--chart-1)"
-              strokeWidth={2}
-              dot={{ r: 3, fill: 'var(--chart-1)' }}
-              activeDot={{ r: 5 }}
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: 'var(--chart-1)' }}
+              activeDot={{ r: 6 }}
               connectNulls={false}
               isAnimationActive={false}
             />
-            <Line
-              type="monotone"
-              dataKey="projected"
-              stroke="var(--chart-2)"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ r: 3, fill: 'var(--chart-2)' }}
-              activeDot={{ r: 5 }}
-              connectNulls
-              isAnimationActive={false}
-            />
-          </LineChart>
+          </ComposedChart>
         </div>
       </div>
     </div>
@@ -457,12 +442,11 @@ function getScrollLeftForCurrentWeekCentered(
   const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
 
   if (currentIndex < 0 || weeks.length === 0) {
-    return maxScroll
+    return Math.max(0, maxScroll / 2)
   }
 
   const weekStep = plotWidth / weeks.length
   const weekCenter = (currentIndex + 0.5) * weekStep
-  const viewportCenter = viewport.clientWidth / 2
 
-  return Math.min(maxScroll, Math.max(0, weekCenter - viewportCenter))
+  return Math.min(maxScroll, Math.max(0, weekCenter - viewport.clientWidth / 2))
 }

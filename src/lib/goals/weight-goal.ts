@@ -1,3 +1,4 @@
+import { addWeeks } from 'date-fns'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type { NutritionGoal, NutritionSettings } from '@/lib/nutrition/types'
 
@@ -318,5 +319,48 @@ export function projectWeightGoalCompletion(
     projectedDate,
     dailyDeficitKcal,
     isReached: false,
+  }
+}
+
+export type GoalChartProjection = {
+  projectedDate: Date
+  weeklyRateKg: number
+  isEstimate: boolean
+}
+
+export function resolveGoalChartProjection(
+  goal: Pick<WeightGoal, 'goal_type' | 'current_weight_kg' | 'target_weight_kg'>,
+  nutritionProjection: WeightGoalProjection | null,
+  now: Date = new Date(),
+): GoalChartProjection | null {
+  if (goal.goal_type === 'maintain' || isWeightGoalReached(goal)) {
+    return null
+  }
+
+  const remainingKg = remainingKgToTarget(goal)
+  if (remainingKg <= 0) {
+    return null
+  }
+
+  if (
+    nutritionProjection?.projectedDate &&
+    !nutritionProjection.isReached &&
+    nutritionProjection.weeklyRateKg > 0
+  ) {
+    return {
+      projectedDate: nutritionProjection.projectedDate,
+      weeklyRateKg: nutritionProjection.weeklyRateKg,
+      isEstimate: false,
+    }
+  }
+
+  const defaultWeeklyRate = goal.goal_type === 'lose' ? 0.5 : 0.25
+  const weeksRemaining = Math.max(1, Math.ceil(remainingKg / defaultWeeklyRate))
+  const projectedDate = addWeeks(now, weeksRemaining)
+
+  return {
+    projectedDate,
+    weeklyRateKg: remainingKg / weeksRemaining,
+    isEstimate: true,
   }
 }

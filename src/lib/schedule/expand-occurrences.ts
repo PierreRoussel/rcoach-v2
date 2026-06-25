@@ -241,6 +241,39 @@ export function datesMatchWorkoutDay(workoutStartedAt: string, date: Date): bool
   return isSameDay(parseISO(workoutStartedAt), date)
 }
 
+export function getNextScheduledOccurrence(
+  sessions: ScheduledSession[],
+  options?: {
+    now?: Date
+    completedWorkouts?: Array<{ started_at: string; ended_at: string | null }>
+  },
+): ScheduleOccurrence | null {
+  const now = options?.now ?? new Date()
+  const today = startOfDay(now)
+  const todayKey = format(today, 'yyyy-MM-dd')
+  const rangeEnd = addYears(today, 2)
+  const occurrences = expandAllOccurrences(sessions, today, rangeEnd)
+
+  const completedToday = (options?.completedWorkouts ?? []).some(
+    (workout) =>
+      workout.ended_at != null && datesMatchWorkoutDay(workout.started_at, now),
+  )
+
+  return (
+    occurrences.find((occurrence) => {
+      if (occurrence.date > todayKey) {
+        return true
+      }
+
+      if (occurrence.date < todayKey) {
+        return false
+      }
+
+      return !completedToday
+    }) ?? null
+  )
+}
+
 export function buildNextOccurrenceByTemplateId(
   sessions: ScheduledSession[],
   now = new Date(),
