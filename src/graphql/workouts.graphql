@@ -1,5 +1,9 @@
-query ListMyWorkouts {
-  workouts(order_by: { started_at: desc }, limit: 100) {
+query ListMyWorkouts($userId: uuid!) {
+  workouts(
+    where: { user_id: { _eq: $userId } }
+    order_by: { started_at: desc }
+    limit: 100
+  ) {
     id
     title
     started_at
@@ -23,8 +27,13 @@ query ListMyWorkouts {
   }
 }
 
-query ListMyWorkoutsPage($limit: Int!, $offset: Int!) {
-  workouts(order_by: { started_at: desc }, limit: $limit, offset: $offset) {
+query ListMyWorkoutsPage($userId: uuid!, $limit: Int!, $offset: Int!) {
+  workouts(
+    where: { user_id: { _eq: $userId } }
+    order_by: { started_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
     id
     title
     started_at

@@ -18,15 +18,17 @@ import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useMyWorkouts() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useQuery({
-    queryKey: ['workouts', 'mine'],
-    enabled: isAuthenticated,
+    queryKey: ['workouts', 'mine', userId],
+    enabled: isAuthenticated && Boolean(userId),
     queryFn: async () => {
       const data = await graphqlRequest<{ workouts: WorkoutSummary[] }>(
         nhost,
         LIST_MY_WORKOUTS,
+        { userId: userId! },
       )
 
       return data.workouts
@@ -86,11 +88,12 @@ export function useMyWorkoutsInfinite(
   options: number | MyWorkoutsInfiniteOptions = {},
 ) {
   const { initialPageSize, pageSize } = resolveMyWorkoutsInfiniteOptions(options)
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useInfiniteQuery({
-    queryKey: ['workouts', 'mine', 'infinite', initialPageSize, pageSize],
-    enabled: isAuthenticated,
+    queryKey: ['workouts', 'mine', 'infinite', userId, initialPageSize, pageSize],
+    enabled: isAuthenticated && Boolean(userId),
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const offset = pageParam
@@ -99,6 +102,7 @@ export function useMyWorkoutsInfinite(
         nhost,
         LIST_MY_WORKOUTS_PAGE,
         {
+          userId: userId!,
           limit,
           offset,
         },

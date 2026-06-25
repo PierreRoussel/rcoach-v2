@@ -177,8 +177,12 @@ export const UPDATE_MY_PROFILE_LEGACY = `
 `
 
 export const LIST_MY_WORKOUTS = `
-  query ListMyWorkouts {
-    workouts(order_by: { started_at: desc }, limit: 100) {
+  query ListMyWorkouts($userId: uuid!) {
+    workouts(
+      where: { user_id: { _eq: $userId } }
+      order_by: { started_at: desc }
+      limit: 100
+    ) {
       id
       title
       started_at
@@ -208,8 +212,9 @@ export const HISTORY_WORKOUTS_INITIAL_PAGE_SIZE = 4
 export const HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE = 10
 
 export const LIST_MY_WORKOUTS_PAGE = `
-  query ListMyWorkoutsPage($limit: Int!, $offset: Int!) {
+  query ListMyWorkoutsPage($userId: uuid!, $limit: Int!, $offset: Int!) {
     workouts(
+      where: { user_id: { _eq: $userId } }
       order_by: { started_at: desc }
       limit: $limit
       offset: $offset
@@ -342,9 +347,12 @@ export const GET_LAST_EXERCISE_PERFORMANCE = `
 `
 
 export const GET_LAST_TEMPLATE_WORKOUT = `
-  query GetLastTemplateWorkout($templateId: uuid!) {
+  query GetLastTemplateWorkout($userId: uuid!, $templateId: uuid!) {
     workouts(
-      where: { ended_at: { _is_null: false } }
+      where: {
+        user_id: { _eq: $userId }
+        ended_at: { _is_null: false }
+      }
       order_by: { started_at: desc }
       limit: 25
     ) {

@@ -24,18 +24,19 @@ export function useLastTemplateSetHistory(
   templateId: string | null | undefined,
   options?: { includeRpe?: boolean },
 ): LastTemplateSetHistoryResult {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
   const includeRpe = options?.includeRpe ?? true
 
   const query = useQuery({
-    queryKey: ['template-set-history', templateId, includeRpe],
-    enabled: isAuthenticated && Boolean(templateId),
+    queryKey: ['template-set-history', userId, templateId, includeRpe],
+    enabled: isAuthenticated && Boolean(templateId) && Boolean(userId),
     queryFn: async () => {
       try {
         const data = await graphqlRequest<{
           workouts: HistoricalWorkout[]
           workout_templates_by_pk: WorkoutTemplate | null
-        }>(nhost, GET_LAST_TEMPLATE_WORKOUT, { templateId })
+        }>(nhost, GET_LAST_TEMPLATE_WORKOUT, { userId: userId!, templateId })
 
         const templateExerciseIds =
           data.workout_templates_by_pk?.workout_template_exercises.map(
