@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { StatCard } from '@/design-system'
+import { StatsSummaryCard } from '@/components/stats/StatsSummaryCard'
 import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
@@ -78,14 +78,14 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
       {!isLoading && !error ? (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard
+            <StatsSummaryCard
               icon={<Activity className="size-4 text-primary" />}
               value={String(totalSessions)}
               label="Séances"
               sub="total enregistrées"
               tone="primary"
             />
-            <StatCard
+            <StatsSummaryCard
               icon={<TrendingUp className="size-4 text-secondary-foreground" />}
               value={Math.round(totalVolume).toLocaleString('fr-FR')}
               label="Volume"
@@ -94,8 +94,8 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
             />
           </div>
 
-          <StatCard
-            icon={<Dumbbell className="size-4 text-primary" />}
+          <StatsSummaryCard
+            icon={<Dumbbell className="size-4 text-accent" />}
             value={String(activeZones)}
             label="Zones actives"
             sub="groupes musculaires travaillés"

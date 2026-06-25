@@ -95,15 +95,18 @@ select_permissions:
                 _eq: X-Hasura-User-Id
               status:
                 _eq: active
-  - role: user
-    permission:
-      columns:
-        - id
-        - display_name
-        - avatar_url
-        - friend_code
-        - email
-      filter: {}
+          - friendships_as_addressee:
+              requester_id:
+                _eq: X-Hasura-User-Id
+              status:
+                _eq: accepted
+          - friendships_as_requester:
+              addressee_id:
+                _eq: X-Hasura-User-Id
+              status:
+                _eq: accepted
+          - friend_code:
+              _is_null: false
   - role: public
     permission:
       columns:
