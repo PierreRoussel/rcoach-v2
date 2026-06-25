@@ -51,6 +51,7 @@ export async function syncWorkoutDraft(
         weightKg: number | null
         reps: number | null
         rpe?: number | null
+        durationSeconds?: number | null
       }>
     }>
   },
@@ -72,6 +73,7 @@ export async function syncWorkoutDraft(
             weight_kg: set.weightKg,
             reps: set.reps,
             rpe: set.rpe ?? null,
+            duration_seconds: set.durationSeconds ?? null,
           })),
         },
       })),

@@ -21,12 +21,14 @@ type TemplateInsertOptions = {
   includeSupersetId?: boolean
   includeDefaultRestSeconds?: boolean
   includeSetType?: boolean
+  includeDurationSeconds?: boolean
 }
 
 const FULL_TEMPLATE_INSERT_OPTIONS: TemplateInsertOptions = {
   includeSupersetId: true,
   includeDefaultRestSeconds: true,
   includeSetType: true,
+  includeDurationSeconds: true,
 }
 
 function buildExerciseRows(
@@ -89,6 +91,7 @@ function buildSetRows(
     reps: number | null
     rest_seconds: number
     set_type?: string
+    duration_seconds?: number | null
   }> = []
 
   for (let sortOrder = 0; sortOrder < exercises.length; sortOrder += 1) {
@@ -118,6 +121,10 @@ function buildSetRows(
 
       if (options?.includeSetType) {
         row.set_type = set.setType ?? 'normal'
+      }
+
+      if (options?.includeDurationSeconds && set.durationSeconds != null) {
+        row.duration_seconds = set.durationSeconds
       }
 
       rows.push(row)
@@ -192,6 +199,13 @@ function degradeTemplateInsertOptions(
 
   if (options.includeSetType && isGraphqlMissingFieldError(error, 'set_type')) {
     return { ...options, includeSetType: false }
+  }
+
+  if (
+    options.includeDurationSeconds &&
+    isGraphqlMissingFieldError(error, 'duration_seconds')
+  ) {
+    return { ...options, includeDurationSeconds: false }
   }
 
   return null

@@ -27,13 +27,13 @@ export function GoalsHomeSummaryTile() {
     <Link
       to="/app/goals"
       className={cn(
-        'block rounded-2xl border border-border/70 bg-card px-3.5 py-3 shadow-sm',
+        'block rounded-2xl border border-secondary/20 bg-gradient-to-br from-soft-secondary/75 via-card to-soft-secondary/35 px-3.5 py-3 shadow-sm',
         'transition-colors active:bg-muted/40',
       )}
       aria-label="Ouvrir la page objectifs"
     >
       <div className="flex items-center gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-soft-primary text-primary">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-soft-secondary text-secondary-foreground">
           <Target className="size-4" />
         </div>
 

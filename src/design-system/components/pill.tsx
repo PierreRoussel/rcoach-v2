@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 type PillProps = {
   children: React.ReactNode
   className?: string
-  tone?: 'default' | 'primary' | 'secondary' | 'accent' | 'purple' | 'solid-primary' | 'solid-accent'
+  tone?: 'default' | 'primary' | 'secondary' | 'accent' | 'purple' | 'solid-primary' | 'solid-accent' | 'solid-purple'
 }
 
 const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
@@ -14,6 +14,7 @@ const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
   purple: 'bg-soft-purple text-[#6b4fcc]',
   'solid-primary': 'bg-primary text-primary-foreground shadow-soft-primary',
   'solid-accent': 'bg-accent text-accent-foreground shadow-soft-accent',
+  'solid-purple': 'bg-[#6b4fcc] text-white shadow-sm',
 }
 
 export function Pill({

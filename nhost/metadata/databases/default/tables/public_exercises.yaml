@@ -24,6 +24,7 @@ select_permissions:
         - created_by
         - is_public
         - created_at
+        - tracking_mode
       filter:
         _or:
           - is_public:
@@ -55,6 +56,7 @@ insert_permissions:
         - muscle_group
         - equipment
         - is_public
+        - tracking_mode
 update_permissions:
   - role: user
     permission:
@@ -63,6 +65,7 @@ update_permissions:
         - muscle_group
         - equipment
         - is_public
+        - tracking_mode
       filter:
         created_by:
           _eq: X-Hasura-User-Id

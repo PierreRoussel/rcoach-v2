@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { DietDayCarousel } from '@/components/nutrition/DietDayCarousel'
 import { DietDayPanel } from '@/components/nutrition/DietDayPanel'
 import { NutritionOnboardingWizard } from '@/components/nutrition/NutritionOnboardingWizard'
+import { GoalsHomeSummaryTile } from '@/components/goals/GoalsHomeSummaryTile'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn } from '@/design-system'
@@ -13,6 +14,8 @@ import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { usePendingNutritionSyncCount } from '@/hooks/usePendingNutritionSync'
+import { useWeightGoal } from '@/hooks/useWeightGoal'
+import { hasNutritionSetup, isNutritionConfigured } from '@/lib/nutrition/onboarding'
 import { toDateKey } from '@/lib/nutrition/dates'
 
 const dietSearchSchema = z.object({
@@ -31,7 +34,9 @@ function DietPage() {
   const search = Route.useSearch()
   const urlDate = search.date ?? toDateKey(new Date())
   const [activeDate, setActiveDate] = useState(urlDate)
-  const { data: settings, isLoading: settingsLoading } = useNutritionSettings()
+  const { data: settings, isLoading: settingsLoading, isFetched: settingsFetched } =
+    useNutritionSettings()
+  const { data: weightGoal, isFetched: weightGoalFetched } = useWeightGoal()
   const { streak } = useNutritionStreak(settings?.daily_calorie_target ?? 0)
   const { data: pendingSyncCount = 0 } = usePendingNutritionSyncCount()
   const isOnline = useOnlineStatus()
@@ -44,8 +49,15 @@ function DietPage() {
     setActiveDate(urlDate)
   }, [urlDate])
 
-  const needsOnboarding = !settingsLoading && !settings?.onboarded_at
+  const setupStatusReady = settingsFetched && weightGoalFetched
+  const hasSetup = hasNutritionSetup(settings, weightGoal)
+  const needsOnboarding = setupStatusReady && !settingsLoading && !hasSetup
   const showWizard = needsOnboarding && !wizardDismissed
+  const showNutritionConfigCard =
+    setupStatusReady &&
+    !settingsLoading &&
+    !isNutritionConfigured(settings) &&
+    wizardDismissed
 
   function handleDateChange(nextDate: string) {
     setActiveDate(nextDate)
@@ -114,7 +126,17 @@ function DietPage() {
         />
       ) : null}
 
-      {needsOnboarding && wizardDismissed ? (
+      {weightGoal ? (
+        shouldAnimateEntrance ? (
+          <AnimateIn delay={280}>
+            <GoalsHomeSummaryTile />
+          </AnimateIn>
+        ) : (
+          <GoalsHomeSummaryTile />
+        )
+      ) : null}
+
+      {showNutritionConfigCard ? (
         shouldAnimateEntrance ? (
           <AnimateIn delay={320}>
             <Card>

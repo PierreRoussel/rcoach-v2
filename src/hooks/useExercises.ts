@@ -44,6 +44,7 @@ export function useCreateExercise() {
       muscle_group: string
       equipment: string
       is_public?: boolean
+      tracking_mode?: string
     }) => {
       const data = await graphqlRequest<{ insert_exercises_one: Exercise | null }>(
         nhost,
@@ -54,12 +55,27 @@ export function useCreateExercise() {
             muscle_group: input.muscle_group,
             equipment: input.equipment,
             is_public: input.is_public ?? false,
+            tracking_mode: input.tracking_mode ?? 'auto',
           },
         },
       )
       return data.insert_exercises_one
     },
-    onSuccess: () => {
+    onSuccess: (exercise) => {
+      if (exercise) {
+        queryClient.setQueryData<Exercise[]>(['exercises', 'all'], (current) => {
+          if (!current) {
+            return [exercise]
+          }
+
+          if (current.some((item) => item.id === exercise.id)) {
+            return current
+          }
+
+          return [exercise, ...current]
+        })
+      }
+
       void queryClient.invalidateQueries({ queryKey: ['exercises'] })
     },
   })
@@ -75,6 +91,11 @@ export function useLastExercisePerformance(exerciseId: string | undefined) {
       const data = await graphqlRequest<{
         workout_exercises: Array<{
           workout: { title: string; started_at: string }
+          exercise: {
+            name: string
+            equipment: string | null
+            tracking_mode?: string | null
+          }
           sets: Array<{
             set_index: number
             set_type: string
@@ -96,6 +117,11 @@ export function useLastExercisePerformance(exerciseId: string | undefined) {
         last.workout.title,
         last.workout.started_at,
         last.sets,
+        {
+          name: last.exercise.name,
+          equipment: last.exercise.equipment,
+          tracking_mode: last.exercise.tracking_mode ?? null,
+        },
       )
     },
   })

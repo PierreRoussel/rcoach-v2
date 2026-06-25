@@ -4,6 +4,10 @@ import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceH
 import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 import { SetOptionsDrawer } from '@/components/workout/SetOptionsDrawer'
 import { RestSecondsInput } from '@/components/workout/RestSecondsInput'
+import {
+  getSetPerformanceColumnLabels,
+  SetPerformanceInputs,
+} from '@/components/workout/SetPerformanceInputs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -14,6 +18,7 @@ import {
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
 import { cn } from '@/lib/utils'
 import { applyOverloadToWorkingSets } from '@/lib/workout/progressive-overload'
+import { getExerciseTrackingKind } from '@/lib/workout/exercise-tracking'
 import { getLastSetSummary } from '@/lib/workout/template-set-history'
 
 type TemplateExerciseSetsEditorProps = {
@@ -23,7 +28,7 @@ type TemplateExerciseSetsEditorProps = {
   onChange: (exercise: TemplateExerciseDraft) => void
 }
 
-type PropagateField = 'weightKg' | 'reps'
+type PropagateField = 'weightKg' | 'reps' | 'durationSeconds'
 
 type PropagatePrompt = {
   setIndex: number
@@ -178,8 +183,19 @@ export function TemplateExerciseSetsEditor({
       return `Appliquer ${prompt.value} kg à toutes les séries ?`
     }
 
+    if (prompt.field === 'durationSeconds') {
+      return `Appliquer ${prompt.value}s à toutes les séries ?`
+    }
+
     return `Appliquer ${prompt.value} reps à toutes les séries ?`
   }
+
+  const trackingKind = getExerciseTrackingKind({
+    name: exercise.exerciseName,
+    equipment: exercise.equipment,
+  })
+  const columnLabels = getSetPerformanceColumnLabels(trackingKind)
+  const performanceColumnCount = columnLabels.length
 
   const defaultRestControl = (
     <div className="flex w-full items-center gap-2 px-3">
@@ -247,14 +263,19 @@ export function TemplateExerciseSetsEditor({
           className={cn(
             'grid w-full gap-1.5 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
             showLastColumn
-              ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_1fr]'
-              : 'grid-cols-[2rem_1fr_1fr_1fr]',
+              ? performanceColumnCount === 1
+                ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr]'
+                : 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_1fr]'
+              : performanceColumnCount === 1
+                ? 'grid-cols-[2rem_1fr_1fr]'
+                : 'grid-cols-[2rem_1fr_1fr_1fr]',
           )}
         >
           <span>#</span>
           {showLastColumn ? <span>Dern.</span> : null}
-          <span>kg</span>
-          <span>reps</span>
+          {columnLabels.map((label) => (
+            <span key={label}>{label}</span>
+          ))}
           <span>repos</span>
         </div>
         {exercise.sets.map((set, index) => (
@@ -285,47 +306,28 @@ export function TemplateExerciseSetsEditor({
                     />
                   </div>
                 ) : null}
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="—"
-                  value={set.weightKg ?? ''}
-                  onFocus={() => handleFieldFocus(index, 'weightKg', set.weightKg)}
-                  onChange={(event) =>
-                    updateSet(index, {
-                      weightKg: event.target.value
-                        ? Number(event.target.value)
-                        : null,
-                    })
-                  }
-                  onBlur={(event) =>
-                    handleFieldBlur(
+                <SetPerformanceInputs
+                  kind={trackingKind}
+                  values={{
+                    weightKg: set.weightKg,
+                    reps: set.reps,
+                    durationSeconds: set.durationSeconds,
+                  }}
+                  onChange={(patch) => updateSet(index, patch)}
+                  onFieldFocus={(field) =>
+                    handleFieldFocus(
                       index,
-                      'weightKg',
-                      event.target.value ? Number(event.target.value) : null,
+                      field as PropagateField,
+                      field === 'durationSeconds'
+                        ? (set.durationSeconds ?? null)
+                        : field === 'weightKg'
+                          ? set.weightKg
+                          : set.reps,
                     )
                   }
-                  className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
-                />
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="—"
-                  value={set.reps ?? ''}
-                  onFocus={() => handleFieldFocus(index, 'reps', set.reps)}
-                  onChange={(event) =>
-                    updateSet(index, {
-                      reps: event.target.value ? Number(event.target.value) : null,
-                    })
+                  onFieldBlur={(field, value) =>
+                    handleFieldBlur(index, field as PropagateField, value)
                   }
-                  onBlur={(event) =>
-                    handleFieldBlur(
-                      index,
-                      'reps',
-                      event.target.value ? Number(event.target.value) : null,
-                    )
-                  }
-                  className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
                 />
                 <Input
                   type="number"

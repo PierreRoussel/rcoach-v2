@@ -1,8 +1,9 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Minus, Plus, Target } from 'lucide-react'
+import { Target } from 'lucide-react'
 import { useState } from 'react'
 
+import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
 import { WeightGoalSetupWizard } from '@/components/goals/WeightGoalSetupWizard'
 import { WeightMilestoneOverlay } from '@/components/goals/WeightMilestoneOverlay'
 import { WeightProgressChart } from '@/components/goals/WeightProgressChart'
@@ -20,9 +21,8 @@ import { PageHeader } from '@/design-system'
 import { useAdjustWeightGoal } from '@/hooks/useAdjustWeightGoal'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useWeightEntries } from '@/hooks/useWeightEntries'
-import { useDeleteWeightGoal, useWeightGoal } from '@/hooks/useWeightGoal'
+import { useWeightGoal } from '@/hooks/useWeightGoal'
 import {
-  formatProgressSinceStart,
   formatWeightKg,
   goalProgressPercent,
   hasNutritionBodyData,
@@ -42,13 +42,11 @@ export function GoalsPage() {
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: weightEntries = [], isLoading: entriesLoading } =
     useWeightEntries()
-  const deleteGoal = useDeleteWeightGoal()
 
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardMode, setWizardMode] = useState<'create' | 'edit'>('create')
   const [milestoneOpen, setMilestoneOpen] = useState(false)
   const [milestoneCount, setMilestoneCount] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const { adjustWeight, isPending: adjustPending, error: adjustError } =
     useAdjustWeightGoal({
@@ -62,19 +60,6 @@ export function GoalsPage() {
     goal && nutritionSettings
       ? projectWeightGoalCompletion(goal, nutritionSettings)
       : null
-
-  async function handleRemoveGoal() {
-    setError(null)
-    try {
-      await deleteGoal.mutateAsync()
-    } catch (removeError) {
-      setError(
-        removeError instanceof Error
-          ? removeError.message
-          : 'Impossible de supprimer l’objectif.',
-      )
-    }
-  }
 
   if (goalLoading) {
     return (
@@ -131,44 +116,11 @@ export function GoalsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-xl border border-border bg-muted/30 p-4">
-                <p className="text-xs text-muted-foreground">Poids actuel</p>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full"
-                    disabled={adjustPending}
-                    onClick={() => void adjustWeight(goal, -1)}
-                    aria-label="Diminuer le poids de 100 g"
-                  >
-                    <Minus className="size-4" />
-                  </Button>
-                  <div className="text-center">
-                    <p className="font-display text-3xl font-black">
-                      {formatWeightKg(goal.current_weight_kg)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {formatProgressSinceStart(goal)}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full"
-                    disabled={adjustPending}
-                    onClick={() => void adjustWeight(goal, 1)}
-                    aria-label="Augmenter le poids de 100 g"
-                  >
-                    <Plus className="size-4" />
-                  </Button>
-                </div>
-                <p className="mt-3 text-center text-[11px] text-muted-foreground">
-                  Ajustements par pas de 100 g
-                </p>
-              </div>
+              <WeightAdjustTile
+                goal={goal}
+                disabled={adjustPending}
+                onAdjust={(delta) => void adjustWeight(goal, delta)}
+              />
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -190,16 +142,6 @@ export function GoalsPage() {
                   }}
                 >
                   Modifier l’objectif
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full text-muted-foreground"
-                  disabled={deleteGoal.isPending}
-                  onClick={() => void handleRemoveGoal()}
-                >
-                  Supprimer
                 </Button>
               </div>
             </CardContent>
@@ -259,18 +201,19 @@ export function GoalsPage() {
             </Card>
           ) : null}
 
-          <Card className="rounded-2xl border-border">
-            <CardHeader>
+          <Card className="overflow-hidden rounded-2xl border-border">
+            <CardHeader className="px-5">
               <CardTitle className="font-display text-base font-black">
                 Courbe de poids
               </CardTitle>
               <CardDescription>
-                Historique de vos pesées et jalon projeté.
+                Moyenne hebdomadaire de vos pesées et jalon projeté. Faites
+                défiler pour parcourir la timeline (~2 mois visibles).
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-0 pb-2">
               {entriesLoading ? (
-                <p className="text-sm text-muted-foreground">Chargement...</p>
+                <p className="px-5 text-sm text-muted-foreground">Chargement...</p>
               ) : (
                 <WeightProgressChart
                   entries={weightEntries}
@@ -283,9 +226,7 @@ export function GoalsPage() {
         </div>
       )}
 
-      {(error || adjustError) && (
-        <FormMessage>{error ?? adjustError}</FormMessage>
-      )}
+      {adjustError && <FormMessage>{adjustError}</FormMessage>}
 
       <WeightGoalSetupWizard
         open={wizardOpen}

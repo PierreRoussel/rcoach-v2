@@ -16,6 +16,7 @@ export type Exercise = {
   muscle_group: string | null
   equipment: string | null
   is_public: boolean
+  tracking_mode?: string | null
 }
 
 export type WorkoutSummary = {
@@ -48,6 +49,7 @@ export type WorkoutTemplateSet = {
   reps: number | null
   rest_seconds: number
   set_type?: string
+  duration_seconds?: number | null
 }
 
 export type WorkoutTemplateExercise = {
@@ -303,6 +305,7 @@ export const LIST_ALL_EXERCISES = `
       muscle_group
       equipment
       is_public
+      tracking_mode
       created_by
     }
   }
@@ -316,6 +319,7 @@ export const INSERT_EXERCISE = `
       muscle_group
       equipment
       is_public
+      tracking_mode
     }
   }
 `
@@ -338,6 +342,7 @@ export const GET_LAST_EXERCISE_PERFORMANCE = `
         name
         equipment
         muscle_group
+        tracking_mode
       }
       sets(order_by: { set_index: asc }) {
         set_index
@@ -777,6 +782,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
           name
           muscle_group
           equipment
+          tracking_mode
         }
         workout_template_sets(order_by: { set_index: asc }) {
           set_index
@@ -784,6 +790,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
           reps
           rest_seconds
           set_type
+          duration_seconds
         }
       }
     }
@@ -808,6 +815,7 @@ export const GET_WORKOUT_TEMPLATE = `
           name
           muscle_group
           equipment
+          tracking_mode
         }
         workout_template_sets(order_by: { set_index: asc }) {
           set_index
@@ -815,6 +823,7 @@ export const GET_WORKOUT_TEMPLATE = `
           reps
           rest_seconds
           set_type
+          duration_seconds
         }
       }
     }

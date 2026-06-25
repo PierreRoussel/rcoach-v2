@@ -16,6 +16,7 @@ export function templateExercisesToActive(
       setType: set.setType ?? 'normal',
       weightKg: set.weightKg,
       reps: set.reps,
+      durationSeconds: set.durationSeconds ?? null,
       restSeconds: set.usesGlobalRest
         ? exercise.defaultRestSeconds
         : set.restSeconds,

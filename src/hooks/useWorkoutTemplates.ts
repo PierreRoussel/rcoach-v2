@@ -21,6 +21,7 @@ export type TemplateSetDraft = {
   setType?: TemplateSetType
   weightKg: number | null
   reps: number | null
+  durationSeconds?: number | null
   restSeconds: number
   usesGlobalRest: boolean
 }
@@ -101,6 +102,7 @@ export function templateToDraft(
           setType: normalizeTemplateSetType(set.set_type),
           weightKg: set.weight_kg,
           reps: set.reps,
+          durationSeconds: set.duration_seconds ?? null,
           restSeconds: set.rest_seconds,
           usesGlobalRest: set.rest_seconds === exerciseDefaultRestSeconds,
         })),
@@ -238,13 +240,14 @@ export {
 export function createTemplateSet(
   setIndex: number,
   defaultRestSeconds: number,
-  inherited?: Pick<TemplateSetDraft, 'weightKg' | 'reps' | 'setType'>,
+  inherited?: Pick<TemplateSetDraft, 'weightKg' | 'reps' | 'setType' | 'durationSeconds'>,
 ): TemplateSetDraft {
   return {
     setIndex,
     setType: inherited?.setType ?? 'normal',
     weightKg: inherited?.weightKg ?? null,
     reps: inherited?.reps ?? null,
+    durationSeconds: inherited?.durationSeconds ?? null,
     restSeconds: defaultRestSeconds,
     usesGlobalRest: true,
   }
@@ -252,28 +255,30 @@ export function createTemplateSet(
 
 export function inheritSetValues(
   sets: TemplateSetDraft[],
-): Pick<TemplateSetDraft, 'weightKg' | 'reps' | 'setType'> {
+): Pick<TemplateSetDraft, 'weightKg' | 'reps' | 'setType' | 'durationSeconds'> {
   const last = sets[sets.length - 1]
-  if (last && (last.weightKg != null || last.reps != null)) {
+  if (last && (last.weightKg != null || last.reps != null || last.durationSeconds != null)) {
     return {
       weightKg: last.weightKg,
       reps: last.reps,
+      durationSeconds: last.durationSeconds ?? null,
       setType: last.setType ?? 'normal',
     }
   }
 
   const firstWithValues = sets.find(
-    (set) => set.weightKg != null || set.reps != null,
+    (set) => set.weightKg != null || set.reps != null || set.durationSeconds != null,
   )
   if (firstWithValues) {
     return {
       weightKg: firstWithValues.weightKg,
       reps: firstWithValues.reps,
+      durationSeconds: firstWithValues.durationSeconds ?? null,
       setType: firstWithValues.setType ?? 'normal',
     }
   }
 
-  return { weightKg: null, reps: null, setType: 'normal' }
+  return { weightKg: null, reps: null, durationSeconds: null, setType: 'normal' }
 }
 
 export function reindexTemplateSets(sets: TemplateSetDraft[]): TemplateSetDraft[] {

@@ -94,6 +94,19 @@ export function formatProgressSinceStart(goal: Pick<WeightGoal, 'goal_type' | 's
   return `Écart de ${formatWeightKg(Math.abs(delta))} depuis le début`
 }
 
+export function isProgressOnTrack(
+  goal: Pick<WeightGoal, 'goal_type' | 'start_weight_kg' | 'current_weight_kg'>,
+) {
+  if (goal.goal_type === 'maintain') {
+    return (
+      Math.abs(goal.current_weight_kg - goal.start_weight_kg) <
+      WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG
+    )
+  }
+
+  return progressKgSinceStart(goal) > 0
+}
+
 export function hasNutritionBodyData(
   settings: Pick<
     NutritionSettings,

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { RestTimerBar } from '@/components/workout/RestTimerBar'
+import { HoldTimerBar } from '@/components/workout/HoldTimerBar'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
 import {
   WorkoutRecapDialog,
@@ -75,6 +76,10 @@ function ActiveWorkoutPage() {
     restSecondsLeft,
     restTargetSeconds,
     isResting,
+    isHolding,
+    holdSecondsLeft,
+    holdTargetSeconds,
+    holdingStep,
     hydrate,
     addExercise,
     removeExercise,
@@ -93,6 +98,9 @@ function ActiveWorkoutPage() {
     adjustRest,
     tickRest,
     skipRest,
+    startHold,
+    stopHold,
+    tickHold,
     finishWorkout,
     cancelWorkout,
   } = useActiveWorkoutStore()
@@ -150,6 +158,21 @@ function ActiveWorkoutPage() {
     return () => window.clearInterval(timer)
   }, [isResting, tickRest])
 
+  useEffect(() => {
+    if (!isHolding) {
+      return
+    }
+
+    const timer = window.setInterval(() => tickHold(), 1000)
+    return () => window.clearInterval(timer)
+  }, [isHolding, tickHold])
+
+  const holdingExercise =
+    holdingStep != null ? activeExercises[holdingStep.exerciseIndex] ?? null : null
+  const holdExerciseLabel = holdingExercise
+    ? `${holdingExercise.exerciseName} — série ${(holdingStep?.setIndex ?? 0) + 1}`
+    : null
+
   async function handleFinish() {
     if (completedCount === 0) {
       setError('Validez au moins une série avant de terminer.')
@@ -186,6 +209,7 @@ function ActiveWorkoutPage() {
               weightKg: set.weightKg,
               reps: set.reps,
               rpe: set.rpe ?? null,
+              durationSeconds: set.durationSeconds ?? null,
             })),
           })),
         })
@@ -272,7 +296,11 @@ function ActiveWorkoutPage() {
   }
 
   return (
-    <div className={isResting ? 'space-y-4 pb-44' : 'space-y-4 pb-24'}>
+    <div
+      className={
+        isResting || isHolding ? 'space-y-4 pb-44' : 'space-y-4 pb-24'
+      }
+    >
       {wearSyncEnabled ? (
         <Pill tone={watchAvailable ? 'secondary' : 'default'}>
           {watchAvailable ? 'Montre Wear OS connectée' : 'Montre Wear OS non détectée'}
@@ -323,6 +351,9 @@ function ActiveWorkoutPage() {
             }
             onCompleteStep={(exerciseIndex, setIndex) =>
               void completeStep(exerciseIndex, setIndex)
+            }
+            onStartHold={(exerciseIndex, setIndex) =>
+              startHold(exerciseIndex, setIndex)
             }
             onUncompleteStep={(exerciseIndex, setIndex) =>
               void uncompleteStep(exerciseIndex, setIndex)
@@ -389,6 +420,15 @@ function ActiveWorkoutPage() {
         <p className="text-sm text-secondary-foreground">{message}</p>
       ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
+
+      {isHolding ? (
+        <HoldTimerBar
+          holdSecondsLeft={holdSecondsLeft}
+          holdTargetSeconds={holdTargetSeconds}
+          exerciseLabel={holdExerciseLabel}
+          onStop={() => void stopHold()}
+        />
+      ) : null}
 
       {isResting ? (
         <RestTimerBar

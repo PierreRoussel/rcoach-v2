@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   adjustWeightKg,
   inferWeightGoalType,
+  isProgressOnTrack,
   milestoneStepFromProgress,
   progressKgSinceStart,
   projectWeightGoalCompletion,
@@ -75,6 +76,48 @@ describe('progress and milestones', () => {
   it('adjusts weight in 100g steps', () => {
     expect(adjustWeightKg(79, -1)).toBe(78.9)
     expect(adjustWeightKg(79, 1)).toBe(79.1)
+  })
+})
+
+describe('isProgressOnTrack', () => {
+  it('rewards weight loss progress for a lose goal', () => {
+    expect(
+      isProgressOnTrack({
+        goal_type: 'lose',
+        start_weight_kg: 80,
+        current_weight_kg: 78.5,
+      }),
+    ).toBe(true)
+  })
+
+  it('does not reward weight gain for a lose goal', () => {
+    expect(
+      isProgressOnTrack({
+        goal_type: 'lose',
+        start_weight_kg: 80,
+        current_weight_kg: 80.5,
+      }),
+    ).toBe(false)
+  })
+
+  it('rewards weight gain for a gain goal', () => {
+    expect(
+      isProgressOnTrack({
+        goal_type: 'gain',
+        start_weight_kg: 70,
+        current_weight_kg: 71,
+      }),
+    ).toBe(true)
+  })
+
+  it('does not reward weight loss for a gain goal', () => {
+    expect(
+      isProgressOnTrack({
+        goal_type: 'gain',
+        start_weight_kg: 70,
+        current_weight_kg: 69.5,
+      }),
+    ).toBe(false)
   })
 })
 

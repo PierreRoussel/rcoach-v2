@@ -52,12 +52,12 @@ export function FriendRecapRow({
         <div className="min-w-0 flex-1">
           <p className="truncate font-display font-black text-foreground">{displayName}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <Pill tone="purple" className="gap-1 py-0.5 text-[10px]">
+            <Pill tone="solid-purple" className="gap-1 py-0.5 text-[10px]">
               <Dumbbell className="size-3" />
               {activity.workoutStreak} sem.
             </Pill>
-            <Pill tone="accent" className="gap-1 py-0.5 text-[10px]">
-              <Flame className="size-3" />
+            <Pill tone="solid-accent" className="gap-1 py-0.5 text-[10px]">
+              <Flame className="size-3 fill-current" />
               {activity.nutritionStreak} j.
             </Pill>
           </div>

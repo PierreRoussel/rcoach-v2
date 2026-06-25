@@ -16,6 +16,7 @@ select_permissions:
         - reps
         - rest_seconds
         - set_type
+        - duration_seconds
       filter:
         template_exercise:
           template:
@@ -36,6 +37,7 @@ insert_permissions:
         - reps
         - rest_seconds
         - set_type
+        - duration_seconds
 update_permissions:
   - role: user
     permission:
@@ -45,6 +47,7 @@ update_permissions:
         - reps
         - rest_seconds
         - set_type
+        - duration_seconds
       filter:
         template_exercise:
           template:

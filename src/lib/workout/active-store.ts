@@ -8,6 +8,7 @@ import {
   removeExerciseFromSuperset,
 } from '@/lib/workout/exercise-superset'
 import { replaceActiveExercise } from '@/lib/workout/replace-exercise'
+import { getExerciseTrackingKind, isTimedExercise } from '@/lib/workout/exercise-tracking'
 import {
   playRestCompleteBeep,
   warmUpRestTimerAudio,
@@ -30,8 +31,11 @@ type CompleteStepValues = {
   weightKg?: number | null
   reps?: number | null
   rpe?: number | null
+  durationSeconds?: number | null
   setType?: ActiveSet['setType']
 }
+
+const DEFAULT_HOLD_SECONDS = 30
 
 type PersistableState = Pick<
   ActiveWorkoutState,
@@ -55,6 +59,10 @@ type ActiveWorkoutState = {
   restSecondsLeft: number
   restTargetSeconds: number
   isResting: boolean
+  isHolding: boolean
+  holdSecondsLeft: number
+  holdTargetSeconds: number
+  holdingStep: CircuitStep | null
   hydrate: () => Promise<void>
   startWorkout: (title: string) => Promise<void>
   startWorkoutFromTemplate: (
@@ -68,6 +76,7 @@ type ActiveWorkoutState = {
     name: string
     muscle_group?: string | null
     equipment?: string | null
+    tracking_mode?: string | null
   }) => Promise<void>
   removeExercise: (exerciseIndex: number) => Promise<void>
   replaceExercise: (
@@ -107,6 +116,9 @@ type ActiveWorkoutState = {
   adjustRest: (deltaSeconds: number) => void
   tickRest: () => void
   skipRest: () => void
+  startHold: (exerciseIndex: number, setIndex: number) => void
+  stopHold: () => Promise<void>
+  tickHold: () => void
   finishWorkout: () => Promise<ActiveWorkoutDraft | null>
   cancelWorkout: () => Promise<void>
   getCircuitSteps: () => CircuitStep[]
@@ -114,12 +126,17 @@ type ActiveWorkoutState = {
   getNextStepLabel: () => string | null
 }
 
-function createEmptySet(setIndex: number, defaultRestSeconds: number): ActiveSet {
+function createEmptySet(
+  setIndex: number,
+  defaultRestSeconds: number,
+  options?: { timed?: boolean },
+): ActiveSet {
   return {
     setIndex,
     setType: 'normal',
     weightKg: null,
     reps: null,
+    durationSeconds: options?.timed ? DEFAULT_HOLD_SECONDS : null,
     restSeconds: defaultRestSeconds,
     completedAt: null,
   }
@@ -244,6 +261,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   restSecondsLeft: 0,
   restTargetSeconds: 0,
   isResting: false,
+  isHolding: false,
+  holdSecondsLeft: 0,
+  holdTargetSeconds: 0,
+  holdingStep: null,
 
   getCircuitSteps: () => buildCircuitSteps(get().exercises),
 
@@ -290,6 +311,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
+      isHolding: false,
+      holdSecondsLeft: 0,
+      holdTargetSeconds: 0,
+      holdingStep: null,
     })
   },
 
@@ -306,6 +331,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
+      isHolding: false,
+      holdSecondsLeft: 0,
+      holdTargetSeconds: 0,
+      holdingStep: null,
     })
     await persistDraft({
       title,
@@ -338,6 +367,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
+      isHolding: false,
+      holdSecondsLeft: 0,
+      holdTargetSeconds: 0,
+      holdingStep: null,
     })
     await persistDraft({
       title,
@@ -356,6 +389,11 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
 
     const defaultRestSeconds = get().defaultRestSeconds
+    const timed = isTimedExercise({
+      name: exercise.name,
+      equipment: exercise.equipment ?? null,
+      tracking_mode: exercise.tracking_mode ?? null,
+    })
     const nextExercises = [
       ...get().exercises,
       {
@@ -365,7 +403,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         equipment: exercise.equipment ?? null,
         supersetId: null,
         defaultRestSeconds,
-        sets: [createEmptySet(0, defaultRestSeconds)],
+        sets: [createEmptySet(0, defaultRestSeconds, { timed })],
       },
     ]
     const { activeStepIndex, lastCompletedStep } =
@@ -555,6 +593,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
             setType: inherited?.setType ?? 'normal',
             weightKg: inherited?.weightKg ?? null,
             reps: inherited?.reps ?? null,
+            durationSeconds: inherited?.durationSeconds ?? null,
             restSeconds: inherited?.restSeconds ?? exercise.defaultRestSeconds ?? get().defaultRestSeconds,
             completedAt: null,
           },
@@ -626,6 +665,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   completeStep: async (exerciseIndex, setIndex, values) => {
+    if (get().isHolding) {
+      return
+    }
+
     const targetSet = get().exercises[exerciseIndex]?.sets[setIndex]
     if (!targetSet || targetSet.completedAt) {
       return
@@ -651,6 +694,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
             weightKg: values?.weightKg !== undefined ? values.weightKg : set.weightKg,
             reps: values?.reps !== undefined ? values.reps : set.reps,
             rpe: values?.rpe !== undefined ? values.rpe : set.rpe,
+            durationSeconds:
+              values?.durationSeconds !== undefined
+                ? values.durationSeconds
+                : set.durationSeconds,
             setType: values?.setType ?? set.setType,
             completedAt: now,
           }
@@ -720,6 +767,19 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   uncompleteStep: async (exerciseIndex, setIndex) => {
     const targetSet = get().exercises[exerciseIndex]?.sets[setIndex]
     if (!targetSet?.completedAt) {
+      const holding = get().holdingStep
+      if (
+        get().isHolding &&
+        holding?.exerciseIndex === exerciseIndex &&
+        holding?.setIndex === setIndex
+      ) {
+        set({
+          isHolding: false,
+          holdSecondsLeft: 0,
+          holdTargetSeconds: 0,
+          holdingStep: null,
+        })
+      }
       return
     }
 
@@ -746,6 +806,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       isResting: false,
       restSecondsLeft: 0,
       restTargetSeconds: 0,
+      isHolding: false,
+      holdSecondsLeft: 0,
+      holdTargetSeconds: 0,
+      holdingStep: null,
     })
 
     await persistDraft({
@@ -795,6 +859,90 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     advanceAfterRest(get, set)
   },
 
+  startHold: (exerciseIndex, setIndex) => {
+    if (get().isResting || get().isHolding) {
+      return
+    }
+
+    const exercise = get().exercises[exerciseIndex]
+    const targetSet = exercise?.sets[setIndex]
+    if (!exercise || !targetSet || targetSet.completedAt) {
+      return
+    }
+
+    const kind = getExerciseTrackingKind({
+      name: exercise.exerciseName,
+      equipment: exercise.equipment ?? null,
+    })
+    if (kind !== 'timed') {
+      return
+    }
+
+    void warmUpRestTimerAudio()
+
+    const target = Math.max(
+      1,
+      targetSet.durationSeconds ?? DEFAULT_HOLD_SECONDS,
+    )
+
+    set({
+      isHolding: true,
+      holdSecondsLeft: target,
+      holdTargetSeconds: target,
+      holdingStep: { exerciseIndex, setIndex },
+    })
+  },
+
+  stopHold: async () => {
+    if (!get().isHolding || !get().holdingStep) {
+      return
+    }
+
+    const elapsed = Math.max(
+      1,
+      get().holdTargetSeconds - get().holdSecondsLeft,
+    )
+    const { exerciseIndex, setIndex } = get().holdingStep
+
+    set({
+      isHolding: false,
+      holdSecondsLeft: 0,
+      holdTargetSeconds: 0,
+      holdingStep: null,
+    })
+
+    await get().completeStep(exerciseIndex, setIndex, {
+      durationSeconds: elapsed,
+    })
+  },
+
+  tickHold: () => {
+    if (!get().isHolding || !get().holdingStep) {
+      return
+    }
+
+    const next = get().holdSecondsLeft - 1
+    if (next <= 0) {
+      void playRestCompleteBeep()
+      const { exerciseIndex, setIndex } = get().holdingStep
+      const target = get().holdTargetSeconds
+
+      set({
+        isHolding: false,
+        holdSecondsLeft: 0,
+        holdTargetSeconds: 0,
+        holdingStep: null,
+      })
+
+      void get().completeStep(exerciseIndex, setIndex, {
+        durationSeconds: target,
+      })
+      return
+    }
+
+    set({ holdSecondsLeft: next })
+  },
+
   finishWorkout: async () => {
     const { title, startedAt, exercises, defaultRestSeconds, sourceTemplateId } = get()
     if (!startedAt) {
@@ -822,6 +970,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       restSecondsLeft: 0,
       restTargetSeconds: 0,
       isResting: false,
+      isHolding: false,
+      holdSecondsLeft: 0,
+      holdTargetSeconds: 0,
+      holdingStep: null,
     })
 
     return draft

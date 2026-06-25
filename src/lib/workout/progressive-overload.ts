@@ -1,4 +1,5 @@
 import type { Exercise } from '@/lib/graphql/operations'
+import { getExerciseTrackingKind } from '@/lib/workout/exercise-tracking'
 
 export type SetSnapshot = {
   set_index: number
@@ -38,6 +39,21 @@ export function classifyExercise(exercise: Pick<Exercise, 'name' | 'equipment'>)
   const equipment = exercise.equipment?.toLowerCase() ?? ''
 
   if (
+    name.includes('plank') ||
+    name.includes('planche') ||
+    name.includes('gainage') ||
+    name.includes('chaise') ||
+    name.includes('wall sit') ||
+    name.includes('hollow') ||
+    name.includes('isometr') ||
+    name.includes('warm up') ||
+    name.includes('stretch') ||
+    name.includes('hold')
+  ) {
+    return 'timed'
+  }
+
+  if (
     equipment === 'bodyweight' ||
     name.includes('pull up') ||
     name.includes('chin up') ||
@@ -62,15 +78,6 @@ export function classifyExercise(exercise: Pick<Exercise, 'name' | 'equipment'>)
     return 'cardio'
   }
 
-  if (
-    name.includes('plank') ||
-    name.includes('warm up') ||
-    name.includes('stretch') ||
-    name.includes('hold')
-  ) {
-    return 'timed'
-  }
-
   return 'weighted'
 }
 
@@ -80,10 +87,29 @@ function workingSets(sets: SetSnapshot[]) {
   )
 }
 
-function bestWorkingSet(sets: SetSnapshot[]) {
+function bestWorkingSet(sets: SetSnapshot[], kind?: ExerciseKind) {
   const candidates = workingSets(sets)
   if (candidates.length === 0) {
     return null
+  }
+
+  const resolvedKind =
+    kind ??
+    (candidates.every(
+      (set) =>
+        (set.duration_seconds ?? 0) > 0 &&
+        (set.reps == null || set.reps === 0) &&
+        (set.weight_kg == null || set.weight_kg === 0),
+    )
+      ? 'timed'
+      : 'weighted')
+
+  if (resolvedKind === 'timed') {
+    return candidates.reduce((best, current) => {
+      const bestDuration = best.duration_seconds ?? 0
+      const currentDuration = current.duration_seconds ?? 0
+      return currentDuration > bestDuration ? current : best
+    })
   }
 
   return candidates.reduce((best, current) => {
@@ -132,24 +158,33 @@ export function summarizePerformance(
   workoutTitle: string,
   startedAt: string,
   sets: SetSnapshot[],
+  exercise?: Pick<Exercise, 'name' | 'equipment' | 'tracking_mode'>,
 ): PerformanceSummary {
+  const kind = exercise
+    ? getExerciseTrackingKind({
+        name: exercise.name,
+        equipment: exercise.equipment,
+        tracking_mode: exercise.tracking_mode,
+      })
+    : undefined
+
   return {
     date: startedAt,
     workoutTitle,
-    bestSet: bestWorkingSet(sets),
+    bestSet: bestWorkingSet(sets, kind),
     allSets: sets,
   }
 }
 
 export function suggestProgressiveOverload(
-  exercise: Pick<Exercise, 'name' | 'equipment'>,
+  exercise: Pick<Exercise, 'name' | 'equipment' | 'tracking_mode'>,
   last: PerformanceSummary | null,
 ): OverloadSuggestion | null {
   if (!last?.bestSet) {
     return null
   }
 
-  const kind = classifyExercise(exercise)
+  const kind = getExerciseTrackingKind(exercise)
   const best = last.bestSet
   const lastSession = formatLastSessionReference(best)
 

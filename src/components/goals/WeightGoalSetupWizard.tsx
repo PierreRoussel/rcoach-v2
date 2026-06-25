@@ -306,6 +306,7 @@ export function WeightGoalSetupWizard({
           goal: pendingCalorieSuggestion.goalType,
           daily_calorie_target: pendingCalorieSuggestion.suggestedCalories,
           tdee_calculated: pendingCalorieSuggestion.tdee,
+          onboarded_at: nutritionSettings?.onboarded_at ?? new Date().toISOString(),
         })
       } catch (saveError) {
         setError(

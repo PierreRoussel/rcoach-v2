@@ -48,6 +48,26 @@ describe('suggestProgressiveOverload', () => {
 
     expect(suggestion?.message).toContain('Dernière séance : 5 reps @ 7.5')
   })
+
+  it('suggests +10s for timed exercises', () => {
+    const last = summarizePerformance(
+      'Core',
+      '2026-01-01T10:00:00Z',
+      [{ set_index: 0, set_type: 'normal', weight_kg: null, reps: null, duration_seconds: 30 }],
+      { name: 'Chaise', equipment: 'bodyweight', tracking_mode: 'timed' },
+    )
+
+    const suggestion = suggestProgressiveOverload(
+      { name: 'Chaise', equipment: 'bodyweight', tracking_mode: 'timed' },
+      last,
+    )
+
+    expect(suggestion).toMatchObject({
+      kind: 'timed',
+      suggestedDurationSeconds: 40,
+    })
+    expect(suggestion?.message).toContain('30s')
+  })
 })
 
 describe('isWorkingSet', () => {

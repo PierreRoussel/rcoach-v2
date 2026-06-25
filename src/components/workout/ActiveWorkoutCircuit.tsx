@@ -14,8 +14,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RestSecondsInput } from '@/components/workout/RestSecondsInput'
+import {
+  getSetPerformanceColumnLabels,
+  SetPerformanceInputs,
+} from '@/components/workout/SetPerformanceInputs'
 import { cn } from '@/lib/utils'
 import type { ActiveExerciseEntry, ActiveSet } from '@/lib/workout/active-store'
+import { getExerciseTrackingKind } from '@/lib/workout/exercise-tracking'
 import {
   buildCircuitSteps,
   findNextStepIndexAfter,
@@ -52,11 +57,13 @@ type ActiveWorkoutCircuitProps = {
     patch: {
       weightKg?: number | null
       reps?: number | null
+      durationSeconds?: number | null
       rpe?: number | null
       setType?: ActiveSet['setType']
     },
   ) => void
   onCompleteStep: (exerciseIndex: number, setIndex: number) => void
+  onStartHold: (exerciseIndex: number, setIndex: number) => void
   onUncompleteStep: (exerciseIndex: number, setIndex: number) => void
   onAddPlannedSet: (exerciseIndex: number) => void
   onDeleteSet: (exerciseIndex: number, setIndex: number) => void
@@ -82,6 +89,7 @@ export function ActiveWorkoutCircuit({
   onUpdateExerciseRest,
   onUpdateSet,
   onCompleteStep,
+  onStartHold,
   onUncompleteStep,
   onAddPlannedSet,
   onDeleteSet,
@@ -137,6 +145,11 @@ export function ActiveWorkoutCircuit({
       showLastSetColumn && templateSetHistory
         ? getLastSetSummary(templateSetHistory, exercise.exerciseId, set.setIndex)
         : null
+    const trackingKind = getExerciseTrackingKind({
+      name: exercise.exerciseName,
+      equipment: exercise.equipment ?? null,
+    })
+    const isTimed = trackingKind === 'timed'
 
     return (
       <div
@@ -192,29 +205,15 @@ export function ActiveWorkoutCircuit({
             </div>
           ) : null}
 
-          <Input
-            inputMode="decimal"
-            placeholder="kg"
-            value={set.weightKg ?? ''}
+          <SetPerformanceInputs
+            kind={trackingKind}
+            values={{
+              weightKg: set.weightKg,
+              reps: set.reps,
+              durationSeconds: set.durationSeconds,
+            }}
             disabled={isCompleted}
-            className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
-            onChange={(event) =>
-              onUpdateSet(exerciseIndex, setIndex, {
-                weightKg: event.target.value ? Number(event.target.value) : null,
-              })
-            }
-          />
-          <Input
-            inputMode="numeric"
-            placeholder="reps"
-            value={set.reps ?? ''}
-            disabled={isCompleted}
-            className="h-9 min-w-0 flex-1 basis-0 px-2 text-center text-sm font-data"
-            onChange={(event) =>
-              onUpdateSet(exerciseIndex, setIndex, {
-                reps: event.target.value ? Number(event.target.value) : null,
-              })
-            }
+            onChange={(patch) => onUpdateSet(exerciseIndex, setIndex, patch)}
           />
 
           {rpeEnabled ? (
@@ -236,8 +235,12 @@ export function ActiveWorkoutCircuit({
                 'size-8 shrink-0 rounded-full',
                 !isNextToDo && 'text-muted-foreground hover:text-foreground',
               )}
-              aria-label="Valider la série"
-              onClick={() => onCompleteStep(exerciseIndex, setIndex)}
+              aria-label={isTimed ? 'Démarrer le maintien' : 'Valider la série'}
+              onClick={() =>
+                isTimed
+                  ? onStartHold(exerciseIndex, setIndex)
+                  : onCompleteStep(exerciseIndex, setIndex)
+              }
             >
               <Check className="size-4" />
             </Button>
@@ -311,6 +314,13 @@ export function ActiveWorkoutCircuit({
             return null
           }
 
+          const trackingKind = getExerciseTrackingKind({
+            name: exercise.exerciseName,
+            equipment: exercise.equipment ?? null,
+          })
+          const columnLabels = getSetPerformanceColumnLabels(trackingKind)
+          const performanceColumnCount = columnLabels.length
+
           return (
             <div className="w-full space-y-2 px-4">
               <ExerciseOverloadHint
@@ -332,17 +342,26 @@ export function ActiveWorkoutCircuit({
                     'grid w-full gap-1.5 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
                     showLastSetColumn
                       ? rpeEnabled
-                        ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_2.5rem_2rem]'
-                        : 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_2rem]'
+                        ? performanceColumnCount === 1
+                          ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_2.5rem_2rem]'
+                          : 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_2.5rem_2rem]'
+                        : performanceColumnCount === 1
+                          ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_2rem]'
+                          : 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_2rem]'
                       : rpeEnabled
-                        ? 'grid-cols-[2rem_1fr_1fr_2.5rem_2rem]'
-                        : 'grid-cols-[2rem_1fr_1fr_2rem]',
+                        ? performanceColumnCount === 1
+                          ? 'grid-cols-[2rem_1fr_2.5rem_2rem]'
+                          : 'grid-cols-[2rem_1fr_1fr_2.5rem_2rem]'
+                        : performanceColumnCount === 1
+                          ? 'grid-cols-[2rem_1fr_2rem]'
+                          : 'grid-cols-[2rem_1fr_1fr_2rem]',
                   )}
                 >
                   <span>#</span>
                   {showLastSetColumn ? <span>Dern.</span> : null}
-                  <span>kg</span>
-                  <span>reps</span>
+                  {columnLabels.map((label) => (
+                    <span key={label}>{label}</span>
+                  ))}
                   {rpeEnabled ? <span>RPE</span> : null}
                   <span aria-hidden className="sr-only">
                     Valider

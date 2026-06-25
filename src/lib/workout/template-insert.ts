@@ -9,6 +9,7 @@ export function buildTemplateExerciseInsertObjects(
       setType?: 'normal' | 'warmup' | 'failure'
       weightKg: number | null
       reps: number | null
+      durationSeconds?: number | null
       restSeconds: number
       usesGlobalRest: boolean
     }>
@@ -37,6 +38,10 @@ export function buildTemplateExerciseInsertObjects(
             rest_seconds: set.usesGlobalRest
               ? exercise.defaultRestSeconds
               : set.restSeconds,
+          }
+
+          if (set.durationSeconds != null) {
+            row.duration_seconds = set.durationSeconds
           }
 
           if (includeSetType) {
