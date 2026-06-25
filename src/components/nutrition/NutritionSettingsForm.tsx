@@ -12,7 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
+import {
+  DEFAULT_MEAL_DISTRIBUTION,
+  MealDistributionSliders,
+  type MealDistributionKey,
+} from '@/components/nutrition/MealDistributionSliders'
 import { useNutritionSettings, useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
+import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type { ActivityLevel, NutritionGoal, NutritionSex } from '@/lib/nutrition/types'
 
@@ -46,10 +52,7 @@ export function NutritionSettingsForm() {
   const [carbsPct, setCarbsPct] = useState(40)
   const [proteinPct, setProteinPct] = useState(30)
   const [fatPct, setFatPct] = useState(30)
-  const [breakfastPct, setBreakfastPct] = useState(20)
-  const [lunchPct, setLunchPct] = useState(35)
-  const [snackPct, setSnackPct] = useState(10)
-  const [dinnerPct, setDinnerPct] = useState(35)
+  const [mealDistribution, setMealDistribution] = useState(DEFAULT_MEAL_DISTRIBUTION)
 
   useEffect(() => {
     if (!settings) {
@@ -67,10 +70,12 @@ export function NutritionSettingsForm() {
     setCarbsPct(Number(settings.carbs_pct))
     setProteinPct(Number(settings.protein_pct))
     setFatPct(Number(settings.fat_pct))
-    setBreakfastPct(Number(settings.breakfast_pct))
-    setLunchPct(Number(settings.lunch_pct))
-    setSnackPct(Number(settings.snack_pct))
-    setDinnerPct(Number(settings.dinner_pct))
+    setMealDistribution({
+      breakfast: Number(settings.breakfast_pct),
+      lunch: Number(settings.lunch_pct),
+      snack: Number(settings.snack_pct),
+      dinner: Number(settings.dinner_pct),
+    })
   }, [settings])
 
   useEffect(() => {
@@ -93,10 +98,9 @@ export function NutritionSettingsForm() {
     setMessage(null)
 
     const macroTotal = carbsPct + proteinPct + fatPct
-    const mealTotal = breakfastPct + lunchPct + snackPct + dinnerPct
 
-    if (macroTotal !== 100 || mealTotal !== 100) {
-      setMessage('Les pourcentages doivent totaliser 100 %.')
+    if (macroTotal !== 100) {
+      setMessage('Les macros doivent totaliser 100 %.')
       return
     }
 
@@ -124,10 +128,10 @@ export function NutritionSettingsForm() {
         carbs_pct: carbsPct,
         protein_pct: proteinPct,
         fat_pct: fatPct,
-        breakfast_pct: breakfastPct,
-        lunch_pct: lunchPct,
-        snack_pct: snackPct,
-        dinner_pct: dinnerPct,
+        breakfast_pct: mealDistribution.breakfast,
+        lunch_pct: mealDistribution.lunch,
+        snack_pct: mealDistribution.snack,
+        dinner_pct: mealDistribution.dinner,
         onboarded_at: settings?.onboarded_at ?? new Date().toISOString(),
       })
       setMessage('Objectifs nutrition mis a jour.')
@@ -218,10 +222,15 @@ export function NutritionSettingsForm() {
           <CardTitle>Repartition des repas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <PctSlider label="Petit dejeuner" value={breakfastPct} onChange={setBreakfastPct} />
-          <PctSlider label="Repas" value={lunchPct} onChange={setLunchPct} />
-          <PctSlider label="Gouter" value={snackPct} onChange={setSnackPct} />
-          <PctSlider label="Diner" value={dinnerPct} onChange={setDinnerPct} />
+          <MealDistributionSliders
+            values={mealDistribution}
+            dailyCalories={Number(dailyCalories) || 0}
+            onChange={(key, value) => {
+              setMealDistribution((current) =>
+                adjustLinkedPercentages(current, key as MealDistributionKey, value),
+              )
+            }}
+          />
         </CardContent>
       </Card>
 

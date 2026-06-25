@@ -28,6 +28,8 @@ export const Route = createFileRoute('/app/diet/')({
   component: DietPage,
 })
 
+const NUTRITION_ONBOARDING_DISMISSED_KEY = 'nutrition-onboarding-dismissed'
+
 function DietPage() {
   const navigate = useNavigate({ from: '/app/diet/' })
   const search = Route.useSearch()
@@ -37,8 +39,12 @@ function DietPage() {
   const { data: daySummary, isLoading: dayLoading } = useNutritionDay(date, settings)
   const { deleteEntry, updateEntry } = useMealLogMutations()
   const [editingEntry, setEditingEntry] = useState<MealLogEntry | null>(null)
+  const [wizardDismissed, setWizardDismissed] = useState(
+    () => sessionStorage.getItem(NUTRITION_ONBOARDING_DISMISSED_KEY) === '1',
+  )
 
-  const showWizard = !settingsLoading && !settings?.onboarded_at
+  const needsOnboarding = !settingsLoading && !settings?.onboarded_at
+  const showWizard = needsOnboarding && !wizardDismissed
 
   const previewByMeal = useMemo(() => {
     if (!daySummary) {
@@ -156,10 +162,35 @@ function DietPage() {
         />
       ) : null}
 
+      {needsOnboarding && wizardDismissed ? (
+        <Card>
+          <CardContent className="space-y-4 py-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Configurez vos objectifs nutritionnels pour suivre vos macros au quotidien.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button type="button" onClick={() => setWizardDismissed(false)}>
+                Configurer maintenant
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/app/diet/settings">Ouvrir les reglages</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <NutritionOnboardingWizard
         open={showWizard}
+        onOpenChange={(open) => {
+          if (!open) {
+            sessionStorage.setItem(NUTRITION_ONBOARDING_DISMISSED_KEY, '1')
+            setWizardDismissed(true)
+          }
+        }}
         onCompleted={() => {
-          /* query invalidation handled by mutation */
+          sessionStorage.removeItem(NUTRITION_ONBOARDING_DISMISSED_KEY)
+          setWizardDismissed(false)
         }}
       />
 

@@ -19,7 +19,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
+import {
+  DEFAULT_MEAL_DISTRIBUTION,
+  MealDistributionSliders,
+  type MealDistributionKey,
+} from '@/components/nutrition/MealDistributionSliders'
 import { useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
+import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type {
   ActivityLevel,
@@ -30,6 +36,7 @@ import type {
 
 type NutritionOnboardingWizardProps = {
   open: boolean
+  onOpenChange: (open: boolean) => void
   onCompleted: () => void
 }
 
@@ -49,6 +56,7 @@ const GOAL_LABELS: Record<NutritionGoal, string> = {
 
 export function NutritionOnboardingWizard({
   open,
+  onOpenChange,
   onCompleted,
 }: NutritionOnboardingWizardProps) {
   const upsert = useUpsertNutritionSettings()
@@ -64,11 +72,15 @@ export function NutritionOnboardingWizard({
   const [carbsPct, setCarbsPct] = useState(40)
   const [proteinPct, setProteinPct] = useState(30)
   const [fatPct, setFatPct] = useState(30)
-  const [breakfastPct, setBreakfastPct] = useState(20)
-  const [lunchPct, setLunchPct] = useState(35)
-  const [snackPct, setSnackPct] = useState(10)
-  const [dinnerPct, setDinnerPct] = useState(35)
+  const [mealDistribution, setMealDistribution] = useState(DEFAULT_MEAL_DISTRIBUTION)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setStep(0)
+      setError(null)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) {
@@ -92,15 +104,9 @@ export function NutritionOnboardingWizard({
     setError(null)
 
     const macroTotal = carbsPct + proteinPct + fatPct
-    const mealTotal = breakfastPct + lunchPct + snackPct + dinnerPct
 
     if (macroTotal !== 100) {
       setError('Les macros doivent totaliser 100 %.')
-      return
-    }
-
-    if (mealTotal !== 100) {
-      setError('La repartition des repas doit totaliser 100 %.')
       return
     }
 
@@ -127,10 +133,10 @@ export function NutritionOnboardingWizard({
       carbs_pct: carbsPct,
       protein_pct: proteinPct,
       fat_pct: fatPct,
-      breakfast_pct: breakfastPct,
-      lunch_pct: lunchPct,
-      snack_pct: snackPct,
-      dinner_pct: dinnerPct,
+      breakfast_pct: mealDistribution.breakfast,
+      lunch_pct: mealDistribution.lunch,
+      snack_pct: mealDistribution.snack,
+      dinner_pct: mealDistribution.dinner,
       onboarded_at: new Date().toISOString(),
     }
 
@@ -147,7 +153,7 @@ export function NutritionOnboardingWizard({
   }
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Configurer votre nutrition</DialogTitle>
@@ -242,23 +248,33 @@ export function NutritionOnboardingWizard({
         ) : null}
 
         {step === 2 ? (
-          <div className="space-y-5">
-            <MacroSlider label="Petit dejeuner" value={breakfastPct} onChange={setBreakfastPct} />
-            <MacroSlider label="Repas" value={lunchPct} onChange={setLunchPct} />
-            <MacroSlider label="Gouter" value={snackPct} onChange={setSnackPct} />
-            <MacroSlider label="Diner" value={dinnerPct} onChange={setDinnerPct} />
-            <p className="text-sm text-muted-foreground">
-              Total : {breakfastPct + lunchPct + snackPct + dinnerPct}%
-            </p>
-          </div>
+          <MealDistributionSliders
+            values={mealDistribution}
+            dailyCalories={Number(dailyCalories) || 0}
+            onChange={(key, value) => {
+              setMealDistribution((current) =>
+                adjustLinkedPercentages(current, key as MealDistributionKey, value),
+              )
+            }}
+          />
         ) : null}
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <Button type="button" variant="outline" disabled={step === 0} onClick={() => setStep((value) => value - 1)}>
-            Retour
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Plus tard
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={step === 0}
+              onClick={() => setStep((value) => value - 1)}
+            >
+              Retour
+            </Button>
+          </div>
           {step < 2 ? (
             <Button type="button" onClick={() => setStep((value) => value + 1)}>
               Continuer
