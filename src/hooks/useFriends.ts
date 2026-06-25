@@ -9,6 +9,7 @@ import {
   LIST_ACCEPTED_FRIENDS_ACTIVITY,
   LIST_MY_FRIENDSHIPS,
   LIST_MY_SENT_MOTIVATIONS,
+  LIST_MY_SENT_MOTIVATIONS_LEGACY,
   LIST_UNREAD_MOTIVATIONS,
   LIST_UNSEEN_HEART_REPLIES,
   MARK_MOTIVATION_READ,
@@ -217,12 +218,19 @@ export function useUnseenHeartReplies() {
     enabled: isAuthenticated && Boolean(userId),
     staleTime: 30_000,
     queryFn: async () => {
-      const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
-        nhost,
-        LIST_UNSEEN_HEART_REPLIES,
-        { userId: userId! },
-      )
-      return data.friend_motivations
+      try {
+        const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+          nhost,
+          LIST_UNSEEN_HEART_REPLIES,
+          { userId: userId! },
+        )
+        return data.friend_motivations
+      } catch (error) {
+        if (isSenderReplySeenSchemaError(error)) {
+          return []
+        }
+        throw error
+      }
     },
   })
 }
@@ -236,14 +244,36 @@ export function useSentMotivations() {
     enabled: isAuthenticated && Boolean(userId),
     staleTime: 30_000,
     queryFn: async () => {
-      const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
-        nhost,
-        LIST_MY_SENT_MOTIVATIONS,
-        { userId: userId! },
-      )
-      return data.friend_motivations
+      try {
+        const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+          nhost,
+          LIST_MY_SENT_MOTIVATIONS,
+          { userId: userId! },
+        )
+        return data.friend_motivations
+      } catch (error) {
+        if (!isSenderReplySeenSchemaError(error)) {
+          throw error
+        }
+
+        const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+          nhost,
+          LIST_MY_SENT_MOTIVATIONS_LEGACY,
+          { userId: userId! },
+        )
+
+        return data.friend_motivations.map((motivation) => ({
+          ...motivation,
+          sender_reply_seen_at: motivation.sender_reply_seen_at ?? null,
+        }))
+      }
     },
   })
+}
+
+function isSenderReplySeenSchemaError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  return message.includes('sender_reply_seen_at')
 }
 
 async function invalidateSocialQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -411,6 +441,43 @@ export function useSendMotivation() {
         },
       })
       return data.insert_friend_motivations_one
+    },
+    onMutate: async ({ recipientId, emoji, message, presetKey }) => {
+      if (!userId) {
+        return
+      }
+
+      await queryClient.cancelQueries({ queryKey: [...SENT_MOTIVATIONS_KEY, userId] })
+      const previous = queryClient.getQueryData<FriendMotivation[]>([
+        ...SENT_MOTIVATIONS_KEY,
+        userId,
+      ])
+
+      const optimistic: FriendMotivation = {
+        id: `optimistic-${Date.now()}`,
+        sender_id: userId,
+        recipient_id: recipientId,
+        emoji,
+        message: normalizeMotivationMessage(message),
+        preset_key: presetKey,
+        read_at: null,
+        hearted_at: null,
+        reply_message: null,
+        sender_reply_seen_at: null,
+        created_at: new Date().toISOString(),
+      }
+
+      queryClient.setQueryData<FriendMotivation[]>(
+        [...SENT_MOTIVATIONS_KEY, userId],
+        [optimistic, ...(previous ?? [])],
+      )
+
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (userId && context?.previous) {
+        queryClient.setQueryData([...SENT_MOTIVATIONS_KEY, userId], context.previous)
+      }
     },
     onSuccess: async () => {
       await invalidateSocialQueries(queryClient)

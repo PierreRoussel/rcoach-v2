@@ -50,19 +50,16 @@ update_permissions:
         - read_at
         - hearted_at
         - reply_message
-      filter:
-        recipient_id:
-          _eq: X-Hasura-User-Id
-      check:
-        recipient_id:
-          _eq: X-Hasura-User-Id
-  - role: user
-    permission:
-      columns:
         - sender_reply_seen_at
       filter:
-        sender_id:
-          _eq: X-Hasura-User-Id
+        _or:
+          - recipient_id:
+              _eq: X-Hasura-User-Id
+          - sender_id:
+              _eq: X-Hasura-User-Id
       check:
-        sender_id:
-          _eq: X-Hasura-User-Id
+        _or:
+          - recipient_id:
+              _eq: X-Hasura-User-Id
+          - sender_id:
+              _eq: X-Hasura-User-Id

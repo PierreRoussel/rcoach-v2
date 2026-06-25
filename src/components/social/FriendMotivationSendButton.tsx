@@ -31,6 +31,56 @@ function ReadStatusBadge({ isRead }: { isRead: boolean }) {
   )
 }
 
+function SentEmojiStatus({
+  sentState,
+  friendName,
+  variant,
+  className,
+}: {
+  sentState: SentMotivationState
+  friendName: string
+  variant: 'icon' | 'soft'
+  className?: string
+}) {
+  const title = getSentMotivationBlockedMessage(sentState)
+
+  if (variant === 'soft') {
+    return (
+      <div
+        className={cn(
+          'relative inline-flex min-w-[3.5rem] items-center justify-center rounded-full',
+          'border border-primary/25 bg-soft-accent/50 px-3 py-1.5',
+          className,
+        )}
+        title={title}
+        aria-label={`${sentState.motivation.emoji} envoye a ${friendName}. ${title}`}
+        role="status"
+      >
+        <span className="relative inline-flex items-center">
+          <span className="text-lg leading-none">{sentState.motivation.emoji}</span>
+          <ReadStatusBadge isRead={sentState.isRead} />
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        'relative flex size-9 shrink-0 items-center justify-center rounded-full',
+        'border border-primary/25 bg-soft-accent/50',
+        className,
+      )}
+      title={title}
+      aria-label={`${sentState.motivation.emoji} envoye a ${friendName}. ${title}`}
+      role="status"
+    >
+      <span className="text-xl leading-none">{sentState.motivation.emoji}</span>
+      <ReadStatusBadge isRead={sentState.isRead} />
+    </div>
+  )
+}
+
 export function FriendMotivationSendButton({
   friendName,
   sentState,
@@ -38,8 +88,16 @@ export function FriendMotivationSendButton({
   variant = 'icon',
   className,
 }: FriendMotivationSendButtonProps) {
-  const canSend = sentState == null
-  const title = sentState ? getSentMotivationBlockedMessage(sentState) : undefined
+  if (sentState) {
+    return (
+      <SentEmojiStatus
+        sentState={sentState}
+        friendName={friendName}
+        variant={variant}
+        className={className}
+      />
+    )
+  }
 
   if (variant === 'soft') {
     return (
@@ -47,28 +105,11 @@ export function FriendMotivationSendButton({
         type="button"
         size="sm"
         variant="soft"
-        className={cn('relative min-w-[3.5rem]', className)}
-        disabled={!canSend}
-        title={title}
-        aria-label={
-          canSend
-            ? `Envoyer un emoji a ${friendName}`
-            : `${sentState.motivation.emoji} envoye a ${friendName}. ${title}`
-        }
-        onClick={() => {
-          if (canSend) {
-            onSend()
-          }
-        }}
+        className={cn('min-w-[3.5rem]', className)}
+        aria-label={`Envoyer un emoji a ${friendName}`}
+        onClick={onSend}
       >
-        {sentState ? (
-          <span className="relative inline-flex items-center">
-            <span className="text-lg leading-none">{sentState.motivation.emoji}</span>
-            <ReadStatusBadge isRead={sentState.isRead} />
-          </span>
-        ) : (
-          'Emoji'
-        )}
+        Emoji
       </Button>
     )
   }
@@ -78,28 +119,11 @@ export function FriendMotivationSendButton({
       type="button"
       variant="ghost"
       size="icon"
-      className={cn('relative shrink-0 rounded-full', className)}
-      disabled={!canSend}
-      title={title}
-      aria-label={
-        canSend
-          ? `Envoyer un emoji a ${friendName}`
-          : `${sentState.motivation.emoji} envoye a ${friendName}. ${title}`
-      }
-      onClick={() => {
-        if (canSend) {
-          onSend()
-        }
-      }}
+      className={cn('shrink-0 rounded-full', className)}
+      aria-label={`Envoyer un emoji a ${friendName}`}
+      onClick={onSend}
     >
-      {sentState ? (
-        <span className="relative inline-flex items-center justify-center">
-          <span className="text-xl leading-none">{sentState.motivation.emoji}</span>
-          <ReadStatusBadge isRead={sentState.isRead} />
-        </span>
-      ) : (
-        <SmilePlus className="size-4" />
-      )}
+      <SmilePlus className="size-4" />
     </Button>
   )
 }

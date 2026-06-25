@@ -1752,6 +1752,26 @@ export const LIST_MY_SENT_MOTIVATIONS = `
   }
 `
 
+export const LIST_MY_SENT_MOTIVATIONS_LEGACY = `
+  query ListMySentMotivationsLegacy($userId: uuid!) {
+    friend_motivations(
+      where: { sender_id: { _eq: $userId } }
+      order_by: { created_at: desc }
+    ) {
+      id
+      sender_id
+      recipient_id
+      emoji
+      message
+      preset_key
+      read_at
+      hearted_at
+      reply_message
+      created_at
+    }
+  }
+`
+
 export const LIST_UNSEEN_HEART_REPLIES = `
   query ListUnseenHeartReplies($userId: uuid!) {
     friend_motivations(
