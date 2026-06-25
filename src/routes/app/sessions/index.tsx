@@ -108,6 +108,7 @@ function CatalogTab() {
       template.name,
       templateExercisesToActive(draft.exercises),
       DEFAULT_GLOBAL_REST_SECONDS,
+      template.id,
     )
     await navigate({ to: '/app/workout/active' })
   }

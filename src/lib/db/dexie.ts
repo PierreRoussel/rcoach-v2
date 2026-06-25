@@ -35,6 +35,7 @@ export type ActiveWorkoutDraft = {
   title: string
   startedAt: string
   defaultRestSeconds?: number
+  sourceTemplateId?: string | null
   activeStepIndex?: number
   lastCompletedStep?: {
     exerciseIndex: number

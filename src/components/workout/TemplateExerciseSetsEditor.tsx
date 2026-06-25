@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 
+import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
 import { SetOptionsDrawer } from '@/components/workout/SetOptionsDrawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
 import {
   createTemplateSet,
   inheritSetValues,
@@ -13,9 +13,14 @@ import {
   type TemplateExerciseDraft,
   type TemplateSetDraft,
 } from '@/hooks/useWorkoutTemplates'
+import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
+import { cn } from '@/lib/utils'
+import { getLastSetSummary } from '@/lib/workout/template-set-history'
 
 type TemplateExerciseSetsEditorProps = {
   exercise: TemplateExerciseDraft
+  templateId?: string
+  includeRpeInHistory?: boolean
   onChange: (exercise: TemplateExerciseDraft) => void
 }
 
@@ -35,6 +40,8 @@ type FocusSnapshot = {
 
 export function TemplateExerciseSetsEditor({
   exercise,
+  templateId,
+  includeRpeInHistory = true,
   onChange,
 }: TemplateExerciseSetsEditorProps) {
   const [propagatePrompt, setPropagatePrompt] = useState<PropagatePrompt | null>(
@@ -42,6 +49,10 @@ export function TemplateExerciseSetsEditor({
   )
   const [selectedSetIndex, setSelectedSetIndex] = useState<number | null>(null)
   const focusSnapshot = useRef<FocusSnapshot | null>(null)
+  const { history: templateSetHistory } = useLastTemplateSetHistory(templateId, {
+    includeRpe: includeRpeInHistory,
+  })
+  const showLastColumn = Boolean(templateId)
 
   function updateSets(nextSets: TemplateSetDraft[]) {
     onChange({ ...exercise, sets: nextSets })
@@ -184,7 +195,7 @@ export function TemplateExerciseSetsEditor({
   }
 
   const defaultRestControl = (
-    <div className="flex w-full max-w-xs items-center gap-2 px-4">
+    <div className="flex w-full items-center gap-2 px-3">
       <Label htmlFor={`defaultRest-${exercise.exerciseId}`} className="shrink-0 text-sm">
         Repos par defaut
       </Label>
@@ -206,7 +217,7 @@ export function TemplateExerciseSetsEditor({
     return (
       <div className="space-y-3">
         {defaultRestControl}
-        <div className="mx-4 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
+        <div className="mx-3 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
           <p className="text-sm text-muted-foreground">Aucune serie planifiee.</p>
           <Button variant="soft" size="sm" className="mt-3" onClick={handleAddSet}>
             <Plus className="size-4" />
@@ -220,17 +231,25 @@ export function TemplateExerciseSetsEditor({
   return (
     <div className="space-y-3">
       {defaultRestControl}
-      <div className="space-y-2">
-        <div className="grid w-full grid-cols-[2rem_1fr_1fr_1fr] gap-2 px-4 text-xs font-semibold text-muted-foreground">
+      <div className="space-y-0">
+        <div
+          className={cn(
+            'grid w-full gap-1.5 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+            showLastColumn
+              ? 'grid-cols-[2rem_minmax(4.25rem,0.9fr)_1fr_1fr_1fr]'
+              : 'grid-cols-[2rem_1fr_1fr_1fr]',
+          )}
+        >
           <span>#</span>
+          {showLastColumn ? <span>Dern.</span> : null}
           <span>kg</span>
           <span>reps</span>
           <span>repos</span>
         </div>
         {exercise.sets.map((set, index) => (
           <div key={set.setIndex} className="w-full space-y-1">
-            <div className="w-full rounded-xl border border-border bg-card px-4 py-2">
-              <div className="flex w-full items-center gap-1.5">
+            <div className="w-full border-b border-border/60 bg-card px-3 py-2 last:border-b-0">
+              <div className="flex w-full min-w-0 items-center gap-1">
                 <button
                   type="button"
                   className={cn(
@@ -244,6 +263,17 @@ export function TemplateExerciseSetsEditor({
                 >
                   {set.setType === 'warmup' ? 'W' : index + 1}
                 </button>
+                {showLastColumn ? (
+                  <div className="min-w-[4.25rem] max-w-[5.5rem] shrink-0 basis-[22%]">
+                    <LastSetPerformanceHint
+                      summary={getLastSetSummary(
+                        templateSetHistory,
+                        exercise.exerciseId,
+                        set.setIndex,
+                      )}
+                    />
+                  </div>
+                ) : null}
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -315,7 +345,7 @@ export function TemplateExerciseSetsEditor({
               </div>
             </div>
             {propagatePrompt?.setIndex === index ? (
-              <div className="mx-4 flex flex-wrap items-center gap-2 rounded-lg bg-soft-secondary/50 px-2 py-1.5 text-xs">
+              <div className="mx-3 flex flex-wrap items-center gap-2 rounded-lg bg-soft-secondary/50 px-2 py-1.5 text-xs">
                 <span>{formatPropagateMessage(propagatePrompt)}</span>
                 <button
                   type="button"
@@ -337,7 +367,7 @@ export function TemplateExerciseSetsEditor({
             ) : null}
           </div>
         ))}
-        <div className="px-4">
+        <div className="px-3 pt-2">
           <Button variant="outline" size="sm" className="mt-2" onClick={handleAddSet}>
             <Plus className="size-4" />
             Serie

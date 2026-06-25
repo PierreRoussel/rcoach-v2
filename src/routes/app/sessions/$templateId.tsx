@@ -58,6 +58,7 @@ function EditSessionTemplatePage() {
       name,
       templateExercisesToActive(exercises),
       DEFAULT_GLOBAL_REST_SECONDS,
+      templateId,
     )
     await navigate({ to: '/app/workout/active' })
   }

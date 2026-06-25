@@ -8,6 +8,9 @@ object_relationships:
   - name: program_day
     using:
       foreign_key_constraint_on: program_day_id
+  - name: workout_template
+    using:
+      foreign_key_constraint_on: workout_template_id
 array_relationships:
   - name: workout_exercises
     using:
@@ -24,6 +27,7 @@ select_permissions:
         - id
         - user_id
         - program_day_id
+        - workout_template_id
         - title
         - started_at
         - ended_at
@@ -62,6 +66,7 @@ insert_permissions:
         user_id: x-hasura-User-Id
       columns:
         - program_day_id
+        - workout_template_id
         - title
         - started_at
         - ended_at
@@ -71,6 +76,7 @@ update_permissions:
     permission:
       columns:
         - program_day_id
+        - workout_template_id
         - title
         - started_at
         - ended_at

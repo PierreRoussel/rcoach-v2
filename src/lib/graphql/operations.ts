@@ -253,6 +253,40 @@ export const GET_LAST_EXERCISE_PERFORMANCE = `
         reps
         duration_seconds
         distance_km
+        rpe
+      }
+    }
+  }
+`
+
+export const GET_LAST_TEMPLATE_WORKOUT = `
+  query GetLastTemplateWorkout($templateId: uuid!) {
+    workouts(
+      where: { ended_at: { _is_null: false } }
+      order_by: { started_at: desc }
+      limit: 25
+    ) {
+      workout_template_id
+      started_at
+      workout_exercises(order_by: { sort_order: asc }) {
+        exercise_id
+        sets(order_by: { set_index: asc }) {
+          set_index
+          set_type
+          weight_kg
+          reps
+          duration_seconds
+          distance_km
+          rpe
+        }
+      }
+    }
+    workout_templates_by_pk(id: $templateId) {
+      id
+      workout_template_exercises(order_by: { sort_order: asc }) {
+        exercise {
+          id
+        }
       }
     }
   }

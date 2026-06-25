@@ -7,6 +7,10 @@ import {
   removeExerciseFromSuperset,
 } from '@/lib/workout/exercise-superset'
 import {
+  playRestCompleteBeep,
+  warmUpRestTimerAudio,
+} from '@/lib/workout/rest-timer-audio'
+import {
   buildCircuitSteps,
   findLastCompletedStep,
   findNextStepIndexAfter,
@@ -32,6 +36,7 @@ type PersistableState = Pick<
   | 'title'
   | 'startedAt'
   | 'defaultRestSeconds'
+  | 'sourceTemplateId'
   | 'exercises'
   | 'activeStepIndex'
   | 'lastCompletedStep'
@@ -41,6 +46,7 @@ type ActiveWorkoutState = {
   title: string
   startedAt: string | null
   defaultRestSeconds: number
+  sourceTemplateId: string | null
   exercises: ActiveExerciseEntry[]
   activeStepIndex: number
   lastCompletedStep: CircuitStep | null
@@ -53,6 +59,7 @@ type ActiveWorkoutState = {
     title: string,
     exercises: ActiveExerciseEntry[],
     defaultRestSeconds?: number,
+    sourceTemplateId?: string | null,
   ) => Promise<void>
   addExercise: (exercise: {
     id: string
@@ -138,16 +145,26 @@ async function applyExerciseSetsChange(
   })
 }
 
-async function persistDraft(state: PersistableState) {
+async function persistDraft(
+  state: Omit<PersistableState, 'sourceTemplateId'> & {
+    sourceTemplateId?: string | null
+  },
+) {
   if (!state.startedAt) {
     return
   }
+
+  const sourceTemplateId =
+    state.sourceTemplateId !== undefined
+      ? state.sourceTemplateId
+      : get().sourceTemplateId
 
   await db.activeDraft.put({
     id: 'current',
     title: state.title,
     startedAt: state.startedAt,
     defaultRestSeconds: state.defaultRestSeconds,
+    sourceTemplateId,
     activeStepIndex: state.activeStepIndex,
     lastCompletedStep: state.lastCompletedStep,
     exercises: state.exercises,
@@ -177,6 +194,8 @@ function syncAfterExerciseStructureChange(exercises: ActiveExerciseEntry[]) {
 }
 
 function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<ActiveWorkoutState>) => void) {
+  void playRestCompleteBeep()
+
   const { exercises, lastCompletedStep } = get()
   const steps = buildCircuitSteps(exercises)
   const nextIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
@@ -207,6 +226,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   title: '',
   startedAt: null,
   defaultRestSeconds: 90,
+  sourceTemplateId: null,
   exercises: [],
   activeStepIndex: 0,
   lastCompletedStep: null,
@@ -252,6 +272,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title: draft.title,
       startedAt: draft.startedAt,
       defaultRestSeconds: draft.defaultRestSeconds ?? 90,
+      sourceTemplateId: draft.sourceTemplateId ?? null,
       exercises,
       activeStepIndex,
       lastCompletedStep,
@@ -267,6 +288,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title,
       startedAt,
       defaultRestSeconds: 90,
+      sourceTemplateId: null,
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,
@@ -278,13 +300,19 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title,
       startedAt,
       defaultRestSeconds: 90,
+      sourceTemplateId: null,
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,
     })
   },
 
-  startWorkoutFromTemplate: async (title, exercises, defaultRestSeconds = 90) => {
+  startWorkoutFromTemplate: async (
+    title,
+    exercises,
+    defaultRestSeconds = 90,
+    sourceTemplateId = null,
+  ) => {
     const startedAt = new Date().toISOString()
     const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
@@ -292,6 +320,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title,
       startedAt,
       defaultRestSeconds,
+      sourceTemplateId,
       exercises,
       activeStepIndex,
       lastCompletedStep,
@@ -303,6 +332,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title,
       startedAt,
       defaultRestSeconds,
+      sourceTemplateId,
       exercises,
       activeStepIndex,
       lastCompletedStep,
@@ -557,6 +587,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       return
     }
 
+    void warmUpRestTimerAudio()
+
     const now = new Date().toISOString()
     const exercises = get().exercises.map((exercise, index) => {
       if (index !== exerciseIndex) {
@@ -720,7 +752,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   finishWorkout: async () => {
-    const { title, startedAt, exercises, defaultRestSeconds } = get()
+    const { title, startedAt, exercises, defaultRestSeconds, sourceTemplateId } = get()
     if (!startedAt) {
       return null
     }
@@ -730,6 +762,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title,
       startedAt,
       defaultRestSeconds,
+      sourceTemplateId,
       exercises,
     }
 
@@ -738,6 +771,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title: '',
       startedAt: null,
       defaultRestSeconds: 90,
+      sourceTemplateId: null,
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,
@@ -755,6 +789,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       title: '',
       startedAt: null,
       defaultRestSeconds: 90,
+      sourceTemplateId: null,
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,

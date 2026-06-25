@@ -55,6 +55,7 @@ export function useStartPlannedSession() {
           'Seance planifiee',
         templateExercisesToActive(draft.exercises),
         DEFAULT_GLOBAL_REST_SECONDS,
+        occurrence.workoutTemplateId,
       )
       await navigate({ to: '/app/workout/active' })
     } finally {

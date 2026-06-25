@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ActiveSetOptionsDrawer } from '@/components/workout/ActiveSetOptionsDrawer'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
+import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
 import { RpeSelect } from '@/components/workout/RpeSelect'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { Button } from '@/components/ui/button'
@@ -16,11 +17,16 @@ import {
   stepKey,
   type CircuitStep,
 } from '@/lib/workout/workout-circuit'
+import {
+  getLastSetSummary,
+  type TemplateSetHistory,
+} from '@/lib/workout/template-set-history'
 
 type ActiveWorkoutCircuitProps = {
   exercises: ActiveExerciseEntry[]
   lastCompletedStep: CircuitStep | null
   rpeEnabled: boolean
+  templateSetHistory?: TemplateSetHistory
   onSelectExercise: (exerciseIndex: number) => void
   onReorderExercises: (fromIndex: number, toIndex: number) => void
   onRemoveExercise: (exerciseIndex: number) => void
@@ -48,6 +54,7 @@ export function ActiveWorkoutCircuit({
   exercises,
   lastCompletedStep,
   rpeEnabled,
+  templateSetHistory,
   onSelectExercise,
   onReorderExercises,
   onRemoveExercise,
@@ -103,6 +110,9 @@ export function ActiveWorkoutCircuit({
     )
     const isCompleted = Boolean(set.completedAt)
     const isNextToDo = globalStepIndex === nextPendingStepIndex && !isCompleted
+    const lastSetSummary = templateSetHistory
+      ? getLastSetSummary(templateSetHistory, exercise.exerciseId, set.setIndex)
+      : null
 
     return (
       <div
@@ -113,15 +123,15 @@ export function ActiveWorkoutCircuit({
           }
         }}
         className={cn(
-          'w-full rounded-xl border px-2 py-2 transition-colors',
+          'w-full border-b border-border/60 px-3 py-2 transition-colors last:border-b-0',
           isNextToDo
-            ? 'border-primary bg-soft-primary/50 ring-1 ring-primary/30'
+            ? 'bg-soft-primary/50 ring-1 ring-inset ring-primary/30'
             : isCompleted
-              ? 'border-border/60 bg-muted/20 opacity-80'
-              : 'border-border bg-card',
+              ? 'bg-muted/20 opacity-80'
+              : 'bg-card',
         )}
       >
-        <div className="flex w-full items-center gap-1.5">
+        <div className="flex w-full min-w-0 items-center gap-1">
           <button
             type="button"
             className={cn(
@@ -151,6 +161,12 @@ export function ActiveWorkoutCircuit({
               setIndex + 1
             )}
           </button>
+
+          {templateSetHistory ? (
+            <div className="min-w-[4.25rem] max-w-[5.5rem] shrink-0 basis-[22%]">
+              <LastSetPerformanceHint summary={lastSetSummary} />
+            </div>
+          ) : null}
 
           <Input
             inputMode="decimal"
@@ -256,7 +272,7 @@ export function ActiveWorkoutCircuit({
           )
         }}
         renderSetsContent={(index) => (
-          <div className="space-y-2 px-4">
+          <div className="w-full divide-y divide-border/60">
             {exercises[index]?.sets.map((set) => renderSetRow(index, set.setIndex))}
           </div>
         )}

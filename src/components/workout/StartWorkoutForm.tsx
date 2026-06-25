@@ -84,6 +84,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
             trimmedTitle,
             templateExercisesToActive(draft.exercises),
             DEFAULT_GLOBAL_REST_SECONDS,
+            template.id,
           )
           return
         }

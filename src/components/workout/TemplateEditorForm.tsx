@@ -23,6 +23,7 @@ import {
   removeExerciseFromSuperset,
   type TemplateExerciseDraft,
 } from '@/hooks/useWorkoutTemplates'
+import { useMyProfile } from '@/hooks/useProfile'
 import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
@@ -44,6 +45,8 @@ export function TemplateEditorForm({
   onSave,
   onStart,
 }: TemplateEditorFormProps) {
+  const { data: profile } = useMyProfile()
+  const rpeEnabled = profile?.rpe_enabled ?? false
   const [name, setName] = useState(initialName)
   const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -227,6 +230,8 @@ export function TemplateEditorForm({
             renderSetsContent={(index) => (
               <TemplateExerciseSetsEditor
                 exercise={exercises[index]!}
+                templateId={templateId}
+                includeRpeInHistory={rpeEnabled}
                 onChange={(exercise) => handleUpdateExercise(index, exercise)}
               />
             )}

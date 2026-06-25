@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/card'
 import { FormMessage } from '@/components/ui/form'
 import { PageHeader, Pill } from '@/design-system'
+import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
 import { useMyProfile } from '@/hooks/useProfile'
+import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
@@ -50,6 +52,7 @@ function ActiveWorkoutPage() {
   const {
     title,
     startedAt,
+    sourceTemplateId,
     exercises: activeExercises,
     activeStepIndex,
     lastCompletedStep,
@@ -85,12 +88,19 @@ function ActiveWorkoutPage() {
 
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
+  const effectiveTemplateId = sourceTemplateId ?? initialTemplateId
+  const { history: templateSetHistory } = useLastTemplateSetHistory(
+    effectiveTemplateId,
+    { includeRpe: rpeEnabled },
+  )
 
   const currentStep = getCurrentStep()
   const currentExercise =
     currentStep != null ? activeExercises[currentStep.exerciseIndex] : null
   const steps = buildCircuitSteps(activeExercises)
   const completedCount = countCompletedSets(activeExercises)
+
+  useRestTimerAudio(isResting, restSecondsLeft)
 
   useEffect(() => {
     void hydrate()
@@ -129,6 +139,7 @@ function ActiveWorkoutPage() {
         await syncWorkoutDraft(nhost, {
           title: draft.title,
           startedAt: draft.startedAt,
+          workoutTemplateId: draft.sourceTemplateId,
           exercises: validatedExercises.map((exercise) => ({
             exerciseId: exercise.exerciseId,
             sets: exercise.sets.map((set) => ({
@@ -233,6 +244,7 @@ function ActiveWorkoutPage() {
             exercises={activeExercises}
             lastCompletedStep={lastCompletedStep}
             rpeEnabled={rpeEnabled}
+            templateSetHistory={effectiveTemplateId ? templateSetHistory : undefined}
             onSelectExercise={(index) => {
               const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
               if (stepIndex >= 0) {
