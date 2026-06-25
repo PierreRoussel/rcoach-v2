@@ -61,14 +61,6 @@ body:has(nav a[href='/app/diet'].bg-soft-primary) {
   color: var(--foreground);
 }
 
-/* Cons / Brûl side labels */
-.border-border\/70:has(.min-h-40 .size-40) .min-h-40 > .absolute.w-12 {
-  padding: 0.25rem 0.15rem;
-  border-radius: 0.625rem;
-  background: color-mix(in srgb, var(--card) 90%, transparent);
-  border: 1px solid var(--border);
-}
-
 /* Macro bars — 3 columns, flat chart colors */
 .border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(1) .macro-bar__progress {
   background: color-mix(in srgb, var(--chart-3) 22%, var(--muted));

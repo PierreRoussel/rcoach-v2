@@ -12,33 +12,25 @@ import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { Pill } from '@/design-system'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useMyWorkouts } from '@/hooks/useWorkouts'
-import { cn } from '@/lib/utils'
 
 type RecentWorkoutsFeedProps = {
   limit?: number
   showViewAll?: boolean
   title?: string
   description?: string
-  fullWidth?: boolean
 }
 
 export function RecentWorkoutsFeed({
   limit,
   showViewAll = false,
   title = 'Dernières séances',
-  fullWidth = false,
 }: RecentWorkoutsFeedProps) {
   const { data: workouts, isLoading, error } = useMyWorkouts()
   const { data: profile } = useMyProfile()
   const visibleWorkouts = limit != null ? workouts?.slice(0, limit) : workouts
 
   return (
-    <Card
-      className={cn(
-        'gap-0 overflow-hidden border-border shadow-sm',
-        fullWidth ? '-mx-4 rounded-none border-x-0' : 'rounded-2xl',
-      )}
-    >
+    <Card className="gap-0 overflow-hidden rounded-2xl border-border shadow-sm">
       <CardHeader className="px-4 pb-4 pt-4">
         <div className="flex items-center justify-between gap-2">
           <div>

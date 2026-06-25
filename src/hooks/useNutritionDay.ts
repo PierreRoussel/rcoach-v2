@@ -95,6 +95,7 @@ export function useNutritionDay(date: string, settings: NutritionSettings | null
   return useQuery({
     queryKey: ['nutrition-day', date],
     enabled: isAuthenticated && Boolean(settings),
+    staleTime: 60_000,
     queryFn: async () => {
       let entries: MealLogEntry[] = []
 

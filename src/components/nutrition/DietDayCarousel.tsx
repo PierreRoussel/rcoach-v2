@@ -191,9 +191,9 @@ export function DietDayCarousel({
   const daySlides = (
     <div ref={carouselRef} className="overflow-hidden">
       <div className="flex touch-pan-y">
-        {dates.map((day) => (
+        {dates.map((day, index) => (
           <div key={day} className="min-w-0 shrink-0 grow-0 basis-full">
-            {renderDay(day)}
+            {mountedIndices.has(index) ? renderDay(day) : <DietDaySlidePlaceholder />}
           </div>
         ))}
       </div>

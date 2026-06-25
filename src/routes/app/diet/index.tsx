@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn } from '@/design-system'
 import { useDietEntranceAnimation } from '@/hooks/useDietEntranceAnimation'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { usePendingNutritionSyncCount } from '@/hooks/usePendingNutritionSync'
 import { toDateKey } from '@/lib/nutrition/dates'
@@ -31,6 +32,7 @@ function DietPage() {
   const urlDate = search.date ?? toDateKey(new Date())
   const [activeDate, setActiveDate] = useState(urlDate)
   const { data: settings, isLoading: settingsLoading } = useNutritionSettings()
+  const { streak } = useNutritionStreak(settings?.daily_calorie_target ?? 0)
   const { data: pendingSyncCount = 0 } = usePendingNutritionSyncCount()
   const isOnline = useOnlineStatus()
   const shouldAnimateEntrance = useDietEntranceAnimation()
@@ -105,6 +107,7 @@ function DietPage() {
             <DietDayPanel
               date={day}
               settings={settings}
+              streak={streak}
               animateEntrance={shouldAnimateEntrance && day === activeDate}
             />
           )}

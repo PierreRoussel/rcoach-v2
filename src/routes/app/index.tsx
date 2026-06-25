@@ -50,7 +50,7 @@ function AppHomePage() {
       </AnimateIn>
 
       <AnimateIn delay={400}>
-        <RecentWorkoutsFeed limit={5} showViewAll fullWidth />
+        <RecentWorkoutsFeed limit={5} showViewAll />
       </AnimateIn>
     </div>
   )

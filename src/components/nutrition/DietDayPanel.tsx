@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Flame, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 
 import { CalorieRingGauge } from '@/components/nutrition/CalorieRingGauge'
 import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
@@ -8,19 +9,57 @@ import { NutritionStreakBadge } from '@/components/nutrition/NutritionStreakBadg
 import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn, Pill, StaggerGroup } from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
-import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { NutritionSettings } from '@/lib/nutrition/types'
+import { cn } from '@/lib/utils'
+
+type CalorieSideStatProps = {
+  icon: LucideIcon
+  iconClassName: string
+  value: number
+  label: string
+  className?: string
+  iconFilled?: boolean
+}
+
+function CalorieSideStat({
+  icon: Icon,
+  iconClassName,
+  value,
+  label,
+  className,
+  iconFilled = false,
+}: CalorieSideStatProps) {
+  return (
+    <div className={cn('flex w-14 flex-col items-center gap-1 text-center', className)}>
+      <div
+        className={cn(
+          'flex size-7 items-center justify-center rounded-full',
+          iconClassName,
+        )}
+      >
+        <Icon className={cn('size-3.5', iconFilled && 'fill-current')} aria-hidden />
+      </div>
+      <div className="font-display text-lg font-black leading-none tabular-nums">{value}</div>
+      <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
+    </div>
+  )
+}
 
 type DietDayPanelProps = {
   date: string
   settings: NutritionSettings
+  streak: number
   animateEntrance?: boolean
 }
 
-export function DietDayPanel({ date, settings, animateEntrance = false }: DietDayPanelProps) {
+export function DietDayPanel({
+  date,
+  settings,
+  streak,
+  animateEntrance = false,
+}: DietDayPanelProps) {
   const { data: daySummary, isLoading } = useNutritionDay(date, settings)
-  const { streak } = useNutritionStreak(settings.daily_calorie_target)
   const [calendarOpen, setCalendarOpen] = useState(false)
 
   const previewByMeal = useMemo(() => {
@@ -64,21 +103,26 @@ export function DietDayPanel({ date, settings, animateEntrance = false }: DietDa
           className="absolute right-3 top-3 z-10"
         />
 
-        <div className="relative flex min-h-40 items-center justify-center">
+        <div className="relative flex min-h-44 items-center justify-center px-12">
           <CalorieRingGauge
             consumed={daySummary.totals.calories}
             target={daySummary.targets.calories}
           />
-          <div className="absolute left-0 top-1/2 w-12 -translate-y-1/2 text-center">
-            <div className="font-display text-lg font-black leading-none">
-              {Math.round(daySummary.totals.calories)}
-            </div>
-            <div className="mt-1 text-[10px] leading-tight text-muted-foreground">Cons.</div>
-          </div>
-          <div className="absolute right-0 top-1/2 w-12 -translate-y-1/2 text-center">
-            <div className="font-display text-lg font-black leading-none">0</div>
-            <div className="mt-1 text-[10px] leading-tight text-muted-foreground">Brûl.</div>
-          </div>
+          <CalorieSideStat
+            className="absolute bottom-0 left-0"
+            icon={UtensilsCrossed}
+            iconClassName="bg-soft-primary text-primary"
+            value={Math.round(daySummary.totals.calories)}
+            label="Cons."
+          />
+          <CalorieSideStat
+            className="absolute bottom-0 right-0"
+            icon={Flame}
+            iconClassName="bg-soft-accent text-accent-foreground"
+            iconFilled
+            value={0}
+            label="Brul."
+          />
         </div>
 
         <MacroProgressBars
