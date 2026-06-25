@@ -8,8 +8,11 @@ import {
   INSERT_FRIENDSHIP,
   LIST_ACCEPTED_FRIENDS_ACTIVITY,
   LIST_MY_FRIENDSHIPS,
+  LIST_MY_SENT_MOTIVATIONS,
   LIST_UNREAD_MOTIVATIONS,
+  LIST_UNSEEN_HEART_REPLIES,
   MARK_MOTIVATION_READ,
+  MARK_MOTIVATION_REPLY_SEEN,
   REPLY_FRIEND_MOTIVATION,
   SEARCH_PROFILE_BY_EMAIL,
   SEARCH_PROFILE_BY_FRIEND_CODE,
@@ -21,6 +24,10 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { summarizeFriendActivity } from '@/lib/social/friend-activity'
 import { buildFriendRecapList, getFriendProfile } from '@/lib/social/friend-utils'
 import {
+  getSentMotivationBlockedMessage,
+  getSentMotivationSendState,
+} from '@/lib/social/sent-motivation'
+import {
   isValidMotivationMessage,
   normalizeMotivationMessage,
   type MotivationPresetKey,
@@ -29,6 +36,7 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 
 const FRIENDS_QUERY_KEY = ['friends']
 const UNREAD_MOTIVATIONS_KEY = ['friend-motivations', 'unread']
+const SENT_MOTIVATIONS_KEY = ['friend-motivations', 'sent']
 
 function friendsQueryKey(userId: string | undefined) {
   return [...FRIENDS_QUERY_KEY, userId]
@@ -121,6 +129,7 @@ export function useFriendRecap(limit = 5) {
   const friendshipsQuery = useFriendships()
   const activityQuery = useFriendsActivity()
   const unreadQuery = useUnreadMotivations()
+  const heartRepliesQuery = useUnseenHeartReplies()
 
   const acceptedFriendships =
     friendshipsQuery.data?.filter((friendship) => friendship.status === 'accepted') ?? []
@@ -128,6 +137,7 @@ export function useFriendRecap(limit = 5) {
   const recapItems = buildFriendRecapList(
     acceptedFriendships,
     unreadQuery.data ?? [],
+    heartRepliesQuery.data ?? [],
     userId,
     limit,
   )
@@ -148,8 +158,13 @@ export function useFriendRecap(limit = 5) {
     isLoading:
       friendshipsQuery.isLoading ||
       activityQuery.isLoading ||
-      unreadQuery.isLoading,
-    error: friendshipsQuery.error ?? activityQuery.error ?? unreadQuery.error,
+      unreadQuery.isLoading ||
+      heartRepliesQuery.isLoading,
+    error:
+      friendshipsQuery.error ??
+      activityQuery.error ??
+      unreadQuery.error ??
+      heartRepliesQuery.error,
   }
 }
 
@@ -163,10 +178,13 @@ export function useUnreadMotivationsCount() {
     staleTime: 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
-        friend_motivations_aggregate: { aggregate: { count: number } | null }
-      }>(nhost, COUNT_UNREAD_MOTIVATIONS)
+        incoming: { aggregate: { count: number } | null }
+        heartReplies: { aggregate: { count: number } | null }
+      }>(nhost, COUNT_UNREAD_MOTIVATIONS, { userId: userId! })
 
-      return data.friend_motivations_aggregate.aggregate?.count ?? 0
+      return (
+        (data.incoming.aggregate?.count ?? 0) + (data.heartReplies.aggregate?.count ?? 0)
+      )
     },
   })
 }
@@ -183,6 +201,45 @@ export function useUnreadMotivations() {
       const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
         nhost,
         LIST_UNREAD_MOTIVATIONS,
+        { userId: userId! },
+      )
+      return data.friend_motivations
+    },
+  })
+}
+
+export function useUnseenHeartReplies() {
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
+
+  return useQuery({
+    queryKey: [...UNREAD_MOTIVATIONS_KEY, 'heart-replies', userId],
+    enabled: isAuthenticated && Boolean(userId),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+        nhost,
+        LIST_UNSEEN_HEART_REPLIES,
+        { userId: userId! },
+      )
+      return data.friend_motivations
+    },
+  })
+}
+
+export function useSentMotivations() {
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
+
+  return useQuery({
+    queryKey: [...SENT_MOTIVATIONS_KEY, userId],
+    enabled: isAuthenticated && Boolean(userId),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+        nhost,
+        LIST_MY_SENT_MOTIVATIONS,
+        { userId: userId! },
       )
       return data.friend_motivations
     },
@@ -193,6 +250,7 @@ async function invalidateSocialQueries(queryClient: ReturnType<typeof useQueryCl
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: FRIENDS_QUERY_KEY }),
     queryClient.invalidateQueries({ queryKey: UNREAD_MOTIVATIONS_KEY }),
+    queryClient.invalidateQueries({ queryKey: SENT_MOTIVATIONS_KEY }),
   ])
 }
 
@@ -311,8 +369,9 @@ export function useRemoveFriend() {
 }
 
 export function useSendMotivation() {
-  const { nhost } = useAuth()
+  const { nhost, user } = useAuth()
   const queryClient = useQueryClient()
+  const userId = user?.id
 
   return useMutation({
     mutationFn: async ({
@@ -326,6 +385,16 @@ export function useSendMotivation() {
       message: string
       presetKey: MotivationPresetKey
     }) => {
+      const sentMotivations =
+        queryClient.getQueryData<FriendMotivation[]>([
+          ...SENT_MOTIVATIONS_KEY,
+          userId,
+        ]) ?? []
+      const blockedState = getSentMotivationSendState(sentMotivations, recipientId)
+      if (blockedState) {
+        throw new Error(getSentMotivationBlockedMessage(blockedState))
+      }
+
       const normalizedMessage = normalizeMotivationMessage(message)
       if (!isValidMotivationMessage(normalizedMessage)) {
         throw new Error('Ajoutez un court message de motivation.')
@@ -360,6 +429,26 @@ export function useMarkMotivationRead() {
       }>(nhost, MARK_MOTIVATION_READ, {
         id: motivationId,
         readAt: new Date().toISOString(),
+      })
+      return data.update_friend_motivations_by_pk
+    },
+    onSuccess: async () => {
+      await invalidateSocialQueries(queryClient)
+    },
+  })
+}
+
+export function useMarkMotivationReplySeen() {
+  const { nhost } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (motivationId: string) => {
+      const data = await graphqlRequest<{
+        update_friend_motivations_by_pk: { id: string } | null
+      }>(nhost, MARK_MOTIVATION_REPLY_SEEN, {
+        id: motivationId,
+        seenAt: new Date().toISOString(),
       })
       return data.update_friend_motivations_by_pk
     },

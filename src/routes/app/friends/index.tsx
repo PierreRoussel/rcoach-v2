@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FriendMotivationSendButton } from '@/components/social/FriendMotivationSendButton'
 import { MotivationPickerDialog } from '@/components/social/MotivationPickerDialog'
 import { FriendRequestRow } from '@/components/social/FriendRequestRow'
 import { PageHeader } from '@/design-system'
@@ -21,11 +22,13 @@ import {
   useInviteFriend,
   useRemoveFriend,
   useRespondFriendRequest,
+  useSentMotivations,
 } from '@/hooks/useFriends'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { isValidFriendCode, normalizeFriendCode } from '@/lib/social/friend-code'
 import { getFriendProfile } from '@/lib/social/friend-utils'
+import { getSentMotivationSendState } from '@/lib/social/sent-motivation'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 export const Route = createFileRoute('/app/friends/')({
@@ -40,6 +43,7 @@ function FriendsPage() {
   const inviteFriend = useInviteFriend()
   const respondRequest = useRespondFriendRequest()
   const removeFriend = useRemoveFriend()
+  const { data: sentMotivations = [] } = useSentMotivations()
 
   const [inviteMode, setInviteMode] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
@@ -310,19 +314,17 @@ function FriendsPage() {
                 <p className="truncate font-display font-bold">{friend.display_name}</p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <Button
-                  type="button"
-                  size="sm"
+                <FriendMotivationSendButton
+                  friendName={friend.display_name}
                   variant="soft"
-                  onClick={() =>
+                  sentState={getSentMotivationSendState(sentMotivations, friend.id)}
+                  onSend={() =>
                     setMotivationTarget({
                       id: friend.id,
                       name: friend.display_name,
                     })
                   }
-                >
-                  Emoji
-                </Button>
+                />
                 <Button
                   type="button"
                   size="icon"

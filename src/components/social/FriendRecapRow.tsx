@@ -1,17 +1,20 @@
-import { Flame, SmilePlus, Dumbbell } from 'lucide-react'
+import { Flame, Dumbbell } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { FriendMotivationSendButton } from '@/components/social/FriendMotivationSendButton'
 import { Pill } from '@/design-system'
 import type { FriendMotivation } from '@/lib/graphql/operations'
 import type { FriendActivitySummary } from '@/lib/social/friend-activity'
+import type { MotivationNotification } from '@/lib/social/motivation-notifications'
+import type { SentMotivationState } from '@/lib/social/sent-motivation'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 type FriendRecapRowProps = {
   displayName: string
   avatarUrl: string | null
   activity: FriendActivitySummary
-  unreadMotivation: FriendMotivation | null
+  motivationNotification: MotivationNotification | null
+  sentState: SentMotivationState | null
   onSendMotivation: () => void
   onOpenMotivation: () => void
 }
@@ -20,24 +23,25 @@ export function FriendRecapRow({
   displayName,
   avatarUrl,
   activity,
-  unreadMotivation,
+  motivationNotification,
+  sentState,
   onSendMotivation,
   onOpenMotivation,
 }: FriendRecapRowProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
-      {unreadMotivation ? (
+      {motivationNotification ? (
         <button
           type="button"
           onClick={onOpenMotivation}
           className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-2 bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
         >
-          <span className="text-base leading-none">{unreadMotivation.emoji}</span>
-          <span>Nouveau message de motivation</span>
+          <span className="text-base leading-none">{motivationNotification.bannerEmoji}</span>
+          <span>{motivationNotification.bannerLabel}</span>
         </button>
       ) : null}
 
-      <div className={`flex items-center gap-3 p-3 ${unreadMotivation ? 'pt-10' : ''}`}>
+      <div className={`flex items-center gap-3 p-3 ${motivationNotification ? 'pt-10' : ''}`}>
         <Avatar className="size-11 border border-border">
           <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
           <AvatarFallback className="text-xs font-bold">
@@ -59,16 +63,11 @@ export function FriendRecapRow({
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="shrink-0 rounded-full"
-          aria-label={`Envoyer un emoji à ${displayName}`}
-          onClick={onSendMotivation}
-        >
-          <SmilePlus className="size-4" />
-        </Button>
+        <FriendMotivationSendButton
+          friendName={displayName}
+          sentState={sentState}
+          onSend={onSendMotivation}
+        />
       </div>
     </div>
   )

@@ -1,4 +1,6 @@
 import type { Friendship, FriendMotivation, FriendProfileSummary } from '@/lib/graphql/operations'
+import type { MotivationNotification } from '@/lib/social/motivation-notifications'
+import { buildMotivationNotificationsByFriend } from '@/lib/social/motivation-notifications'
 
 export function getFriendUserId(
   friendship: Friendship,
@@ -29,21 +31,20 @@ export function getFriendProfile(
 export type FriendRecapItem = {
   friendshipId: string
   friend: FriendProfileSummary
-  unreadMotivation: FriendMotivation | null
+  motivationNotification: MotivationNotification | null
 }
 
 export function buildFriendRecapList(
   friendships: Friendship[],
-  unreadMotivations: FriendMotivation[],
+  incomingUnread: FriendMotivation[],
+  unseenHeartReplies: FriendMotivation[],
   currentUserId: string,
   limit = 5,
 ): FriendRecapItem[] {
-  const unreadBySender = new Map<string, FriendMotivation>()
-  for (const motivation of unreadMotivations) {
-    if (!unreadBySender.has(motivation.sender_id)) {
-      unreadBySender.set(motivation.sender_id, motivation)
-    }
-  }
+  const notificationsByFriend = buildMotivationNotificationsByFriend(
+    incomingUnread,
+    unseenHeartReplies,
+  )
 
   const items = friendships
     .map((friendship) => {
@@ -55,14 +56,14 @@ export function buildFriendRecapList(
       return {
         friendshipId: friendship.id,
         friend,
-        unreadMotivation: unreadBySender.get(friend.id) ?? null,
+        motivationNotification: notificationsByFriend.get(friend.id) ?? null,
       }
     })
     .filter((item): item is FriendRecapItem => item != null)
 
   items.sort((left, right) => {
-    const leftUnread = left.unreadMotivation ? 1 : 0
-    const rightUnread = right.unreadMotivation ? 1 : 0
+    const leftUnread = left.motivationNotification ? 1 : 0
+    const rightUnread = right.motivationNotification ? 1 : 0
     if (leftUnread !== rightUnread) {
       return rightUnread - leftUnread
     }

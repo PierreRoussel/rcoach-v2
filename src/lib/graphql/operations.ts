@@ -138,8 +138,14 @@ export type FriendMotivation = {
   read_at: string | null
   hearted_at: string | null
   reply_message: string | null
+  sender_reply_seen_at: string | null
   created_at: string
   sender?: {
+    id: string
+    display_name: string
+    avatar_url: string | null
+  } | null
+  recipient?: {
     id: string
     display_name: string
     avatar_url: string | null
@@ -1620,8 +1626,24 @@ export const INSERT_FRIEND_MOTIVATION = `
 `
 
 export const COUNT_UNREAD_MOTIVATIONS = `
-  query CountUnreadMotivations {
-    friend_motivations_aggregate(where: { read_at: { _is_null: true } }) {
+  query CountMotivationNotifications($userId: uuid!) {
+    incoming: friend_motivations_aggregate(
+      where: {
+        recipient_id: { _eq: $userId }
+        read_at: { _is_null: true }
+      }
+    ) {
+      aggregate {
+        count
+      }
+    }
+    heartReplies: friend_motivations_aggregate(
+      where: {
+        sender_id: { _eq: $userId }
+        hearted_at: { _is_null: false }
+        sender_reply_seen_at: { _is_null: true }
+      }
+    ) {
       aggregate {
         count
       }
@@ -1629,10 +1651,10 @@ export const COUNT_UNREAD_MOTIVATIONS = `
   }
 `
 
-export const LIST_UNREAD_MOTIVATIONS = `
-  query ListUnreadMotivations {
+export const LIST_MY_SENT_MOTIVATIONS = `
+  query ListMySentMotivations($userId: uuid!) {
     friend_motivations(
-      where: { read_at: { _is_null: true } }
+      where: { sender_id: { _eq: $userId } }
       order_by: { created_at: desc }
     ) {
       id
@@ -1644,12 +1666,79 @@ export const LIST_UNREAD_MOTIVATIONS = `
       read_at
       hearted_at
       reply_message
+      sender_reply_seen_at
+      created_at
+    }
+  }
+`
+
+export const LIST_UNSEEN_HEART_REPLIES = `
+  query ListUnseenHeartReplies($userId: uuid!) {
+    friend_motivations(
+      where: {
+        sender_id: { _eq: $userId }
+        hearted_at: { _is_null: false }
+        sender_reply_seen_at: { _is_null: true }
+      }
+      order_by: { hearted_at: desc }
+    ) {
+      id
+      sender_id
+      recipient_id
+      emoji
+      message
+      preset_key
+      read_at
+      hearted_at
+      reply_message
+      sender_reply_seen_at
+      created_at
+      recipient {
+        id
+        display_name
+        avatar_url
+      }
+    }
+  }
+`
+
+export const LIST_UNREAD_MOTIVATIONS = `
+  query ListUnreadMotivations($userId: uuid!) {
+    friend_motivations(
+      where: {
+        recipient_id: { _eq: $userId }
+        read_at: { _is_null: true }
+      }
+      order_by: { created_at: desc }
+    ) {
+      id
+      sender_id
+      recipient_id
+      emoji
+      message
+      preset_key
+      read_at
+      hearted_at
+      reply_message
+      sender_reply_seen_at
       created_at
       sender {
         id
         display_name
         avatar_url
       }
+    }
+  }
+`
+
+export const MARK_MOTIVATION_REPLY_SEEN = `
+  mutation MarkMotivationReplySeen($id: uuid!, $seenAt: timestamptz!) {
+    update_friend_motivations_by_pk(
+      pk_columns: { id: $id }
+      _set: { sender_reply_seen_at: $seenAt }
+    ) {
+      id
+      sender_reply_seen_at
     }
   }
 `

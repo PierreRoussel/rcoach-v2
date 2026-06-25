@@ -10,19 +10,24 @@ import {
   useFriendRecap,
   usePendingIncomingFriendRequests,
   useRespondFriendRequest,
+  useSentMotivations,
 } from '@/hooks/useFriends'
-import type { FriendMotivation } from '@/lib/graphql/operations'
+import { getSentMotivationSendState } from '@/lib/social/sent-motivation'
+import type { MotivationNotification } from '@/lib/social/motivation-notifications'
 
 export function FriendsSection() {
   const { items, isLoading } = useFriendRecap(5)
   const { pending, isLoading: pendingLoading } = usePendingIncomingFriendRequests()
   const respondRequest = useRespondFriendRequest()
+  const { data: sentMotivations = [] } = useSentMotivations()
   const [respondingId, setRespondingId] = useState<string | null>(null)
   const [pickerFriend, setPickerFriend] = useState<{
     id: string
     name: string
   } | null>(null)
-  const [activeMotivation, setActiveMotivation] = useState<FriendMotivation | null>(null)
+  const [activeNotification, setActiveNotification] = useState<MotivationNotification | null>(
+    null,
+  )
 
   async function handleRespond(friendshipId: string, accept: boolean) {
     setRespondingId(friendshipId)
@@ -90,13 +95,14 @@ export function FriendsSection() {
               displayName={item.friend.display_name}
               avatarUrl={item.friend.avatar_url}
               activity={item.activity}
-              unreadMotivation={item.unreadMotivation}
+              motivationNotification={item.motivationNotification}
+              sentState={getSentMotivationSendState(sentMotivations, item.friend.id)}
               onSendMotivation={() =>
                 setPickerFriend({ id: item.friend.id, name: item.friend.display_name })
               }
               onOpenMotivation={() => {
-                if (item.unreadMotivation) {
-                  setActiveMotivation(item.unreadMotivation)
+                if (item.motivationNotification) {
+                  setActiveNotification(item.motivationNotification)
                 }
               }}
             />
@@ -116,8 +122,8 @@ export function FriendsSection() {
       />
 
       <MotivationRevealOverlay
-        motivation={activeMotivation}
-        onClose={() => setActiveMotivation(null)}
+        notification={activeNotification}
+        onClose={() => setActiveNotification(null)}
       />
     </section>
   )

@@ -3,20 +3,27 @@ import { Heart, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useMarkMotivationRead, useReplyMotivation } from '@/hooks/useFriends'
-import type { FriendMotivation } from '@/lib/graphql/operations'
+import {
+  useMarkMotivationRead,
+  useMarkMotivationReplySeen,
+  useReplyMotivation,
+} from '@/hooks/useFriends'
 import {
   MAX_MOTIVATION_MESSAGE_LENGTH,
   normalizeMotivationMessage,
 } from '@/lib/social/motivation-presets'
+import type { MotivationNotification } from '@/lib/social/motivation-notifications'
 import { cn } from '@/lib/utils'
 
 type MotivationRevealOverlayProps = {
-  motivation: FriendMotivation | null
+  notification: MotivationNotification | null
   onClose: () => void
 }
 
-function animationClass(presetKey: FriendMotivation['preset_key'], emoji: string): string {
+function animationClass(
+  presetKey: MotivationNotification['motivation']['preset_key'],
+  emoji: string,
+): string {
   if (presetKey === 'fire' || emoji.includes('🔥')) {
     return 'animate-motivation-bounce'
   }
@@ -30,30 +37,34 @@ function animationClass(presetKey: FriendMotivation['preset_key'], emoji: string
 }
 
 export function MotivationRevealOverlay({
-  motivation,
+  notification,
   onClose,
 }: MotivationRevealOverlayProps) {
   const markRead = useMarkMotivationRead()
+  const markReplySeen = useMarkMotivationReplySeen()
   const replyMotivation = useReplyMotivation()
   const [replyMessage, setReplyMessage] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  if (!motivation) {
+  if (!notification) {
     return null
   }
 
+  const { motivation, kind } = notification
+
   async function handleClose() {
-    if (!motivation?.read_at) {
+    if (kind === 'received' && !motivation.read_at) {
       await markRead.mutateAsync(motivation.id)
     }
+
+    if (kind === 'heart_reply' && !motivation.sender_reply_seen_at) {
+      await markReplySeen.mutateAsync(motivation.id)
+    }
+
     onClose()
   }
 
   async function handleReply() {
-    if (!motivation) {
-      return
-    }
-
     setError(null)
 
     try {
@@ -74,6 +85,43 @@ export function MotivationRevealOverlay({
           : 'Impossible d’envoyer votre réponse.',
       )
     }
+  }
+
+  if (kind === 'heart_reply') {
+    const friendName = motivation.recipient?.display_name ?? 'Un ami'
+
+    return (
+      <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+        <div className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-card p-6 text-center shadow-2xl">
+          <button
+            type="button"
+            className="absolute right-3 top-3 rounded-full p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fermer"
+            onClick={() => void handleClose()}
+          >
+            <X className="size-4" />
+          </button>
+
+          <p className="text-sm text-muted-foreground">{friendName} répond à votre emoji</p>
+          <div className="my-6 text-7xl leading-none animate-motivation-pulse">❤️</div>
+          <p className="font-display text-xl font-black text-foreground">
+            {motivation.reply_message?.trim() || 'Merci pour l’encouragement !'}
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Votre emoji envoyé : {motivation.emoji}
+          </p>
+
+          <Button
+            type="button"
+            variant="pill"
+            className="mt-6 w-full"
+            onClick={() => void handleClose()}
+          >
+            Fermer
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

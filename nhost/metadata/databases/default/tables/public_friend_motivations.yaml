@@ -22,6 +22,7 @@ select_permissions:
         - read_at
         - hearted_at
         - reply_message
+        - sender_reply_seen_at
         - created_at
       filter:
         _or:
@@ -54,4 +55,14 @@ update_permissions:
           _eq: X-Hasura-User-Id
       check:
         recipient_id:
+          _eq: X-Hasura-User-Id
+  - role: user
+    permission:
+      columns:
+        - sender_reply_seen_at
+      filter:
+        sender_id:
+          _eq: X-Hasura-User-Id
+      check:
+        sender_id:
           _eq: X-Hasura-User-Id
