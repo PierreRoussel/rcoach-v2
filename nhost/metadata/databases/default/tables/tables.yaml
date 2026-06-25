@@ -26,3 +26,5 @@
 - "!include public_meal_log_entries.yaml"
 - "!include public_friendships.yaml"
 - "!include public_friend_motivations.yaml"
+- "!include storage_buckets.yaml"
+- "!include storage_files.yaml"
