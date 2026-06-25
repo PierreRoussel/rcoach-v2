@@ -30,12 +30,17 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 const FRIENDS_QUERY_KEY = ['friends']
 const UNREAD_MOTIVATIONS_KEY = ['friend-motivations', 'unread']
 
+function friendsQueryKey(userId: string | undefined) {
+  return [...FRIENDS_QUERY_KEY, userId]
+}
+
 export function useFriendships() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useQuery({
-    queryKey: FRIENDS_QUERY_KEY,
-    enabled: isAuthenticated,
+    queryKey: friendsQueryKey(userId),
+    enabled: isAuthenticated && Boolean(userId),
     queryFn: async () => {
       const data = await graphqlRequest<{ friendships: Friendship[] }>(
         nhost,
@@ -84,6 +89,32 @@ export function useFriendsActivity() {
   })
 }
 
+export function usePendingIncomingFriendRequests() {
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
+  const friendshipsQuery = useFriendships()
+
+  const pending =
+    friendshipsQuery.data?.filter(
+      (friendship) =>
+        friendship.status === 'pending' && friendship.addressee_id === userId,
+    ) ?? []
+
+  return {
+    pending,
+    count: pending.length,
+    isLoading: friendshipsQuery.isLoading,
+    error: friendshipsQuery.error,
+  }
+}
+
+export function useProfileNavBadgeCount() {
+  const { data: unreadMotivations = 0 } = useUnreadMotivationsCount()
+  const { count: pendingFriendRequests } = usePendingIncomingFriendRequests()
+
+  return unreadMotivations + pendingFriendRequests
+}
+
 export function useFriendRecap(limit = 5) {
   const { user } = useAuth()
   const userId = user?.id ?? ''
@@ -123,11 +154,12 @@ export function useFriendRecap(limit = 5) {
 }
 
 export function useUnreadMotivationsCount() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useQuery({
-    queryKey: [...UNREAD_MOTIVATIONS_KEY, 'count'],
-    enabled: isAuthenticated,
+    queryKey: [...UNREAD_MOTIVATIONS_KEY, 'count', userId],
+    enabled: isAuthenticated && Boolean(userId),
     staleTime: 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
@@ -140,11 +172,12 @@ export function useUnreadMotivationsCount() {
 }
 
 export function useUnreadMotivations() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useQuery({
-    queryKey: UNREAD_MOTIVATIONS_KEY,
-    enabled: isAuthenticated,
+    queryKey: [...UNREAD_MOTIVATIONS_KEY, userId],
+    enabled: isAuthenticated && Boolean(userId),
     staleTime: 30_000,
     queryFn: async () => {
       const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
@@ -235,7 +268,7 @@ export function useInviteFriend() {
 }
 
 export function useRespondFriendRequest() {
-  const { nhost, user } = useAuth()
+  const { nhost } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -251,7 +284,6 @@ export function useRespondFriendRequest() {
       }>(nhost, UPDATE_FRIENDSHIP_STATUS, {
         id: friendshipId,
         status: accept ? 'accepted' : 'declined',
-        addresseeId: accept ? user?.id : undefined,
       })
       return data.update_friendships_by_pk
     },

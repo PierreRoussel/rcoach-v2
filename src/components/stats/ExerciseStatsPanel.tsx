@@ -157,7 +157,7 @@ export function ExerciseStatsPanel({
                 </p>
               ) : null}
               {bestPerformance.best1Rm != null ? (
-                <Pill tone="primary">
+                <Pill tone="solid-accent">
                   {Math.round(bestPerformance.best1Rm)} kg est. 1RM
                 </Pill>
               ) : null}

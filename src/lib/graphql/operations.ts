@@ -239,8 +239,8 @@ export const LIST_MY_WORKOUTS_PAGE = `
 `
 
 export const GET_MY_PROFILE = `
-  query GetMyProfile {
-    profiles(limit: 1) {
+  query GetMyProfile($userId: uuid!) {
+    profiles(where: { id: { _eq: $userId } }, limit: 1) {
       id
       display_name
       avatar_url
@@ -256,8 +256,8 @@ export const GET_MY_PROFILE = `
 
 /** Fallback when exercise_locale migration is not deployed yet. */
 export const GET_MY_PROFILE_LEGACY = `
-  query GetMyProfileLegacy {
-    profiles(limit: 1) {
+  query GetMyProfileLegacy($userId: uuid!) {
+    profiles(where: { id: { _eq: $userId } }, limit: 1) {
       id
       display_name
       avatar_url
@@ -1577,10 +1577,10 @@ export const INSERT_FRIENDSHIP = `
 `
 
 export const UPDATE_FRIENDSHIP_STATUS = `
-  mutation UpdateFriendshipStatus($id: uuid!, $status: String!, $addresseeId: uuid) {
+  mutation UpdateFriendshipStatus($id: uuid!, $status: String!) {
     update_friendships_by_pk(
       pk_columns: { id: $id }
-      _set: { status: $status, addressee_id: $addresseeId }
+      _set: { status: $status }
     ) {
       id
       status

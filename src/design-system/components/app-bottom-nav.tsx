@@ -1,7 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Activity, List, UtensilsCrossed, UserRound } from 'lucide-react'
 
-import { useUnreadMotivationsCount } from '@/hooks/useFriends'
+import { useProfileNavBadgeCount } from '@/hooks/useFriends'
 import { cn } from '@/lib/utils'
 
 const items = [
@@ -29,13 +29,13 @@ function isNavItemActive(pathname: string, item: (typeof items)[number]) {
 
 export function AppBottomNav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const { data: unreadCount = 0 } = useUnreadMotivationsCount()
+  const badgeCount = useProfileNavBadgeCount()
 
   return (
-    <nav className="sticky bottom-0 grid grid-cols-4 border-t border-border bg-card/95 px-2 py-2 text-xs backdrop-blur">
+    <nav className="sticky bottom-0 z-40 grid grid-cols-4 border-t border-border bg-card px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-xs shadow-[0_-1px_0_0_var(--border)]">
       {items.map((item) => {
         const isActive = isNavItemActive(pathname, item)
-        const showBadge = 'badge' in item && item.badge && unreadCount > 0
+        const showBadge = 'badge' in item && item.badge && badgeCount > 0
 
         return (
           <Link
@@ -52,7 +52,7 @@ export function AppBottomNav() {
               <item.icon className="size-4" />
               {showBadge ? (
                 <span className="absolute -right-2 -top-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
               ) : null}
             </span>

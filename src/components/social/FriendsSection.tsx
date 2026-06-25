@@ -2,31 +2,39 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { FriendRecapRow } from '@/components/social/FriendRecapRow'
+import { FriendRequestRow } from '@/components/social/FriendRequestRow'
 import { MotivationPickerDialog } from '@/components/social/MotivationPickerDialog'
 import { MotivationRevealOverlay } from '@/components/social/MotivationRevealOverlay'
-import { useFriendRecap } from '@/hooks/useFriends'
+import {
+  useFriendRecap,
+  usePendingIncomingFriendRequests,
+  useRespondFriendRequest,
+} from '@/hooks/useFriends'
 import type { FriendMotivation } from '@/lib/graphql/operations'
 
 export function FriendsSection() {
   const { items, isLoading } = useFriendRecap(5)
+  const { pending, isLoading: pendingLoading } = usePendingIncomingFriendRequests()
+  const respondRequest = useRespondFriendRequest()
+  const [respondingId, setRespondingId] = useState<string | null>(null)
   const [pickerFriend, setPickerFriend] = useState<{
     id: string
     name: string
   } | null>(null)
   const [activeMotivation, setActiveMotivation] = useState<FriendMotivation | null>(null)
 
-  if (isLoading) {
+  async function handleRespond(friendshipId: string, accept: boolean) {
+    setRespondingId(friendshipId)
+
+    try {
+      await respondRequest.mutateAsync({ friendshipId, accept })
+    } finally {
+      setRespondingId(null)
+    }
+  }
+
+  if (isLoading || pendingLoading) {
     return <p className="text-sm text-muted-foreground">Chargement de vos amis...</p>
   }
 
@@ -44,7 +52,28 @@ export function FriendsSection() {
         </Button>
       </div>
 
-      {items.length === 0 ? (
+      {pending.length > 0 ? (
+        <div className="space-y-2">
+          {pending.map((friendship) => {
+            const requester = friendship.requester
+            const name =
+              requester?.display_name ?? friendship.invited_email ?? 'Utilisateur'
+
+            return (
+              <FriendRequestRow
+                key={friendship.id}
+                displayName={name}
+                avatarUrl={requester?.avatar_url ?? null}
+                isResponding={respondingId === friendship.id}
+                onAccept={() => void handleRespond(friendship.id, true)}
+                onDecline={() => void handleRespond(friendship.id, false)}
+              />
+            )
+          })}
+        </div>
+      ) : null}
+
+      {items.length === 0 && pending.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border px-4 py-6 text-center">
           <p className="text-sm text-muted-foreground">
             Ajoutez des amis pour suivre leurs streaks et leur envoyer des emojis.

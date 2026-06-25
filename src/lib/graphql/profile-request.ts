@@ -25,9 +25,14 @@ function withDefaultExerciseLocale(
   }
 }
 
-export async function fetchMyProfile(nhost: NhostClient): Promise<Profile | null> {
+export async function fetchMyProfile(
+  nhost: NhostClient,
+  userId: string,
+): Promise<Profile | null> {
   try {
-    const data = await graphqlRequest<{ profiles: Profile[] }>(nhost, GET_MY_PROFILE)
+    const data = await graphqlRequest<{ profiles: Profile[] }>(nhost, GET_MY_PROFILE, {
+      userId,
+    })
     const profile = data.profiles[0]
     return profile ? withDefaultExerciseLocale(profile) : null
   } catch (error) {
@@ -37,7 +42,7 @@ export async function fetchMyProfile(nhost: NhostClient): Promise<Profile | null
 
     const data = await graphqlRequest<{
       profiles: Array<Omit<Profile, 'exercise_locale'>>
-    }>(nhost, GET_MY_PROFILE_LEGACY)
+    }>(nhost, GET_MY_PROFILE_LEGACY, { userId })
     const profile = data.profiles[0]
     return profile ? withDefaultExerciseLocale(profile) : null
   }

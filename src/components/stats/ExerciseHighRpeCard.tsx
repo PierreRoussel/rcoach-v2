@@ -50,7 +50,7 @@ export function ExerciseHighRpeCard({
             {Math.round(comparison.baselineOneRm)} kg est.
           </Pill>
           {comparison.deltaKg != null ? (
-            <Pill tone={comparison.deltaKg >= 0 ? 'accent' : 'purple'}>
+            <Pill tone={comparison.deltaKg >= 0 ? 'solid-accent' : 'purple'}>
               {comparison.deltaKg >= 0 ? '+' : ''}
               {comparison.deltaKg.toFixed(1)} kg
             </Pill>

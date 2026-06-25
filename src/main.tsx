@@ -3,6 +3,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { AuthQuerySync } from '@/components/auth/AuthQuerySync'
 import { ThemeProvider } from '@/design-system'
 import { AuthProvider } from '@/lib/nhost/AuthProvider'
 import { resolveViewTransitionTypes } from '@/lib/router/view-transition-types'
@@ -39,6 +40,7 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
+          <AuthQuerySync />
           <RouterProvider router={router} />
         </QueryClientProvider>
       </AuthProvider>

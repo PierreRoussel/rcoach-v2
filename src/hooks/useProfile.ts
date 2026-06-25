@@ -10,12 +10,13 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useMyProfile() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useQuery({
-    queryKey: ['profile', 'me'],
-    enabled: isAuthenticated,
-    queryFn: () => fetchMyProfile(nhost),
+    queryKey: ['profile', 'me', userId],
+    enabled: isAuthenticated && Boolean(userId),
+    queryFn: () => fetchMyProfile(nhost, userId!),
   })
 }
 

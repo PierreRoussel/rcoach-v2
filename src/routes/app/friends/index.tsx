@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MotivationPickerDialog } from '@/components/social/MotivationPickerDialog'
+import { FriendRequestRow } from '@/components/social/FriendRequestRow'
 import { PageHeader } from '@/design-system'
 import {
   useFriendships,
@@ -234,48 +235,24 @@ function FriendsPage() {
                 'Utilisateur'
 
               return (
-                <div
+                <FriendRequestRow
                   key={friendship.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="size-10">
-                      <AvatarImage src={requester?.avatar_url ?? undefined} />
-                      <AvatarFallback>{getProfileInitials(name)}</AvatarFallback>
-                    </Avatar>
-                    <p className="font-display font-bold">{name}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="pill"
-                      disabled={respondRequest.isPending}
-                      onClick={() =>
-                        void respondRequest.mutateAsync({
-                          friendshipId: friendship.id,
-                          accept: true,
-                        })
-                      }
-                    >
-                      Accepter
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={respondRequest.isPending}
-                      onClick={() =>
-                        void respondRequest.mutateAsync({
-                          friendshipId: friendship.id,
-                          accept: false,
-                        })
-                      }
-                    >
-                      Refuser
-                    </Button>
-                  </div>
-                </div>
+                  displayName={name}
+                  avatarUrl={requester?.avatar_url ?? null}
+                  isResponding={respondRequest.isPending}
+                  onAccept={() =>
+                    void respondRequest.mutateAsync({
+                      friendshipId: friendship.id,
+                      accept: true,
+                    })
+                  }
+                  onDecline={() =>
+                    void respondRequest.mutateAsync({
+                      friendshipId: friendship.id,
+                      accept: false,
+                    })
+                  }
+                />
               )
             })}
           </CardContent>
