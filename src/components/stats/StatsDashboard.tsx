@@ -79,14 +79,14 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
         <>
           <div className="grid grid-cols-2 gap-3">
             <StatsSummaryCard
-              icon={<Activity className="size-4 text-primary" />}
+              icon={<Activity className="size-4 stroke-[2.25] text-primary" />}
               value={String(totalSessions)}
               label="Séances"
               sub="total enregistrées"
               tone="primary"
             />
             <StatsSummaryCard
-              icon={<TrendingUp className="size-4 text-secondary-foreground" />}
+              icon={<TrendingUp className="size-4 stroke-[2.25] text-secondary-foreground" />}
               value={Math.round(totalVolume).toLocaleString('fr-FR')}
               label="Volume"
               sub="kg x reps"
@@ -95,7 +95,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
           </div>
 
           <StatsSummaryCard
-            icon={<Dumbbell className="size-4 text-accent" />}
+            icon={<Dumbbell className="size-4 stroke-[2.25] text-accent" />}
             value={String(activeZones)}
             label="Zones actives"
             sub="groupes musculaires travaillés"

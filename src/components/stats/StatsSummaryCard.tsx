@@ -18,13 +18,13 @@ const toneClasses: Record<NonNullable<StatsSummaryCardProps['tone']>, string> = 
 
 const iconWrapClasses: Record<NonNullable<StatsSummaryCardProps['tone']>, string> = {
   primary:
-    'bg-primary/15 ring-1 ring-primary/30 dark:bg-primary/22 dark:ring-primary/45',
+    'bg-primary/15 ring-1 ring-primary/30 dark:bg-primary/30 dark:ring-primary/55',
   secondary:
-    'bg-secondary/25 ring-1 ring-secondary-foreground/30 dark:bg-secondary/30 dark:ring-secondary-foreground/45',
+    'bg-secondary-foreground/12 ring-1 ring-secondary-foreground/28 dark:bg-secondary-foreground/20 dark:ring-secondary-foreground/55',
   accent:
-    'bg-accent/20 ring-1 ring-accent/35 dark:bg-accent/25 dark:ring-accent/50',
+    'bg-accent/20 ring-1 ring-accent/35 dark:bg-accent/30 dark:ring-accent/55',
   purple:
-    'bg-[#6b4fcc]/12 ring-1 ring-[#6b4fcc]/30 dark:bg-[#6b4fcc]/18 dark:ring-[#6b4fcc]/45',
+    'bg-[#6b4fcc]/12 ring-1 ring-[#6b4fcc]/30 dark:bg-[#6b4fcc]/22 dark:ring-[#6b4fcc]/55',
 }
 
 export function StatsSummaryCard({

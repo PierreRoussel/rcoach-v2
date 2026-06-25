@@ -49,12 +49,12 @@ insert_permissions:
                           - requester_id:
                               _eq: X-Hasura-User-Id
                           - addressee_id:
-                              _eq: recipient_id
+                              _eq: $recipient_id
                       - _and:
                           - addressee_id:
                               _eq: X-Hasura-User-Id
                           - requester_id:
-                              _eq: recipient_id
+                              _eq: $recipient_id
       set:
         sender_id: x-hasura-User-Id
       columns:
