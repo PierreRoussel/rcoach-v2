@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -25,7 +24,6 @@ export function RecentWorkoutsFeed({
   limit,
   showViewAll = false,
   title = 'Dernieres seances',
-  description = 'Vos seances recentes en un coup d oeil.',
 }: RecentWorkoutsFeedProps) {
   const { data: workouts, isLoading, error } = useMyWorkouts()
   const { data: profile } = useMyProfile()
@@ -37,7 +35,6 @@ export function RecentWorkoutsFeed({
         <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle className="font-display font-black">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
           </div>
           <Pill tone="purple">
             <CalendarDays className="size-3" />

@@ -142,3 +142,57 @@ body:has(nav a[href='/app/diet'].bg-soft-primary) main > div.space-y-4 > .rounde
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--soft-accent) 35%, var(--muted));
 }
+
+/* ---- Meal detail page ---- */
+
+.meal-detail-page[data-meal-type='breakfast'] {
+  --meal-tint: var(--soft-accent);
+  --meal-accent: var(--accent);
+}
+
+.meal-detail-page[data-meal-type='lunch'] {
+  --meal-tint: var(--soft-secondary);
+  --meal-accent: var(--secondary);
+}
+
+.meal-detail-page[data-meal-type='snack'] {
+  --meal-tint: var(--soft-primary);
+  --meal-accent: var(--primary);
+}
+
+.meal-detail-page[data-meal-type='dinner'] {
+  --meal-tint: var(--soft-purple);
+  --meal-accent: #6b4fcc;
+}
+
+.meal-detail-page .macro-progress-grid .macro-bar:nth-child(1) .macro-bar__progress {
+  background: color-mix(in srgb, var(--chart-3) 22%, var(--muted));
+}
+
+.meal-detail-page .macro-progress-grid .macro-bar:nth-child(1) [data-slot='progress-indicator'] {
+  background: var(--chart-3);
+}
+
+.meal-detail-page .macro-progress-grid .macro-bar:nth-child(2) .macro-bar__progress {
+  background: color-mix(in srgb, var(--chart-2) 22%, var(--muted));
+}
+
+.meal-detail-page .macro-progress-grid .macro-bar:nth-child(2) [data-slot='progress-indicator'] {
+  background: var(--chart-2);
+}
+
+.meal-detail-page .macro-progress-grid .macro-bar:nth-child(3) .macro-bar__progress {
+  background: color-mix(in srgb, var(--chart-5) 25%, var(--muted));
+}
+
+.meal-detail-page .macro-progress-grid .macro-bar:nth-child(3) [data-slot='progress-indicator'] {
+  background: var(--chart-5);
+}
+
+.meal-detail-page > .overflow-hidden.border-border\/70 .h-2\.5 {
+  background: color-mix(in srgb, var(--muted) 80%, var(--card));
+}
+
+.meal-detail-page > .overflow-hidden.border-border\/70 .h-2\.5 [data-slot='progress-indicator'] {
+  background: var(--meal-accent);
+}

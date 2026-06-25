@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { CalendarDays, Dumbbell, Pencil, Play, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
 import { StatsDashboard } from '@/components/stats/StatsDashboard'
@@ -60,21 +60,31 @@ function SessionsPage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const activeTab = tab ?? 'catalog'
 
+  const tabs = useMemo(
+    () => [
+      { id: 'catalog' as const, label: 'Catalogue', panel: <CatalogTab /> },
+      { id: 'history' as const, label: 'Historique', panel: <HistoryTab /> },
+      { id: 'stats' as const, label: 'Stats', panel: <StatsDashboard /> },
+    ],
+    [],
+  )
+
+  const handleTabChange = useCallback(
+    (nextTab: 'catalog' | 'history' | 'stats') => {
+      void navigate({
+        search: { tab: nextTab },
+        replace: true,
+        viewTransition: false,
+      })
+    },
+    [navigate],
+  )
+
   return (
     <SwipeableTabPanels
       value={activeTab}
-      onChange={(nextTab) =>
-        void navigate({
-          search: { tab: nextTab },
-          replace: true,
-          viewTransition: false,
-        })
-      }
-      tabs={[
-        { id: 'catalog', label: 'Catalogue', panel: <CatalogTab /> },
-        { id: 'history', label: 'Historique', panel: <HistoryTab /> },
-        { id: 'stats', label: 'Stats', panel: <StatsDashboard /> },
-      ]}
+      onChange={handleTabChange}
+      tabs={tabs}
     />
   )
 }

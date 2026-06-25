@@ -21,7 +21,6 @@ export type TdeeInput = {
   weightKg: number
   activityLevel: ActivityLevel
   goal: NutritionGoal
-  calorieAdjustment?: number
 }
 
 export function calculateBmr(input: Pick<TdeeInput, 'sex' | 'age' | 'heightCm' | 'weightKg'>) {
@@ -39,12 +38,11 @@ export function calculateTdee(input: TdeeInput) {
   const activityMultiplier = ACTIVITY_MULTIPLIERS[input.activityLevel]
   const tdee = Math.round(bmr * activityMultiplier)
   const goalAdjustment = GOAL_ADJUSTMENTS[input.goal]
-  const manualAdjustment = input.calorieAdjustment ?? 0
 
   return {
     bmr: Math.round(bmr),
     tdee,
-    dailyTarget: Math.max(1200, tdee + goalAdjustment + manualAdjustment),
+    dailyTarget: Math.max(1200, tdee + goalAdjustment),
   }
 }
 

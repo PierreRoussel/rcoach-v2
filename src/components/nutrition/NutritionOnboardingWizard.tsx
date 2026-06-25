@@ -18,12 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
 import {
   DEFAULT_MEAL_DISTRIBUTION,
   MealDistributionSliders,
   type MealDistributionKey,
 } from '@/components/nutrition/MealDistributionSliders'
+import {
+  DEFAULT_MACRO_DISTRIBUTION,
+  MacroDistributionSliders,
+  type MacroDistributionKey,
+} from '@/components/nutrition/MacroDistributionSliders'
 import { useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
@@ -67,11 +71,8 @@ export function NutritionOnboardingWizard({
   const [weightKg, setWeightKg] = useState('75')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
   const [goal, setGoal] = useState<NutritionGoal>('maintain')
-  const [calorieAdjustment, setCalorieAdjustment] = useState('0')
   const [dailyCalories, setDailyCalories] = useState('2200')
-  const [carbsPct, setCarbsPct] = useState(40)
-  const [proteinPct, setProteinPct] = useState(30)
-  const [fatPct, setFatPct] = useState(30)
+  const [macroDistribution, setMacroDistribution] = useState(DEFAULT_MACRO_DISTRIBUTION)
   const [mealDistribution, setMealDistribution] = useState(DEFAULT_MEAL_DISTRIBUTION)
   const [error, setError] = useState<string | null>(null)
 
@@ -94,21 +95,13 @@ export function NutritionOnboardingWizard({
       weightKg: Number(weightKg) || 75,
       activityLevel,
       goal,
-      calorieAdjustment: Number(calorieAdjustment) || 0,
     })
 
     setDailyCalories(String(tdee.dailyTarget))
-  }, [open, sex, age, heightCm, weightKg, activityLevel, goal, calorieAdjustment])
+  }, [open, sex, age, heightCm, weightKg, activityLevel, goal])
 
   async function handleFinish() {
     setError(null)
-
-    const macroTotal = carbsPct + proteinPct + fatPct
-
-    if (macroTotal !== 100) {
-      setError('Les macros doivent totaliser 100 %.')
-      return
-    }
 
     const tdee = calculateTdee({
       sex,
@@ -117,7 +110,6 @@ export function NutritionOnboardingWizard({
       weightKg: Number(weightKg),
       activityLevel,
       goal,
-      calorieAdjustment: Number(calorieAdjustment) || 0,
     })
 
     const payload: Partial<NutritionSettings> = {
@@ -127,12 +119,12 @@ export function NutritionOnboardingWizard({
       weight_kg: Number(weightKg),
       activity_level: activityLevel,
       goal,
-      calorie_adjustment: Number(calorieAdjustment) || 0,
+      calorie_adjustment: 0,
       tdee_calculated: tdee.tdee,
       daily_calorie_target: Number(dailyCalories),
-      carbs_pct: carbsPct,
-      protein_pct: proteinPct,
-      fat_pct: fatPct,
+      carbs_pct: macroDistribution.carbs,
+      protein_pct: macroDistribution.protein,
+      fat_pct: macroDistribution.fat,
       breakfast_pct: mealDistribution.breakfast,
       lunch_pct: mealDistribution.lunch,
       snack_pct: mealDistribution.snack,
@@ -189,14 +181,6 @@ export function NutritionOnboardingWizard({
                 <Label>Poids (kg)</Label>
                 <Input value={weightKg} onChange={(event) => setWeightKg(event.target.value)} inputMode="decimal" />
               </div>
-              <div className="space-y-2">
-                <Label>Ajustement kcal</Label>
-                <Input
-                  value={calorieAdjustment}
-                  onChange={(event) => setCalorieAdjustment(event.target.value)}
-                  inputMode="numeric"
-                />
-              </div>
             </div>
             <div className="space-y-2">
               <Label>Activite</Label>
@@ -239,12 +223,15 @@ export function NutritionOnboardingWizard({
         ) : null}
 
         {step === 1 ? (
-          <div className="space-y-5">
-            <MacroSlider label="Glucides" value={carbsPct} onChange={setCarbsPct} />
-            <MacroSlider label="Proteines" value={proteinPct} onChange={setProteinPct} />
-            <MacroSlider label="Lipides" value={fatPct} onChange={setFatPct} />
-            <p className="text-sm text-muted-foreground">Total : {carbsPct + proteinPct + fatPct}%</p>
-          </div>
+          <MacroDistributionSliders
+            values={macroDistribution}
+            dailyCalories={Number(dailyCalories) || 0}
+            onChange={(key, value) => {
+              setMacroDistribution((current) =>
+                adjustLinkedPercentages(current, key as MacroDistributionKey, value),
+              )
+            }}
+          />
         ) : null}
 
         {step === 2 ? (
@@ -287,25 +274,5 @@ export function NutritionOnboardingWizard({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function MacroSlider({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number
-  onChange: (value: number) => void
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold">{label}</span>
-        <span>{value}%</span>
-      </div>
-      <Slider value={[value]} min={0} max={100} step={1} onValueChange={(next) => onChange(next[0] ?? 0)} />
-    </div>
   )
 }

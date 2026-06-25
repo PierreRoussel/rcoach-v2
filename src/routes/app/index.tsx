@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Dumbbell, History } from 'lucide-react'
+import { History, UtensilsCrossed } from 'lucide-react'
 
 import { RecentWorkoutsFeed } from '@/components/workout/RecentWorkoutsFeed'
+import { NutritionHomeSummaryTile } from '@/components/nutrition/NutritionHomeSummaryTile'
 import { Button } from '@/components/ui/button'
 import { AnimateIn, PageHeader, StaggerGroup } from '@/design-system'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
@@ -19,8 +20,8 @@ function AppHomePage() {
         <StaggerGroup baseDelay={80}>
           <PageHeader
             eyebrow="Athlete"
-            title="Move with joy"
-            description="Lancez une seance et suivez votre progression."
+            title="Courir plus, manger plus"
+            description="Demarrez une seance et suivez votre nutrition au quotidien."
           />
         </StaggerGroup>
         <StaggerGroup baseDelay={160} className="mt-4 flex flex-wrap gap-2">
@@ -36,12 +37,16 @@ function AppHomePage() {
             </Link>
           </Button>
           <Button variant="outline" className="rounded-full" asChild>
-            <Link to="/app/exercises">
-              <Dumbbell className="size-4" />
-              Catalogue
+            <Link to="/app/diet">
+              <UtensilsCrossed className="size-4" />
+              Diete
             </Link>
           </Button>
         </StaggerGroup>
+      </AnimateIn>
+
+      <AnimateIn delay={280}>
+        <NutritionHomeSummaryTile />
       </AnimateIn>
 
       <AnimateIn delay={400}>

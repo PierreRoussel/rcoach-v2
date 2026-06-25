@@ -1,16 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronRight, Coffee, Moon, Soup, UtensilsCrossed } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
+import { MEAL_ICONS } from '@/lib/nutrition/meal-visuals'
 import { MEAL_LABELS, type MealType } from '@/lib/nutrition/types'
-
-const MEAL_ICONS: Record<MealType, typeof Coffee> = {
-  breakfast: Coffee,
-  lunch: Soup,
-  snack: UtensilsCrossed,
-  dinner: Moon,
-}
 
 type MealSummaryCardProps = {
   date: string
@@ -30,9 +24,8 @@ export function MealSummaryCard({
   const Icon = MEAL_ICONS[mealType]
 
   return (
-    <Card className="overflow-hidden border-border/70 shadow-sm">
-      <CardContent className="p-0">
-        <div className="flex items-center gap-3 p-4">
+    <Card className="gap-0 overflow-hidden border-border/70 shadow-sm">
+      <div className="flex items-center gap-3 p-4">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-soft-primary">
             <Icon className="size-5 text-primary" />
           </div>
@@ -59,8 +52,7 @@ export function MealSummaryCard({
               <ChevronRight className="size-4" />
             </Link>
           </Button>
-        </div>
-      </CardContent>
+      </div>
     </Card>
   )
 }

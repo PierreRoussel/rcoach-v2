@@ -11,12 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
 import {
   DEFAULT_MEAL_DISTRIBUTION,
   MealDistributionSliders,
   type MealDistributionKey,
 } from '@/components/nutrition/MealDistributionSliders'
+import {
+  DEFAULT_MACRO_DISTRIBUTION,
+  MacroDistributionSliders,
+  type MacroDistributionKey,
+} from '@/components/nutrition/MacroDistributionSliders'
 import { useNutritionSettings, useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
@@ -47,11 +51,8 @@ export function NutritionSettingsForm() {
   const [weightKg, setWeightKg] = useState('75')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
   const [goal, setGoal] = useState<NutritionGoal>('maintain')
-  const [calorieAdjustment, setCalorieAdjustment] = useState('0')
   const [dailyCalories, setDailyCalories] = useState('2200')
-  const [carbsPct, setCarbsPct] = useState(40)
-  const [proteinPct, setProteinPct] = useState(30)
-  const [fatPct, setFatPct] = useState(30)
+  const [macroDistribution, setMacroDistribution] = useState(DEFAULT_MACRO_DISTRIBUTION)
   const [mealDistribution, setMealDistribution] = useState(DEFAULT_MEAL_DISTRIBUTION)
 
   useEffect(() => {
@@ -65,11 +66,12 @@ export function NutritionSettingsForm() {
     setWeightKg(String(settings.weight_kg ?? 75))
     setActivityLevel(settings.activity_level ?? 'moderate')
     setGoal(settings.goal ?? 'maintain')
-    setCalorieAdjustment(String(settings.calorie_adjustment ?? 0))
     setDailyCalories(String(settings.daily_calorie_target))
-    setCarbsPct(Number(settings.carbs_pct))
-    setProteinPct(Number(settings.protein_pct))
-    setFatPct(Number(settings.fat_pct))
+    setMacroDistribution({
+      carbs: Number(settings.carbs_pct),
+      protein: Number(settings.protein_pct),
+      fat: Number(settings.fat_pct),
+    })
     setMealDistribution({
       breakfast: Number(settings.breakfast_pct),
       lunch: Number(settings.lunch_pct),
@@ -86,23 +88,15 @@ export function NutritionSettingsForm() {
       weightKg: Number(weightKg) || 75,
       activityLevel,
       goal,
-      calorieAdjustment: Number(calorieAdjustment) || 0,
     })
 
     if (!settings) {
       setDailyCalories(String(tdee.dailyTarget))
     }
-  }, [sex, age, heightCm, weightKg, activityLevel, goal, calorieAdjustment, settings])
+  }, [sex, age, heightCm, weightKg, activityLevel, goal, settings])
 
   async function handleSave() {
     setMessage(null)
-
-    const macroTotal = carbsPct + proteinPct + fatPct
-
-    if (macroTotal !== 100) {
-      setMessage('Les macros doivent totaliser 100 %.')
-      return
-    }
 
     const tdee = calculateTdee({
       sex,
@@ -111,7 +105,6 @@ export function NutritionSettingsForm() {
       weightKg: Number(weightKg),
       activityLevel,
       goal,
-      calorieAdjustment: Number(calorieAdjustment) || 0,
     })
 
     try {
@@ -122,12 +115,12 @@ export function NutritionSettingsForm() {
         weight_kg: Number(weightKg),
         activity_level: activityLevel,
         goal,
-        calorie_adjustment: Number(calorieAdjustment) || 0,
+        calorie_adjustment: settings?.calorie_adjustment ?? 0,
         tdee_calculated: tdee.tdee,
         daily_calorie_target: Number(dailyCalories),
-        carbs_pct: carbsPct,
-        protein_pct: proteinPct,
-        fat_pct: fatPct,
+        carbs_pct: macroDistribution.carbs,
+        protein_pct: macroDistribution.protein,
+        fat_pct: macroDistribution.fat,
         breakfast_pct: mealDistribution.breakfast,
         lunch_pct: mealDistribution.lunch,
         snack_pct: mealDistribution.snack,
@@ -167,7 +160,6 @@ export function NutritionSettingsForm() {
             <Field label="Age" value={age} onChange={setAge} />
             <Field label="Taille (cm)" value={heightCm} onChange={setHeightCm} />
             <Field label="Poids (kg)" value={weightKg} onChange={setWeightKg} />
-            <Field label="Ajustement kcal" value={calorieAdjustment} onChange={setCalorieAdjustment} />
           </div>
           <div className="space-y-2">
             <Label>Activite</Label>
@@ -211,9 +203,15 @@ export function NutritionSettingsForm() {
           <CardTitle>Macros (% des kcal)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <PctSlider label="Glucides" value={carbsPct} onChange={setCarbsPct} />
-          <PctSlider label="Proteines" value={proteinPct} onChange={setProteinPct} />
-          <PctSlider label="Lipides" value={fatPct} onChange={setFatPct} />
+          <MacroDistributionSliders
+            values={macroDistribution}
+            dailyCalories={Number(dailyCalories) || 0}
+            onChange={(key, value) => {
+              setMacroDistribution((current) =>
+                adjustLinkedPercentages(current, key as MacroDistributionKey, value),
+              )
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -256,26 +254,6 @@ function Field({
     <div className="space-y-2">
       <Label>{label}</Label>
       <Input value={value} onChange={(event) => onChange(event.target.value)} inputMode="decimal" />
-    </div>
-  )
-}
-
-function PctSlider({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number
-  onChange: (value: number) => void
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold">{label}</span>
-        <span>{value}%</span>
-      </div>
-      <Slider value={[value]} min={0} max={100} step={1} onValueChange={(next) => onChange(next[0] ?? 0)} />
     </div>
   )
 }

@@ -1,18 +1,33 @@
-import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react'
+import useEmblaCarousel from 'embla-carousel-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 
-type CarouselApi = NonNullable<UseEmblaCarouselType[1]>
+function expandMountedIndices(indices: Set<number>, centerIndex: number, slideCount: number) {
+  const next = new Set(indices)
+  const start = Math.max(0, centerIndex - 1)
+  const end = Math.min(slideCount - 1, centerIndex + 1)
 
-function resolveActiveIndex(api: CarouselApi, slideCount: number): number {
-  if (slideCount <= 1) {
-    return 0
+  for (let index = start; index <= end; index += 1) {
+    next.add(index)
   }
 
-  const progress = api.scrollProgress()
-  return Math.min(Math.round(progress * (slideCount - 1)), slideCount - 1)
+  return next
+}
+
+function setsAreEqual(left: Set<number>, right: Set<number>) {
+  if (left.size !== right.size) {
+    return false
+  }
+
+  for (const value of left) {
+    if (!right.has(value)) {
+      return false
+    }
+  }
+
+  return true
 }
 
 export type SwipeableTabDefinition<T extends string> = {
@@ -53,12 +68,15 @@ export function SwipeableTabPanels<T extends string>({
   const [visualTab, setVisualTab] = useState(value)
   const activeIndex = tabs.findIndex((tab) => tab.id === value)
   const resolvedIndex = activeIndex >= 0 ? activeIndex : 0
+  const [mountedIndices, setMountedIndices] = useState(
+    () => expandMountedIndices(new Set(), resolvedIndex, tabs.length),
+  )
 
   const [carouselRef, api] = useEmblaCarousel({
     loop: false,
     align: 'start',
     containScroll: 'trimSnaps',
-    duration: prefersReducedMotion ? 0 : 38,
+    duration: prefersReducedMotion ? 0 : 20,
     dragFree: false,
     watchDrag: true,
   })
@@ -67,26 +85,30 @@ export function SwipeableTabPanels<T extends string>({
     setVisualTab(value)
   }, [value])
 
-  const syncVisualTabFromCarousel = useCallback(() => {
-    if (!api) {
-      return
-    }
+  useEffect(() => {
+    const visualIndex = tabs.findIndex((tab) => tab.id === visualTab)
+    const centerIndex = visualIndex >= 0 ? visualIndex : resolvedIndex
 
-    const index = resolveActiveIndex(api, tabs.length)
-    const tab = tabs[index]
-    if (tab) {
-      setVisualTab(tab.id)
-    }
-  }, [api, tabs])
+    setMountedIndices((current) => {
+      const next = expandMountedIndices(current, centerIndex, tabs.length)
+      return setsAreEqual(current, next) ? current : next
+    })
+  }, [resolvedIndex, tabs, visualTab])
 
-  const syncUrlFromCarousel = useCallback(() => {
+  const syncFromCarousel = useCallback(() => {
     if (!api) {
       return
     }
 
     const index = api.selectedScrollSnap()
     const tab = tabs[index]
-    if (tab && tab.id !== value) {
+    if (!tab) {
+      return
+    }
+
+    setVisualTab((current) => (current === tab.id ? current : tab.id))
+
+    if (tab.id !== value) {
       onChange(tab.id)
     }
   }, [api, onChange, tabs, value])
@@ -96,14 +118,12 @@ export function SwipeableTabPanels<T extends string>({
       return
     }
 
-    syncVisualTabFromCarousel()
-    api.on('scroll', syncVisualTabFromCarousel)
-    api.on('select', syncUrlFromCarousel)
+    syncFromCarousel()
+    api.on('select', syncFromCarousel)
     return () => {
-      api.off('scroll', syncVisualTabFromCarousel)
-      api.off('select', syncUrlFromCarousel)
+      api.off('select', syncFromCarousel)
     }
-  }, [api, syncUrlFromCarousel, syncVisualTabFromCarousel])
+  }, [api, syncFromCarousel])
 
   useEffect(() => {
     if (!api || api.selectedScrollSnap() === resolvedIndex) {
@@ -143,11 +163,11 @@ export function SwipeableTabPanels<T extends string>({
         </TabsList>
       </Tabs>
 
-      <div ref={carouselRef} className="overflow-hidden">
-        <div className="flex touch-pan-y">
-          {tabs.map((tab) => (
+      <div ref={carouselRef} className="overflow-hidden touch-pan-y">
+        <div className="flex">
+          {tabs.map((tab, index) => (
             <div key={tab.id} className="min-w-0 shrink-0 grow-0 basis-full">
-              {tab.panel}
+              {mountedIndices.has(index) ? tab.panel : null}
             </div>
           ))}
         </div>
