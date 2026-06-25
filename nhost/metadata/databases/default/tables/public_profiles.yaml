@@ -51,6 +51,27 @@ array_relationships:
         table:
           name: scheduled_sessions
           schema: public
+  - name: friendships_as_requester
+    using:
+      foreign_key_constraint_on:
+        column: requester_id
+        table:
+          name: friendships
+          schema: public
+  - name: friendships_as_addressee
+    using:
+      foreign_key_constraint_on:
+        column: addressee_id
+        table:
+          name: friendships
+          schema: public
+  - name: meal_log_entries
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: meal_log_entries
+          schema: public
 select_permissions:
   - role: user
     permission:
@@ -63,6 +84,8 @@ select_permissions:
         - rpe_enabled
         - exercise_locale
         - created_at
+        - friend_code
+        - email
       filter:
         _or:
           - id:
@@ -72,6 +95,15 @@ select_permissions:
                 _eq: X-Hasura-User-Id
               status:
                 _eq: active
+  - role: user
+    permission:
+      columns:
+        - id
+        - display_name
+        - avatar_url
+        - friend_code
+        - email
+      filter: {}
   - role: public
     permission:
       columns:

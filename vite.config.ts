@@ -71,6 +71,14 @@ export default defineConfig({
           'User-Agent': 'RCoach/0.1 (contact: app@rcoach.local)',
         },
       },
+      '/api/open-food-facts-search': {
+        target: 'https://search.openfoodfacts.org',
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/api\/open-food-facts-search/, ''),
+        headers: {
+          'User-Agent': 'RCoach/0.1 (contact: app@rcoach.local)',
+        },
+      },
     },
   },
   preview: {
@@ -79,6 +87,14 @@ export default defineConfig({
         target: 'https://world.openfoodfacts.org',
         changeOrigin: true,
         rewrite: (requestPath) => requestPath.replace(/^\/api\/open-food-facts/, ''),
+        headers: {
+          'User-Agent': 'RCoach/0.1 (contact: app@rcoach.local)',
+        },
+      },
+      '/api/open-food-facts-search': {
+        target: 'https://search.openfoodfacts.org',
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/api\/open-food-facts-search/, ''),
         headers: {
           'User-Agent': 'RCoach/0.1 (contact: app@rcoach.local)',
         },

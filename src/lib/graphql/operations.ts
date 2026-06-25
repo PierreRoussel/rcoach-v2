@@ -2,6 +2,7 @@ export type Profile = {
   id: string
   display_name: string
   avatar_url: string | null
+  friend_code?: string | null
   role: 'athlete' | 'coach' | 'both'
   unit_system: 'kg' | 'lb'
   rpe_enabled: boolean
@@ -98,10 +99,51 @@ export type SharedWorkoutDetail = WorkoutDetail & {
 
 export type ProfileUpdateInput = {
   display_name?: string
+  avatar_url?: string | null
   unit_system?: 'kg' | 'lb'
   role?: 'athlete' | 'coach' | 'both'
   rpe_enabled?: boolean
   exercise_locale?: 'fr' | 'en'
+}
+
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined'
+
+export type Friendship = {
+  id: string
+  requester_id: string
+  addressee_id: string | null
+  invited_email: string | null
+  status: FriendshipStatus
+  created_at: string
+  requester?: FriendProfileSummary | null
+  addressee?: FriendProfileSummary | null
+}
+
+export type FriendProfileSummary = {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  friend_code?: string | null
+  workouts: Array<{ started_at: string }>
+  meal_log_entries: Array<{ logged_date: string; calories: number }>
+}
+
+export type FriendMotivation = {
+  id: string
+  sender_id: string
+  recipient_id: string
+  emoji: string
+  message: string
+  preset_key: 'fire' | 'muscle' | 'clap' | 'custom'
+  read_at: string | null
+  hearted_at: string | null
+  reply_message: string | null
+  created_at: string
+  sender?: {
+    id: string
+    display_name: string
+    avatar_url: string | null
+  } | null
 }
 
 export const UPDATE_MY_PROFILE = `
@@ -206,6 +248,7 @@ export const GET_MY_PROFILE = `
       unit_system
       rpe_enabled
       exercise_locale
+      friend_code
       created_at
     }
   }
@@ -1338,6 +1381,31 @@ export const GET_FOOD_BY_OFF_ID = `
   }
 `
 
+export const GET_FOOD_BY_BARCODE = `
+  query GetFoodByBarcode($barcode: String!) {
+    foods(where: { barcode: { _eq: $barcode } }, limit: 1) {
+      id
+      user_id
+      barcode
+      name
+      brand
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      salt_g
+      sugar_g
+      saturated_fat_g
+      serving_size_g
+      serving_label
+      source
+      off_product_id
+      created_at
+      updated_at
+    }
+  }
+`
+
 export const LIST_FOOD_FAVORITES = `
   query ListFoodFavorites {
     food_favorites(order_by: { created_at: desc }) {
@@ -1400,6 +1468,215 @@ export const LIST_FREQUENT_FOODS = `
         source
         off_product_id
       }
+    }
+  }
+`
+
+export const SEARCH_PROFILE_BY_FRIEND_CODE = `
+  query SearchProfileByFriendCode($code: String!) {
+    profiles(where: { friend_code: { _eq: $code } }, limit: 1) {
+      id
+      display_name
+      avatar_url
+      friend_code
+    }
+  }
+`
+
+export const SEARCH_PROFILE_BY_EMAIL = `
+  query SearchProfileByEmail($email: String!) {
+    profiles(where: { email: { _eq: $email } }, limit: 1) {
+      id
+      display_name
+      avatar_url
+      friend_code
+    }
+  }
+`
+
+export const LIST_MY_FRIENDSHIPS = `
+  query ListMyFriendships {
+    friendships(order_by: { created_at: desc }) {
+      id
+      requester_id
+      addressee_id
+      invited_email
+      status
+      created_at
+      requester {
+        id
+        display_name
+        avatar_url
+        friend_code
+      }
+      addressee {
+        id
+        display_name
+        avatar_url
+        friend_code
+      }
+    }
+  }
+`
+
+export const LIST_ACCEPTED_FRIENDS_ACTIVITY = `
+  query ListAcceptedFriendsActivity($mealSince: date!) {
+    friendships(
+      where: { status: { _eq: accepted } }
+      order_by: { created_at: asc }
+    ) {
+      id
+      requester_id
+      addressee_id
+      status
+      requester {
+        id
+        display_name
+        avatar_url
+        workouts(limit: 100, order_by: { started_at: desc }) {
+          started_at
+        }
+        meal_log_entries(
+          where: { logged_date: { _gte: $mealSince } }
+          order_by: { logged_date: desc }
+        ) {
+          logged_date
+          calories
+        }
+      }
+      addressee {
+        id
+        display_name
+        avatar_url
+        workouts(limit: 100, order_by: { started_at: desc }) {
+          started_at
+        }
+        meal_log_entries(
+          where: { logged_date: { _gte: $mealSince } }
+          order_by: { logged_date: desc }
+        ) {
+          logged_date
+          calories
+        }
+      }
+    }
+  }
+`
+
+export const INSERT_FRIENDSHIP = `
+  mutation InsertFriendship($object: friendships_insert_input!) {
+    insert_friendships_one(object: $object) {
+      id
+      requester_id
+      addressee_id
+      invited_email
+      status
+      created_at
+    }
+  }
+`
+
+export const UPDATE_FRIENDSHIP_STATUS = `
+  mutation UpdateFriendshipStatus($id: uuid!, $status: String!, $addresseeId: uuid) {
+    update_friendships_by_pk(
+      pk_columns: { id: $id }
+      _set: { status: $status, addressee_id: $addresseeId }
+    ) {
+      id
+      status
+      addressee_id
+    }
+  }
+`
+
+export const DELETE_FRIENDSHIP = `
+  mutation DeleteFriendship($id: uuid!) {
+    delete_friendships_by_pk(id: $id) {
+      id
+    }
+  }
+`
+
+export const INSERT_FRIEND_MOTIVATION = `
+  mutation InsertFriendMotivation($object: friend_motivations_insert_input!) {
+    insert_friend_motivations_one(object: $object) {
+      id
+      sender_id
+      recipient_id
+      emoji
+      message
+      preset_key
+      created_at
+    }
+  }
+`
+
+export const COUNT_UNREAD_MOTIVATIONS = `
+  query CountUnreadMotivations {
+    friend_motivations_aggregate(where: { read_at: { _is_null: true } }) {
+      aggregate {
+        count
+      }
+    }
+  }
+`
+
+export const LIST_UNREAD_MOTIVATIONS = `
+  query ListUnreadMotivations {
+    friend_motivations(
+      where: { read_at: { _is_null: true } }
+      order_by: { created_at: desc }
+    ) {
+      id
+      sender_id
+      recipient_id
+      emoji
+      message
+      preset_key
+      read_at
+      hearted_at
+      reply_message
+      created_at
+      sender {
+        id
+        display_name
+        avatar_url
+      }
+    }
+  }
+`
+
+export const MARK_MOTIVATION_READ = `
+  mutation MarkMotivationRead($id: uuid!, $readAt: timestamptz!) {
+    update_friend_motivations_by_pk(
+      pk_columns: { id: $id }
+      _set: { read_at: $readAt }
+    ) {
+      id
+      read_at
+    }
+  }
+`
+
+export const REPLY_FRIEND_MOTIVATION = `
+  mutation ReplyFriendMotivation(
+    $id: uuid!
+    $readAt: timestamptz!
+    $heartedAt: timestamptz!
+    $replyMessage: String
+  ) {
+    update_friend_motivations_by_pk(
+      pk_columns: { id: $id }
+      _set: {
+        read_at: $readAt
+        hearted_at: $heartedAt
+        reply_message: $replyMessage
+      }
+    ) {
+      id
+      read_at
+      hearted_at
+      reply_message
     }
   }
 `

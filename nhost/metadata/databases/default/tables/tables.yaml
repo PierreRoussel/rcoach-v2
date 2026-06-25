@@ -15,3 +15,5 @@
 - "!include public_foods.yaml"
 - "!include public_food_favorites.yaml"
 - "!include public_meal_log_entries.yaml"
+- "!include public_friendships.yaml"
+- "!include public_friend_motivations.yaml"

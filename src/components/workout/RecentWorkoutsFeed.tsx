@@ -61,9 +61,9 @@ export function RecentWorkoutsFeed({
             </Button>
           </div>
         ) : null}
-        <ul className="divide-y divide-border border-t border-border">
+        <ul className="w-full divide-y divide-border border-t border-border">
           {visibleWorkouts?.map((workout) => (
-            <li key={workout.id}>
+            <li key={workout.id} className="w-full">
               <WorkoutHistoryCard
                 workout={workout}
                 profile={profile}

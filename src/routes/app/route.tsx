@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useNutritionSync } from '@/hooks/useNutritionSync'
+import { useUnreadMotivationsCount } from '@/hooks/useFriends'
 
 function resolveDisplayName(
   profileName: string | null | undefined,
@@ -43,6 +44,7 @@ function AppLayout() {
   const hydrate = useActiveWorkoutStore((state) => state.hydrate)
 
   useNutritionSync()
+  useUnreadMotivationsCount()
 
   useEffect(() => {
     void hydrate()

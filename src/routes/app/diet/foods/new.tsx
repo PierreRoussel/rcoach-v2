@@ -10,7 +10,9 @@ import { PageHeader } from '@/design-system'
 import { useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
-import { getOffProductByBarcode, mapOffDraftToFoodInsert } from '@/lib/nutrition/open-food-facts'
+import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
+import { mapOffDraftToFoodInsert } from '@/lib/nutrition/open-food-facts'
+import { useAuth } from '@/lib/nhost/AuthProvider'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { MealType } from '@/lib/nutrition/types'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
@@ -52,6 +54,7 @@ function NewFoodPage() {
   const { createFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
   const { requestScan, scanner } = useBarcodeScanner()
+  const { nhost } = useAuth()
 
   useEffect(() => {
     if (!search.barcode) {
@@ -62,7 +65,7 @@ function NewFoodPage() {
   }, [search.barcode])
 
   async function prefillFromBarcode(code: string) {
-    const draft = await getOffProductByBarcode(code)
+    const draft = await resolveOffDraftFromBarcode(nhost, code)
     if (!draft) {
       setBarcode(code)
       setStep(1)

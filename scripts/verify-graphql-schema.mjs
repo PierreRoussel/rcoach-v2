@@ -42,12 +42,16 @@ const REQUIRED_QUERY_FIELDS = [
   'workouts',
   'workout_templates',
   'scheduled_sessions',
+  'friendships',
+  'friend_motivations',
 ]
 
 const REQUIRED_MUTATION_FIELDS = [
   'insert_workouts_one',
   'insert_workout_templates_one',
   'insert_scheduled_sessions_one',
+  'insert_friendships_one',
+  'insert_friend_motivations_one',
 ]
 
 async function introspect(headers = {}) {

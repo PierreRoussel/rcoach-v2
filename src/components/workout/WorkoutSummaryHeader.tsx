@@ -19,19 +19,22 @@ export type WorkoutSummaryHeaderProps = {
   compact?: boolean
   className?: string
   actions?: ReactNode
+  onRecordsClick?: () => void
 }
 
 function WorkoutStat({
   label,
   value,
   compact,
+  onClick,
 }: {
   label: string
   value: ReactNode
   compact?: boolean
+  onClick?: () => void
 }) {
-  return (
-    <div className="min-w-0 flex-1">
+  const content = (
+    <>
       <p
         className={cn(
           'font-medium text-muted-foreground',
@@ -48,8 +51,23 @@ function WorkoutStat({
       >
         {value}
       </p>
-    </div>
+    </>
   )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="min-w-0 flex-1 rounded-xl text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        aria-label={`Voir les ${label.toLowerCase()}`}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return <div className="min-w-0 flex-1">{content}</div>
 }
 
 export function WorkoutSummaryHeader({
@@ -63,6 +81,7 @@ export function WorkoutSummaryHeader({
   compact = false,
   className,
   actions,
+  onRecordsClick,
 }: WorkoutSummaryHeaderProps) {
   return (
     <div className={cn('space-y-3', className)}>
@@ -120,6 +139,7 @@ export function WorkoutSummaryHeader({
             </span>
           }
           compact={compact}
+          onClick={recordsCount > 0 ? onRecordsClick : undefined}
         />
       </div>
     </div>

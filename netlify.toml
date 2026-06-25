@@ -3,3 +3,9 @@
   to = "https://world.openfoodfacts.org/:splat"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/open-food-facts-search/*"
+  to = "https://search.openfoodfacts.org/:splat"
+  status = 200
+  force = true

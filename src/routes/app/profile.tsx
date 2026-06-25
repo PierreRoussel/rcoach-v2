@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import {
   AlertDialog,
@@ -25,6 +26,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
+import { AvatarEditor } from '@/components/social/AvatarEditor'
+import { FriendsSection } from '@/components/social/FriendsSection'
 import { PageHeader, ThemeSetting } from '@/design-system'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useCalendarData } from '@/hooks/useCalendarData'
@@ -74,7 +77,7 @@ function ProfileEditor({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="displayName">Nom affiche</Label>
+        <Label htmlFor="displayName">Nom affiché</Label>
         <Input
           id="displayName"
           value={displayName}
@@ -116,10 +119,10 @@ function ProfileEditor({
           className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
           value={role}
           onChange={(event) =>
-            setRole(event.target.value as 'athlète' | 'coach' | 'both')
+            setRole(event.target.value as 'athlete' | 'coach' | 'both')
           }
         >
-          <option value="athlète">Athlète</option>
+          <option value="athlete">Athlète</option>
           <option value="coach">Coach</option>
           <option value="both">Athlète + Coach</option>
         </select>
@@ -231,8 +234,13 @@ function LogoutSection() {
 }
 
 function ProfilePage() {
+  const queryClient = useQueryClient()
   const { data: profile, isLoading, error } = useMyProfile()
   const { markers, weeklyStreak, isLoading: calendarLoading } = useCalendarData()
+
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
+  }, [queryClient])
 
   return (
     <div className="space-y-4">
@@ -241,6 +249,8 @@ function ProfilePage() {
         title="Profil"
         description="Informations du compte et préférences d'affichage."
       />
+
+      <FriendsSection />
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
@@ -301,7 +311,16 @@ function ProfilePage() {
               {error instanceof Error ? error.message : 'Erreur de chargement'}
             </p>
           ) : null}
-          {profile ? <ProfileEditor key={profile.id} profile={profile} /> : null}
+          {profile ? (
+            <>
+              <AvatarEditor
+                profileId={profile.id}
+                displayName={profile.display_name}
+                avatarUrl={profile.avatar_url}
+              />
+              <ProfileEditor key={profile.id} profile={profile} />
+            </>
+          ) : null}
         </CardContent>
       </Card>
 

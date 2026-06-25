@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft, Dumbbell } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { WorkoutDetailMenu } from '@/components/workout/WorkoutDetailMenu'
+import { WorkoutRecordsDrawer } from '@/components/workout/WorkoutRecordsDrawer'
 import { WorkoutSummaryHeader } from '@/components/workout/WorkoutSummaryHeader'
 import { Pill } from '@/design-system'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
@@ -17,7 +19,7 @@ import { useMyProfile } from '@/hooks/useProfile'
 import { useMyWorkouts, useWorkoutById } from '@/hooks/useWorkouts'
 import {
   computeWorkoutVolume,
-  countWorkoutPersonalRecords,
+  detectWorkoutPersonalRecords,
   formatWorkoutDuration,
 } from '@/lib/stats/workout-metrics'
 import { formatSetPerformanceSummary } from '@/lib/workout/format-set-performance'
@@ -31,6 +33,12 @@ function WorkoutDetailPage() {
   const { data: workout, isLoading, error } = useWorkoutById(workoutId)
   const { data: profile } = useMyProfile()
   const { data: allWorkouts } = useMyWorkouts()
+  const [recordsDrawerOpen, setRecordsDrawerOpen] = useState(false)
+
+  const personalRecords = useMemo(
+    () => (workout ? detectWorkoutPersonalRecords(workout, allWorkouts ?? []) : []),
+    [workout, allWorkouts],
+  )
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Chargement...</p>
@@ -46,7 +54,6 @@ function WorkoutDetailPage() {
 
   const duration = formatWorkoutDuration(workout.started_at, workout.ended_at)
   const volumeKg = computeWorkoutVolume(workout)
-  const recordsCount = countWorkoutPersonalRecords(workout, allWorkouts ?? [])
 
   return (
     <div className="space-y-4">
@@ -64,8 +71,16 @@ function WorkoutDetailPage() {
         title={workout.title}
         duration={duration}
         volumeKg={volumeKg}
-        recordsCount={recordsCount}
+        recordsCount={personalRecords.length}
+        onRecordsClick={() => setRecordsDrawerOpen(true)}
         actions={<WorkoutDetailMenu workout={workout} />}
+      />
+
+      <WorkoutRecordsDrawer
+        open={recordsDrawerOpen}
+        onOpenChange={setRecordsDrawerOpen}
+        records={personalRecords}
+        workoutTitle={workout.title}
       />
 
       {workout.notes ? (

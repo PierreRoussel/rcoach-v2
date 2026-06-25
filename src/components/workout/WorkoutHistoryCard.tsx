@@ -56,10 +56,10 @@ export function WorkoutHistoryCard({
   return (
     <div
       className={cn(
-        'relative w-full pr-12 transition-colors',
+        'relative block w-full transition-colors',
         variant === 'standalone'
           ? 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm hover:shadow-md'
-          : 'border-border px-4 py-3 hover:bg-muted/20',
+          : 'w-full border-border px-4 py-3 pr-12 hover:bg-muted/20',
         className,
       )}
     >
@@ -70,7 +70,7 @@ export function WorkoutHistoryCard({
       <Link
         to="/app/workouts/$workoutId"
         params={{ workoutId: workout.id }}
-        className="block"
+        className="block w-full min-w-0"
       >
         <WorkoutSummaryHeader
           displayName={displayName}

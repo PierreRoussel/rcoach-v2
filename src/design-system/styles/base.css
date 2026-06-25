@@ -107,4 +107,8 @@
   .shadow-soft-primary {
     box-shadow: 0 12px 30px rgba(212, 120, 154, 0.18);
   }
+
+  .shadow-soft-accent {
+    box-shadow: 0 8px 20px rgba(232, 184, 75, 0.28);
+  }
 }

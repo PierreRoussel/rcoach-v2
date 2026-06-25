@@ -26,8 +26,21 @@ select_permissions:
         - created_at
         - updated_at
       filter:
-        user_id:
-          _eq: X-Hasura-User-Id
+        _or:
+          - user_id:
+              _eq: X-Hasura-User-Id
+          - user:
+              friendships_as_addressee:
+                requester_id:
+                  _eq: X-Hasura-User-Id
+                status:
+                  _eq: accepted
+          - user:
+              friendships_as_requester:
+                addressee_id:
+                  _eq: X-Hasura-User-Id
+                status:
+                  _eq: accepted
 insert_permissions:
   - role: user
     permission:

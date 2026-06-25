@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   DELETE_FOOD_FAVORITE,
+  GET_FOOD_BY_BARCODE,
   GET_FOOD_BY_OFF_ID,
   INSERT_FOOD,
   INSERT_FOOD_FAVORITE,
@@ -132,7 +133,25 @@ export function useFoodMutations() {
   }
 
   const lookupBarcode = async (barcode: string) => {
-    const draft = await getOffProductByBarcode(barcode)
+    const normalized = barcode.trim()
+    if (!normalized) {
+      return null
+    }
+
+    try {
+      const existing = await graphqlRequest<{ foods: Food[] }>(nhost, GET_FOOD_BY_BARCODE, {
+        barcode: normalized,
+      })
+
+      if (existing.foods[0]) {
+        await cacheFood(existing.foods[0])
+        return existing.foods[0]
+      }
+    } catch {
+      // Fall back to live OFF lookup.
+    }
+
+    const draft = await getOffProductByBarcode(normalized)
     if (!draft) {
       return null
     }

@@ -1,0 +1,65 @@
+table:
+  name: friendships
+  schema: public
+object_relationships:
+  - name: requester
+    using:
+      foreign_key_constraint_on: requester_id
+  - name: addressee
+    using:
+      foreign_key_constraint_on: addressee_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - requester_id
+        - addressee_id
+        - invited_email
+        - status
+        - created_at
+      filter:
+        _or:
+          - requester_id:
+              _eq: X-Hasura-User-Id
+          - addressee_id:
+              _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        requester_id:
+          _eq: X-Hasura-User-Id
+      set:
+        requester_id: x-hasura-User-Id
+      columns:
+        - addressee_id
+        - invited_email
+        - status
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - status
+        - addressee_id
+      filter:
+        _or:
+          - addressee_id:
+              _eq: X-Hasura-User-Id
+          - requester_id:
+              _eq: X-Hasura-User-Id
+      check:
+        _or:
+          - addressee_id:
+              _eq: X-Hasura-User-Id
+          - requester_id:
+              _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        _or:
+          - requester_id:
+              _eq: X-Hasura-User-Id
+          - addressee_id:
+              _eq: X-Hasura-User-Id

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { FoodQuickActions, FoodSearchList } from '@/components/nutrition/FoodSearchList'
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useFrequentFoods } from '@/hooks/useFrequentFoods'
-import { useFoodSearch, type FoodSearchResult } from '@/hooks/useFoodSearch'
+import { useFoodSearch, OFF_MIN_QUERY_LENGTH, type FoodSearchResult } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { toDateKey } from '@/lib/nutrition/dates'
@@ -32,16 +32,24 @@ function AddFoodPage() {
   const mealType = (search.mealType ?? 'breakfast') as MealType
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
+  const [searchOffExternally, setSearchOffExternally] = useState(false)
   const [selectedFood, setSelectedFood] = useState<Food | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  const { results, isLoading } = useFoodSearch(query)
+  const trimmedQuery = query.trim()
+  const { results, isLoading, canTriggerOffSearch } = useFoodSearch(query, true, {
+    searchOffExternally,
+  })
   const { data: favorites = [] } = useFoodFavorites()
   const { data: frequentFoods = [] } = useFrequentFoods()
   const { toggleFavorite } = useFoodFavoriteMutations()
   const { ensureOffFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
   const { requestScan, scanner } = useBarcodeScanner()
+
+  useEffect(() => {
+    setSearchOffExternally(false)
+  }, [trimmedQuery])
 
   const favoriteFoodIds = useMemo(
     () => new Set(favorites.map((favorite) => favorite.food_id)),
@@ -182,9 +190,20 @@ function AddFoodPage() {
         }
       />
 
+      {canTriggerOffSearch ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => setSearchOffExternally(true)}
+        >
+          Rechercher dans Open Food Facts
+        </Button>
+      ) : null}
+
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
 
-      {query.trim().length < 2 ? (
+      {trimmedQuery.length < 2 ? (
         <div className="space-y-6">
           <section className="space-y-2">
             <h2 className="font-display text-sm font-bold uppercase tracking-wide text-muted-foreground">
@@ -251,6 +270,15 @@ function AddFoodPage() {
           emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun résultat.'}
         />
       )}
+
+      {trimmedQuery.length >= OFF_MIN_QUERY_LENGTH &&
+      !isLoading &&
+      results.length === 0 ? (
+        <p className="px-1 text-center text-xs text-muted-foreground">
+          Aucun aliment local. La recherche Open Food Facts est lancée automatiquement à partir de{' '}
+          {OFF_MIN_QUERY_LENGTH} caractères.
+        </p>
+      ) : null}
 
       <PortionPickerSheet
         open={Boolean(selectedFood)}

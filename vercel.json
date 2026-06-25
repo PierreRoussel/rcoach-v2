@@ -3,6 +3,10 @@
     {
       "source": "/api/open-food-facts/:path*",
       "destination": "https://world.openfoodfacts.org/:path*"
+    },
+    {
+      "source": "/api/open-food-facts-search/:path*",
+      "destination": "https://search.openfoodfacts.org/:path*"
     }
   ]
 }
