@@ -3,11 +3,48 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn } from '@/design-system'
 import { addDays, buildDateWindow, formatFrenchDateLabel } from '@/lib/nutrition/dates'
 import { cn } from '@/lib/utils'
 
 type CarouselApi = NonNullable<UseEmblaCarouselType[1]>
+
+function expandMountedIndices(indices: Set<number>, centerIndex: number, slideCount: number) {
+  const next = new Set(indices)
+  const start = Math.max(0, centerIndex - 1)
+  const end = Math.min(slideCount - 1, centerIndex + 1)
+
+  for (let index = start; index <= end; index += 1) {
+    next.add(index)
+  }
+
+  return next
+}
+
+function setsAreEqual(left: Set<number>, right: Set<number>) {
+  if (left.size !== right.size) {
+    return false
+  }
+
+  for (const value of left) {
+    if (!right.has(value)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function DietDaySlidePlaceholder() {
+  return (
+    <Card>
+      <CardContent className="py-10 text-center text-sm text-muted-foreground">
+        Chargement...
+      </CardContent>
+    </Card>
+  )
+}
 
 function resolveActiveIndex(api: CarouselApi, slideCount: number) {
   if (slideCount <= 1) {
@@ -35,12 +72,16 @@ export function DietDayCarousel({
 }: DietDayCarouselProps) {
   const dates = buildDateWindow(date, 14)
   const activeIndex = dates.indexOf(date)
+  const resolvedIndex = activeIndex >= 0 ? activeIndex : 14
   const [displayDate, setDisplayDate] = useState(date)
+  const [mountedIndices, setMountedIndices] = useState(
+    () => expandMountedIndices(new Set(), resolvedIndex, dates.length),
+  )
 
   const [carouselRef, api] = useEmblaCarousel({
     loop: false,
     align: 'center',
-    startIndex: activeIndex >= 0 ? activeIndex : 14,
+    startIndex: resolvedIndex,
     duration: 20,
     dragFree: false,
     watchDrag: true,
@@ -49,6 +90,13 @@ export function DietDayCarousel({
   useEffect(() => {
     setDisplayDate(date)
   }, [date])
+
+  useEffect(() => {
+    setMountedIndices((current) => {
+      const next = expandMountedIndices(current, resolvedIndex, dates.length)
+      return setsAreEqual(current, next) ? current : next
+    })
+  }, [resolvedIndex, dates.length])
 
   const syncDisplayDateFromScroll = useCallback(() => {
     if (!api) {
@@ -60,6 +108,11 @@ export function DietDayCarousel({
     if (nextDate) {
       setDisplayDate(nextDate)
     }
+
+    setMountedIndices((current) => {
+      const next = expandMountedIndices(current, index, dates.length)
+      return setsAreEqual(current, next) ? current : next
+    })
   }, [api, dates])
 
   const syncUrlFromCarousel = useCallback(() => {

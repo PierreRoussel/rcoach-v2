@@ -65,7 +65,6 @@ export function SwipeableTabPanels<T extends string>({
   className,
 }: SwipeableTabPanelsProps<T>) {
   const prefersReducedMotion = usePrefersReducedMotion()
-  const [visualTab, setVisualTab] = useState(value)
   const activeIndex = tabs.findIndex((tab) => tab.id === value)
   const resolvedIndex = activeIndex >= 0 ? activeIndex : 0
   const [mountedIndices, setMountedIndices] = useState(
@@ -82,33 +81,20 @@ export function SwipeableTabPanels<T extends string>({
   })
 
   useEffect(() => {
-    setVisualTab(value)
-  }, [value])
-
-  useEffect(() => {
-    const visualIndex = tabs.findIndex((tab) => tab.id === visualTab)
-    const centerIndex = visualIndex >= 0 ? visualIndex : resolvedIndex
-
     setMountedIndices((current) => {
-      const next = expandMountedIndices(current, centerIndex, tabs.length)
+      const next = expandMountedIndices(current, resolvedIndex, tabs.length)
       return setsAreEqual(current, next) ? current : next
     })
-  }, [resolvedIndex, tabs, visualTab])
+  }, [resolvedIndex, tabs.length])
 
-  const syncFromCarousel = useCallback(() => {
+  const syncUrlFromSwipe = useCallback(() => {
     if (!api) {
       return
     }
 
     const index = api.selectedScrollSnap()
     const tab = tabs[index]
-    if (!tab) {
-      return
-    }
-
-    setVisualTab((current) => (current === tab.id ? current : tab.id))
-
-    if (tab.id !== value) {
+    if (tab && tab.id !== value) {
       onChange(tab.id)
     }
   }, [api, onChange, tabs, value])
@@ -118,12 +104,11 @@ export function SwipeableTabPanels<T extends string>({
       return
     }
 
-    syncFromCarousel()
-    api.on('select', syncFromCarousel)
+    api.on('settle', syncUrlFromSwipe)
     return () => {
-      api.off('select', syncFromCarousel)
+      api.off('settle', syncUrlFromSwipe)
     }
-  }, [api, syncFromCarousel])
+  }, [api, syncUrlFromSwipe])
 
   useEffect(() => {
     if (!api || api.selectedScrollSnap() === resolvedIndex) {
@@ -134,7 +119,7 @@ export function SwipeableTabPanels<T extends string>({
   }, [api, prefersReducedMotion, resolvedIndex])
 
   function handleTabChange(next: string) {
-    if (next === visualTab) {
+    if (next === value) {
       return
     }
 
@@ -143,13 +128,14 @@ export function SwipeableTabPanels<T extends string>({
       return
     }
 
-    setVisualTab(tab.id)
+    const index = tabs.findIndex((item) => item.id === tab.id)
+    api?.scrollTo(index, !prefersReducedMotion)
     onChange(tab.id)
   }
 
   return (
     <div className={cn('space-y-3', className)}>
-      <Tabs value={visualTab} onValueChange={handleTabChange}>
+      <Tabs value={value} onValueChange={handleTabChange}>
         <TabsList className="grid h-auto w-full grid-cols-3 p-1">
           {tabs.map((tab) => (
             <TabsTrigger

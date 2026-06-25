@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { parseISO } from 'date-fns'
 import { ArrowLeft, CalendarPlus, Flame, ListChecks } from 'lucide-react'
 import { useState } from 'react'
@@ -11,6 +11,13 @@ import {
   type ScheduleFormValues,
 } from '@/components/schedule/ScheduleSessionForm'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { PageHeader, Pill } from '@/design-system'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import {
@@ -57,6 +64,7 @@ export const Route = createFileRoute('/app/planning/')({
 })
 
 function PlanningPage() {
+  const navigate = useNavigate({ from: Route.fullPath })
   const {
     date: initialDateParam,
     templateId: initialTemplateId,
@@ -91,6 +99,8 @@ function PlanningPage() {
   function closeForm() {
     setEditing(null)
     setShowForm(false)
+    setFormDate(undefined)
+    void navigate({ search: {}, replace: true, viewTransition: false })
   }
 
   async function handleSubmit(values: ScheduleFormValues) {
@@ -188,22 +198,20 @@ function PlanningPage() {
               Touchez un jour pour le détail et démarrer une séance.
             </p>
           </div>
-          {!showForm ? (
-            <Button
-              type="button"
-              variant="pill"
-              size="sm"
-              className="shrink-0 rounded-full"
-              onClick={() => {
-                setEditing(null)
-                setFormDate(undefined)
-                setShowForm(true)
-              }}
-            >
-              <CalendarPlus className="size-4" />
-              Planifier
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="pill"
+            size="sm"
+            className="shrink-0 rounded-full"
+            onClick={() => {
+              setEditing(null)
+              setFormDate(undefined)
+              setShowForm(true)
+            }}
+          >
+            <CalendarPlus className="size-4" />
+            Planifier
+          </Button>
         </div>
 
         <WorkoutCalendarPanel
@@ -216,32 +224,41 @@ function PlanningPage() {
         />
       </section>
 
-      {showForm ? (
-        <section className="space-y-4 rounded-3xl border border-primary/20 bg-card p-5 shadow-sm ring-1 ring-primary/10">
-          <div>
-            <h2 className="font-display text-lg font-black">
+      <Dialog
+        open={showForm}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeForm()
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto rounded-2xl p-0 sm:max-w-lg">
+          <DialogHeader className="border-b border-border px-5 py-4 text-left">
+            <DialogTitle className="font-display font-black">
               {editing ? 'Modifier la planification' : 'Nouvelle planification'}
-            </h2>
-            <p className="text-xs text-muted-foreground">
+            </DialogTitle>
+            <DialogDescription>
               Titre libre ou modèle, ponctuel, hebdomadaire ou alternance ABA.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-5 py-4">
+            <ScheduleSessionForm
+              key={`${editing?.id ?? 'new'}-${initialTemplateId ?? 'none'}-${initialTitle ?? ''}`}
+              templates={(templates ?? []).map((template) => ({
+                id: template.id,
+                name: template.name,
+              }))}
+              initialDate={formDate}
+              initialTemplateId={editing ? undefined : initialTemplateId}
+              initialTitle={editing ? undefined : initialTitle}
+              editing={editing}
+              isPending={createSession.isPending || updateSession.isPending}
+              onSubmit={handleSubmit}
+              onCancel={closeForm}
+            />
           </div>
-          <ScheduleSessionForm
-            key={`${editing?.id ?? 'new'}-${initialTemplateId ?? 'none'}-${initialTitle ?? ''}`}
-            templates={(templates ?? []).map((template) => ({
-              id: template.id,
-              name: template.name,
-            }))}
-            initialDate={formDate}
-            initialTemplateId={editing ? undefined : initialTemplateId}
-            initialTitle={editing ? undefined : initialTitle}
-            editing={editing}
-            isPending={createSession.isPending || updateSession.isPending}
-            onSubmit={handleSubmit}
-            onCancel={closeForm}
-          />
-        </section>
-      ) : null}
+        </DialogContent>
+      </Dialog>
 
       <section className="space-y-3">
         <div className="px-1">
@@ -256,18 +273,20 @@ function PlanningPage() {
             <p className="text-sm text-muted-foreground">
               Aucune séance planifiée. Ajoutez votre première règle.
             </p>
-            {!showForm ? (
-              <Button
-                type="button"
-                variant="soft"
-                size="sm"
-                className="mt-3 rounded-full"
-                onClick={() => setShowForm(true)}
-              >
-                <CalendarPlus className="size-4" />
-                Créer une planification
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              variant="soft"
+              size="sm"
+              className="mt-3 rounded-full"
+              onClick={() => {
+                setEditing(null)
+                setFormDate(undefined)
+                setShowForm(true)
+              }}
+            >
+              <CalendarPlus className="size-4" />
+              Créer une planification
+            </Button>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -277,6 +296,7 @@ function PlanningPage() {
                 session={session}
                 onEdit={() => {
                   setEditing(session)
+                  setFormDate(undefined)
                   setShowForm(true)
                 }}
                 onToggleActive={(active) =>
