@@ -9,7 +9,7 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
-import { syncMealEntryInsert, syncMealEntryUpdate, syncMealEntryDelete } from '@/lib/graphql/nutrition-sync-queue'
+import { syncMealEntryInsert, syncMealEntryUpdate, removeMealEntryFromDayCache, enqueueNutritionMutation } from '@/lib/graphql/nutrition-sync-queue'
 
 export type AddMealEntryInput = {
   loggedDate: string
@@ -41,6 +41,7 @@ export function useMealLogMutations() {
   const invalidate = async (date?: string) => {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-day'] })
     await queryClient.invalidateQueries({ queryKey: ['frequent-foods'] })
+    await queryClient.invalidateQueries({ queryKey: ['nutrition-log-history'] })
     if (date) {
       await queryClient.invalidateQueries({ queryKey: ['nutrition-day', date] })
     }
@@ -106,13 +107,18 @@ export function useMealLogMutations() {
 
   const deleteEntry = useMutation({
     mutationFn: async (input: { id: string; loggedDate: string }) => {
+      await removeMealEntryFromDayCache(input.id)
+
       try {
-        await graphqlRequest(nhost, DELETE_MEAL_LOG_ENTRY, { id: input.id })
+        const data = await graphqlRequest<{
+          delete_meal_log_entries_by_pk: { id: string } | null
+        }>(nhost, DELETE_MEAL_LOG_ENTRY, { id: input.id })
+
+        if (!data.delete_meal_log_entries_by_pk) {
+          return
+        }
       } catch {
-        await syncMealEntryDelete(nhost, input.id)
-        throw new Error(
-          'Suppression enregistrée localement. Synchronisation à la reconnexion.',
-        )
+        await enqueueNutritionMutation('delete_meal_entry', { id: input.id })
       }
     },
     onSuccess: async (_data, variables) => {

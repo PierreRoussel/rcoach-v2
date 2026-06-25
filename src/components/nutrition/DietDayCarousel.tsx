@@ -1,10 +1,21 @@
-import useEmblaCarousel from 'embla-carousel-react'
+import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCallback, useEffect, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { addDays, buildDateWindow, formatFrenchDateLabel } from '@/lib/nutrition/dates'
 import { cn } from '@/lib/utils'
+
+type CarouselApi = NonNullable<UseEmblaCarouselType[1]>
+
+function resolveActiveIndex(api: CarouselApi, slideCount: number) {
+  if (slideCount <= 1) {
+    return 0
+  }
+
+  const progress = api.scrollProgress()
+  return Math.min(Math.round(progress * (slideCount - 1)), slideCount - 1)
+}
 
 type DietDayCarouselProps = {
   date: string
@@ -21,14 +32,34 @@ export function DietDayCarousel({
 }: DietDayCarouselProps) {
   const dates = buildDateWindow(date, 14)
   const activeIndex = dates.indexOf(date)
+  const [displayDate, setDisplayDate] = useState(date)
 
   const [carouselRef, api] = useEmblaCarousel({
     loop: false,
     align: 'center',
     startIndex: activeIndex >= 0 ? activeIndex : 14,
+    duration: 20,
+    dragFree: false,
+    watchDrag: true,
   })
 
-  const syncDateFromCarousel = useCallback(() => {
+  useEffect(() => {
+    setDisplayDate(date)
+  }, [date])
+
+  const syncDisplayDateFromScroll = useCallback(() => {
+    if (!api) {
+      return
+    }
+
+    const index = resolveActiveIndex(api, dates.length)
+    const nextDate = dates[index]
+    if (nextDate) {
+      setDisplayDate(nextDate)
+    }
+  }, [api, dates])
+
+  const syncUrlFromCarousel = useCallback(() => {
     if (!api) {
       return
     }
@@ -45,11 +76,14 @@ export function DietDayCarousel({
       return
     }
 
-    api.on('settle', syncDateFromCarousel)
+    syncDisplayDateFromScroll()
+    api.on('scroll', syncDisplayDateFromScroll)
+    api.on('select', syncUrlFromCarousel)
     return () => {
-      api.off('settle', syncDateFromCarousel)
+      api.off('scroll', syncDisplayDateFromScroll)
+      api.off('select', syncUrlFromCarousel)
     }
-  }, [api, syncDateFromCarousel])
+  }, [api, syncDisplayDateFromScroll, syncUrlFromCarousel])
 
   useEffect(() => {
     if (!api) {
@@ -62,6 +96,11 @@ export function DietDayCarousel({
     }
   }, [api, date, dates])
 
+  function handleChevronChange(nextDate: string) {
+    setDisplayDate(nextDate)
+    onDateChange(nextDate)
+  }
+
   return (
     <div className={cn('space-y-3', className)}>
       <div className="flex items-center justify-between gap-2">
@@ -70,16 +109,16 @@ export function DietDayCarousel({
           variant="outline"
           size="icon"
           className="size-9 rounded-full"
-          onClick={() => onDateChange(addDays(date, -1))}
+          onClick={() => handleChevronChange(addDays(displayDate, -1))}
         >
           <ChevronLeft className="size-4" />
         </Button>
 
         <div className="text-center">
           <div className="font-display text-xl font-black text-foreground">
-            {formatFrenchDateLabel(date)}
+            {formatFrenchDateLabel(displayDate)}
           </div>
-          <div className="text-xs text-muted-foreground">{date}</div>
+          <div className="text-xs text-muted-foreground">{displayDate}</div>
         </div>
 
         <Button
@@ -87,7 +126,7 @@ export function DietDayCarousel({
           variant="outline"
           size="icon"
           className="size-9 rounded-full"
-          onClick={() => onDateChange(addDays(date, 1))}
+          onClick={() => handleChevronChange(addDays(displayDate, 1))}
         >
           <ChevronRight className="size-4" />
         </Button>

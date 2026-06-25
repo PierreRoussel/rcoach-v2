@@ -48,10 +48,7 @@ export function useUpsertNutritionSettings() {
       const data = await graphqlRequest<{
         insert_nutrition_settings_one: NutritionSettings
       }>(nhost, UPSERT_NUTRITION_SETTINGS, {
-        object: {
-          user_id: user.id,
-          ...input,
-        },
+        object: input,
       })
 
       return data.insert_nutrition_settings_one

@@ -39,7 +39,7 @@ export function CalorieRingGauge({ consumed, target, className }: CalorieRingGau
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <div className="font-display text-3xl font-black text-foreground">{remaining}</div>
+        <div className="font-display text-3xl font-black text-foreground">{Math.round(remaining)}</div>
         <div className="text-sm font-semibold text-muted-foreground">Restantes</div>
       </div>
     </div>

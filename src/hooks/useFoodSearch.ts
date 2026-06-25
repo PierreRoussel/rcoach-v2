@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { SEARCH_MY_FOODS } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { searchOffProducts, type OffFoodDraft } from '@/lib/nutrition/open-food-facts'
@@ -42,9 +43,14 @@ function mapDbFood(food: Food): FoodSearchResult {
   }
 }
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export function useFoodSearch(query: string, enabled = true) {
   const { nhost, isAuthenticated } = useAuth()
-  const trimmed = query.trim()
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
+  const trimmed = debouncedQuery.trim()
+  const isDebouncing =
+    enabled && query.trim() !== trimmed && query.trim().length >= 2
 
   const dbQuery = useQuery({
     queryKey: ['food-search-db', trimmed],
@@ -100,8 +106,8 @@ export function useFoodSearch(query: string, enabled = true) {
 
   return {
     results,
-    isLoading: dbQuery.isLoading || offQuery.isLoading,
-    isFetching: dbQuery.isFetching || offQuery.isFetching,
+    isLoading: isDebouncing || dbQuery.isLoading || offQuery.isLoading,
+    isFetching: isDebouncing || dbQuery.isFetching || offQuery.isFetching,
     error: dbQuery.error ?? offQuery.error,
   }
 }

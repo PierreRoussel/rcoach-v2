@@ -1,18 +1,17 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
 import { z } from 'zod'
 
 import { MealEntryRow } from '@/components/nutrition/MealEntryRow'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader } from '@/design-system'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
-import { MEAL_LABELS, type MealType } from '@/lib/nutrition/types'
 import { toDateKey } from '@/lib/nutrition/dates'
-import { useState } from 'react'
-import type { MealLogEntry } from '@/lib/nutrition/types'
+import { MEAL_LABELS, type MealLogEntry, type MealType } from '@/lib/nutrition/types'
 
 const mealSearchSchema = z.object({
   date: z.string().optional(),
@@ -38,15 +37,39 @@ function MealDetailPage() {
   const { data: daySummary } = useNutritionDay(date, settings)
   const { updateEntry, deleteEntry } = useMealLogMutations()
   const [editingEntry, setEditingEntry] = useState<MealLogEntry | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const meal = daySummary?.meals.find((item) => item.mealType === mealType)
 
+  async function handleDeleteEntry(entryId: string) {
+    setDeleteError(null)
+
+    try {
+      await deleteEntry.mutateAsync({ id: entryId, loggedDate: date })
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : 'Impossible de supprimer cet aliment.',
+      )
+    }
+  }
+
   return (
     <div className="space-y-4 pb-24">
-      <PageHeader
-        title={MEAL_LABELS[mealType as MealType]}
-        description={`${Math.round(meal?.totals.calories ?? 0)} / ${meal?.targetCalories ?? 0} Cal`}
-      />
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
+          <Link to="/app/diet" search={{ date }} aria-label="Retour au journal">
+            <ArrowLeft className="size-5" />
+          </Link>
+        </Button>
+        <div className="min-w-0 space-y-1">
+          <h1 className="font-display text-2xl font-black text-foreground">
+            {MEAL_LABELS[mealType as MealType]}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {Math.round(meal?.totals.calories ?? 0)} / {meal?.targetCalories ?? 0} Cal
+          </p>
+        </div>
+      </div>
 
       <Card>
         <CardContent className="grid grid-cols-4 gap-2 p-4 text-center text-sm">
@@ -71,6 +94,9 @@ function MealDetailPage() {
 
       <Card>
         <CardContent className="px-4 py-2">
+          {deleteError ? (
+            <p className="py-2 text-sm text-destructive">{deleteError}</p>
+          ) : null}
           {(meal?.entries ?? []).length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Aucun aliment pour ce repas.
@@ -85,7 +111,7 @@ function MealDetailPage() {
                 quantityG={entry.quantity_g}
                 servings={entry.servings}
                 onEdit={() => setEditingEntry(entry)}
-                onDelete={() => void deleteEntry.mutateAsync({ id: entry.id, loggedDate: date })}
+                onDelete={() => void handleDeleteEntry(entry.id)}
               />
             ))
           )}

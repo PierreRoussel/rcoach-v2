@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   DayPicker,
   type DayButtonProps,
@@ -75,6 +75,28 @@ function DayMarker({ modifiers }: { modifiers: DayButtonProps['modifiers'] }) {
         aria-hidden
         className="pointer-events-none absolute bottom-0 left-1/2 z-[2] size-2 -translate-x-1/2 rounded-full bg-muted-foreground/50"
       />
+    )
+  }
+
+  if (modifiers.nutritionOk) {
+    return (
+      <span
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] flex size-3.5 -translate-x-1/2 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm"
+      >
+        <Check className="size-2.5 stroke-[3]" />
+      </span>
+    )
+  }
+
+  if (modifiers.nutritionOver) {
+    return (
+      <span
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] flex size-3.5 -translate-x-1/2 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+      >
+        <Check className="size-2.5 stroke-[3]" />
+      </span>
     )
   }
 

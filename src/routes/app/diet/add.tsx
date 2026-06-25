@@ -1,11 +1,12 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { FoodQuickActions, FoodSearchList } from '@/components/nutrition/FoodSearchList'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { Input } from '@/components/ui/input'
-import { PageHeader } from '@/design-system'
+import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useFrequentFoods } from '@/hooks/useFrequentFoods'
 import { useFoodSearch, type FoodSearchResult } from '@/hooks/useFoodSearch'
@@ -137,7 +138,30 @@ function AddFoodPage() {
 
   return (
     <div className="space-y-4 pb-8">
-      <PageHeader title="Ajouter un aliment" description="Recherchez, scannez ou creez un aliment." />
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
+          {search.mealType ? (
+            <Link
+              to="/app/diet/meals/$mealType"
+              params={{ mealType: search.mealType }}
+              search={{ date }}
+              aria-label="Retour au repas"
+            >
+              <ArrowLeft className="size-5" />
+            </Link>
+          ) : (
+            <Link to="/app/diet" search={{ date }} aria-label="Retour au journal">
+              <ArrowLeft className="size-5" />
+            </Link>
+          )}
+        </Button>
+        <div className="min-w-0 space-y-1">
+          <h1 className="font-display text-2xl font-black text-foreground">Ajouter un aliment</h1>
+          <p className="text-sm text-muted-foreground">
+            Recherchez, scannez ou creez un aliment.
+          </p>
+        </div>
+      </div>
 
       <Input
         ref={searchInputRef}

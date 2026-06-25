@@ -157,8 +157,8 @@ function PlanningPage() {
           className="relative"
         />
         <div className="relative mt-4 flex flex-wrap gap-2">
-          <Pill tone="accent">
-            <Flame className="size-3" />
+          <Pill tone="solid-primary">
+            <Flame className="size-3 fill-current" />
             {weeklyStreak} sem. de suite
           </Pill>
           <Pill tone="secondary">

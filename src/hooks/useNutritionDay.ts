@@ -114,9 +114,11 @@ export function useNutritionDay(date: string, settings: NutritionSettings | null
       if (cached?.entries.length) {
         const knownIds = new Set(entries.map((entry) => entry.id))
         for (const pendingEntry of cached.entries) {
-          if (!knownIds.has(pendingEntry.id)) {
-            entries = [...entries, pendingEntry as unknown as MealLogEntry]
+          if (!pendingEntry.pending || knownIds.has(pendingEntry.id)) {
+            continue
           }
+
+          entries = [...entries, pendingEntry as unknown as MealLogEntry]
         }
       }
 

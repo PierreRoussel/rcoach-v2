@@ -15,8 +15,8 @@ export function WeeklyStreakIndicator({
 }: WeeklyStreakIndicatorProps) {
   return (
     <span title={formatWeeklyStreakLabel(streak)}>
-      <Pill tone="accent" className={cn('shrink-0', className)}>
-        <Flame className="size-3" />
+      <Pill tone="solid-primary" className={cn('shrink-0', className)}>
+        <Flame className="size-3 fill-current" />
         {streak}
       </Pill>
     </span>

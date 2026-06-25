@@ -47,6 +47,10 @@ export async function syncMealEntryUpdate(
 
 export async function syncMealEntryDelete(_nhost: NhostClient, id: string) {
   await enqueueNutritionMutation('delete_meal_entry', { id })
+  await removeMealEntryFromDayCache(id)
+}
+
+export async function removeMealEntryFromDayCache(id: string) {
   await removeCachedMealEntry(id)
 }
 

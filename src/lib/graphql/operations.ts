@@ -1119,6 +1119,18 @@ export const UPSERT_NUTRITION_SETTINGS = `
   }
 `
 
+export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
+  query ListMealLogEntriesForRange($from: date!, $to: date!) {
+    meal_log_entries(
+      where: { logged_date: { _gte: $from, _lte: $to } }
+      order_by: [{ logged_date: asc }, { created_at: asc }]
+    ) {
+      logged_date
+      calories
+    }
+  }
+`
+
 export const LIST_MEAL_LOG_ENTRIES_FOR_DATE = `
   query ListMealLogEntriesForDate($date: date!) {
     meal_log_entries(
