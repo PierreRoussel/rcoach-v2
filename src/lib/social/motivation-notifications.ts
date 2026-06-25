@@ -63,3 +63,15 @@ export function buildMotivationNotificationsByFriend(
 
   return byFriend
 }
+
+export function toReceivedMotivationNotification(
+  motivation: FriendMotivation,
+): MotivationNotification {
+  return {
+    kind: 'received',
+    motivation,
+    friendId: motivation.sender_id,
+    bannerEmoji: motivation.emoji,
+    bannerLabel: 'Nouveau message de motivation',
+  }
+}

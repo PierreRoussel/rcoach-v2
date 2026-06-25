@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { History, UtensilsCrossed } from 'lucide-react'
 
 import { RecentWorkoutsFeed } from '@/components/workout/RecentWorkoutsFeed'
+import { MotivationHomeNotificationTile } from '@/components/social/MotivationHomeNotificationTile'
 import { NutritionHomeSummaryTile } from '@/components/nutrition/NutritionHomeSummaryTile'
 import { Button } from '@/components/ui/button'
 import { AnimateIn, PageHeader, StaggerGroup } from '@/design-system'
@@ -45,11 +46,13 @@ function AppHomePage() {
         </StaggerGroup>
       </AnimateIn>
 
-      <AnimateIn delay={280}>
+      <MotivationHomeNotificationTile />
+
+      <AnimateIn delay={320}>
         <NutritionHomeSummaryTile />
       </AnimateIn>
 
-      <AnimateIn delay={400}>
+      <AnimateIn delay={440}>
         <RecentWorkoutsFeed limit={5} showViewAll />
       </AnimateIn>
     </div>

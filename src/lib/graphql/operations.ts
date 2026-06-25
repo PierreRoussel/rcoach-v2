@@ -1176,6 +1176,86 @@ export const UPSERT_NUTRITION_SETTINGS = `
   }
 `
 
+export type WeightGoalInput = {
+  target_weight_kg: number
+  start_weight_kg: number
+  current_weight_kg: number
+  goal_type: 'lose' | 'maintain' | 'gain'
+  last_milestone_step?: number
+}
+
+export const GET_WEIGHT_GOAL = `
+  query GetWeightGoal($userId: uuid!) {
+    weight_goals_by_pk(user_id: $userId) {
+      user_id
+      target_weight_kg
+      start_weight_kg
+      current_weight_kg
+      goal_type
+      last_milestone_step
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const UPSERT_WEIGHT_GOAL = `
+  mutation UpsertWeightGoal($object: weight_goals_insert_input!) {
+    insert_weight_goals_one(
+      object: $object
+      on_conflict: {
+        constraint: weight_goals_pkey
+        update_columns: [
+          target_weight_kg
+          start_weight_kg
+          current_weight_kg
+          goal_type
+          last_milestone_step
+          updated_at
+        ]
+      }
+    ) {
+      user_id
+      target_weight_kg
+      start_weight_kg
+      current_weight_kg
+      goal_type
+      last_milestone_step
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const UPDATE_WEIGHT_GOAL = `
+  mutation UpdateWeightGoal(
+    $userId: uuid!
+    $changes: weight_goals_set_input!
+  ) {
+    update_weight_goals_by_pk(
+      pk_columns: { user_id: $userId }
+      _set: $changes
+    ) {
+      user_id
+      target_weight_kg
+      start_weight_kg
+      current_weight_kg
+      goal_type
+      last_milestone_step
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const DELETE_WEIGHT_GOAL = `
+  mutation DeleteWeightGoal($userId: uuid!) {
+    delete_weight_goals_by_pk(user_id: $userId) {
+      user_id
+    }
+  }
+`
+
 export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
   query ListMealLogEntriesForRange($from: date!, $to: date!) {
     meal_log_entries(

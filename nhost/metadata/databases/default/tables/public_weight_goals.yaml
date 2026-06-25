@@ -1,0 +1,58 @@
+table:
+  name: weight_goals
+  schema: public
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - user_id
+        - target_weight_kg
+        - start_weight_kg
+        - current_weight_kg
+        - goal_type
+        - last_milestone_step
+        - created_at
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - target_weight_kg
+        - start_weight_kg
+        - current_weight_kg
+        - goal_type
+        - last_milestone_step
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - target_weight_kg
+        - start_weight_kg
+        - current_weight_kg
+        - goal_type
+        - last_milestone_step
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id

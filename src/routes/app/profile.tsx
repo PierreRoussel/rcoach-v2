@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
 import { AvatarEditor } from '@/components/social/AvatarEditor'
 import { FriendsSection } from '@/components/social/FriendsSection'
+import { GoalsSection } from '@/components/goals/GoalsSection'
 import { PageHeader, ThemeSetting } from '@/design-system'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useCalendarData } from '@/hooks/useCalendarData'
@@ -245,6 +246,8 @@ function ProfilePage() {
   return (
     <div className="space-y-4">
       <FriendsSection />
+
+      <GoalsSection />
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
