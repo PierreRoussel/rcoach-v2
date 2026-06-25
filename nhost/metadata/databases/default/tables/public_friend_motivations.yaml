@@ -33,28 +33,8 @@ insert_permissions:
   - role: user
     permission:
       check:
-        _and:
-          - sender_id:
-              _eq: X-Hasura-User-Id
-          - _exists:
-              _table:
-                name: friendships
-                schema: public
-              _where:
-                _and:
-                  - status:
-                      _eq: accepted
-                  - _or:
-                      - _and:
-                          - requester_id:
-                              _eq: X-Hasura-User-Id
-                          - addressee_id:
-                              _eq: $recipient_id
-                      - _and:
-                          - addressee_id:
-                              _eq: X-Hasura-User-Id
-                          - requester_id:
-                              _eq: $recipient_id
+        sender_id:
+          _eq: X-Hasura-User-Id
       set:
         sender_id: x-hasura-User-Id
       columns:
