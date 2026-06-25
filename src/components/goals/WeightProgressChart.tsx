@@ -49,8 +49,10 @@ type WeeklyChartRow = {
 const WEEK_OPTS = { weekStartsOn: 1 as const }
 const VISIBLE_WEEKS = 9
 const CHART_HEIGHT = 288
-const Y_AXIS_WIDTH = 36
-const CHART_MARGIN = { top: 8, right: 16, left: 4, bottom: 24 }
+const Y_AXIS_WIDTH = 40
+const CHART_MARGIN_TOP = 8
+const CHART_MARGIN_RIGHT = 56
+const CHART_MARGIN_BOTTOM = 24
 const MIN_WEEK_WIDTH = 28
 
 function buildWeightByWeek(entries: WeightEntry[]) {
@@ -191,6 +193,66 @@ function buildWeeklyChartData(
   )
 }
 
+function buildYDomain(
+  entries: WeightEntry[],
+  goal: WeightGoal,
+): [number, number] {
+  const weights = [
+    ...entries.map((entry) => Number(entry.weight_kg)),
+    goal.target_weight_kg,
+    goal.current_weight_kg,
+    goal.start_weight_kg,
+  ]
+
+  const minWeight = Math.min(...weights) - 1
+  const maxWeight = Math.max(...weights) + 1
+  return [minWeight, maxWeight]
+}
+
+function buildYAxisTicks(min: number, max: number, count = 4) {
+  if (count <= 1 || min === max) {
+    return [min]
+  }
+
+  const step = (max - min) / (count - 1)
+  return Array.from({ length: count }, (_, index) =>
+    Math.round((min + step * index) * 10) / 10,
+  )
+}
+
+function formatYAxisTick(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function WeightYAxis({ domain }: { domain: [number, number] }) {
+  const [min, max] = domain
+  const ticks = buildYAxisTicks(min, max)
+  const plotHeight = CHART_HEIGHT - CHART_MARGIN_TOP - CHART_MARGIN_BOTTOM
+
+  return (
+    <div
+      className="relative shrink-0 pl-3"
+      style={{ width: Y_AXIS_WIDTH, height: CHART_HEIGHT }}
+      aria-hidden
+    >
+      {ticks.map((tick) => {
+        const ratio = ticks.length === 1 ? 0 : (tick - min) / (max - min)
+        const top = CHART_MARGIN_TOP + plotHeight - ratio * plotHeight
+
+        return (
+          <span
+            key={tick}
+            className="absolute right-0 -translate-y-1/2 text-[10px] leading-none tabular-nums text-muted-foreground"
+            style={{ top }}
+          >
+            {formatYAxisTick(tick)}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 function MonthTick({
   x,
   y,
@@ -242,29 +304,12 @@ export function WeightProgressChart({
     () => buildWeeklyChartData(weeks, weightByWeek, goal, projection),
     [weeks, weightByWeek, goal, projection],
   )
+  const yDomain = useMemo(() => buildYDomain(entries, goal), [entries, goal])
 
   const plotWidth = Math.max(
     weeks.length * weekWidth,
     weekWidth * VISIBLE_WEEKS,
   )
-  const totalChartWidth =
-    CHART_MARGIN.left + Y_AXIS_WIDTH + plotWidth + CHART_MARGIN.right
-
-  const yDomain = useMemo(() => {
-    const weights = [
-      ...entries.map((entry) => Number(entry.weight_kg)),
-      goal.target_weight_kg,
-      goal.current_weight_kg,
-    ]
-
-    if (weights.length === 0) {
-      return [0, 100] as [number, number]
-    }
-
-    const minWeight = Math.min(...weights) - 1
-    const maxWeight = Math.max(...weights) + 1
-    return [minWeight, maxWeight] as [number, number]
-  }, [entries, goal])
 
   useEffect(() => {
     const node = viewportRef.current
@@ -287,16 +332,12 @@ export function WeightProgressChart({
 
   useLayoutEffect(() => {
     const node = viewportRef.current
-    if (!node || totalChartWidth <= 0) {
+    if (!node || plotWidth <= 0) {
       return
     }
 
-    node.scrollLeft = getScrollLeftForCurrentWeekCentered(
-      node,
-      weeks,
-      plotWidth,
-    )
-  }, [totalChartWidth, weeks, plotWidth])
+    node.scrollLeft = getScrollLeftForCurrentWeekCentered(node, weeks, plotWidth)
+  }, [plotWidth, weeks, weekWidth])
 
   if (weightByWeek.size === 0) {
     return (
@@ -307,17 +348,24 @@ export function WeightProgressChart({
   }
 
   return (
-    <div className={cn('flex w-full', className)}>
+    <div className={cn('flex w-full overflow-hidden', className)}>
+      <WeightYAxis domain={yDomain} />
+
       <div
-        className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:thin]"
         ref={viewportRef}
+        className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:thin]"
       >
-        <div style={{ width: totalChartWidth, height: CHART_HEIGHT }}>
+        <div style={{ width: plotWidth, height: CHART_HEIGHT }}>
           <LineChart
-            width={totalChartWidth}
+            width={plotWidth}
             height={CHART_HEIGHT}
             data={chartData}
-            margin={CHART_MARGIN}
+            margin={{
+              top: CHART_MARGIN_TOP,
+              right: CHART_MARGIN_RIGHT,
+              left: 0,
+              bottom: CHART_MARGIN_BOTTOM,
+            }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -332,17 +380,7 @@ export function WeightProgressChart({
               tick={(props) => <MonthTick {...props} chartData={chartData} />}
               height={32}
             />
-            <YAxis
-              width={Y_AXIS_WIDTH}
-              domain={yDomain}
-              allowDataOverflow
-              tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
-              tickFormatter={(value) =>
-                Number.isInteger(value) ? String(value) : value.toFixed(1)
-              }
-              axisLine={false}
-              tickLine={false}
-            />
+            <YAxis hide domain={yDomain} width={0} />
             <Tooltip
               labelFormatter={(_, payload) => {
                 const row = payload?.[0]?.payload as WeeklyChartRow | undefined
@@ -368,11 +406,14 @@ export function WeightProgressChart({
               y={goal.target_weight_kg}
               stroke="var(--chart-2)"
               strokeDasharray="6 4"
+              strokeWidth={2}
+              ifOverflow="extendDomain"
               label={{
                 value: `Cible ${formatWeightKg(goal.target_weight_kg)}`,
                 position: 'insideTopRight',
-                fill: 'var(--muted-foreground)',
+                fill: 'var(--chart-2)',
                 fontSize: 11,
+                fontWeight: 600,
               }}
             />
             <Line
@@ -391,8 +432,8 @@ export function WeightProgressChart({
               stroke="var(--chart-2)"
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={false}
-              activeDot={{ r: 4 }}
+              dot={{ r: 3, fill: 'var(--chart-2)' }}
+              activeDot={{ r: 5 }}
               connectNulls
               isAnimationActive={false}
             />
@@ -419,9 +460,8 @@ function getScrollLeftForCurrentWeekCentered(
     return maxScroll
   }
 
-  const plotLeft = CHART_MARGIN.left + Y_AXIS_WIDTH
   const weekStep = plotWidth / weeks.length
-  const weekCenter = plotLeft + (currentIndex + 0.5) * weekStep
+  const weekCenter = (currentIndex + 0.5) * weekStep
   const viewportCenter = viewport.clientWidth / 2
 
   return Math.min(maxScroll, Math.max(0, weekCenter - viewportCenter))

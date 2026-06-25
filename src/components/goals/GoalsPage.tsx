@@ -211,7 +211,7 @@ export function GoalsPage() {
                 défiler pour parcourir la timeline (~2 mois visibles).
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-0 pb-2">
+            <CardContent className="px-3 pb-2 pt-0">
               {entriesLoading ? (
                 <p className="px-5 text-sm text-muted-foreground">Chargement...</p>
               ) : (
