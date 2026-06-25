@@ -1,4 +1,4 @@
-import { Clock, Dumbbell, Heart, Trophy } from 'lucide-react'
+import { Clock, Dumbbell, Flame, Heart, Trophy } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -13,6 +13,7 @@ import { StatCard } from '@/design-system'
 import { WorkoutPersonalRecordsList } from '@/components/workout/WorkoutPersonalRecordsList'
 import type { HeartRateRecap } from '@/lib/health/read-heart-rate-summary'
 import {
+  formatWorkoutCalories,
   formatWorkoutDuration,
   formatWorkoutVolume,
   type PersonalRecordHit,
@@ -24,6 +25,7 @@ export type WorkoutRecapData = {
   endedAt: string
   volumeKg: number
   completedSets: number
+  estimatedCaloriesKcal: number
   records: PersonalRecordHit[]
   heartRate?: HeartRateRecap | null
 }
@@ -91,12 +93,19 @@ export function WorkoutRecapDialog({
           <p className="font-display text-base font-black text-foreground">{recap.title}</p>
         </DialogHeader>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <StatCard
             icon={<Clock className="size-4 text-primary" />}
             value={duration ?? '—'}
             label="Durée"
             tone="primary"
+            className="p-3"
+          />
+          <StatCard
+            icon={<Flame className="size-4 text-orange-500" />}
+            value={formatWorkoutCalories(recap.estimatedCaloriesKcal)}
+            label="Dépense est."
+            tone="accent"
             className="p-3"
           />
           <StatCard
@@ -110,7 +119,7 @@ export function WorkoutRecapDialog({
             icon={<Trophy className="size-4 text-accent-foreground" />}
             value={String(recap.records.length)}
             label="Records"
-            tone="accent"
+            tone="purple"
             className="p-3"
           />
         </div>

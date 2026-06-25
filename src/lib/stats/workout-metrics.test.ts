@@ -5,6 +5,8 @@ import {
   countWorkoutPersonalRecords,
   detectWorkoutPersonalRecords,
   draftToWorkoutSummary,
+  estimateWorkoutCalories,
+  formatWorkoutCalories,
 } from '@/lib/stats/workout-metrics'
 
 function buildWorkout(
@@ -159,5 +161,42 @@ describe('draftToWorkoutSummary', () => {
       reps: 10,
       set_type: 'normal',
     })
+  })
+})
+
+describe('estimateWorkoutCalories', () => {
+  it('estimates calories from duration and body weight', () => {
+    const kcal = estimateWorkoutCalories({
+      startedAt: '2026-06-20T10:00:00.000Z',
+      endedAt: '2026-06-20T11:00:00.000Z',
+      volumeKg: 3000,
+      completedSets: 12,
+      bodyWeightKg: 75,
+    })
+
+    expect(kcal).toBeGreaterThan(200)
+    expect(kcal).toBeLessThan(500)
+  })
+
+  it('uses a default body weight when none is provided', () => {
+    const withWeight = estimateWorkoutCalories({
+      startedAt: '2026-06-20T10:00:00.000Z',
+      endedAt: '2026-06-20T10:45:00.000Z',
+      volumeKg: 1500,
+      completedSets: 8,
+      bodyWeightKg: 70,
+    })
+    const fallback = estimateWorkoutCalories({
+      startedAt: '2026-06-20T10:00:00.000Z',
+      endedAt: '2026-06-20T10:45:00.000Z',
+      volumeKg: 1500,
+      completedSets: 8,
+    })
+
+    expect(fallback).toBe(withWeight)
+  })
+
+  it('formats calories for display', () => {
+    expect(formatWorkoutCalories(312)).toBe('312 kcal')
   })
 })

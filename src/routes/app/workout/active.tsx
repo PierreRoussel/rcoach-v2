@@ -22,6 +22,7 @@ import {
 import { FormMessage } from '@/components/ui/form'
 import { PageHeader, Pill } from '@/design-system'
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
+import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
 import { useMyWorkouts } from '@/hooks/useWorkouts'
@@ -35,6 +36,7 @@ import {
   computeDraftVolume,
   detectWorkoutPersonalRecords,
   draftToWorkoutSummary,
+  estimateWorkoutCalories,
 } from '@/lib/stats/workout-metrics'
 import {
   buildCircuitSteps,
@@ -64,6 +66,7 @@ function ActiveWorkoutPage() {
   const { nhost } = useAuth()
   const navigate = useNavigate()
   const { data: profile } = useMyProfile()
+  const { data: nutritionSettings } = useNutritionSettings()
   const { data: allWorkouts } = useMyWorkouts()
   const rpeEnabled = profile?.rpe_enabled ?? false
   const {
@@ -221,6 +224,7 @@ function ActiveWorkoutPage() {
       void pushWorkoutSession(draft, endedAt).catch(() => undefined)
 
       const heartRate = await heartRatePromise
+      const volumeKg = computeDraftVolume(validatedExercises)
       const workoutSummary = draftToWorkoutSummary(
         {
           title: draft.title,
@@ -234,8 +238,16 @@ function ActiveWorkoutPage() {
         title: draft.title,
         startedAt: draft.startedAt,
         endedAt,
-        volumeKg: computeDraftVolume(validatedExercises),
+        volumeKg,
         completedSets: completedCount,
+        estimatedCaloriesKcal: estimateWorkoutCalories({
+          startedAt: draft.startedAt,
+          endedAt,
+          volumeKg,
+          completedSets: completedCount,
+          bodyWeightKg: nutritionSettings?.weight_kg,
+          avgHeartRateBpm: heartRate?.avgBpm,
+        }),
         records: detectWorkoutPersonalRecords(workoutSummary, allWorkouts ?? []),
         heartRate,
       })

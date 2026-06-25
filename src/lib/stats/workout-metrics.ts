@@ -143,6 +143,69 @@ export function formatWorkoutVolume(kg: number): string {
   return `${new Intl.NumberFormat('fr-FR').format(Math.round(kg))} kg`
 }
 
+const DEFAULT_BODY_WEIGHT_KG = 70
+
+export function getWorkoutDurationMinutes(startedAt: string, endedAt: string): number {
+  const minutes = Math.round(
+    (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60_000,
+  )
+
+  return Math.max(1, minutes)
+}
+
+function resolveStrengthTrainingMet(
+  durationMinutes: number,
+  volumeKg: number,
+  completedSets: number,
+  avgHeartRateBpm?: number | null,
+): number {
+  const volumePerMinute = volumeKg / durationMinutes
+  let met = 4.5
+
+  if (volumePerMinute >= 80 || completedSets >= 20) {
+    met = 6
+  } else if (volumePerMinute >= 40 || completedSets >= 12) {
+    met = 5.5
+  } else if (volumePerMinute >= 15 || completedSets >= 8) {
+    met = 5
+  }
+
+  if (avgHeartRateBpm != null && avgHeartRateBpm >= 100) {
+    const heartRateBoost = Math.min(1.5, Math.max(0, (avgHeartRateBpm - 100) / 60))
+    met += heartRateBoost
+  }
+
+  return met
+}
+
+export function estimateWorkoutCalories(input: {
+  startedAt: string
+  endedAt: string
+  volumeKg: number
+  completedSets: number
+  bodyWeightKg?: number | null
+  avgHeartRateBpm?: number | null
+}): number {
+  const durationMinutes = getWorkoutDurationMinutes(input.startedAt, input.endedAt)
+  const durationHours = durationMinutes / 60
+  const bodyWeightKg =
+    input.bodyWeightKg != null && input.bodyWeightKg > 0
+      ? input.bodyWeightKg
+      : DEFAULT_BODY_WEIGHT_KG
+  const met = resolveStrengthTrainingMet(
+    durationMinutes,
+    input.volumeKg,
+    input.completedSets,
+    input.avgHeartRateBpm,
+  )
+
+  return Math.round(Math.max(1, met * bodyWeightKg * durationHours))
+}
+
+export function formatWorkoutCalories(kcal: number): string {
+  return `${new Intl.NumberFormat('fr-FR').format(kcal)} kcal`
+}
+
 type ExerciseBest = {
   volume: number
   oneRm: number
