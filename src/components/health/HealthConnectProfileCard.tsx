@@ -211,8 +211,8 @@ export function HealthConnectProfileCard() {
   }
 
   return (
-    <Card className="overflow-hidden rounded-2xl border-border">
-      <CardHeader className="bg-gradient-to-br from-soft-secondary/40 via-card to-soft-purple/20">
+    <Card className="overflow-hidden rounded-2xl border-border bg-gradient-to-br from-soft-secondary/40 via-card to-soft-purple/20">
+      <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-soft-secondary text-secondary-foreground">
@@ -220,9 +220,6 @@ export function HealthConnectProfileCard() {
             </div>
             <div>
               <CardTitle className="font-display font-black">Santé Connect</CardTitle>
-              <CardDescription className="mt-1">
-                Synchronisez vos séances avec Health Connect (Google).
-              </CardDescription>
             </div>
           </div>
           {!isLoading ? statusPill(connectionState) : null}
@@ -234,6 +231,8 @@ export function HealthConnectProfileCard() {
           <p className="text-sm text-muted-foreground">Vérification de la connexion...</p>
         ) : (
           <p className="text-sm leading-relaxed text-muted-foreground">
+            Synchronisez vos séances avec Health Connect (Google). <br />
+
             {statusDescription(connectionState)}
           </p>
         )}

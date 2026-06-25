@@ -244,12 +244,6 @@ function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        eyebrow="Compte"
-        title="Profil"
-        description="Informations du compte et préférences d'affichage."
-      />
-
       <FriendsSection />
 
       <Card className="rounded-2xl border-border">
