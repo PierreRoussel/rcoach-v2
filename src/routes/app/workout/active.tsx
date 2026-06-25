@@ -95,8 +95,9 @@ function ActiveWorkoutPage() {
     skipRest,
     finishWorkout,
     cancelWorkout,
-    getNextStepLabel,
   } = useActiveWorkoutStore()
+
+  const nextStepLabel = useActiveWorkoutStore((state) => state.getNextStepLabel())
 
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -393,7 +394,7 @@ function ActiveWorkoutPage() {
         <RestTimerBar
           restSecondsLeft={restSecondsLeft}
           restTargetSeconds={restTargetSeconds}
-          nextStepLabel={getNextStepLabel()}
+          nextStepLabel={nextStepLabel}
           onAdjust={adjustRest}
           onSkip={skipRest}
         />

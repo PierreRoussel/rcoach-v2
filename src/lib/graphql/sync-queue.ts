@@ -1,4 +1,5 @@
 import { INSERT_WORKOUT } from '@/lib/graphql/operations'
+import { flushNutritionSyncQueue } from '@/lib/graphql/nutrition-sync-queue'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { db } from '@/lib/db/dexie'
 import type { NhostClient } from '@nhost/nhost-js'
@@ -32,6 +33,8 @@ export async function flushSyncQueue(nhost: NhostClient) {
       }
     }
   }
+
+  await flushNutritionSyncQueue(nhost)
 }
 
 export async function syncWorkoutDraft(

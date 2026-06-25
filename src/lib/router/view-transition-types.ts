@@ -1,7 +1,7 @@
 const MAIN_TAB_PATTERNS = [
   /^\/app\/?$/,
   /^\/app\/sessions\/?$/,
-  /^\/app\/stats\/?$/,
+  /^\/app\/diet\/?$/,
   /^\/app\/profile\/?$/,
 ] as const
 
@@ -20,7 +20,11 @@ export function getMainTabIndex(pathname: string): number | null {
 export function resolveViewTransitionTypes(
   fromPathname: string | undefined,
   toPathname: string,
-): string[] {
+): string[] | false {
+  if (shouldSkipViewTransition(fromPathname, toPathname)) {
+    return false
+  }
+
   const fromIndex = fromPathname ? getMainTabIndex(fromPathname) : null
   const toIndex = getMainTabIndex(toPathname)
 
@@ -30,4 +34,19 @@ export function resolveViewTransitionTypes(
   }
 
   return ['fade']
+}
+
+function normalizePathname(pathname: string) {
+  return pathname.replace(/\/$/, '') || '/'
+}
+
+export function shouldSkipViewTransition(
+  fromPathname: string | undefined,
+  toPathname: string,
+) {
+  if (!fromPathname) {
+    return false
+  }
+
+  return normalizePathname(fromPathname) === normalizePathname(toPathname)
 }

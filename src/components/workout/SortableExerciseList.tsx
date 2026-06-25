@@ -69,6 +69,65 @@ function supersetAccentClass(supersetId: number) {
   return SUPERSET_ACCENTS[(supersetId - 1) % SUPERSET_ACCENTS.length]
 }
 
+type SupersetPartnerOption =
+  | {
+      type: 'superset'
+      partnerIndex: number
+      supersetId: number
+      memberNames: string[]
+    }
+  | {
+      type: 'exercise'
+      partnerIndex: number
+      exerciseName: string
+    }
+
+function buildSupersetPartnerOptions(
+  exercises: ActiveExerciseEntry[],
+  fromIndex: number,
+): SupersetPartnerOption[] {
+  const options: SupersetPartnerOption[] = []
+  const seenSupersetIds = new Set<number>()
+
+  for (let itemIndex = 0; itemIndex < exercises.length; itemIndex += 1) {
+    if (itemIndex === fromIndex) {
+      continue
+    }
+
+    const item = exercises[itemIndex]
+    if (!item) {
+      continue
+    }
+
+    if (item.supersetId != null) {
+      if (seenSupersetIds.has(item.supersetId)) {
+        continue
+      }
+
+      seenSupersetIds.add(item.supersetId)
+      const members = exercises
+        .map((exercise, exerciseIndex) => ({ exercise, exerciseIndex }))
+        .filter(({ exercise }) => exercise.supersetId === item.supersetId)
+
+      options.push({
+        type: 'superset',
+        partnerIndex: members[0]?.exerciseIndex ?? itemIndex,
+        supersetId: item.supersetId,
+        memberNames: members.map(({ exercise }) => exercise.exerciseName),
+      })
+      continue
+    }
+
+    options.push({
+      type: 'exercise',
+      partnerIndex: itemIndex,
+      exerciseName: item.exerciseName,
+    })
+  }
+
+  return options
+}
+
 function ExerciseActionsMenu({
   index,
   exercises,
@@ -89,9 +148,7 @@ function ExerciseActionsMenu({
   onViewStats?: (index: number) => void
 }) {
   const exercise = exercises[index]
-  const partners = exercises
-    .map((item, itemIndex) => ({ item, itemIndex }))
-    .filter(({ itemIndex }) => itemIndex !== index)
+  const partnerOptions = buildSupersetPartnerOptions(exercises, index)
   const hasSupersetActions = onAddToSuperset && onRemoveFromSuperset
 
   if (
@@ -140,29 +197,49 @@ function ExerciseActionsMenu({
         (onOpenReorder || onReplaceRequest || onViewStats) ? (
           <DropdownMenuSeparator />
         ) : null}
-        {hasSupersetActions && partners.length > 0 ? (
+        {hasSupersetActions && partnerOptions.length > 0 ? (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Link2 className="size-4" />
               Ajouter a un superset
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-              {partners.map(({ item, itemIndex }) => (
-                <DropdownMenuItem
-                  key={item.exerciseId}
-                  onClick={() => onAddToSuperset(index, itemIndex)}
-                >
-                  {item.exerciseName ? (
-                    <DisplayExerciseName name={item.exerciseName} />
-                  ) : null}
-                </DropdownMenuItem>
-              ))}
+              {partnerOptions.map((option) => {
+                if (option.type === 'superset') {
+                  return (
+                    <DropdownMenuItem
+                      key={`superset-${option.supersetId}`}
+                      onClick={() => onAddToSuperset(index, option.partnerIndex)}
+                    >
+                      <span className="truncate">
+                        Superset {option.supersetId} (
+                        {option.memberNames.map((name, nameIndex) => (
+                          <span key={`${option.supersetId}-${name}`}>
+                            {nameIndex > 0 ? ' · ' : null}
+                            <DisplayExerciseName name={name} />
+                          </span>
+                        ))}
+                        )
+                      </span>
+                    </DropdownMenuItem>
+                  )
+                }
+
+                return (
+                  <DropdownMenuItem
+                    key={`exercise-${option.partnerIndex}`}
+                    onClick={() => onAddToSuperset(index, option.partnerIndex)}
+                  >
+                    <DisplayExerciseName name={option.exerciseName} />
+                  </DropdownMenuItem>
+                )
+              })}
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         ) : null}
         {hasSupersetActions && exercise?.supersetId != null ? (
           <>
-            {partners.length > 0 ? <DropdownMenuSeparator /> : null}
+            {partnerOptions.length > 0 ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem onClick={() => onRemoveFromSuperset(index)}>
               <Unlink className="size-4" />
               Retirer du superset

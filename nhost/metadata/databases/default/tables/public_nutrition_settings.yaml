@@ -1,0 +1,88 @@
+table:
+  name: nutrition_settings
+  schema: public
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - user_id
+        - daily_calorie_target
+        - carbs_pct
+        - protein_pct
+        - fat_pct
+        - breakfast_pct
+        - lunch_pct
+        - snack_pct
+        - dinner_pct
+        - sex
+        - age
+        - height_cm
+        - weight_kg
+        - activity_level
+        - goal
+        - calorie_adjustment
+        - tdee_calculated
+        - onboarded_at
+        - created_at
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - daily_calorie_target
+        - carbs_pct
+        - protein_pct
+        - fat_pct
+        - breakfast_pct
+        - lunch_pct
+        - snack_pct
+        - dinner_pct
+        - sex
+        - age
+        - height_cm
+        - weight_kg
+        - activity_level
+        - goal
+        - calorie_adjustment
+        - tdee_calculated
+        - onboarded_at
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - daily_calorie_target
+        - carbs_pct
+        - protein_pct
+        - fat_pct
+        - breakfast_pct
+        - lunch_pct
+        - snack_pct
+        - dinner_pct
+        - sex
+        - age
+        - height_cm
+        - weight_kg
+        - activity_level
+        - goal
+        - calorie_adjustment
+        - tdee_calculated
+        - onboarded_at
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id

@@ -273,6 +273,20 @@ function ProfilePage() {
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
+          <CardTitle className="font-display font-black">Nutrition</CardTitle>
+          <CardDescription>
+            Objectifs caloriques, macros et repartition des repas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="soft" asChild>
+            <Link to="/app/diet/settings">Reglages nutrition</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
           <CardTitle className="font-display font-black">Identite</CardTitle>
           <CardDescription>
             Mettez a jour votre nom et vos unites de mesure.

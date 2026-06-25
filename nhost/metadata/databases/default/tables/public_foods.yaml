@@ -1,0 +1,125 @@
+table:
+  name: foods
+  schema: public
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+array_relationships:
+  - name: meal_log_entries
+    using:
+      foreign_key_constraint_on:
+        column: food_id
+        table:
+          name: meal_log_entries
+          schema: public
+  - name: food_favorites
+    using:
+      foreign_key_constraint_on:
+        column: food_id
+        table:
+          name: food_favorites
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - user_id
+        - barcode
+        - name
+        - brand
+        - calories
+        - carbs_g
+        - protein_g
+        - fat_g
+        - salt_g
+        - sugar_g
+        - saturated_fat_g
+        - serving_size_g
+        - serving_label
+        - source
+        - off_product_id
+        - created_at
+        - updated_at
+      filter:
+        _or:
+          - user_id:
+              _eq: X-Hasura-User-Id
+          - source:
+              _eq: open_food_facts
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        source:
+          _eq: user
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - barcode
+        - name
+        - brand
+        - calories
+        - carbs_g
+        - protein_g
+        - fat_g
+        - salt_g
+        - sugar_g
+        - saturated_fat_g
+        - serving_size_g
+        - serving_label
+        - source
+        - off_product_id
+  - role: user
+    permission:
+      check:
+        _and:
+          - source:
+              _eq: open_food_facts
+          - user_id:
+              _is_null: true
+      columns:
+        - barcode
+        - name
+        - brand
+        - calories
+        - carbs_g
+        - protein_g
+        - fat_g
+        - salt_g
+        - sugar_g
+        - saturated_fat_g
+        - serving_size_g
+        - serving_label
+        - source
+        - off_product_id
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - barcode
+        - name
+        - brand
+        - calories
+        - carbs_g
+        - protein_g
+        - fat_g
+        - salt_g
+        - sugar_g
+        - saturated_fat_g
+        - serving_size_g
+        - serving_label
+        - updated_at
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id

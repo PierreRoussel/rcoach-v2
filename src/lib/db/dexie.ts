@@ -2,10 +2,21 @@ import Dexie, { type EntityTable } from 'dexie'
 
 export type SyncQueueItem = {
   id?: number
-  type: 'insert_workout'
+  type:
+    | 'insert_workout'
+    | 'insert_meal_entry'
+    | 'update_meal_entry'
+    | 'delete_meal_entry'
+    | 'upsert_food'
   payload: string
   createdAt: string
   attempts: number
+}
+
+export type NutritionDayCache = {
+  date: string
+  entries: Array<Record<string, unknown> & { id: string; pending?: boolean }>
+  updatedAt: string
 }
 
 export type ActiveSetDraft = {
@@ -47,6 +58,7 @@ export type ActiveWorkoutDraft = {
 class RCoachDB extends Dexie {
   syncQueue!: EntityTable<SyncQueueItem, 'id'>
   activeDraft!: EntityTable<ActiveWorkoutDraft, 'id'>
+  nutritionDayCache!: EntityTable<NutritionDayCache, 'date'>
 
   constructor() {
     super('rcoach-v2')
@@ -79,6 +91,12 @@ class RCoachDB extends Dexie {
             }
           })
       })
+
+    this.version(3).stores({
+      syncQueue: '++id, type, createdAt',
+      activeDraft: 'id',
+      nutritionDayCache: 'date',
+    })
   }
 }
 

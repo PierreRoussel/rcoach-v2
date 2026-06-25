@@ -90,7 +90,15 @@ function ExerciseStatsDetailPage() {
   return (
     <div className="space-y-4 pb-8">
       <Button variant="ghost" size="sm" className="-ml-2 rounded-full" asChild>
-        <Link to="/app/stats">
+        <Link
+          to="/app/sessions"
+          search={{ tab: 'stats' }}
+          onClick={() => {
+            if (from === 'featured') {
+              markStatsScrollToFeatured()
+            }
+          }}
+        >
           <ArrowLeft className="size-4" />
           Statistiques
         </Link>

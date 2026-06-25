@@ -6,6 +6,8 @@ import {
   GET_WORKOUT_BY_ID,
   GET_WORKOUT_BY_ID_WITHOUT_SHARE,
   LIST_MY_WORKOUTS,
+  HISTORY_WORKOUTS_INITIAL_PAGE_SIZE,
+  HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
   LIST_MY_WORKOUTS_PAGE,
   WORKOUTS_PAGE_SIZE,
   type WorkoutDetail,
@@ -37,34 +39,90 @@ export type WorkoutsPageResult = {
   nextOffset: number | undefined
 }
 
-export function useMyWorkoutsInfinite(pageSize = WORKOUTS_PAGE_SIZE) {
+export type MyWorkoutsInfiniteOptions = {
+  initialPageSize?: number
+  pageSize?: number
+}
+
+function resolveMyWorkoutsInfiniteOptions(
+  options: number | MyWorkoutsInfiniteOptions = {},
+): { initialPageSize: number; pageSize: number } {
+  if (typeof options === 'number') {
+    return { initialPageSize: options, pageSize: options }
+  }
+
+  const pageSize = options.pageSize ?? WORKOUTS_PAGE_SIZE
+
+  return {
+    initialPageSize: options.initialPageSize ?? pageSize,
+    pageSize,
+  }
+}
+
+export function resolveWorkoutsPageLimit(
+  offset: number,
+  initialPageSize: number,
+  pageSize: number,
+): number {
+  return offset === 0 ? initialPageSize : pageSize
+}
+
+export function resolveWorkoutsNextOffset(
+  offset: number,
+  loadedCount: number,
+  initialPageSize: number,
+  pageSize: number,
+): number | undefined {
+  const expectedLimit = resolveWorkoutsPageLimit(offset, initialPageSize, pageSize)
+
+  if (loadedCount < expectedLimit) {
+    return undefined
+  }
+
+  return offset + loadedCount
+}
+
+export function useMyWorkoutsInfinite(
+  options: number | MyWorkoutsInfiniteOptions = {},
+) {
+  const { initialPageSize, pageSize } = resolveMyWorkoutsInfiniteOptions(options)
   const { nhost, isAuthenticated } = useAuth()
 
   return useInfiniteQuery({
-    queryKey: ['workouts', 'mine', 'infinite', pageSize],
+    queryKey: ['workouts', 'mine', 'infinite', initialPageSize, pageSize],
     enabled: isAuthenticated,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
+      const offset = pageParam
+      const limit = resolveWorkoutsPageLimit(offset, initialPageSize, pageSize)
       const data = await graphqlRequest<{ workouts: WorkoutSummary[] }>(
         nhost,
         LIST_MY_WORKOUTS_PAGE,
         {
-          limit: pageSize,
-          offset: pageParam,
+          limit,
+          offset,
         },
       )
 
       const workouts = data.workouts
-      const nextOffset = pageParam + workouts.length
 
       return {
         workouts,
-        nextOffset:
-          workouts.length === pageSize ? nextOffset : undefined,
+        nextOffset: resolveWorkoutsNextOffset(
+          offset,
+          workouts.length,
+          initialPageSize,
+          pageSize,
+        ),
       } satisfies WorkoutsPageResult
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset,
   })
+}
+
+export {
+  HISTORY_WORKOUTS_INITIAL_PAGE_SIZE,
+  HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
 }
 
 export function useWorkoutById(workoutId: string) {

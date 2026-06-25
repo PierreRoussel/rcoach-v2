@@ -142,7 +142,7 @@ function PlanningPage() {
   return (
     <div className="space-y-6 pb-8">
       <Button variant="ghost" size="sm" className="-ml-2 rounded-full" asChild>
-        <Link to="/app/stats">
+        <Link to="/app/sessions" search={{ tab: 'stats' }}>
           <ArrowLeft className="size-4" />
           Stats
         </Link>

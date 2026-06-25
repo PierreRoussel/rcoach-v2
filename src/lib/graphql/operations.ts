@@ -162,6 +162,8 @@ export const LIST_MY_WORKOUTS = `
 `
 
 export const WORKOUTS_PAGE_SIZE = 15
+export const HISTORY_WORKOUTS_INITIAL_PAGE_SIZE = 4
+export const HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE = 10
 
 export const LIST_MY_WORKOUTS_PAGE = `
   query ListMyWorkoutsPage($limit: Int!, $offset: Int!) {
@@ -1014,6 +1016,378 @@ export const DELETE_SCHEDULED_SESSION = `
   mutation DeleteScheduledSession($id: uuid!) {
     delete_scheduled_sessions_by_pk(id: $id) {
       id
+    }
+  }
+`
+
+export type NutritionSettingsInput = {
+  daily_calorie_target?: number
+  carbs_pct?: number
+  protein_pct?: number
+  fat_pct?: number
+  breakfast_pct?: number
+  lunch_pct?: number
+  snack_pct?: number
+  dinner_pct?: number
+  sex?: 'male' | 'female' | null
+  age?: number | null
+  height_cm?: number | null
+  weight_kg?: number | null
+  activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active' | null
+  goal?: 'lose' | 'maintain' | 'gain' | null
+  calorie_adjustment?: number
+  tdee_calculated?: number | null
+  onboarded_at?: string | null
+}
+
+export const GET_NUTRITION_SETTINGS = `
+  query GetNutritionSettings($userId: uuid!) {
+    nutrition_settings_by_pk(user_id: $userId) {
+      user_id
+      daily_calorie_target
+      carbs_pct
+      protein_pct
+      fat_pct
+      breakfast_pct
+      lunch_pct
+      snack_pct
+      dinner_pct
+      sex
+      age
+      height_cm
+      weight_kg
+      activity_level
+      goal
+      calorie_adjustment
+      tdee_calculated
+      onboarded_at
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const UPSERT_NUTRITION_SETTINGS = `
+  mutation UpsertNutritionSettings($object: nutrition_settings_insert_input!) {
+    insert_nutrition_settings_one(
+      object: $object
+      on_conflict: {
+        constraint: nutrition_settings_pkey
+        update_columns: [
+          daily_calorie_target
+          carbs_pct
+          protein_pct
+          fat_pct
+          breakfast_pct
+          lunch_pct
+          snack_pct
+          dinner_pct
+          sex
+          age
+          height_cm
+          weight_kg
+          activity_level
+          goal
+          calorie_adjustment
+          tdee_calculated
+          onboarded_at
+          updated_at
+        ]
+      }
+    ) {
+      user_id
+      daily_calorie_target
+      carbs_pct
+      protein_pct
+      fat_pct
+      breakfast_pct
+      lunch_pct
+      snack_pct
+      dinner_pct
+      sex
+      age
+      height_cm
+      weight_kg
+      activity_level
+      goal
+      calorie_adjustment
+      tdee_calculated
+      onboarded_at
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const LIST_MEAL_LOG_ENTRIES_FOR_DATE = `
+  query ListMealLogEntriesForDate($date: date!) {
+    meal_log_entries(
+      where: { logged_date: { _eq: $date } }
+      order_by: [{ meal_type: asc }, { created_at: asc }]
+    ) {
+      id
+      user_id
+      logged_date
+      meal_type
+      food_id
+      quantity_g
+      servings
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      created_at
+      updated_at
+      food {
+        id
+        user_id
+        barcode
+        name
+        brand
+        calories
+        carbs_g
+        protein_g
+        fat_g
+        salt_g
+        sugar_g
+        saturated_fat_g
+        serving_size_g
+        serving_label
+        source
+        off_product_id
+        created_at
+        updated_at
+      }
+    }
+  }
+`
+
+export const INSERT_MEAL_LOG_ENTRY = `
+  mutation InsertMealLogEntry($object: meal_log_entries_insert_input!) {
+    insert_meal_log_entries_one(object: $object) {
+      id
+      logged_date
+      meal_type
+      food_id
+      quantity_g
+      servings
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      created_at
+      updated_at
+      food {
+        id
+        name
+        brand
+        calories
+        carbs_g
+        protein_g
+        fat_g
+        serving_size_g
+        serving_label
+        source
+        off_product_id
+      }
+    }
+  }
+`
+
+export const UPDATE_MEAL_LOG_ENTRY = `
+  mutation UpdateMealLogEntry($id: uuid!, $changes: meal_log_entries_set_input!) {
+    update_meal_log_entries_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      logged_date
+      meal_type
+      food_id
+      quantity_g
+      servings
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      updated_at
+      food {
+        id
+        name
+        brand
+        calories
+        carbs_g
+        protein_g
+        fat_g
+        serving_size_g
+        serving_label
+      }
+    }
+  }
+`
+
+export const DELETE_MEAL_LOG_ENTRY = `
+  mutation DeleteMealLogEntry($id: uuid!) {
+    delete_meal_log_entries_by_pk(id: $id) {
+      id
+    }
+  }
+`
+
+export const SEARCH_MY_FOODS = `
+  query SearchMyFoods($query: String!, $limit: Int = 20) {
+    foods(
+      where: {
+        _and: [
+          {
+            _or: [
+              { user_id: { _is_null: false } }
+              { source: { _eq: open_food_facts } }
+            ]
+          }
+          {
+            _or: [
+              { name: { _ilike: $query } }
+              { brand: { _ilike: $query } }
+              { barcode: { _ilike: $query } }
+            ]
+          }
+        ]
+      }
+      order_by: [{ source: asc }, { name: asc }]
+      limit: $limit
+    ) {
+      id
+      user_id
+      barcode
+      name
+      brand
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      salt_g
+      sugar_g
+      saturated_fat_g
+      serving_size_g
+      serving_label
+      source
+      off_product_id
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const INSERT_FOOD = `
+  mutation InsertFood($object: foods_insert_input!) {
+    insert_foods_one(object: $object) {
+      id
+      user_id
+      barcode
+      name
+      brand
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      salt_g
+      sugar_g
+      saturated_fat_g
+      serving_size_g
+      serving_label
+      source
+      off_product_id
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const GET_FOOD_BY_OFF_ID = `
+  query GetFoodByOffId($offProductId: String!) {
+    foods(where: { off_product_id: { _eq: $offProductId } }, limit: 1) {
+      id
+      user_id
+      barcode
+      name
+      brand
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      salt_g
+      sugar_g
+      saturated_fat_g
+      serving_size_g
+      serving_label
+      source
+      off_product_id
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const LIST_FOOD_FAVORITES = `
+  query ListFoodFavorites {
+    food_favorites(order_by: { created_at: desc }) {
+      id
+      food_id
+      created_at
+      food {
+        id
+        name
+        brand
+        calories
+        carbs_g
+        protein_g
+        fat_g
+        serving_size_g
+        serving_label
+        source
+        off_product_id
+      }
+    }
+  }
+`
+
+export const INSERT_FOOD_FAVORITE = `
+  mutation InsertFoodFavorite($foodId: uuid!) {
+    insert_food_favorites_one(object: { food_id: $foodId }) {
+      id
+      food_id
+      created_at
+    }
+  }
+`
+
+export const DELETE_FOOD_FAVORITE = `
+  mutation DeleteFoodFavorite($id: uuid!) {
+    delete_food_favorites_by_pk(id: $id) {
+      id
+    }
+  }
+`
+
+export const LIST_FREQUENT_FOODS = `
+  query ListFrequentFoods($since: date!) {
+    meal_log_entries(
+      where: { logged_date: { _gte: $since } }
+      order_by: { created_at: desc }
+      limit: 200
+    ) {
+      food_id
+      food {
+        id
+        name
+        brand
+        calories
+        carbs_g
+        protein_g
+        fat_g
+        serving_size_g
+        serving_label
+        source
+        off_product_id
+      }
     }
   }
 `

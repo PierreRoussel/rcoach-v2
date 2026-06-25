@@ -19,10 +19,13 @@ import { Input } from '@/components/ui/input'
 import {
   addExerciseToSuperset,
   cleanupSupersetAfterRemoval,
+  compactSupersetBlocks,
+  removeExerciseFromSuperset,
+} from '@/lib/workout/exercise-superset'
+import {
   createTemplateSet,
   exerciseToDraft,
   inheritSetValues,
-  removeExerciseFromSuperset,
   type TemplateExerciseDraft,
 } from '@/hooks/useWorkoutTemplates'
 import { useMyProfile } from '@/hooks/useProfile'
@@ -81,7 +84,8 @@ export function TemplateEditorForm({
       return
     }
     next.splice(to, 0, moved)
-    setExercises(next)
+    const compacted = compactSupersetBlocks(next)
+    setExercises(compacted)
 
     if (activeIndex === from) {
       setActiveIndex(to)

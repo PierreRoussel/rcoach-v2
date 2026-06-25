@@ -17,7 +17,7 @@ import {
 } from '@/lib/workout/workout-circuit'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 
-const WATCH_POLL_INTERVAL_MS = 5_000
+const WATCH_POLL_INTERVAL_MS = 1_000
 
 export function useWearWorkoutSync(enabled = true) {
   const [watchAvailable, setWatchAvailable] = useState(false)
@@ -109,6 +109,7 @@ export function useWearWorkoutSync(enabled = true) {
       : buildIdleWorkoutSnapshot()
 
     await publishWorkoutSnapshot(snapshot)
+    setWatchAvailable(true)
   }
 
   async function handleWatchCommand(command: WatchCommand) {

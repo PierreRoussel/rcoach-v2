@@ -247,4 +247,81 @@ describe('workout-circuit', () => {
     expect(steps[2]).toEqual({ exerciseIndex: 1, setIndex: 0 })
     expect(isWorkoutComplete(steps, exercises, lastCompleted)).toBe(false)
   })
+
+  it('alternates three-exercise supersets by round', () => {
+    const exercises = [
+      makeExercise('a', 'Bench', 2, { supersetId: 1 }),
+      makeExercise('b', 'Row', 2, { supersetId: 1 }),
+      makeExercise('c', 'Curl', 2, { supersetId: 1 }),
+    ]
+    const steps = buildCircuitSteps(exercises)
+
+    expect(steps).toEqual([
+      { exerciseIndex: 0, setIndex: 0 },
+      { exerciseIndex: 1, setIndex: 0 },
+      { exerciseIndex: 2, setIndex: 0 },
+      { exerciseIndex: 0, setIndex: 1 },
+      { exerciseIndex: 1, setIndex: 1 },
+      { exerciseIndex: 2, setIndex: 1 },
+    ])
+  })
+
+  it('applies zero rest between three-exercise superset transitions in a round', () => {
+    const exercises = [
+      makeExercise('a', 'Bench', 2, { supersetId: 1, restSeconds: 60 }),
+      makeExercise('b', 'Row', 2, { supersetId: 1, restSeconds: 60 }),
+      makeExercise('c', 'Curl', 2, { supersetId: 1, restSeconds: 60 }),
+    ]
+
+    expect(
+      getStepRestSeconds(
+        exercises,
+        { exerciseIndex: 0, setIndex: 0 },
+        { exerciseIndex: 1, setIndex: 0 },
+        90,
+      ),
+    ).toBe(0)
+
+    expect(
+      getStepRestSeconds(
+        exercises,
+        { exerciseIndex: 1, setIndex: 0 },
+        { exerciseIndex: 2, setIndex: 0 },
+        90,
+      ),
+    ).toBe(0)
+
+    expect(
+      getStepRestSeconds(
+        exercises,
+        { exerciseIndex: 2, setIndex: 0 },
+        { exerciseIndex: 0, setIndex: 1 },
+        90,
+      ),
+    ).toBe(60)
+  })
+
+  it('handles two supersets in the same workout', () => {
+    const exercises = [
+      makeExercise('a', 'Bench', 2, { supersetId: 1 }),
+      makeExercise('b', 'Row', 2, { supersetId: 1 }),
+      makeExercise('c', 'Squat', 2),
+      makeExercise('d', 'Curl', 2, { supersetId: 2 }),
+      makeExercise('e', 'Dips', 2, { supersetId: 2 }),
+    ]
+    const steps = buildCircuitSteps(exercises)
+
+    expect(steps).toEqual([
+      { exerciseIndex: 0, setIndex: 0 },
+      { exerciseIndex: 1, setIndex: 0 },
+      { exerciseIndex: 0, setIndex: 1 },
+      { exerciseIndex: 1, setIndex: 1 },
+      { exerciseIndex: 2, setIndex: 0 },
+      { exerciseIndex: 2, setIndex: 1 },
+      { exerciseIndex: 3, setIndex: 0 },
+      { exerciseIndex: 4, setIndex: 0 },
+      { exerciseIndex: 3, setIndex: 1 },
+      { exerciseIndex: 4, setIndex: 1 },
+    ])
+  })
 })

@@ -10,8 +10,22 @@ export function useActiveWorkoutElapsed(startedAt: string | null): string | null
       return
     }
 
-    const timer = window.setInterval(() => setNow(new Date()), 1000)
-    return () => window.clearInterval(timer)
+    const tick = () => setNow(new Date())
+    tick()
+
+    const timer = window.setInterval(tick, 1000)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        tick()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [startedAt])
 
   if (!startedAt) {

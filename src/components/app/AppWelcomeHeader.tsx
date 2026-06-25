@@ -7,6 +7,7 @@ import { useActiveWorkoutElapsed } from '@/hooks/useActiveWorkoutElapsed'
 import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { formatTodayReminderMessage } from '@/lib/schedule/today-reminders'
+import { formatValidatedWorkoutMessage } from '@/lib/workout/format-validated-workout-message'
 import { getWorkoutEncouragementMessage } from '@/lib/workout/workout-encouragement'
 
 function getFirstName(displayName: string | null | undefined): string | null {
@@ -19,30 +20,6 @@ function getFirstName(displayName: string | null | undefined): string | null {
   return spaceIndex === -1 ? trimmed : trimmed.slice(0, spaceIndex)
 }
 
-function daysSince(dateStr: string): number {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const diffMs = startOfToday.getTime() - startOfDate.getTime()
-
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
-}
-
-function formatLastSessionMessage(startedAt: string): string {
-  const days = daysSince(startedAt)
-
-  if (days === 0) {
-    return 'Derniere seance aujourd\'hui'
-  }
-
-  if (days === 1) {
-    return 'Derniere seance il y a 1 jour'
-  }
-
-  return `Derniere seance il y a ${days} jours`
-}
-
 type AppWelcomeHeaderProps = {
   displayName?: string | null
 }
@@ -50,8 +27,6 @@ type AppWelcomeHeaderProps = {
 export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
   const startedAt = useActiveWorkoutStore((state) => state.startedAt)
   const workoutTitle = useActiveWorkoutStore((state) => state.title)
-  const exercises = useActiveWorkoutStore((state) => state.exercises)
-  const lastCompletedStep = useActiveWorkoutStore((state) => state.lastCompletedStep)
   const elapsed = useActiveWorkoutElapsed(startedAt)
   const { workouts, todayReminders } = useCalendarData()
   const { startPlannedSession, isStarting } = useStartPlannedSession()
@@ -59,9 +34,17 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
   const firstName = getFirstName(displayName)
   const greeting = firstName ? `Bonjour ${firstName} 👋` : 'Bonjour 👋'
   const exerciseLocale = useExerciseLocale()
-  const encouragement = startedAt
-    ? getWorkoutEncouragementMessage(exercises, lastCompletedStep, exerciseLocale)
-    : null
+  const encouragement = useActiveWorkoutStore((state) => {
+    if (!state.startedAt) {
+      return null
+    }
+
+    return getWorkoutEncouragementMessage(
+      state.exercises,
+      state.lastCompletedStep,
+      exerciseLocale,
+    )
+  })
 
   const mostRecentWorkout = workouts[0]
   const todayMessage = formatTodayReminderMessage(todayReminders)
@@ -112,7 +95,10 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
               </p>
             ) : mostRecentWorkout ? (
               <p className="truncate text-xs text-muted-foreground">
-                {formatLastSessionMessage(mostRecentWorkout.started_at)}
+                {formatValidatedWorkoutMessage(
+                  mostRecentWorkout.title,
+                  mostRecentWorkout.started_at,
+                )}
               </p>
             ) : (
               <p className="truncate text-xs text-muted-foreground">

@@ -26,13 +26,18 @@ import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/inde
 import { Route as AppSessionsIndexRouteImport } from './routes/app/sessions/index'
 import { Route as AppPlanningIndexRouteImport } from './routes/app/planning/index'
 import { Route as AppExercisesIndexRouteImport } from './routes/app/exercises/index'
+import { Route as AppDietIndexRouteImport } from './routes/app/diet/index'
 import { Route as ShareWorkoutShareTokenRouteImport } from './routes/share/workout/$shareToken'
 import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach/programs/$programId'
 import { Route as AppWorkoutsWorkoutIdRouteImport } from './routes/app/workouts/$workoutId'
 import { Route as AppWorkoutActiveRouteImport } from './routes/app/workout/active'
 import { Route as AppSessionsNewRouteImport } from './routes/app/sessions/new'
 import { Route as AppSessionsTemplateIdRouteImport } from './routes/app/sessions/$templateId'
+import { Route as AppDietSettingsRouteImport } from './routes/app/diet/settings'
+import { Route as AppDietAddRouteImport } from './routes/app/diet/add'
 import { Route as AppStatsExercisesExerciseIdRouteImport } from './routes/app/stats/exercises/$exerciseId'
+import { Route as AppDietMealsMealTypeRouteImport } from './routes/app/diet/meals/$mealType'
+import { Route as AppDietFoodsNewRouteImport } from './routes/app/diet/foods/new'
 
 const CoachRouteRoute = CoachRouteRouteImport.update({
   id: '/coach',
@@ -119,6 +124,11 @@ const AppExercisesIndexRoute = AppExercisesIndexRouteImport.update({
   path: '/exercises/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDietIndexRoute = AppDietIndexRouteImport.update({
+  id: '/diet/',
+  path: '/diet/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const ShareWorkoutShareTokenRoute = ShareWorkoutShareTokenRouteImport.update({
   id: '/share/workout/$shareToken',
   path: '/share/workout/$shareToken',
@@ -149,12 +159,32 @@ const AppSessionsTemplateIdRoute = AppSessionsTemplateIdRouteImport.update({
   path: '/sessions/$templateId',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDietSettingsRoute = AppDietSettingsRouteImport.update({
+  id: '/diet/settings',
+  path: '/diet/settings',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDietAddRoute = AppDietAddRouteImport.update({
+  id: '/diet/add',
+  path: '/diet/add',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppStatsExercisesExerciseIdRoute =
   AppStatsExercisesExerciseIdRouteImport.update({
     id: '/exercises/$exerciseId',
     path: '/exercises/$exerciseId',
     getParentRoute: () => AppStatsRoute,
   } as any)
+const AppDietMealsMealTypeRoute = AppDietMealsMealTypeRouteImport.update({
+  id: '/diet/meals/$mealType',
+  path: '/diet/meals/$mealType',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDietFoodsNewRoute = AppDietFoodsNewRouteImport.update({
+  id: '/diet/foods/new',
+  path: '/diet/foods/new',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -167,12 +197,15 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
+  '/app/diet/add': typeof AppDietAddRoute
+  '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
   '/app/workouts/$workoutId': typeof AppWorkoutsWorkoutIdRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
+  '/app/diet/': typeof AppDietIndexRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/planning/': typeof AppPlanningIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
@@ -180,6 +213,8 @@ export interface FileRoutesByFullPath {
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
+  '/app/diet/foods/new': typeof AppDietFoodsNewRoute
+  '/app/diet/meals/$mealType': typeof AppDietMealsMealTypeRoute
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRoutesByTo {
@@ -191,12 +226,15 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/app': typeof AppIndexRoute
   '/coach': typeof CoachIndexRoute
+  '/app/diet/add': typeof AppDietAddRoute
+  '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
   '/app/workouts/$workoutId': typeof AppWorkoutsWorkoutIdRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
+  '/app/diet': typeof AppDietIndexRoute
   '/app/exercises': typeof AppExercisesIndexRoute
   '/app/planning': typeof AppPlanningIndexRoute
   '/app/sessions': typeof AppSessionsIndexRoute
@@ -204,6 +242,8 @@ export interface FileRoutesByTo {
   '/coach/analytics': typeof CoachAnalyticsIndexRoute
   '/coach/clients': typeof CoachClientsIndexRoute
   '/coach/programs': typeof CoachProgramsIndexRoute
+  '/app/diet/foods/new': typeof AppDietFoodsNewRoute
+  '/app/diet/meals/$mealType': typeof AppDietMealsMealTypeRoute
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRoutesById {
@@ -218,12 +258,15 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
+  '/app/diet/add': typeof AppDietAddRoute
+  '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
   '/app/workouts/$workoutId': typeof AppWorkoutsWorkoutIdRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
+  '/app/diet/': typeof AppDietIndexRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/planning/': typeof AppPlanningIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
@@ -231,6 +274,8 @@ export interface FileRoutesById {
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
+  '/app/diet/foods/new': typeof AppDietFoodsNewRoute
+  '/app/diet/meals/$mealType': typeof AppDietMealsMealTypeRoute
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRouteTypes {
@@ -246,12 +291,15 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/app/'
     | '/coach/'
+    | '/app/diet/add'
+    | '/app/diet/settings'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
     | '/app/workouts/$workoutId'
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
+    | '/app/diet/'
     | '/app/exercises/'
     | '/app/planning/'
     | '/app/sessions/'
@@ -259,6 +307,8 @@ export interface FileRouteTypes {
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
+    | '/app/diet/foods/new'
+    | '/app/diet/meals/$mealType'
     | '/app/stats/exercises/$exerciseId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -270,12 +320,15 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/app'
     | '/coach'
+    | '/app/diet/add'
+    | '/app/diet/settings'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
     | '/app/workouts/$workoutId'
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
+    | '/app/diet'
     | '/app/exercises'
     | '/app/planning'
     | '/app/sessions'
@@ -283,6 +336,8 @@ export interface FileRouteTypes {
     | '/coach/analytics'
     | '/coach/clients'
     | '/coach/programs'
+    | '/app/diet/foods/new'
+    | '/app/diet/meals/$mealType'
     | '/app/stats/exercises/$exerciseId'
   id:
     | '__root__'
@@ -296,12 +351,15 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/app/'
     | '/coach/'
+    | '/app/diet/add'
+    | '/app/diet/settings'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
     | '/app/workouts/$workoutId'
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
+    | '/app/diet/'
     | '/app/exercises/'
     | '/app/planning/'
     | '/app/sessions/'
@@ -309,6 +367,8 @@ export interface FileRouteTypes {
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
+    | '/app/diet/foods/new'
+    | '/app/diet/meals/$mealType'
     | '/app/stats/exercises/$exerciseId'
   fileRoutesById: FileRoutesById
 }
@@ -442,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppExercisesIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/diet/': {
+      id: '/app/diet/'
+      path: '/diet'
+      fullPath: '/app/diet/'
+      preLoaderRoute: typeof AppDietIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/share/workout/$shareToken': {
       id: '/share/workout/$shareToken'
       path: '/share/workout/$shareToken'
@@ -484,12 +551,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSessionsTemplateIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/diet/settings': {
+      id: '/app/diet/settings'
+      path: '/diet/settings'
+      fullPath: '/app/diet/settings'
+      preLoaderRoute: typeof AppDietSettingsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/diet/add': {
+      id: '/app/diet/add'
+      path: '/diet/add'
+      fullPath: '/app/diet/add'
+      preLoaderRoute: typeof AppDietAddRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/stats/exercises/$exerciseId': {
       id: '/app/stats/exercises/$exerciseId'
       path: '/exercises/$exerciseId'
       fullPath: '/app/stats/exercises/$exerciseId'
       preLoaderRoute: typeof AppStatsExercisesExerciseIdRouteImport
       parentRoute: typeof AppStatsRoute
+    }
+    '/app/diet/meals/$mealType': {
+      id: '/app/diet/meals/$mealType'
+      path: '/diet/meals/$mealType'
+      fullPath: '/app/diet/meals/$mealType'
+      preLoaderRoute: typeof AppDietMealsMealTypeRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/diet/foods/new': {
+      id: '/app/diet/foods/new'
+      path: '/diet/foods/new'
+      fullPath: '/app/diet/foods/new'
+      preLoaderRoute: typeof AppDietFoodsNewRouteImport
+      parentRoute: typeof AppRouteRoute
     }
   }
 }
@@ -511,14 +606,19 @@ interface AppRouteRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppStatsRoute: typeof AppStatsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppDietAddRoute: typeof AppDietAddRoute
+  AppDietSettingsRoute: typeof AppDietSettingsRoute
   AppSessionsTemplateIdRoute: typeof AppSessionsTemplateIdRoute
   AppSessionsNewRoute: typeof AppSessionsNewRoute
   AppWorkoutActiveRoute: typeof AppWorkoutActiveRoute
   AppWorkoutsWorkoutIdRoute: typeof AppWorkoutsWorkoutIdRoute
+  AppDietIndexRoute: typeof AppDietIndexRoute
   AppExercisesIndexRoute: typeof AppExercisesIndexRoute
   AppPlanningIndexRoute: typeof AppPlanningIndexRoute
   AppSessionsIndexRoute: typeof AppSessionsIndexRoute
   AppWorkoutsIndexRoute: typeof AppWorkoutsIndexRoute
+  AppDietFoodsNewRoute: typeof AppDietFoodsNewRoute
+  AppDietMealsMealTypeRoute: typeof AppDietMealsMealTypeRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -526,14 +626,19 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppStatsRoute: AppStatsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppDietAddRoute: AppDietAddRoute,
+  AppDietSettingsRoute: AppDietSettingsRoute,
   AppSessionsTemplateIdRoute: AppSessionsTemplateIdRoute,
   AppSessionsNewRoute: AppSessionsNewRoute,
   AppWorkoutActiveRoute: AppWorkoutActiveRoute,
   AppWorkoutsWorkoutIdRoute: AppWorkoutsWorkoutIdRoute,
+  AppDietIndexRoute: AppDietIndexRoute,
   AppExercisesIndexRoute: AppExercisesIndexRoute,
   AppPlanningIndexRoute: AppPlanningIndexRoute,
   AppSessionsIndexRoute: AppSessionsIndexRoute,
   AppWorkoutsIndexRoute: AppWorkoutsIndexRoute,
+  AppDietFoodsNewRoute: AppDietFoodsNewRoute,
+  AppDietMealsMealTypeRoute: AppDietMealsMealTypeRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

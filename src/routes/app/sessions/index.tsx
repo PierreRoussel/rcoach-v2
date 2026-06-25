@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { CalendarDays, Dumbbell, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
+import { StatsDashboard } from '@/components/stats/StatsDashboard'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,8 +13,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
-import { PageHeader, Pill } from '@/design-system'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
+import { Pill } from '@/design-system'
 import {
   DEFAULT_GLOBAL_REST_SECONDS,
   isGraphqlTemplatesMissingError,
@@ -24,19 +26,31 @@ import {
 import { useMyProfile } from '@/hooks/useProfile'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
-import { useMyWorkoutsInfinite } from '@/hooks/useWorkouts'
+import {
+  HISTORY_WORKOUTS_INITIAL_PAGE_SIZE,
+  HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
+  useMyWorkoutsInfinite,
+} from '@/hooks/useWorkouts'
 import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
 import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
 type SessionsSearch = {
-  tab?: 'catalog' | 'history'
+  tab?: 'catalog' | 'history' | 'stats'
+}
+
+function parseSessionsTab(tab: unknown): SessionsSearch['tab'] {
+  if (tab === 'history' || tab === 'stats') {
+    return tab
+  }
+
+  return 'catalog'
 }
 
 export const Route = createFileRoute('/app/sessions/')({
   validateSearch: (search: Record<string, unknown>): SessionsSearch => ({
-    tab: search.tab === 'history' ? 'history' : 'catalog',
+    tab: parseSessionsTab(search.tab),
   }),
   component: SessionsPage,
 })
@@ -47,32 +61,21 @@ function SessionsPage() {
   const activeTab = tab ?? 'catalog'
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        eyebrow="Seances"
-        title="Catalogue & historique"
-        description="Creez des modeles de seances et consultez vos seances terminees."
-      />
-
-      <div className="flex gap-2">
-        <Button
-          variant={activeTab === 'catalog' ? 'pill' : 'soft'}
-          size="sm"
-          onClick={() => void navigate({ search: { tab: 'catalog' } })}
-        >
-          Catalogue
-        </Button>
-        <Button
-          variant={activeTab === 'history' ? 'pill' : 'soft'}
-          size="sm"
-          onClick={() => void navigate({ search: { tab: 'history' } })}
-        >
-          Historique
-        </Button>
-      </div>
-
-      {activeTab === 'catalog' ? <CatalogTab /> : <HistoryTab />}
-    </div>
+    <SwipeableTabPanels
+      value={activeTab}
+      onChange={(nextTab) =>
+        void navigate({
+          search: { tab: nextTab },
+          replace: true,
+          viewTransition: false,
+        })
+      }
+      tabs={[
+        { id: 'catalog', label: 'Catalogue', panel: <CatalogTab /> },
+        { id: 'history', label: 'Historique', panel: <HistoryTab /> },
+        { id: 'stats', label: 'Stats', panel: <StatsDashboard /> },
+      ]}
+    />
   )
 }
 
@@ -253,7 +256,10 @@ function HistoryTab() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useMyWorkoutsInfinite()
+  } = useMyWorkoutsInfinite({
+    initialPageSize: HISTORY_WORKOUTS_INITIAL_PAGE_SIZE,
+    pageSize: HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
+  })
   const { data: profile } = useMyProfile()
   const { targetRef, isIntersecting } = useIntersectionObserver({
     enabled: Boolean(hasNextPage) && !isFetchingNextPage,

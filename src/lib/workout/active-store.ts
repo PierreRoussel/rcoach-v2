@@ -4,6 +4,7 @@ import { db, type ActiveExerciseDraft, type ActiveSetDraft, type ActiveWorkoutDr
 import {
   addExerciseToSuperset,
   cleanupSupersetAfterRemoval,
+  compactSupersetBlocks,
   removeExerciseFromSuperset,
 } from '@/lib/workout/exercise-superset'
 import { replaceActiveExercise } from '@/lib/workout/replace-exercise'
@@ -438,14 +439,16 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
     exercises.splice(toIndex, 0, moved)
 
-    const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
+    const compacted = compactSupersetBlocks(exercises)
+    const { activeStepIndex, lastCompletedStep } =
+      syncAfterExerciseStructureChange(compacted)
 
-    set({ exercises, activeStepIndex, lastCompletedStep })
+    set({ exercises: compacted, activeStepIndex, lastCompletedStep })
     await persistDraft({
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
-      exercises,
+      exercises: compacted,
       activeStepIndex,
       lastCompletedStep,
     })
