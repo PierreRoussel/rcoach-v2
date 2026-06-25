@@ -1,11 +1,15 @@
+import { Capacitor } from '@capacitor/core'
+
 import type { Food } from '@/lib/nutrition/types'
 
-const OFF_API = 'https://world.openfoodfacts.org'
+const OFF_DIRECT_API = 'https://world.openfoodfacts.org'
+const OFF_PROXY_PATH = '/api/open-food-facts'
+const OFF_USER_AGENT = 'RCoach/0.1 (contact: app@rcoach.local)'
 
 export type OffSearchProduct = {
   code: string
   product_name?: string
-  brands?: string
+  brands?: string | string[]
   nutriments?: OffNutriments
   serving_size?: string
   serving_quantity?: number
@@ -37,6 +41,33 @@ export type OffFoodDraft = {
   servingLabel: string
 }
 
+export function getOffApiBaseUrl(): string {
+  const configured = import.meta.env.VITE_OFF_API_BASE?.trim()
+  if (configured) {
+    return configured.replace(/\/$/, '')
+  }
+
+  if (typeof window !== 'undefined' && !Capacitor.isNativePlatform()) {
+    return OFF_PROXY_PATH
+  }
+
+  return OFF_DIRECT_API
+}
+
+function buildOffUrl(path: string): string {
+  const base = getOffApiBaseUrl()
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${normalizedPath}`
+}
+
+async function fetchOff(path: string): Promise<Response> {
+  return fetch(buildOffUrl(path), {
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+}
+
 function parseOffNutriments(nutriments: OffNutriments | undefined) {
   return {
     calories: nutriments?.['energy-kcal_100g'] ?? 0,
@@ -47,6 +78,14 @@ function parseOffNutriments(nutriments: OffNutriments | undefined) {
     sugarG: nutriments?.sugars_100g ?? null,
     saturatedFatG: nutriments?.['saturated-fat_100g'] ?? null,
   }
+}
+
+function normalizeBrand(brands: OffSearchProduct['brands']): string | null {
+  if (Array.isArray(brands)) {
+    return brands[0]?.trim() ?? null
+  }
+
+  return brands?.split(',')[0]?.trim() ?? null
 }
 
 export function mapOffProductToDraft(product: OffSearchProduct): OffFoodDraft | null {
@@ -63,7 +102,7 @@ export function mapOffProductToDraft(product: OffSearchProduct): OffFoodDraft | 
     barcode: product.code,
     offProductId: product.code,
     name,
-    brand: product.brands?.split(',')[0]?.trim() ?? null,
+    brand: normalizeBrand(product.brands),
     ...nutrients,
     servingSizeG,
     servingLabel,
@@ -104,15 +143,19 @@ export async function searchOffProducts(query: string, pageSize = 20): Promise<O
     fields: 'code,product_name,brands,nutriments,serving_size,serving_quantity',
   })
 
-  const response = await fetch(`${OFF_API}/cgi/search.pl?${params.toString()}`)
-  if (!response.ok) {
-    throw new Error('Recherche Open Food Facts indisponible')
-  }
+  try {
+    const response = await fetchOff(`/cgi/search.pl?${params.toString()}`)
+    if (!response.ok) {
+      return []
+    }
 
-  const data = (await response.json()) as { products?: OffSearchProduct[] }
-  return (data.products ?? [])
-    .map(mapOffProductToDraft)
-    .filter((item): item is OffFoodDraft => item != null)
+    const data = (await response.json()) as { products?: OffSearchProduct[] }
+    return (data.products ?? [])
+      .map(mapOffProductToDraft)
+      .filter((item): item is OffFoodDraft => item != null)
+  } catch {
+    return []
+  }
 }
 
 export async function getOffProductByBarcode(barcode: string): Promise<OffFoodDraft | null> {
@@ -121,19 +164,27 @@ export async function getOffProductByBarcode(barcode: string): Promise<OffFoodDr
     return null
   }
 
-  const response = await fetch(`${OFF_API}/api/v2/product/${encodeURIComponent(normalized)}.json`)
-  if (!response.ok) {
+  try {
+    const response = await fetchOff(
+      `/api/v2/product/${encodeURIComponent(normalized)}.json`,
+    )
+    if (!response.ok) {
+      return null
+    }
+
+    const data = (await response.json()) as { product?: OffSearchProduct; status?: number }
+    if (data.status !== 1 || !data.product) {
+      return null
+    }
+
+    return mapOffProductToDraft({ ...data.product, code: normalized })
+  } catch {
     return null
   }
-
-  const data = (await response.json()) as { product?: OffSearchProduct; status?: number }
-  if (data.status !== 1 || !data.product) {
-    return null
-  }
-
-  return mapOffProductToDraft({ ...data.product, code: normalized })
 }
 
 export function isOffCachedFood(food: Pick<Food, 'source' | 'off_product_id'>) {
   return food.source === 'open_food_facts' && Boolean(food.off_product_id)
 }
+
+export { OFF_DIRECT_API, OFF_PROXY_PATH, OFF_USER_AGENT }

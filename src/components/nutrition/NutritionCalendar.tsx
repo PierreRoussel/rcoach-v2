@@ -44,7 +44,7 @@ function NutritionCalendarLegend() {
       </Pill>
       <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
         <span className="flex size-3.5 items-center justify-center rounded-full bg-destructive text-white">
-          <span className="text-[0.5rem] font-bold">✓</span>
+          <span className="text-[0.5rem] font-bold">✕</span>
         </span>
         Objectif depasse
       </Pill>

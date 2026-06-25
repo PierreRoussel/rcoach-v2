@@ -61,4 +61,28 @@ export default defineConfig({
       ),
     },
   },
+  server: {
+    proxy: {
+      '/api/open-food-facts': {
+        target: 'https://world.openfoodfacts.org',
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/api\/open-food-facts/, ''),
+        headers: {
+          'User-Agent': 'RCoach/0.1 (contact: app@rcoach.local)',
+        },
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/api/open-food-facts': {
+        target: 'https://world.openfoodfacts.org',
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/api\/open-food-facts/, ''),
+        headers: {
+          'User-Agent': 'RCoach/0.1 (contact: app@rcoach.local)',
+        },
+      },
+    },
+  },
 })

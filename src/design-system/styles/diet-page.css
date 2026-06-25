@@ -1,0 +1,144 @@
+/**
+ * Diet journal page — discrete visual polish (CSS only).
+ */
+
+/* ---- Page atmosphere ---- */
+
+body:has(nav a[href='/app/diet'].bg-soft-primary) {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--soft-peach) 30%, var(--background)) 0%,
+    var(--background) 200px
+  );
+}
+
+.dark body:has(nav a[href='/app/diet'].bg-soft-primary) {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--soft-peach) 12%, var(--background)) 0%,
+    var(--background) 180px
+  );
+}
+
+/* ---- Day carousel header ---- */
+
+.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between {
+  padding: 0.35rem 0.5rem;
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--soft-primary) 35%, var(--card));
+  border: 1px solid var(--border);
+}
+
+.dark .space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between {
+  background: color-mix(in srgb, var(--muted) 50%, var(--card));
+}
+
+.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between .font-display.text-xl {
+  color: var(--foreground);
+}
+
+.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between .size-9.rounded-full {
+  border-color: var(--border);
+  background: var(--card);
+}
+
+.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between .size-9.rounded-full:hover {
+  background: var(--muted);
+}
+
+/* ---- Summary hero card ---- */
+
+.border-border\/70:has(.min-h-40 .size-40) {
+  border-color: var(--border) !important;
+  background: color-mix(in srgb, var(--soft-primary) 28%, var(--card));
+}
+
+.dark .border-border\/70:has(.min-h-40 .size-40) {
+  background: color-mix(in srgb, var(--muted) 45%, var(--card));
+}
+
+.border-border\/70:has(.min-h-40 .size-40) .size-40 .font-display.text-3xl {
+  color: var(--foreground);
+}
+
+/* Cons / Brûl side labels */
+.border-border\/70:has(.min-h-40 .size-40) .min-h-40 > .absolute.w-12 {
+  padding: 0.25rem 0.15rem;
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border: 1px solid var(--border);
+}
+
+/* Macro bars — 3 columns, flat chart colors */
+.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(1) .macro-bar__progress {
+  background: color-mix(in srgb, var(--chart-3) 22%, var(--muted));
+}
+
+.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(1) [data-slot='progress-indicator'] {
+  background: var(--chart-3);
+}
+
+.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(2) .macro-bar__progress {
+  background: color-mix(in srgb, var(--chart-2) 22%, var(--muted));
+}
+
+.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(2) [data-slot='progress-indicator'] {
+  background: var(--chart-2);
+}
+
+.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(3) .macro-bar__progress {
+  background: color-mix(in srgb, var(--chart-5) 25%, var(--muted));
+}
+
+.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(3) [data-slot='progress-indicator'] {
+  background: var(--chart-5);
+}
+
+/* ---- Meal cards ---- */
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70 {
+  border-color: var(--border) !important;
+  background: var(--card);
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(1) {
+  background: color-mix(in srgb, var(--soft-accent) 40%, var(--card));
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(1) .rounded-full.bg-soft-primary {
+  background: var(--soft-accent);
+  color: var(--accent);
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(2) {
+  background: color-mix(in srgb, var(--soft-secondary) 40%, var(--card));
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(2) .rounded-full.bg-soft-primary {
+  background: var(--soft-secondary);
+  color: var(--secondary);
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(3) {
+  background: color-mix(in srgb, var(--soft-primary) 40%, var(--card));
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(3) .rounded-full.bg-soft-primary {
+  background: var(--soft-primary);
+  color: var(--primary);
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(4) {
+  background: color-mix(in srgb, var(--soft-purple) 40%, var(--card));
+}
+
+div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(4) .rounded-full.bg-soft-primary {
+  background: var(--soft-purple);
+  color: #6b4fcc;
+}
+
+/* Sync pending banner */
+body:has(nav a[href='/app/diet'].bg-soft-primary) main > div.space-y-4 > .rounded-xl.bg-muted {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--soft-accent) 35%, var(--muted));
+}

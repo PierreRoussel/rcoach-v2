@@ -21,14 +21,12 @@ function MacroBar({
   const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-foreground">{label}</span>
-        <span className="text-muted-foreground">
-          {formatNutrient(current)} / {formatNutrient(target)} g
-        </span>
-      </div>
-      <Progress value={progress} className="h-2" />
+    <div className="macro-bar flex min-w-0 flex-col gap-1.5">
+      <span className="text-xs font-semibold text-foreground">{label}</span>
+      <Progress value={progress} className="macro-bar__progress h-2" />
+      <span className="text-[10px] leading-tight text-muted-foreground">
+        {formatNutrient(current)} / {formatNutrient(target)} g
+      </span>
     </div>
   )
 }
@@ -40,7 +38,7 @@ export function MacroProgressBars({
   className,
 }: MacroProgressBarsProps) {
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('macro-progress-grid grid grid-cols-3 gap-2', className)}>
       <MacroBar label="Glucides" current={carbs.current} target={carbs.target} />
       <MacroBar label="Proteines" current={protein.current} target={protein.target} />
       <MacroBar label="Lipides" current={fat.current} target={fat.target} />

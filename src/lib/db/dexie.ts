@@ -1,5 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 
+import type { Food } from '@/lib/nutrition/types'
+
 export type SyncQueueItem = {
   id?: number
   type:
@@ -59,6 +61,7 @@ class RCoachDB extends Dexie {
   syncQueue!: EntityTable<SyncQueueItem, 'id'>
   activeDraft!: EntityTable<ActiveWorkoutDraft, 'id'>
   nutritionDayCache!: EntityTable<NutritionDayCache, 'date'>
+  foodsCache!: EntityTable<Food, 'id'>
 
   constructor() {
     super('rcoach-v2')
@@ -96,6 +99,13 @@ class RCoachDB extends Dexie {
       syncQueue: '++id, type, createdAt',
       activeDraft: 'id',
       nutritionDayCache: 'date',
+    })
+
+    this.version(4).stores({
+      syncQueue: '++id, type, createdAt',
+      activeDraft: 'id',
+      nutritionDayCache: 'date',
+      foodsCache: 'id, name, barcode, off_product_id',
     })
   }
 }

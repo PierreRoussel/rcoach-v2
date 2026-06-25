@@ -9,6 +9,7 @@ import { flushSyncQueue } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { useMyProfile } from '@/hooks/useProfile'
+import { useNutritionSync } from '@/hooks/useNutritionSync'
 
 function resolveDisplayName(
   profileName: string | null | undefined,
@@ -40,6 +41,8 @@ function AppLayout() {
   const { nhost, user } = useAuth()
   const { data: profile } = useMyProfile()
   const hydrate = useActiveWorkoutStore((state) => state.hydrate)
+
+  useNutritionSync()
 
   useEffect(() => {
     void hydrate()

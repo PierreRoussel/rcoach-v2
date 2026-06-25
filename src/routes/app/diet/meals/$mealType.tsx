@@ -144,6 +144,7 @@ function MealDetailPage() {
             .mutateAsync({
               id: editingEntry.id,
               loggedDate: date,
+              mealType,
               food: editingEntry.food,
               portion,
             })

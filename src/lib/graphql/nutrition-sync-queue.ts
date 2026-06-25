@@ -6,7 +6,20 @@ import {
   UPDATE_MEAL_LOG_ENTRY,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import {
+  buildLocalFood,
+  cacheFood,
+  isLocalFoodId,
+  toLocalFoodId,
+  stripLocalFoodId,
+} from '@/lib/nutrition/offline-food'
+import type { Food } from '@/lib/nutrition/types'
 import type { NhostClient } from '@nhost/nhost-js'
+
+export type NutritionFlushResult = {
+  syncedCount: number
+  affectedDates: string[]
+}
 
 export async function enqueueNutritionMutation(
   type:
@@ -26,14 +39,15 @@ export async function enqueueNutritionMutation(
 
 export async function syncMealEntryInsert(
   _nhost: NhostClient,
-  payload: { object: Record<string, unknown>; food?: Record<string, unknown> },
+  payload: { object: Record<string, unknown>; food?: Food; entryId?: string },
 ) {
-  const localId = crypto.randomUUID()
+  const localId = payload.entryId ?? crypto.randomUUID()
   await enqueueNutritionMutation('insert_meal_entry', {
     localId,
     object: payload.object,
   })
   await cacheMealEntryLocally(localId, payload.object, payload.food)
+  return localId
 }
 
 export async function syncMealEntryUpdate(
@@ -47,26 +61,77 @@ export async function syncMealEntryUpdate(
 
 export async function syncMealEntryDelete(_nhost: NhostClient, id: string) {
   await enqueueNutritionMutation('delete_meal_entry', { id })
-  await removeMealEntryFromDayCache(id)
+  await removeCachedMealEntry(id)
 }
 
 export async function removeMealEntryFromDayCache(id: string) {
   await removeCachedMealEntry(id)
 }
 
-export async function syncFoodUpsert(_nhost: NhostClient, object: Record<string, unknown>) {
-  await enqueueNutritionMutation('upsert_food', { object })
+export async function syncFoodUpsert(
+  _nhost: NhostClient,
+  object: Record<string, unknown>,
+  userId: string,
+  localId?: string,
+) {
+  const resolvedLocalId = localId ?? stripLocalFoodId(crypto.randomUUID())
+  const localFood = buildLocalFood(object, userId, resolvedLocalId)
+  await cacheFood(localFood)
+  await enqueueNutritionMutation('upsert_food', {
+    localId: resolvedLocalId,
+    object,
+  })
+  return localFood
 }
 
-export async function flushNutritionSyncQueue(nhost: NhostClient) {
+export async function flushNutritionSyncQueue(nhost: NhostClient): Promise<NutritionFlushResult> {
   const pending = await db.syncQueue.orderBy('createdAt').toArray()
+  const foodIdMap = new Map<string, string>()
+  let syncedCount = 0
+  const affectedDates = new Set<string>()
 
   for (const item of pending) {
+    if (item.type !== 'upsert_food') {
+      continue
+    }
+
+    try {
+      const payload = JSON.parse(item.payload) as {
+        localId?: string
+        object: Record<string, unknown>
+      }
+
+      const data = await graphqlRequest<{ insert_foods_one: Food }>(nhost, INSERT_FOOD, {
+        object: payload.object,
+      })
+
+      if (payload.localId) {
+        foodIdMap.set(toLocalFoodId(payload.localId), data.insert_foods_one.id)
+        await db.foodsCache.delete(toLocalFoodId(payload.localId))
+        await cacheFood(data.insert_foods_one)
+      }
+
+      if (item.id != null) {
+        await db.syncQueue.delete(item.id)
+      }
+
+      syncedCount += 1
+    } catch {
+      if (item.id != null) {
+        await db.syncQueue.update(item.id, { attempts: item.attempts + 1 })
+      }
+    }
+  }
+
+  for (const item of pending) {
+    if (item.type === 'upsert_food') {
+      continue
+    }
+
     if (
       item.type !== 'insert_meal_entry' &&
       item.type !== 'update_meal_entry' &&
-      item.type !== 'delete_meal_entry' &&
-      item.type !== 'upsert_food'
+      item.type !== 'delete_meal_entry'
     ) {
       continue
     }
@@ -75,9 +140,23 @@ export async function flushNutritionSyncQueue(nhost: NhostClient) {
       const payload = JSON.parse(item.payload) as Record<string, unknown>
 
       if (item.type === 'insert_meal_entry') {
-        await graphqlRequest(nhost, INSERT_MEAL_LOG_ENTRY, {
-          object: payload.object,
-        })
+        const object = { ...(payload.object as Record<string, unknown>) }
+        const foodId = String(object.food_id ?? '')
+        if (isLocalFoodId(foodId) && foodIdMap.has(foodId)) {
+          object.food_id = foodIdMap.get(foodId)
+        }
+
+        await graphqlRequest(nhost, INSERT_MEAL_LOG_ENTRY, { object })
+
+        const date = String(object.logged_date ?? '')
+        if (date) {
+          affectedDates.add(date)
+        }
+
+        const localId = String(payload.localId ?? '')
+        if (localId) {
+          await removeCachedMealEntry(localId)
+        }
       } else if (item.type === 'update_meal_entry') {
         await graphqlRequest(nhost, UPDATE_MEAL_LOG_ENTRY, {
           id: payload.id,
@@ -85,25 +164,30 @@ export async function flushNutritionSyncQueue(nhost: NhostClient) {
         })
       } else if (item.type === 'delete_meal_entry') {
         await graphqlRequest(nhost, DELETE_MEAL_LOG_ENTRY, { id: payload.id })
-      } else if (item.type === 'upsert_food') {
-        await graphqlRequest(nhost, INSERT_FOOD, { object: payload.object })
       }
 
       if (item.id != null) {
         await db.syncQueue.delete(item.id)
       }
+
+      syncedCount += 1
     } catch {
       if (item.id != null) {
         await db.syncQueue.update(item.id, { attempts: item.attempts + 1 })
       }
     }
   }
+
+  return {
+    syncedCount,
+    affectedDates: Array.from(affectedDates),
+  }
 }
 
 async function cacheMealEntryLocally(
   localId: string,
   object: Record<string, unknown>,
-  food?: Record<string, unknown>,
+  food?: Food,
 ) {
   const date = String(object.logged_date)
   const existing = await db.nutritionDayCache.get(date)

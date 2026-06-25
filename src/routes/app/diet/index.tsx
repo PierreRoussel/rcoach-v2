@@ -8,6 +8,7 @@ import { NutritionOnboardingWizard } from '@/components/nutrition/NutritionOnboa
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { usePendingNutritionSyncCount } from '@/hooks/usePendingNutritionSync'
 import { toDateKey } from '@/lib/nutrition/dates'
 
@@ -29,6 +30,7 @@ function DietPage() {
   const [activeDate, setActiveDate] = useState(urlDate)
   const { data: settings, isLoading: settingsLoading } = useNutritionSettings()
   const { data: pendingSyncCount = 0 } = usePendingNutritionSyncCount()
+  const isOnline = useOnlineStatus()
   const [wizardDismissed, setWizardDismissed] = useState(
     () => sessionStorage.getItem(NUTRITION_ONBOARDING_DISMISSED_KEY) === '1',
   )
@@ -50,6 +52,12 @@ function DietPage() {
 
   return (
     <div className="space-y-4 pb-4">
+      {!isOnline ? (
+        <p className="rounded-xl border border-border/70 bg-muted px-3 py-2 text-xs text-muted-foreground">
+          Mode hors ligne — vos modifications seront synchronisees a la reconnexion.
+        </p>
+      ) : null}
+
       {pendingSyncCount > 0 ? (
         <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
           {pendingSyncCount} modification{pendingSyncCount > 1 ? 's' : ''} en attente de synchronisation.

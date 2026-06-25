@@ -8,14 +8,15 @@ import {
   LIST_FOOD_FAVORITES,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { cacheFood } from '@/lib/nutrition/offline-food'
+import type { Food } from '@/lib/nutrition/types'
+import { useAuth } from '@/lib/nhost/AuthProvider'
+import { syncFoodUpsert } from '@/lib/graphql/nutrition-sync-queue'
 import {
   getOffProductByBarcode,
   mapOffDraftToFoodInsert,
   type OffFoodDraft,
 } from '@/lib/nutrition/open-food-facts'
-import type { Food } from '@/lib/nutrition/types'
-import { useAuth } from '@/lib/nhost/AuthProvider'
-import { syncFoodUpsert } from '@/lib/graphql/nutrition-sync-queue'
 
 export function useFoodFavorites() {
   const { nhost, isAuthenticated } = useAuth()
@@ -89,12 +90,14 @@ export function useFoodMutations() {
         const data = await graphqlRequest<{ insert_foods_one: Food }>(nhost, INSERT_FOOD, {
           object: payload,
         })
+        await cacheFood(data.insert_foods_one)
         return data.insert_foods_one
       } catch {
-        await syncFoodUpsert(nhost, payload)
-        throw new Error(
-          'Aliment enregistré localement. Synchronisation à la reconnexion.',
-        )
+        if (!user?.id) {
+          throw new Error('Utilisateur non connecte.')
+        }
+
+        return syncFoodUpsert(nhost, payload, user.id)
       }
     },
     onSuccess: async () => {
@@ -103,19 +106,29 @@ export function useFoodMutations() {
   })
 
   const ensureOffFood = async (draft: OffFoodDraft) => {
-    const existing = await graphqlRequest<{ foods: Food[] }>(nhost, GET_FOOD_BY_OFF_ID, {
-      offProductId: draft.offProductId,
-    })
+    try {
+      const existing = await graphqlRequest<{ foods: Food[] }>(nhost, GET_FOOD_BY_OFF_ID, {
+        offProductId: draft.offProductId,
+      })
 
-    if (existing.foods[0]) {
-      return existing.foods[0]
+      if (existing.foods[0]) {
+        await cacheFood(existing.foods[0])
+        return existing.foods[0]
+      }
+
+      const data = await graphqlRequest<{ insert_foods_one: Food }>(nhost, INSERT_FOOD, {
+        object: mapOffDraftToFoodInsert(draft),
+      })
+
+      await cacheFood(data.insert_foods_one)
+      return data.insert_foods_one
+    } catch {
+      if (!user?.id) {
+        throw new Error('Utilisateur non connecte.')
+      }
+
+      return syncFoodUpsert(nhost, mapOffDraftToFoodInsert(draft), user.id, draft.offProductId)
     }
-
-    const data = await graphqlRequest<{ insert_foods_one: Food }>(nhost, INSERT_FOOD, {
-      object: mapOffDraftToFoodInsert(draft),
-    })
-
-    return data.insert_foods_one
   }
 
   const lookupBarcode = async (barcode: string) => {

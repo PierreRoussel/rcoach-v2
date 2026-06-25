@@ -2,9 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { SEARCH_MY_FOODS } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import { searchOffProducts, type OffFoodDraft } from '@/lib/nutrition/open-food-facts'
+import { cacheFood, searchCachedFoods } from '@/lib/nutrition/offline-food'
+import {
+  getOffProductByBarcode,
+  searchOffProducts,
+  type OffFoodDraft,
+} from '@/lib/nutrition/open-food-facts'
 import type { Food } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -43,32 +49,59 @@ function mapDbFood(food: Food): FoodSearchResult {
   }
 }
 
-const SEARCH_DEBOUNCE_MS = 300
+const SEARCH_DEBOUNCE_MS = 700
+
+function isBarcodeQuery(query: string) {
+  return /^\d{8,14}$/.test(query.trim())
+}
 
 export function useFoodSearch(query: string, enabled = true) {
   const { nhost, isAuthenticated } = useAuth()
+  const isOnline = useOnlineStatus()
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
   const trimmed = debouncedQuery.trim()
   const isDebouncing =
     enabled && query.trim() !== trimmed && query.trim().length >= 2
+  const isBarcode = isBarcodeQuery(trimmed)
 
   const dbQuery = useQuery({
     queryKey: ['food-search-db', trimmed],
-    enabled: isAuthenticated && enabled && trimmed.length >= 2,
+    enabled: isAuthenticated && enabled && trimmed.length >= 2 && !isBarcode,
     queryFn: async () => {
-      const data = await graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_MY_FOODS, {
-        query: `%${trimmed}%`,
-        limit: 20,
-      })
-      return data.foods
+      try {
+        const data = await graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_MY_FOODS, {
+          query: `%${trimmed}%`,
+          limit: 20,
+        })
+
+        for (const food of data.foods) {
+          await cacheFood(food)
+        }
+
+        return data.foods
+      } catch {
+        return searchCachedFoods(trimmed, 20)
+      }
     },
+  })
+
+  const barcodeQuery = useQuery({
+    queryKey: ['food-search-barcode', trimmed],
+    enabled: enabled && isBarcode && isOnline,
+    queryFn: async () => {
+      const draft = await getOffProductByBarcode(trimmed)
+      return draft ? [draft] : []
+    },
+    staleTime: 60_000,
+    retry: false,
   })
 
   const offQuery = useQuery({
     queryKey: ['food-search-off', trimmed],
-    enabled: enabled && trimmed.length >= 2,
+    enabled: enabled && trimmed.length >= 2 && !isBarcode && isOnline,
     queryFn: async () => searchOffProducts(trimmed, 15),
     staleTime: 60_000,
+    retry: false,
   })
 
   const results = useMemo(() => {
@@ -79,7 +112,9 @@ export function useFoodSearch(query: string, enabled = true) {
       merged.set(key, mapDbFood(food))
     }
 
-    for (const draft of offQuery.data ?? []) {
+    const offDrafts = isBarcode ? (barcodeQuery.data ?? []) : (offQuery.data ?? [])
+
+    for (const draft of offDrafts) {
       if (merged.has(draft.offProductId)) {
         continue
       }
@@ -102,12 +137,20 @@ export function useFoodSearch(query: string, enabled = true) {
     }
 
     return Array.from(merged.values())
-  }, [dbQuery.data, offQuery.data])
+  }, [barcodeQuery.data, dbQuery.data, isBarcode, offQuery.data])
 
   return {
     results,
-    isLoading: isDebouncing || dbQuery.isLoading || offQuery.isLoading,
-    isFetching: isDebouncing || dbQuery.isFetching || offQuery.isFetching,
-    error: dbQuery.error ?? offQuery.error,
+    isLoading:
+      isDebouncing ||
+      dbQuery.isLoading ||
+      offQuery.isLoading ||
+      barcodeQuery.isLoading,
+    isFetching:
+      isDebouncing ||
+      dbQuery.isFetching ||
+      offQuery.isFetching ||
+      barcodeQuery.isFetching,
+    error: dbQuery.error,
   }
 }

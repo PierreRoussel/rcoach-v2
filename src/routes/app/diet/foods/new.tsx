@@ -233,7 +233,10 @@ function NewFoodPage() {
               food: createdFood,
               portion,
             })
-            .then(() => {
+            .then((result) => {
+              if (result.offline) {
+                setMessage('Enregistre localement. Synchronisation a la reconnexion.')
+              }
               void navigate({
                 to: '/app/diet/meals/$mealType',
                 params: { mealType },

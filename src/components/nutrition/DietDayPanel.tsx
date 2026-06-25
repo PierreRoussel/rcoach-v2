@@ -6,8 +6,10 @@ import { MealSummaryCard } from '@/components/nutrition/MealSummaryCard'
 import { NutritionCalendarDrawer } from '@/components/nutrition/NutritionCalendarDrawer'
 import { NutritionStreakBadge } from '@/components/nutrition/NutritionStreakBadge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Pill } from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
+import { toDateKey } from '@/lib/nutrition/dates'
 import type { NutritionSettings } from '@/lib/nutrition/types'
 
 type DietDayPanelProps = {
@@ -45,6 +47,12 @@ export function DietDayPanel({ date, settings }: DietDayPanelProps) {
 
   return (
     <div className="space-y-4">
+      {date > toDateKey(new Date()) ? (
+        <Pill tone="default" className="w-full justify-center py-2">
+          Jour planifie — vous pouvez preparer vos repas a l avance
+        </Pill>
+      ) : null}
+
       <Card className="border-border/70 shadow-sm">
         <CardContent className="relative space-y-5 p-4">
           <NutritionStreakBadge
