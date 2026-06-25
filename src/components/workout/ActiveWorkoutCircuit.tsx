@@ -7,6 +7,10 @@ import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawe
 import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
 import { RpeSelect } from '@/components/workout/RpeSelect'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import {
+  ExerciseStatsDrawer,
+  type ExerciseStatsDrawerTarget,
+} from '@/components/stats/ExerciseStatsDrawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -92,6 +96,9 @@ export function ActiveWorkoutCircuit({
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const hasAutoScrolledRef = useRef(false)
   const [reorderOpen, setReorderOpen] = useState(false)
+  const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(
+    null,
+  )
   const [setOptions, setSetOptions] = useState<{
     exerciseIndex: number
     setIndex: number
@@ -252,6 +259,19 @@ export function ActiveWorkoutCircuit({
         onAddToSuperset={onAddToSuperset}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={() => setReorderOpen(true)}
+        onViewStats={(index) => {
+          const exercise = exercises[index]
+          if (!exercise) {
+            return
+          }
+
+          setStatsExercise({
+            exerciseId: exercise.exerciseId,
+            exerciseName: exercise.exerciseName,
+            muscleGroup: exercise.muscleGroup,
+            equipment: exercise.equipment,
+          })
+        }}
         onAddSet={onAddPlannedSet}
         showSetCount={false}
         dragHandle="subtle"
@@ -337,6 +357,16 @@ export function ActiveWorkoutCircuit({
             </div>
           )
         }}
+      />
+
+      <ExerciseStatsDrawer
+        open={statsExercise != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatsExercise(null)
+          }
+        }}
+        exercise={statsExercise}
       />
 
       <ExerciseReorderDrawer

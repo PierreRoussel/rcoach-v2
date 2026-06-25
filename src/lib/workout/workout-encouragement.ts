@@ -4,6 +4,8 @@ import {
   type CircuitExercise,
   type CircuitStep,
 } from '@/lib/workout/workout-circuit'
+import type { ExerciseLocale } from '@/lib/workout/exercise-translations'
+import { translateExerciseName } from '@/lib/workout/translate-exercise-name'
 
 export function formatActiveWorkoutElapsed(
   startedAt: string,
@@ -29,6 +31,7 @@ function countPendingSets(exercise: CircuitExercise): number {
 export function getWorkoutEncouragementMessage(
   exercises: CircuitExercise[],
   lastCompletedStep: CircuitStep | null,
+  locale: ExerciseLocale = 'fr',
 ): string {
   if (exercises.length === 0) {
     return 'Ajoutez des exercices pour avancer'
@@ -51,7 +54,10 @@ export function getWorkoutEncouragementMessage(
   }
 
   const exercise = exercises[nextStep.exerciseIndex]
-  const exerciseName = exercise?.exerciseName ?? 'cet exercice'
+  const exerciseName = translateExerciseName(
+    exercise?.exerciseName ?? 'cet exercice',
+    locale,
+  )
   const pendingInExercise = exercise ? countPendingSets(exercise) : 0
   const exercisesWithPending = exercises.filter(
     (entry) => countPendingSets(entry) > 0,

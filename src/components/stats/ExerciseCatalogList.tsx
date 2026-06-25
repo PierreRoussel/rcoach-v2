@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 
 import type { ExerciseCatalogEntry } from '@/lib/stats/exercise-progression'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 import { cn } from '@/lib/utils'
 
@@ -46,7 +47,9 @@ export function ExerciseCatalogList({
               }
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate font-display font-bold">{entry.name}</p>
+                <p className="truncate font-display font-bold">
+                  <DisplayExerciseName name={entry.name} />
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {muscleLabel} · {entry.sessionCount} seance
                   {entry.sessionCount > 1 ? 's' : ''}

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Pill, StatCard } from '@/design-system'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import type { HeartRateRecap } from '@/lib/health/read-heart-rate-summary'
 import {
   formatWorkoutDuration,
@@ -161,7 +162,7 @@ export function WorkoutRecapDialog({
                   >
                     <div className="min-w-0">
                       <p className="truncate font-display text-sm font-black text-foreground">
-                        {record.exerciseName}
+                        <DisplayExerciseName name={record.exerciseName} />
                       </p>
                       <p className="font-data text-xs text-muted-foreground">
                         {performance}

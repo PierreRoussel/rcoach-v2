@@ -10,6 +10,9 @@ import {
   formatWorkoutDuration,
 } from '@/lib/stats/workout-metrics'
 import { countWorkoutSets } from '@/hooks/useWorkouts'
+import { useExerciseLocale } from '@/hooks/useExerciseLocale'
+import { translateExerciseName } from '@/lib/workout/translate-exercise-name'
+import type { ExerciseLocale } from '@/lib/workout/exercise-translations'
 import { cn } from '@/lib/utils'
 
 const VISIBLE_EXERCISES = 3
@@ -23,12 +26,16 @@ type WorkoutHistoryCardProps = {
   className?: string
 }
 
-function formatExerciseSummary(entry: WorkoutSummary['workout_exercises'][number]) {
+function formatExerciseSummary(
+  entry: WorkoutSummary['workout_exercises'][number],
+  locale: ExerciseLocale,
+) {
   const setCount = entry.sets.length
   const equipment = entry.exercise.equipment
   const suffix = equipment ? ` (${equipment})` : ''
+  const exerciseName = translateExerciseName(entry.exercise.name, locale)
 
-  return `${setCount} série${setCount > 1 ? 's' : ''} de ${entry.exercise.name}${suffix}`
+  return `${setCount} série${setCount > 1 ? 's' : ''} de ${exerciseName}${suffix}`
 }
 
 export function WorkoutHistoryCard({
@@ -38,6 +45,7 @@ export function WorkoutHistoryCard({
   variant = 'standalone',
   className,
 }: WorkoutHistoryCardProps) {
+  const exerciseLocale = useExerciseLocale()
   const displayName = profile?.display_name ?? 'Athlète'
   const volumeKg = computeWorkoutVolume(workout)
   const recordsCount = countWorkoutPersonalRecords(workout, allWorkouts)
@@ -85,7 +93,7 @@ export function WorkoutHistoryCard({
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-soft-secondary">
                   <Dumbbell className="size-3.5 text-secondary" />
                 </span>
-                <span className="truncate">{formatExerciseSummary(entry)}</span>
+                <span className="truncate">{formatExerciseSummary(entry, exerciseLocale)}</span>
               </li>
             ))}
             {hiddenCount > 0 ? (

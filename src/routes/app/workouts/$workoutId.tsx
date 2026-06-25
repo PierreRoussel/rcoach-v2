@@ -12,6 +12,7 @@ import {
 import { WorkoutDetailMenu } from '@/components/workout/WorkoutDetailMenu'
 import { WorkoutSummaryHeader } from '@/components/workout/WorkoutSummaryHeader'
 import { Pill } from '@/design-system'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useMyWorkouts, useWorkoutById } from '@/hooks/useWorkouts'
 import {
@@ -90,7 +91,9 @@ function WorkoutDetailPage() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-display font-black">{entry.exercise.name}</p>
+                  <p className="font-display font-black">
+                    <DisplayExerciseName name={entry.exercise.name} />
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {entry.exercise.muscle_group ?? '—'}
                   </p>

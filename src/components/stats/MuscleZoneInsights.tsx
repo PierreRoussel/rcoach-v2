@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Trophy } from 'lucide-react'
 
 import { Pill } from '@/design-system'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import type { TopExerciseByZone } from '@/lib/stats/analytics'
 import { cn } from '@/lib/utils'
 
@@ -33,7 +34,9 @@ function ZoneInsightCard({ zone }: { zone: TopExerciseByZone }) {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {zone.label}
           </p>
-          <p className="font-display font-black text-foreground">{zone.exerciseName}</p>
+          <p className="font-display font-black text-foreground">
+            <DisplayExerciseName name={zone.exerciseName} />
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {zone.sets} sets · {Math.round(zone.volume).toLocaleString('fr-FR')} kg·reps
           </p>

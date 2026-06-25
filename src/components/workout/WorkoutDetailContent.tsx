@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Pill } from '@/design-system'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import type { WorkoutDetail } from '@/lib/graphql/operations'
 import { formatSetPerformanceSummary } from '@/lib/workout/format-set-performance'
 
@@ -70,7 +71,9 @@ export function WorkoutDetailContent({
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-display font-black">{entry.exercise.name}</p>
+                  <p className="font-display font-black">
+                    <DisplayExerciseName name={entry.exercise.name} />
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {entry.exercise.muscle_group ?? '—'}
                   </p>

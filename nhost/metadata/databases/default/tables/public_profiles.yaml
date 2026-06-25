@@ -61,6 +61,7 @@ select_permissions:
         - role
         - unit_system
         - rpe_enabled
+        - exercise_locale
         - created_at
       filter:
         _or:
@@ -89,6 +90,7 @@ update_permissions:
         - role
         - unit_system
         - rpe_enabled
+        - exercise_locale
       filter:
         id:
           _eq: X-Hasura-User-Id

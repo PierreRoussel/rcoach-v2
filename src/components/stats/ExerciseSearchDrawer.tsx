@@ -5,10 +5,13 @@ import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pill } from '@/design-system'
+import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { filterExercises, useAllExercises } from '@/hooks/useExercises'
 import type { ExerciseCatalogEntry } from '@/lib/stats/exercise-progression'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 import { MUSCLE_GROUPS } from '@/lib/workout/exercise-meta'
+import { exerciseNameMatchesQuery } from '@/lib/workout/translate-exercise-name'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import {
   Sheet,
   SheetContent,
@@ -38,6 +41,7 @@ export function ExerciseSearchDrawer({
 }: ExerciseSearchDrawerProps) {
   const navigate = useNavigate()
   const { data: allExercises = [], isLoading } = useAllExercises()
+  const exerciseLocale = useExerciseLocale()
   const [query, setQuery] = useState('')
   const [muscleGroup, setMuscleGroup] = useState<string>('all')
 
@@ -51,7 +55,7 @@ export function ExerciseSearchDrawer({
     }))
 
     const catalogIds = new Set(fromCatalog.map((entry) => entry.exerciseId))
-    const extras = filterExercises(allExercises, query, muscleGroup)
+    const extras = filterExercises(allExercises, query, muscleGroup, exerciseLocale)
       .filter((exercise) => !catalogIds.has(exercise.id))
       .map<DrawerRow>((exercise) => ({
         exerciseId: exercise.id,
@@ -66,10 +70,10 @@ export function ExerciseSearchDrawer({
         ? fromCatalog.filter((entry) => {
             const exercise = allExercises.find((item) => item.id === entry.exerciseId)
             if (!exercise) {
-              return entry.name.toLowerCase().includes(query.trim().toLowerCase())
+              return exerciseNameMatchesQuery(entry.name, query, exerciseLocale)
             }
 
-            return filterExercises([exercise], query, muscleGroup).length > 0
+            return filterExercises([exercise], query, muscleGroup, exerciseLocale).length > 0
           })
         : fromCatalog
 
@@ -80,7 +84,7 @@ export function ExerciseSearchDrawer({
 
       return left.name.localeCompare(right.name, 'fr')
     })
-  }, [allExercises, catalog, muscleGroup, query])
+  }, [allExercises, catalog, exerciseLocale, muscleGroup, query])
 
   function handleSelect(exerciseId: string) {
     onOpenChange(false)
@@ -151,7 +155,9 @@ export function ExerciseSearchDrawer({
                     onClick={() => handleSelect(row.exerciseId)}
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-display font-bold">{row.name}</p>
+                      <p className="truncate font-display font-bold">
+                        <DisplayExerciseName name={row.name} />
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {MUSCLE_GROUP_LABELS[normalizeMuscleGroup(row.muscleGroup)]}
                         {row.sessionCount > 0

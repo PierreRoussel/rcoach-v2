@@ -5,6 +5,7 @@ export type Profile = {
   role: 'athlete' | 'coach' | 'both'
   unit_system: 'kg' | 'lb'
   rpe_enabled: boolean
+  exercise_locale?: 'fr' | 'en'
   created_at: string
 }
 
@@ -100,10 +101,27 @@ export type ProfileUpdateInput = {
   unit_system?: 'kg' | 'lb'
   role?: 'athlete' | 'coach' | 'both'
   rpe_enabled?: boolean
+  exercise_locale?: 'fr' | 'en'
 }
 
 export const UPDATE_MY_PROFILE = `
   mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
+    update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      rpe_enabled
+      exercise_locale
+      created_at
+    }
+  }
+`
+
+/** Fallback when exercise_locale migration is not deployed yet. */
+export const UPDATE_MY_PROFILE_LEGACY = `
+  mutation UpdateMyProfileLegacy($id: uuid!, $changes: profiles_set_input!) {
     update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
       id
       display_name
@@ -178,6 +196,22 @@ export const LIST_MY_WORKOUTS_PAGE = `
 
 export const GET_MY_PROFILE = `
   query GetMyProfile {
+    profiles(limit: 1) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      rpe_enabled
+      exercise_locale
+      created_at
+    }
+  }
+`
+
+/** Fallback when exercise_locale migration is not deployed yet. */
+export const GET_MY_PROFILE_LEGACY = `
+  query GetMyProfileLegacy {
     profiles(limit: 1) {
       id
       display_name

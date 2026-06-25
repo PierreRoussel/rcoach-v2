@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useMatchRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-router'
 import { Activity, Dumbbell, Search, TrendingUp } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -21,26 +21,17 @@ import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
 import { useExerciseCatalogStats } from '@/hooks/useExerciseCatalogStats'
-
-type StatsSearch = {
-  scrollTo?: 'featured'
-}
+import {
+  consumeStatsScrollToFeatured,
+  scrollElementIntoViewWhenReady,
+} from '@/lib/stats/scroll-to-featured'
 
 export const Route = createFileRoute('/app/stats')({
-  validateSearch: (search: Record<string, unknown>): StatsSearch => {
-    if (search.scrollTo === 'featured') {
-      return { scrollTo: 'featured' }
-    }
-
-    return {}
-  },
   component: StatsPage,
 })
 
 function StatsPage() {
   const matchRoute = useMatchRoute()
-  const navigate = useNavigate()
-  const { scrollTo } = Route.useSearch()
   const featuredSectionRef = useRef<HTMLElement>(null)
   const isExerciseDetail = matchRoute({ to: '/app/stats/exercises/$exerciseId' })
   const {
@@ -67,23 +58,12 @@ function StatsPage() {
   const hasData = workouts.length > 0
 
   useEffect(() => {
-    if (isExerciseDetail || scrollTo !== 'featured') {
+    if (isExerciseDetail || !hasData || !consumeStatsScrollToFeatured()) {
       return
     }
 
-    const section = featuredSectionRef.current
-    if (!section) {
-      return
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      section.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-
-    void navigate({ to: '/app/stats', search: {}, replace: true })
-
-    return () => window.cancelAnimationFrame(frame)
-  }, [isExerciseDetail, navigate, scrollTo])
+    return scrollElementIntoViewWhenReady(() => featuredSectionRef.current)
+  }, [hasData, isExerciseDetail])
 
   if (isExerciseDetail) {
     return <Outlet />

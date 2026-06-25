@@ -44,6 +44,7 @@ function ProfileEditor({
   const updateProfile = useUpdateProfile()
   const [displayName, setDisplayName] = useState(profile.display_name)
   const [unitSystem, setUnitSystem] = useState(profile.unit_system)
+  const [exerciseLocale, setExerciseLocale] = useState(profile.exercise_locale ?? 'fr')
   const [role, setRole] = useState(profile.role)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -56,6 +57,7 @@ function ProfileEditor({
         changes: {
           display_name: displayName,
           unit_system: unitSystem,
+          exercise_locale: exerciseLocale,
           role,
         },
       })
@@ -91,6 +93,20 @@ function ProfileEditor({
         >
           <option value="kg">Kilogrammes (kg)</option>
           <option value="lb">Livres (lb)</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="exerciseLocale">Langue des exercices</Label>
+        <select
+          id="exerciseLocale"
+          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+          value={exerciseLocale}
+          onChange={(event) =>
+            setExerciseLocale(event.target.value as 'fr' | 'en')
+          }
+        >
+          <option value="fr">Francais (noms traduits)</option>
+          <option value="en">Anglais (noms d&apos;origine)</option>
         </select>
       </div>
       <div className="space-y-2">

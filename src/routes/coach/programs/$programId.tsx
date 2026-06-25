@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PageHeader, Pill } from '@/design-system'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import {
   useAddProgramDay,
   useAddProgramExercise,
@@ -158,7 +159,9 @@ function ProgramDetailPage() {
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3"
               >
                 <div>
-                  <p className="font-display font-bold">{entry.exercise.name}</p>
+                  <p className="font-display font-bold">
+                    <DisplayExerciseName name={entry.exercise.name} />
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {entry.target_sets ?? '—'} x {entry.target_reps ?? '—'}
                     {entry.exercise.muscle_group

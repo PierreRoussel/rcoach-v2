@@ -23,6 +23,7 @@ import {
   wrapSortableDragEnd,
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
+import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 
 export type SetOptionsSetType = 'normal' | 'warmup' | 'failure'
 
@@ -126,6 +127,7 @@ export function SetOptionsDrawer({
   onUpdateSetType,
 }: SetOptionsDrawerProps) {
   const sensors = useSortableSensors()
+  const displayExerciseName = useExerciseDisplayName(exerciseName)
   const [localSelectedIndex, setLocalSelectedIndex] = useState<number | null>(null)
   const selectedIndex = open ? (localSelectedIndex ?? selectedSetIndex) : null
   const selectedSet = selectedIndex != null ? sets[selectedIndex] : null
@@ -206,7 +208,7 @@ export function SetOptionsDrawer({
             {selectedSet ? setLabel(selectedSet, selectedIndex ?? 0) : 'Serie'}
           </SheetTitle>
           <SheetDescription>
-            {exerciseName ?? 'Options de la serie selectionnee'}
+            {displayExerciseName || 'Options de la serie selectionnee'}
           </SheetDescription>
         </SheetHeader>
 

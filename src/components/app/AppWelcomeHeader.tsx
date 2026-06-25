@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { BrandLogo } from '@/design-system'
+import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useActiveWorkoutElapsed } from '@/hooks/useActiveWorkoutElapsed'
 import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
@@ -57,8 +58,9 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
 
   const firstName = getFirstName(displayName)
   const greeting = firstName ? `Bonjour ${firstName} 👋` : 'Bonjour 👋'
+  const exerciseLocale = useExerciseLocale()
   const encouragement = startedAt
-    ? getWorkoutEncouragementMessage(exercises, lastCompletedStep)
+    ? getWorkoutEncouragementMessage(exercises, lastCompletedStep, exerciseLocale)
     : null
 
   const mostRecentWorkout = workouts[0]

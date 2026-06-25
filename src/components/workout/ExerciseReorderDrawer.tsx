@@ -22,6 +22,7 @@ import {
   wrapSortableDragEnd,
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 
 type ExerciseReorderDrawerProps = {
@@ -63,7 +64,9 @@ function ReorderItem({
         <GripVertical className="size-4" />
       </button>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display font-black">{exercise.exerciseName}</p>
+        <p className="truncate font-display font-black">
+          <DisplayExerciseName name={exercise.exerciseName} />
+        </p>
         <p className="text-xs text-muted-foreground">
           {exercise.sets.length} serie{exercise.sets.length !== 1 ? 's' : ''}
         </p>

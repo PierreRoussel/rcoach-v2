@@ -11,6 +11,11 @@ import {
   summarizePerformance,
   type PerformanceSummary,
 } from '@/lib/workout/progressive-overload'
+import {
+  exerciseNameMatchesQuery,
+  translateExerciseName,
+} from '@/lib/workout/translate-exercise-name'
+import type { ExerciseLocale } from '@/lib/workout/exercise-translations'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useAllExercises() {
@@ -100,6 +105,7 @@ export function filterExercises(
   exercises: Exercise[],
   query: string,
   muscleGroup: string | 'all',
+  locale: ExerciseLocale = 'fr',
 ) {
   const normalized = query.trim().toLowerCase()
 
@@ -113,9 +119,11 @@ export function filterExercises(
     }
 
     return (
-      exercise.name.toLowerCase().includes(normalized) ||
+      exerciseNameMatchesQuery(exercise.name, normalized, locale) ||
       exercise.muscle_group?.toLowerCase().includes(normalized) ||
       exercise.equipment?.toLowerCase().includes(normalized)
     )
   })
 }
+
+export { translateExerciseName }
