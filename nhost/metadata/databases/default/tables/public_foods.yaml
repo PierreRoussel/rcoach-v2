@@ -52,34 +52,19 @@ insert_permissions:
   - role: user
     permission:
       check:
-        source:
-          _eq: user
-      set:
-        user_id: x-hasura-User-Id
+        _or:
+          - _and:
+              - source:
+                  _eq: user
+              - user_id:
+                  _eq: X-Hasura-User-Id
+          - _and:
+              - source:
+                  _eq: open_food_facts
+              - user_id:
+                  _is_null: true
       columns:
-        - barcode
-        - name
-        - brand
-        - calories
-        - carbs_g
-        - protein_g
-        - fat_g
-        - salt_g
-        - sugar_g
-        - saturated_fat_g
-        - serving_size_g
-        - serving_label
-        - source
-        - off_product_id
-  - role: user
-    permission:
-      check:
-        _and:
-          - source:
-              _eq: open_food_facts
-          - user_id:
-              _is_null: true
-      columns:
+        - user_id
         - barcode
         - name
         - brand

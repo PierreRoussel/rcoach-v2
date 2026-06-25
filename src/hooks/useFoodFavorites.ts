@@ -62,18 +62,36 @@ export function useFoodFavoriteMutations() {
 }
 
 export function useFoodMutations() {
-  const { nhost } = useAuth()
+  const { nhost, user } = useAuth()
   const queryClient = useQueryClient()
+
+  function withFoodInsertIdentity(object: Record<string, unknown>) {
+    if (object.source === 'open_food_facts') {
+      return object
+    }
+
+    if (!user?.id) {
+      throw new Error('Utilisateur non connecte.')
+    }
+
+    return {
+      ...object,
+      source: 'user',
+      user_id: user.id,
+    }
+  }
 
   const createFood = useMutation({
     mutationFn: async (object: Record<string, unknown>) => {
+      const payload = withFoodInsertIdentity(object)
+
       try {
         const data = await graphqlRequest<{ insert_foods_one: Food }>(nhost, INSERT_FOOD, {
-          object,
+          object: payload,
         })
         return data.insert_foods_one
       } catch {
-        await syncFoodUpsert(nhost, object)
+        await syncFoodUpsert(nhost, payload)
         throw new Error(
           'Aliment enregistré localement. Synchronisation à la reconnexion.',
         )
