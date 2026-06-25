@@ -6,7 +6,7 @@ import { Pill } from '@/design-system'
 import type { FriendMotivation } from '@/lib/graphql/operations'
 import type { FriendActivitySummary } from '@/lib/social/friend-activity'
 import type { MotivationNotification } from '@/lib/social/motivation-notifications'
-import type { SentMotivationState } from '@/lib/social/sent-motivation'
+import type { SentMotivationDisplay } from '@/lib/social/sent-motivation'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 type FriendRecapRowProps = {
@@ -14,7 +14,7 @@ type FriendRecapRowProps = {
   avatarUrl: string | null
   activity: FriendActivitySummary
   motivationNotification: MotivationNotification | null
-  sentState: SentMotivationState | null
+  sentDisplay: SentMotivationDisplay | null
   onSendMotivation: () => void
   onOpenMotivation: () => void
 }
@@ -24,7 +24,7 @@ export function FriendRecapRow({
   avatarUrl,
   activity,
   motivationNotification,
-  sentState,
+  sentDisplay,
   onSendMotivation,
   onOpenMotivation,
 }: FriendRecapRowProps) {
@@ -65,7 +65,7 @@ export function FriendRecapRow({
 
         <FriendMotivationSendButton
           friendName={displayName}
-          sentState={sentState}
+          sentDisplay={sentDisplay}
           onSend={onSendMotivation}
         />
       </div>

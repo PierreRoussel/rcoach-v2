@@ -25,10 +25,6 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { summarizeFriendActivity } from '@/lib/social/friend-activity'
 import { buildFriendRecapList, getFriendProfile } from '@/lib/social/friend-utils'
 import {
-  getSentMotivationBlockedMessage,
-  getSentMotivationSendState,
-} from '@/lib/social/sent-motivation'
-import {
   isValidMotivationMessage,
   normalizeMotivationMessage,
   type MotivationPresetKey,
@@ -415,16 +411,6 @@ export function useSendMotivation() {
       message: string
       presetKey: MotivationPresetKey
     }) => {
-      const sentMotivations =
-        queryClient.getQueryData<FriendMotivation[]>([
-          ...SENT_MOTIVATIONS_KEY,
-          userId,
-        ]) ?? []
-      const blockedState = getSentMotivationSendState(sentMotivations, recipientId)
-      if (blockedState) {
-        throw new Error(getSentMotivationBlockedMessage(blockedState))
-      }
-
       const normalizedMessage = normalizeMotivationMessage(message)
       if (!isValidMotivationMessage(normalizedMessage)) {
         throw new Error('Ajoutez un court message de motivation.')

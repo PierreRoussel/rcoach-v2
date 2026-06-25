@@ -1,10 +1,7 @@
-import { isAfter, parseISO, startOfDay } from 'date-fns'
-
 import type { FriendMotivation } from '@/lib/graphql/operations'
 
-export type SentMotivationState = {
+export type SentMotivationDisplay = {
   motivation: FriendMotivation
-  canSendAgain: boolean
   isRead: boolean
 }
 
@@ -14,7 +11,8 @@ export function buildLatestSentByRecipient(
   const latestByRecipient = new Map<string, FriendMotivation>()
 
   for (const motivation of motivations) {
-    if (!latestByRecipient.has(motivation.recipient_id)) {
+    const existing = latestByRecipient.get(motivation.recipient_id)
+    if (!existing || motivation.created_at > existing.created_at) {
       latestByRecipient.set(motivation.recipient_id, motivation)
     }
   }
@@ -22,46 +20,25 @@ export function buildLatestSentByRecipient(
   return latestByRecipient
 }
 
-/** Envoi possible a partir du lendemain (jour calendaire) de la lecture. */
-export function canSendMotivationAfterRead(
-  motivation: FriendMotivation,
-  now = new Date(),
-): boolean {
-  if (!motivation.read_at) {
-    return false
-  }
-
-  const readDay = startOfDay(parseISO(motivation.read_at))
-  const today = startOfDay(now)
-  return isAfter(today, readDay)
-}
-
-export function getSentMotivationSendState(
+export function getSentMotivationDisplay(
   motivations: FriendMotivation[],
   recipientId: string,
-  now = new Date(),
-): SentMotivationState | null {
+): SentMotivationDisplay | null {
   const latest = buildLatestSentByRecipient(motivations).get(recipientId)
   if (!latest) {
     return null
   }
 
-  const canSendAgain = canSendMotivationAfterRead(latest, now)
-  if (canSendAgain) {
-    return null
-  }
-
   return {
     motivation: latest,
-    canSendAgain: false,
     isRead: latest.read_at != null,
   }
 }
 
-export function getSentMotivationBlockedMessage(state: SentMotivationState): string {
-  if (!state.isRead) {
-    return 'En attente de lecture par votre ami.'
+export function getSentMotivationStatusLabel(display: SentMotivationDisplay): string {
+  if (!display.isRead) {
+    return 'Dernier emoji en attente de lecture.'
   }
 
-  return 'Nouvel emoji disponible demain.'
+  return 'Dernier emoji lu par votre ami.'
 }

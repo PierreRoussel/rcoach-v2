@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { FriendMotivation } from '@/lib/graphql/operations'
 
-import {
-  canSendMotivationAfterRead,
-  getSentMotivationSendState,
-} from '@/lib/social/sent-motivation'
+import { getSentMotivationDisplay } from '@/lib/social/sent-motivation'
 
 function sentMotivation(
   overrides: Partial<FriendMotivation> & Pick<FriendMotivation, 'recipient_id'>,
@@ -27,48 +24,49 @@ function sentMotivation(
 }
 
 describe('sent-motivation', () => {
-  it('blocks sending while the latest motivation is unread', () => {
-    const state = getSentMotivationSendState(
+  it('shows the latest sent emoji even when unread', () => {
+    const display = getSentMotivationDisplay(
       [sentMotivation({ recipient_id: 'friend-a' })],
       'friend-a',
-      new Date('2026-06-25T18:00:00.000Z'),
     )
 
-    expect(state?.isRead).toBe(false)
-    expect(state?.canSendAgain).toBe(false)
+    expect(display?.isRead).toBe(false)
+    expect(display?.motivation.emoji).toBe('🔥')
   })
 
-  it('blocks sending on the same calendar day as read', () => {
-    const readAt = new Date(2026, 5, 25, 15, 30).toISOString()
-    const motivation = sentMotivation({
-      recipient_id: 'friend-a',
-      read_at: readAt,
-    })
+  it('keeps showing the latest sent emoji after read', () => {
+    const display = getSentMotivationDisplay(
+      [
+        sentMotivation({
+          recipient_id: 'friend-a',
+          read_at: '2026-06-25T15:30:00.000Z',
+        }),
+      ],
+      'friend-a',
+    )
 
-    expect(
-      canSendMotivationAfterRead(motivation, new Date(2026, 5, 25, 23, 59)),
-    ).toBe(false)
-    expect(
-      getSentMotivationSendState([motivation], 'friend-a', new Date(2026, 5, 25, 23, 59)),
-    ).not.toBeNull()
+    expect(display?.isRead).toBe(true)
   })
 
-  it('allows sending from the day after read', () => {
-    const readAt = new Date(2026, 5, 25, 15, 30).toISOString()
-    const motivation = sentMotivation({
-      recipient_id: 'friend-a',
-      read_at: readAt,
-    })
+  it('uses the most recent send per friend', () => {
+    const display = getSentMotivationDisplay(
+      [
+        sentMotivation({
+          id: 'old',
+          recipient_id: 'friend-a',
+          emoji: '👏',
+          created_at: '2026-06-24T10:00:00.000Z',
+        }),
+        sentMotivation({
+          id: 'new',
+          recipient_id: 'friend-a',
+          emoji: '💪',
+          created_at: '2026-06-25T10:00:00.000Z',
+        }),
+      ],
+      'friend-a',
+    )
 
-    expect(
-      canSendMotivationAfterRead(motivation, new Date(2026, 5, 26, 0, 1)),
-    ).toBe(true)
-    expect(
-      getSentMotivationSendState(
-        [motivation],
-        'friend-a',
-        new Date(2026, 5, 26, 0, 1),
-      ),
-    ).toBeNull()
+    expect(display?.motivation.emoji).toBe('💪')
   })
 })

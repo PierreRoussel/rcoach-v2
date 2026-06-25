@@ -12,7 +12,7 @@ import {
   useRespondFriendRequest,
   useSentMotivations,
 } from '@/hooks/useFriends'
-import { getSentMotivationSendState } from '@/lib/social/sent-motivation'
+import { getSentMotivationDisplay } from '@/lib/social/sent-motivation'
 import type { MotivationNotification } from '@/lib/social/motivation-notifications'
 
 export function FriendsSection() {
@@ -96,7 +96,7 @@ export function FriendsSection() {
               avatarUrl={item.friend.avatar_url}
               activity={item.activity}
               motivationNotification={item.motivationNotification}
-              sentState={getSentMotivationSendState(sentMotivations, item.friend.id)}
+              sentDisplay={getSentMotivationDisplay(sentMotivations, item.friend.id)}
               onSendMotivation={() =>
                 setPickerFriend({ id: item.friend.id, name: item.friend.display_name })
               }

@@ -28,7 +28,7 @@ import { useMyProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { isValidFriendCode, normalizeFriendCode } from '@/lib/social/friend-code'
 import { getFriendProfile } from '@/lib/social/friend-utils'
-import { getSentMotivationSendState } from '@/lib/social/sent-motivation'
+import { getSentMotivationDisplay } from '@/lib/social/sent-motivation'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 export const Route = createFileRoute('/app/friends/')({
@@ -317,7 +317,7 @@ function FriendsPage() {
                 <FriendMotivationSendButton
                   friendName={friend.display_name}
                   variant="soft"
-                  sentState={getSentMotivationSendState(sentMotivations, friend.id)}
+                  sentDisplay={getSentMotivationDisplay(sentMotivations, friend.id)}
                   onSend={() =>
                     setMotivationTarget({
                       id: friend.id,
