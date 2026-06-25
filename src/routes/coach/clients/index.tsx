@@ -41,12 +41,12 @@ function CoachClientsPage() {
     try {
       await inviteClient.mutateAsync(email)
       setEmail('')
-      setMessage('Invitation envoyee (statut pending).')
+      setMessage('Invitation envoyée (statut pending).')
     } catch (inviteError) {
       setMessage(
         inviteError instanceof Error
           ? inviteError.message
-          : 'Impossible d inviter ce client.',
+          : "Impossible d'inviter ce client.",
       )
     }
   }
@@ -56,7 +56,7 @@ function CoachClientsPage() {
       <PageHeader
         eyebrow="Coach"
         title="Clients"
-        description="Invitez des athletes et suivez le statut de la relation coach-client."
+        description="Invitez des athlètes et suivez le statut de la relation coach-client."
       />
 
       <Card className="rounded-2xl border-border">
@@ -65,7 +65,7 @@ function CoachClientsPage() {
             Inviter un client
           </CardTitle>
           <CardDescription>
-            L athlete pourra accepter l invitation une fois connecte (Phase 2).
+            L'athlète pourra accepter l'invitation une fois connecté (Phase 2).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -74,7 +74,7 @@ function CoachClientsPage() {
             <Input
               id="clientEmail"
               type="email"
-              placeholder="athlete@example.com"
+              placeholder="athlète@example.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -118,7 +118,7 @@ function CoachClientsPage() {
             >
               <div className="space-y-1">
                 <p className="font-display font-bold">
-                  {client.athlete?.display_name ??
+                  {client.athlète?.display_name ??
                     client.invited_email ??
                     'Client'}
                 </p>

@@ -134,7 +134,7 @@ describe('client-dashboard', () => {
   })
 
   it('formats relative workout dates', () => {
-    expect(formatRelativeWorkoutDate(null, now)).toBe('Aucune seance')
+    expect(formatRelativeWorkoutDate(null, now)).toBe('Aucune séance')
     expect(formatRelativeWorkoutDate('2026-06-20T08:00:00.000Z', now)).toBe(
       "Aujourd'hui",
     )

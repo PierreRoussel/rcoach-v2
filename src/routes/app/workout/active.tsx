@@ -152,7 +152,7 @@ function ActiveWorkoutPage() {
 
   async function handleFinish() {
     if (completedCount === 0) {
-      setError('Validez au moins une serie avant de terminer.')
+      setError('Validez au moins une série avant de terminer.')
       return
     }
 
@@ -164,7 +164,7 @@ function ActiveWorkoutPage() {
     try {
       const draft = await finishWorkout()
       if (!draft) {
-        setError('Seance introuvable.')
+        setError('Séance introuvable.')
         return
       }
 
@@ -221,7 +221,7 @@ function ActiveWorkoutPage() {
       setError(
         finishError instanceof Error
           ? finishError.message
-          : 'Impossible de terminer la seance.',
+          : 'Impossible de terminer la séance.',
       )
     } finally {
       setIsSaving(false)
@@ -232,9 +232,9 @@ function ActiveWorkoutPage() {
     return (
       <div className="space-y-4">
         <PageHeader
-          eyebrow="Seance active"
-          title="Nouvelle seance"
-          description="Composez votre seance, reordonnez les exercices et suivez votre surcharge."
+          eyebrow="Séance active"
+          title="Nouvelle séance"
+          description="Composez votre séance, réordonnez les exercices et suivez votre surcharge."
         />
         <StartWorkoutForm initialTemplateId={initialTemplateId} />
       </div>
@@ -246,10 +246,10 @@ function ActiveWorkoutPage() {
       <>
         <div className="space-y-4">
           <PageHeader
-            eyebrow="Seance terminee"
-            title={recapData?.title ?? 'Seance'}
+            eyebrow="Séance terminée"
+            title={recapData?.title ?? 'Séance'}
             description={
-              isSaving ? 'Enregistrement en cours...' : 'Consultez votre recap ci-dessous.'
+              isSaving ? 'Enregistrement en cours...' : 'Consultez votre récap ci-dessous.'
             }
           />
         </div>
@@ -275,14 +275,14 @@ function ActiveWorkoutPage() {
     <div className={isResting ? 'space-y-4 pb-44' : 'space-y-4 pb-24'}>
       {wearSyncEnabled ? (
         <Pill tone={watchAvailable ? 'secondary' : 'default'}>
-          {watchAvailable ? 'Montre Wear OS connectee' : 'Montre Wear OS non detectee'}
+          {watchAvailable ? 'Montre Wear OS connectée' : 'Montre Wear OS non détectée'}
         </Pill>
       ) : null}
 
       <PageHeader
         eyebrow="En cours"
         title={title}
-        description={`Etape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} serie${completedCount > 1 ? 's' : ''} validee${completedCount > 1 ? 's' : ''}`}
+        description={`Étape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} série${completedCount > 1 ? 's' : ''} validée${completedCount > 1 ? 's' : ''}`}
       />
 
       <Card className="rounded-2xl border-border">
@@ -292,7 +292,7 @@ function ActiveWorkoutPage() {
             Circuit
           </CardTitle>
           <CardDescription>
-            Validez les series dans l ordre qui vous convient. Les supersets alternent automatiquement.
+            Validez les séries dans l'ordre qui vous convient. Les supersets alternent automatiquement.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-0 pb-0 sm:px-0">
@@ -375,7 +375,7 @@ function ActiveWorkoutPage() {
           disabled={isSaving}
           onClick={() => void handleFinish()}
         >
-          {isSaving ? 'Enregistrement...' : 'Terminer la seance'}
+          {isSaving ? 'Enregistrement...' : 'Terminer la séance'}
         </Button>
         <Button type="button" variant="ghost" onClick={() => void cancelWorkout()}>
           Annuler

@@ -31,7 +31,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
     (state) => state.startWorkoutFromTemplate,
   )
 
-  const [workoutTitle, setWorkoutTitle] = useState('Seance libre')
+  const [workoutTitle, setWorkoutTitle] = useState('Séance libre')
   const [templateId, setTemplateId] = useState<string | null>(
     initialTemplateId ?? null,
   )
@@ -73,7 +73,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
     setIsStarting(true)
 
     try {
-      const trimmedTitle = workoutTitle.trim() || 'Seance libre'
+      const trimmedTitle = workoutTitle.trim() || 'Séance libre'
 
       if (templateId && templates) {
         const template = templates.find((item) => item.id === templateId)
@@ -95,7 +95,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
       setFormError(
         startError instanceof Error
           ? startError.message
-          : 'Impossible de demarrer la seance.',
+          : 'Impossible de démarrer la séance.',
       )
     } finally {
       setIsStarting(false)
@@ -105,9 +105,9 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
   return (
     <Card className="rounded-2xl border-border">
       <CardHeader>
-        <CardTitle className="font-display font-black">Demarrer</CardTitle>
+        <CardTitle className="font-display font-black">Démarrer</CardTitle>
         <CardDescription>
-          Seance libre ou a partir d&apos;un modele pre-construit.
+          Séance libre ou a partir d&apos;un modèle pre-construit.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -119,16 +119,16 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
             onChange={(event) => setWorkoutTitle(event.target.value)}
             placeholder={
               selectedTemplate
-                ? `Par defaut : ${selectedTemplate.name}`
-                : 'Seance libre, Push, Legs...'
+                ? `Par défaut : ${selectedTemplate.name}`
+                : 'Séance libre, Push, Legs...'
             }
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="workoutTemplate">Modele (optionnel)</Label>
+          <Label htmlFor="workoutTemplate">Modèle (optionnel)</Label>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Chargement des modeles...</p>
+            <p className="text-sm text-muted-foreground">Chargement des modèles...</p>
           ) : (
             <select
               id="workoutTemplate"
@@ -139,7 +139,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
               }
               disabled={Boolean(error)}
             >
-              <option value="">Seance libre (sans modele)</option>
+              <option value="">Séance libre (sans modèle)</option>
               {(templates ?? []).map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name} ({template.workout_template_exercises.length} exo)
@@ -149,7 +149,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
           )}
           {templatesMissing ? (
             <p className="text-xs text-muted-foreground">
-              Modeles indisponibles — redeployez Nhost (migration workout_templates).
+              Modèles indisponibles — redéployez Nhost (migration workout_templates).
             </p>
           ) : null}
           {error && !templatesMissing ? (
@@ -165,7 +165,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
           disabled={isStarting}
           onClick={() => void handleStart()}
         >
-          {isStarting ? 'Demarrage...' : 'Demarrer'}
+          {isStarting ? 'Démarrage...' : 'Démarrer'}
         </Button>
 
         {formError ? <FormMessage>{formError}</FormMessage> : null}

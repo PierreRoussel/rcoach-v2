@@ -31,7 +31,7 @@ export async function graphqlRequest<T>(
     }
 
     if (response.body.data == null) {
-      throw new Error('Reponse GraphQL vide.')
+      throw new Error('Réponse GraphQL vide.')
     }
 
     return response.body.data

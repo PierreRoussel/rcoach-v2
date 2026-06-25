@@ -183,7 +183,7 @@ export function TemplateExerciseSetsEditor({
   const defaultRestControl = (
     <div className="flex w-full items-center gap-2 px-3">
       <Label htmlFor={`defaultRest-${exercise.exerciseId}`} className="shrink-0 text-sm">
-        Repos par defaut
+        Repos par défaut
       </Label>
       <Input
         id={`defaultRest-${exercise.exerciseId}`}
@@ -220,7 +220,7 @@ export function TemplateExerciseSetsEditor({
           />
         </div>
         <div className="mx-3 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
-          <p className="text-sm text-muted-foreground">Aucune serie planifiee.</p>
+          <p className="text-sm text-muted-foreground">Aucune série planifiée.</p>
         </div>
       </div>
     )
@@ -272,7 +272,7 @@ export function TemplateExerciseSetsEditor({
                       ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
                       : 'bg-muted text-foreground',
                   )}
-                  aria-label={`Options serie ${index + 1}`}
+                  aria-label={`Options série ${index + 1}`}
                   onClick={() => setSelectedSetIndex(index)}
                 >
                   {set.setType === 'warmup' ? 'W' : index + 1}

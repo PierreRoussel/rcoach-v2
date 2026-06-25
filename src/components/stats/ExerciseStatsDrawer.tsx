@@ -55,7 +55,7 @@ export function ExerciseStatsDrawer({
           </SheetTitle>
           <SheetDescription>
             {[muscleLabel, exercise?.equipment].filter(Boolean).join(' · ') ||
-              'Progression et historique de l exercice'}
+              "Progression et historique de l'exercice"}
           </SheetDescription>
         </SheetHeader>
 

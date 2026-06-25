@@ -48,8 +48,8 @@ export function CalendarDayDetail({
           </p>
           <p className="text-xs text-muted-foreground">
             {hasContent
-              ? 'Detail de la journee selectionnee'
-              : 'Aucune seance pour ce jour'}
+              ? 'Détail de la journée sélectionnée'
+              : 'Aucune séance pour ce jour'}
           </p>
         </div>
         <Pill tone="purple" className="shrink-0 py-1">
@@ -61,7 +61,7 @@ export function CalendarDayDetail({
       {marker?.workouts.length ? (
         <section className="space-y-2">
           <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-            Realise
+            Réalisé
           </p>
           <ul className="space-y-2">
             {marker.workouts.map((workout) => (
@@ -89,7 +89,7 @@ export function CalendarDayDetail({
       {marker?.planned.length ? (
         <section className="space-y-2">
           <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-            Planifie
+            Planifié
           </p>
           <ul className="space-y-2">
             {marker.planned.map((occurrence) => (
@@ -129,7 +129,7 @@ export function CalendarDayDetail({
       {!hasContent ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center">
           <Dumbbell className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Rien de prevu pour ce jour.</p>
+          <p className="text-sm text-muted-foreground">Rien de prévu pour ce jour.</p>
         </div>
       ) : null}
 
@@ -142,7 +142,7 @@ export function CalendarDayDetail({
           onClick={() => onPlanDate(date)}
         >
           <CalendarClock className="size-4" />
-          Planifier une seance
+          Planifier une séance
         </Button>
       ) : null}
     </div>

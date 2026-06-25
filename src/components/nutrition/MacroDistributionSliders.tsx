@@ -4,7 +4,7 @@ export type MacroDistributionKey = 'carbs' | 'protein' | 'fat'
 
 const MACRO_LABELS: Record<MacroDistributionKey, string> = {
   carbs: 'Glucides',
-  protein: 'Proteines',
+  protein: 'Protéines',
   fat: 'Lipides',
 }
 

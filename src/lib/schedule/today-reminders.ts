@@ -42,10 +42,10 @@ export function formatTodayReminderMessage(reminders: TodayReminder[]): string |
   if (reminders.length === 1) {
     const reminder = reminders[0]
     const time = reminder.timeLabel ? ` a ${reminder.timeLabel}` : ''
-    return `Seance prevue${time} : ${reminder.title}`
+    return `Séance prévue${time} : ${reminder.title}`
   }
 
-  return `${reminders.length} seances prevues aujourd'hui`
+  return `${reminders.length} séances prévues aujourd'hui`
 }
 
 export function formatTodayDateLabel(now = new Date()): string {

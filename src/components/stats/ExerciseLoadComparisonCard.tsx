@@ -23,7 +23,7 @@ export function ExerciseLoadComparisonCard({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-muted/15 px-4 py-6 text-center">
         <p className="text-sm text-muted-foreground">
-          Pas encore assez de donnees pour comparer le debut et la fin de cette periode.
+          Pas encore assez de données pour comparer le debut et la fin de cette période.
         </p>
         {comparison.currentLabel ? (
           <p className="mt-2 font-data text-sm text-foreground">

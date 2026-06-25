@@ -340,7 +340,7 @@ function SortableExerciseItem({
               ? 'cursor-grab opacity-0 transition-opacity group-hover:opacity-40 active:cursor-grabbing active:opacity-70'
               : 'cursor-grab active:cursor-grabbing',
           )}
-          aria-label="Reordonner"
+          aria-label="Réordonner"
           {...attributes}
           {...listeners}
         >
@@ -373,7 +373,7 @@ function SortableExerciseItem({
               variant="ghost"
               size="icon"
               className="size-8 shrink-0 [&[data-state=open]>svg]:rotate-180"
-              aria-label="Replier ou deplier les series"
+              aria-label="Replier ou déplier les séries"
             >
               <ChevronDown className="size-4 transition-transform duration-200" />
             </Button>
@@ -412,7 +412,7 @@ function SortableExerciseItem({
                 onClick={() => onAddSet(index)}
               >
                 <Plus className="size-4" />
-                Ajouter une serie
+                Ajouter une série
               </Button>
             </div>
           ) : null}
@@ -603,7 +603,7 @@ export function SortableExerciseList({
             }
           }}
           dialogTitle="Remplacer l'exercice"
-          dialogDescription={`Choisissez un exercice pour remplacer ${replaceExerciseName || 'cet exercice'}. Les series planifiees sont conservees.`}
+          dialogDescription={`Choisissez un exercice pour remplacer ${replaceExerciseName || 'cet exercice'}. Les séries planifiées sont conservées.`}
           excludeIds={exercises
             .filter((_, index) => index !== replaceIndex)
             .map((exercise) => exercise.exerciseId)}

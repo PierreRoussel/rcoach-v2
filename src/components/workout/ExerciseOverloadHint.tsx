@@ -83,7 +83,7 @@ function OverloadAdjustDialog({
         <DialogHeader>
           <DialogTitle className="font-display font-black">Ajuster la surcharge</DialogTitle>
           <DialogDescription>
-            Modifiez la charge et les repetitions a appliquer aux series de travail.
+            Modifiez la charge et les répétitions a appliquer aux séries de travail.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
@@ -206,7 +206,7 @@ export function ExerciseOverloadHint({
   if (!lastPerformance?.bestSet) {
     return (
       <p className={cn('text-xs text-muted-foreground', className)}>
-        Premiere fois sur cet exercice — validez une serie de reference.
+        Première fois sur cet exercice — validez une série de référence.
       </p>
     )
   }
@@ -256,7 +256,7 @@ export function ExerciseOverloadHint({
         <div className="flex items-center gap-2">
           <TrendingUp className="size-4 text-secondary-foreground" />
           <p className="text-xs font-semibold text-foreground">
-            Seance precedente ({dateLabel})
+            Séance précédente ({dateLabel})
           </p>
         </div>
         <p className="font-data text-xs text-muted-foreground">

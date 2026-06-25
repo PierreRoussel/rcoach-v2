@@ -18,7 +18,7 @@ export function FoodSearchList({
   favoriteFoodIds,
   onSelect,
   onToggleFavorite,
-  emptyLabel = 'Aucun aliment trouve.',
+  emptyLabel = 'Aucun aliment trouvé.',
   className,
 }: FoodSearchListProps) {
   if (results.length === 0) {

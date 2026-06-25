@@ -47,7 +47,7 @@ export async function insertWorkoutTemplateWithFallbacks(
     try {
       const template = await tryInsertTemplate(nhost, object)
       if (!template?.id) {
-        throw new Error('Creation du modele impossible.')
+        throw new Error('Création du modèle impossible.')
       }
 
       if (input.sourceWorkoutId) {
@@ -71,7 +71,7 @@ export async function insertWorkoutTemplateWithFallbacks(
 
   throw lastError instanceof Error
     ? lastError
-    : new Error('Creation du modele impossible.')
+    : new Error('Création du modèle impossible.')
 }
 
 async function linkTemplateToSourceWorkout(

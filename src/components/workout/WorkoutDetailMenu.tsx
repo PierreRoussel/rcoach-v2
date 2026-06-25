@@ -95,7 +95,7 @@ export function WorkoutDetailMenu({
     } catch (shareError) {
       if (isGraphqlMissingFieldError(shareError, 'share_token')) {
         setError(
-          'Le partage necessite un redeploiement Nhost (migration workout_sharing).',
+          'Le partage nécessite un redéploiement Nhost (migration workout_sharing).',
         )
         return
       }
@@ -103,7 +103,7 @@ export function WorkoutDetailMenu({
       setError(
         shareError instanceof Error
           ? shareError.message
-          : 'Impossible de partager la seance.',
+          : 'Impossible de partager la séance.',
       )
     }
   }
@@ -120,7 +120,7 @@ export function WorkoutDetailMenu({
       const message =
         saveError instanceof Error
           ? saveError.message
-          : 'Impossible d enregistrer le modele.'
+          : "Impossible d'enregistrer le modèle."
       setError(message)
       throw saveError
     }
@@ -141,7 +141,7 @@ export function WorkoutDetailMenu({
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : 'Impossible de supprimer la seance.',
+          : 'Impossible de supprimer la séance.',
       )
     }
   }
@@ -162,7 +162,7 @@ export function WorkoutDetailMenu({
             variant={compact ? 'ghost' : 'outline'}
             size="icon"
             className={compact ? 'size-8 rounded-full' : 'rounded-full'}
-            aria-label="Actions de la seance"
+            aria-label="Actions de la séance"
           >
             <MoreVertical className="size-4" />
           </Button>
@@ -173,7 +173,7 @@ export function WorkoutDetailMenu({
             onClick={() => void handleShare()}
           >
             <Link2 className="size-4" />
-            Partager la seance
+            Partager la séance
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
@@ -197,7 +197,7 @@ export function WorkoutDetailMenu({
                   params={{ templateId: existingTemplate.id }}
                 >
                   <BookmarkPlus className="size-4" />
-                  Voir le modele
+                  Voir le modèle
                 </Link>
               </DropdownMenuItem>
             </>
@@ -207,7 +207,7 @@ export function WorkoutDetailMenu({
               onClick={() => setSaveDialogOpen(true)}
             >
               <BookmarkPlus className="size-4" />
-              Enregistrer comme modele
+              Enregistrer comme modèle
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
@@ -220,7 +220,7 @@ export function WorkoutDetailMenu({
             }}
           >
             <Trash2 className="size-4" />
-            Supprimer la seance
+            Supprimer la séance
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -252,8 +252,8 @@ export function WorkoutDetailMenu({
         onOpenChange={setSaveDialogOpen}
         onConfirm={handleSaveAsTemplate}
         isPending={createTemplate.isPending}
-        title="Enregistrer comme modele"
-        description="Creez un modele reutilisable a partir de cette seance."
+        title="Enregistrer comme modèle"
+        description="Créez un modèle reutilisable a partir de cette séance."
         placeholder={workout.title}
         confirmLabel="Enregistrer"
         defaultName={workout.title}
@@ -262,10 +262,10 @@ export function WorkoutDetailMenu({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette seance ?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer cette séance ?</AlertDialogTitle>
             <AlertDialogDescription>
-              « {workout.title} » sera retire de votre historique. Cette action est
-              irreversible.
+              « {workout.title} » sera retiré de votre historique. Cette action est
+              irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -27,7 +27,7 @@ export function useStartPlannedSession() {
     try {
       if (!occurrence.workoutTemplateId) {
         await startWorkout(
-          occurrence.title || occurrence.workoutTemplateName || 'Seance planifiee',
+          occurrence.title || occurrence.workoutTemplateName || 'Séance planifiée',
         )
         await navigate({ to: '/app/workout/active' })
         return
@@ -41,7 +41,7 @@ export function useStartPlannedSession() {
 
       if (!template) {
         await startWorkout(
-          occurrence.title || occurrence.workoutTemplateName || 'Seance planifiee',
+          occurrence.title || occurrence.workoutTemplateName || 'Séance planifiée',
         )
         await navigate({ to: '/app/workout/active' })
         return
@@ -52,7 +52,7 @@ export function useStartPlannedSession() {
         occurrence.title ||
           occurrence.workoutTemplateName ||
           template.name ||
-          'Seance planifiee',
+          'Séance planifiée',
         templateExercisesToActive(draft.exercises),
         DEFAULT_GLOBAL_REST_SECONDS,
         occurrence.workoutTemplateId,

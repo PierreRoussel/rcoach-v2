@@ -165,7 +165,7 @@ export function suggestProgressiveOverload(
         const increment = weight >= 80 ? 5 : 2.5
         return {
           kind,
-          message: `Derniere seance : ${lastSession}. Essayer ${weight + increment} kg x ${Math.max(reps - 1, 6)} reps.`,
+          message: `Dernière séance : ${lastSession}. Essayer ${weight + increment} kg x ${Math.max(reps - 1, 6)} reps.`,
           suggestedWeightKg: weight + increment,
           suggestedReps: Math.max(reps - 1, 6),
           suggestedDurationSeconds: null,
@@ -175,7 +175,7 @@ export function suggestProgressiveOverload(
 
       return {
         kind,
-        message: `Derniere seance : ${lastSession}. Viser ${weight} kg x ${reps + 1} reps.`,
+        message: `Dernière séance : ${lastSession}. Viser ${weight} kg x ${reps + 1} reps.`,
         suggestedWeightKg: weight,
         suggestedReps: reps + 1,
         suggestedDurationSeconds: null,
@@ -191,7 +191,7 @@ export function suggestProgressiveOverload(
 
       return {
         kind,
-        message: `Derniere seance : ${lastSession}. Viser ${reps + 1} a ${reps + 2} reps.`,
+        message: `Dernière séance : ${lastSession}. Viser ${reps + 1} à ${reps + 2} reps.`,
         suggestedWeightKg: best.weight_kg,
         suggestedReps: reps + 1,
         suggestedDurationSeconds: null,
@@ -204,7 +204,7 @@ export function suggestProgressiveOverload(
       return {
         kind,
         message: reps
-          ? `Derniere seance : ${lastSession}. Ajouter 1-2 reps ou une tension superieure.`
+          ? `Dernière séance : ${lastSession}. Ajouter 1-2 reps ou une tension supérieure.`
           : 'Augmenter legerement la tension ou les reps.',
         suggestedWeightKg: null,
         suggestedReps: reps ? reps + 1 : null,
@@ -219,7 +219,7 @@ export function suggestProgressiveOverload(
       if (distance != null) {
         return {
           kind,
-          message: `Derniere seance : ${lastSession}. Viser +0.2 km a allure similaire.`,
+          message: `Dernière séance : ${lastSession}. Viser +0.2 km à allure similaire.`,
           suggestedWeightKg: null,
           suggestedReps: null,
           suggestedDurationSeconds: duration,
@@ -230,7 +230,7 @@ export function suggestProgressiveOverload(
       if (duration != null) {
         return {
           kind,
-          message: `Derniere seance : ${lastSession}. Viser +2 min.`,
+          message: `Dernière séance : ${lastSession}. Viser +2 min.`,
           suggestedWeightKg: null,
           suggestedReps: null,
           suggestedDurationSeconds: duration + 120,
@@ -249,7 +249,7 @@ export function suggestProgressiveOverload(
 
       return {
         kind,
-        message: `Derniere seance : ${lastSession}. Viser ${duration + 10}s.`,
+        message: `Dernière séance : ${lastSession}. Viser ${duration + 10}s.`,
         suggestedWeightKg: null,
         suggestedReps: null,
         suggestedDurationSeconds: duration + 10,

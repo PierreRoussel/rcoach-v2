@@ -39,7 +39,7 @@ function WorkoutDetailPage() {
   if (error || !workout) {
     return (
       <p className="text-sm text-destructive">
-        {error instanceof Error ? error.message : 'Seance introuvable.'}
+        {error instanceof Error ? error.message : 'Séance introuvable.'}
       </p>
     )
   }
@@ -80,7 +80,7 @@ function WorkoutDetailPage() {
         <CardHeader>
           <CardTitle className="font-display font-black">Exercices</CardTitle>
           <CardDescription>
-            {workout.workout_exercises.length} exercice(s) enregistres.
+            {workout.workout_exercises.length} exercice(s) enregistrés.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

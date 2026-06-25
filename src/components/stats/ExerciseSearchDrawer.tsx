@@ -100,7 +100,7 @@ export function ExerciseSearchDrawer({
         <SheetHeader className="px-4 text-left">
           <SheetTitle className="font-display font-black">Choisir un exercice</SheetTitle>
           <SheetDescription>
-            Les plus frequents en premier, puis le catalogue complet.
+            Les plus fréquents en premier, puis le catalogue complet.
           </SheetDescription>
         </SheetHeader>
 
@@ -144,7 +144,7 @@ export function ExerciseSearchDrawer({
           {isLoading ? (
             <p className="px-2 text-sm text-muted-foreground">Chargement...</p>
           ) : rows.length === 0 ? (
-            <p className="px-2 text-sm text-muted-foreground">Aucun exercice trouve.</p>
+            <p className="px-2 text-sm text-muted-foreground">Aucun exercice trouvé.</p>
           ) : (
             <ul className="divide-y divide-border/60">
               {rows.map((row) => (
@@ -161,8 +161,8 @@ export function ExerciseSearchDrawer({
                       <p className="text-xs text-muted-foreground">
                         {MUSCLE_GROUP_LABELS[normalizeMuscleGroup(row.muscleGroup)]}
                         {row.sessionCount > 0
-                          ? ` · ${row.sessionCount} seance${row.sessionCount > 1 ? 's' : ''}`
-                          : ' · jamais realise'}
+                          ? ` · ${row.sessionCount} séance${row.sessionCount > 1 ? 's' : ''}`
+                          : ' · jamais réalisé'}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

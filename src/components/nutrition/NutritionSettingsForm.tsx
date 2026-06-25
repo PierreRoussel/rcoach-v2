@@ -27,11 +27,11 @@ import { calculateTdee } from '@/lib/nutrition/tdee'
 import type { ActivityLevel, NutritionGoal, NutritionSex } from '@/lib/nutrition/types'
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
-  sedentary: 'Sedentaire',
-  light: 'Leger',
-  moderate: 'Modere',
+  sedentary: 'Sédentaire',
+  light: 'Léger',
+  moderate: 'Modéré',
   active: 'Actif',
-  very_active: 'Tres actif',
+  very_active: 'Très actif',
 }
 
 const GOAL_LABELS: Record<NutritionGoal, string> = {
@@ -127,14 +127,14 @@ export function NutritionSettingsForm() {
         dinner_pct: mealDistribution.dinner,
         onboarded_at: settings?.onboarded_at ?? new Date().toISOString(),
       })
-      setMessage('Objectifs nutrition mis a jour.')
+      setMessage('Objectifs nutrition mis à jour.')
     } catch (saveError) {
       setMessage(saveError instanceof Error ? saveError.message : 'Sauvegarde impossible.')
     }
   }
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Chargement des reglages...</p>
+    return <p className="text-sm text-muted-foreground">Chargement des réglages...</p>
   }
 
   return (
@@ -157,12 +157,12 @@ export function NutritionSettingsForm() {
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Age" value={age} onChange={setAge} />
+            <Field label="Âge" value={age} onChange={setAge} />
             <Field label="Taille (cm)" value={heightCm} onChange={setHeightCm} />
             <Field label="Poids (kg)" value={weightKg} onChange={setWeightKg} />
           </div>
           <div className="space-y-2">
-            <Label>Activite</Label>
+            <Label>Activité</Label>
             <Select
               value={activityLevel}
               onValueChange={(value) => setActivityLevel(value as ActivityLevel)}
@@ -217,7 +217,7 @@ export function NutritionSettingsForm() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Repartition des repas</CardTitle>
+          <CardTitle>Répartition des repas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <MealDistributionSliders

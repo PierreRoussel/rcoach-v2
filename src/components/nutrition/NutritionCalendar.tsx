@@ -40,13 +40,13 @@ function NutritionCalendarLegend() {
         <span className="flex size-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
           <span className="text-[0.5rem] font-bold">✓</span>
         </span>
-        Objectif respecte
+        Objectif respecté
       </Pill>
       <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
         <span className="flex size-3.5 items-center justify-center rounded-full bg-destructive text-white">
           <span className="text-[0.5rem] font-bold">✕</span>
         </span>
-        Objectif depasse
+        Objectif dépassé
       </Pill>
     </div>
   )
@@ -151,11 +151,11 @@ export function NutritionCalendar({
             <p className="mt-1 text-muted-foreground">
               {Math.round(selectedSummary.calories)} / {dailyTarget} kcal —{' '}
               {selectedSummary.status === 'on_target'
-                ? 'objectif respecte'
-                : 'objectif depasse'}
+                ? 'objectif respecté'
+                : 'objectif dépassé'}
             </p>
           ) : (
-            <p className="mt-1 text-muted-foreground">Aucun aliment enregistre ce jour-la.</p>
+            <p className="mt-1 text-muted-foreground">Aucun aliment enregistré ce jour-là.</p>
           )}
         </div>
       ) : null}

@@ -43,11 +43,11 @@ function CalendarLegend() {
     <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
       <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
         <span className="size-2 rounded-full bg-primary shadow-sm shadow-primary/40" />
-        Realise
+        Réalisé
       </Pill>
       <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
         <span className="size-2 rounded-full bg-secondary shadow-sm shadow-secondary/30" />
-        Planifie
+        Planifié
       </Pill>
       <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
         <span className="size-2 rounded-full bg-muted-foreground/45" />

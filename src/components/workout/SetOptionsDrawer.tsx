@@ -48,14 +48,14 @@ type SetOptionsDrawerProps = {
 
 function setLabel(set: SetOptionsSet, index: number) {
   if (set.setType === 'warmup') {
-    return 'Echauffement'
+    return 'Échauffement'
   }
 
   if (set.setType === 'failure') {
-    return `Serie ${index + 1} (echec)`
+    return `Série ${index + 1} (échec)`
   }
 
-  return `Serie ${index + 1}`
+  return `Série ${index + 1}`
 }
 
 function SortableSetItem({
@@ -88,7 +88,7 @@ function SortableSetItem({
       <button
         type="button"
         className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        aria-label="Reordonner la serie"
+        aria-label="Réordonner la série"
         {...attributes}
         {...listeners}
       >
@@ -99,7 +99,7 @@ function SortableSetItem({
         <p className="text-xs text-muted-foreground">
           {set.weightKg != null ? `${set.weightKg} kg` : '—'} x{' '}
           {set.reps ?? '—'} reps
-          {set.completedAt ? ' · validee' : ''}
+          {set.completedAt ? ' · validée' : ''}
         </p>
       </div>
       <span
@@ -205,10 +205,10 @@ export function SetOptionsDrawer({
       <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
         <SheetHeader>
           <SheetTitle className="font-display font-black">
-            {selectedSet ? setLabel(selectedSet, selectedIndex ?? 0) : 'Serie'}
+            {selectedSet ? setLabel(selectedSet, selectedIndex ?? 0) : 'Série'}
           </SheetTitle>
           <SheetDescription>
-            {displayExerciseName || 'Options de la serie selectionnee'}
+            {displayExerciseName || 'Options de la série sélectionnée'}
           </SheetDescription>
         </SheetHeader>
 
@@ -222,13 +222,13 @@ export function SetOptionsDrawer({
           >
             <Flame className="size-4" />
             {selectedSet?.setType === 'warmup'
-              ? 'Marquer comme serie de travail'
-              : 'Marquer en serie d echauffement'}
+              ? 'Marquer comme série de travail'
+              : "Marquer en série d'échauffement"}
           </Button>
 
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Ordre des series
+              Ordre des séries
             </p>
             {sets.length > 0 ? (
               <DndContext
@@ -265,7 +265,7 @@ export function SetOptionsDrawer({
             onClick={handleDelete}
           >
             <Trash2 className="size-4" />
-            Supprimer cette serie
+            Supprimer cette série
           </Button>
         </div>
       </SheetContent>

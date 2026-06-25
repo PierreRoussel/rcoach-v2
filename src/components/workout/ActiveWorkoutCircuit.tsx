@@ -236,7 +236,7 @@ export function ActiveWorkoutCircuit({
                 'size-8 shrink-0 rounded-full',
                 !isNextToDo && 'text-muted-foreground hover:text-foreground',
               )}
-              aria-label="Valider la serie"
+              aria-label="Valider la série"
               onClick={() => onCompleteStep(exerciseIndex, setIndex)}
             >
               <Check className="size-4" />

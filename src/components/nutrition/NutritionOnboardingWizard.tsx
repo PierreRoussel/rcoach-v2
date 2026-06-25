@@ -45,11 +45,11 @@ type NutritionOnboardingWizardProps = {
 }
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
-  sedentary: 'Sedentaire',
-  light: 'Leger',
-  moderate: 'Modere',
+  sedentary: 'Sédentaire',
+  light: 'Léger',
+  moderate: 'Modéré',
   active: 'Actif',
-  very_active: 'Tres actif',
+  very_active: 'Très actif',
 }
 
 const GOAL_LABELS: Record<NutritionGoal, string> = {
@@ -150,7 +150,7 @@ export function NutritionOnboardingWizard({
         <DialogHeader>
           <DialogTitle>Configurer votre nutrition</DialogTitle>
           <DialogDescription>
-            Etape {step + 1} sur 3 — definissez vos objectifs journaliers.
+            Étape {step + 1} sur 3 — définissez vos objectifs journaliers.
           </DialogDescription>
         </DialogHeader>
 
@@ -170,7 +170,7 @@ export function NutritionOnboardingWizard({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Age</Label>
+                <Label>Âge</Label>
                 <Input value={age} onChange={(event) => setAge(event.target.value)} inputMode="numeric" />
               </div>
               <div className="space-y-2">
@@ -183,7 +183,7 @@ export function NutritionOnboardingWizard({
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Activite</Label>
+              <Label>Activité</Label>
               <Select
                 value={activityLevel}
                 onValueChange={(value) => setActivityLevel(value as ActivityLevel)}

@@ -68,7 +68,7 @@ function ImportPage() {
       }
 
       setProgress(
-        `Termine : ${imported} seance(s) importee(s), ${skipped} ignoree(s).`,
+        `Termine : ${imported} séance(s) importée(s), ${skipped} ignorée(s).`,
       )
     } catch (importError) {
       setError(
@@ -96,7 +96,7 @@ function ImportPage() {
             <div>
               <CardTitle className="font-display font-black">Fichier CSV</CardTitle>
               <CardDescription>
-                Selectionnez votre export Hevy au format CSV.
+                Sélectionnez votre export Hevy au format CSV.
               </CardDescription>
             </div>
             <Pill tone="primary">

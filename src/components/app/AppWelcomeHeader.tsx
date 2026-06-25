@@ -61,7 +61,7 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
                 to="/app/workout/active"
                 className="hover:text-primary"
               >
-                {workoutTitle.trim() || 'Seance en cours'}
+                {workoutTitle.trim() || 'Séance en cours'}
               </Link>
             </p>
             <p className="truncate text-xs text-muted-foreground">
@@ -83,7 +83,7 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
                   disabled={isStarting}
                   onClick={() => void startPlannedSession(primaryReminder)}
                 >
-                  Demarrer
+                  Démarrer
                 </button>
                 {' · '}
                 <Link
@@ -102,7 +102,7 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
               </p>
             ) : (
               <p className="truncate text-xs text-muted-foreground">
-                Pret pour votre premiere seance ?
+                Prêt pour votre première séance ?
               </p>
             )}
           </>

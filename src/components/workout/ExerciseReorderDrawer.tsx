@@ -57,7 +57,7 @@ function ReorderItem({
       <button
         type="button"
         className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        aria-label="Reordonner"
+        aria-label="Réordonner"
         {...attributes}
         {...listeners}
       >
@@ -68,7 +68,7 @@ function ReorderItem({
           <DisplayExerciseName name={exercise.exerciseName} />
         </p>
         <p className="text-xs text-muted-foreground">
-          {exercise.sets.length} serie{exercise.sets.length !== 1 ? 's' : ''}
+          {exercise.sets.length} série{exercise.sets.length !== 1 ? 's' : ''}
         </p>
       </div>
       <span className="shrink-0 font-data text-xs text-muted-foreground">
@@ -123,7 +123,7 @@ export function ExerciseReorderDrawer({
             Reorganiser les exercices
           </SheetTitle>
           <SheetDescription>
-            Glissez les exercices pour changer leur ordre dans la seance.
+            Glissez les exercices pour changer leur ordre dans la séance.
           </SheetDescription>
         </SheetHeader>
         <DndContext

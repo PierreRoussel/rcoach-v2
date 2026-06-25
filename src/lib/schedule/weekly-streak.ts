@@ -35,10 +35,10 @@ export function formatWeeklyStreakLabel(streak: number): string {
   }
 
   if (streak === 1) {
-    return '1 semaine d\'affilee'
+    return "1 semaine d'affilée"
   }
 
-  return `${streak} semaines d'affilee`
+  return `${streak} semaines d'affilée`
 }
 
 export function formatWeekLabel(date: Date): string {

@@ -46,7 +46,7 @@ export function ExerciseHighRpeCard({
             {Math.round(comparison.currentOneRm)} kg est.
           </Pill>
           <Pill tone="secondary">
-            {comparison.baselinePeriodLabel ?? 'Debut'} :{' '}
+            {comparison.baselinePeriodLabel ?? 'Début'} :{' '}
             {Math.round(comparison.baselineOneRm)} kg est.
           </Pill>
           {comparison.deltaKg != null ? (

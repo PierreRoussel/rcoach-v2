@@ -137,7 +137,7 @@ export function formatRelativeWorkoutDate(
   now = new Date(),
 ) {
   if (!date) {
-    return 'Aucune seance'
+    return 'Aucune séance'
   }
 
   const days = differenceInCalendarDays(now, new Date(date))

@@ -78,7 +78,7 @@ function MealDetailPage() {
 
   return (
     <div
-      className="meal-detail-page space-y-5 pb-28"
+      className="meal-détail-page space-y-5 pb-28"
       data-meal-type={mealType}
     >
       <div className="flex items-center gap-3">
@@ -163,7 +163,7 @@ function MealDetailPage() {
                     Aucun aliment
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Ajoutez votre premier aliment a ce repas.
+                    Ajoutez votre premier aliment à ce repas.
                   </p>
                 </div>
                 <Button variant="outline" size="sm" className="rounded-full" asChild>

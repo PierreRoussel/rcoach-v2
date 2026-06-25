@@ -40,7 +40,7 @@ export function MacroProgressBars({
   return (
     <div className={cn('macro-progress-grid grid grid-cols-3 gap-2', className)}>
       <MacroBar label="Glucides" current={carbs.current} target={carbs.target} />
-      <MacroBar label="Proteines" current={protein.current} target={protein.target} />
+      <MacroBar label="Protéines" current={protein.current} target={protein.target} />
       <MacroBar label="Lipides" current={fat.current} target={fat.target} />
     </div>
   )

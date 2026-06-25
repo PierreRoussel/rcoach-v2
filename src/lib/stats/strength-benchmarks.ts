@@ -197,7 +197,7 @@ export function getStrengthPercentile(
   } else if (percentile >= 25) {
     tierLabel = 'En progression'
   } else {
-    tierLabel = 'Debutant / en construction'
+    tierLabel = 'Débutant / en construction'
   }
 
   return {

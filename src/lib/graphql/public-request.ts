@@ -31,7 +31,7 @@ export async function publicGraphqlRequest<T>(
   }
 
   if (!payload.data) {
-    throw new Error('Reponse GraphQL vide.')
+    throw new Error('Réponse GraphQL vide.')
   }
 
   return payload.data

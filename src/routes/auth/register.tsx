@@ -45,7 +45,7 @@ function RegisterPage() {
       })
 
       if (response.status !== 200) {
-        setError("Impossible de creer le compte. L'email est peut-etre deja utilise.")
+        setError("Impossible de créer le compte. L'email est peut-être déjà utilisé.")
         return
       }
 
@@ -56,7 +56,7 @@ function RegisterPage() {
 
       setSuccess('Compte créé — vérifiez votre email pour confirmer.')
     } catch {
-      setError('Inscription impossible. Reessayez plus tard.')
+      setError('Inscription impossible. Réessayez plus tard.')
     } finally {
       setIsSubmitting(false)
     }
@@ -69,7 +69,7 @@ function RegisterPage() {
           <CardTitle className="font-display text-2xl font-black">
             Rejoindre RCoach
           </CardTitle>
-          <CardDescription>Creez votre compte athlete en quelques secondes.</CardDescription>
+          <CardDescription>Créez votre compte athlète en quelques secondes.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -115,11 +115,11 @@ function RegisterPage() {
               type="submit"
               disabled={isSubmitting || success != null}
             >
-              {isSubmitting ? 'Creation...' : "S'inscrire"}
+              {isSubmitting ? 'Création...' : "S'inscrire"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Deja un compte ?{' '}
+            Déjà un compte ?{' '}
             <Link className="font-semibold text-primary underline-offset-4 hover:underline" to="/auth/login">
               Se connecter
             </Link>

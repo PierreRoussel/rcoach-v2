@@ -123,23 +123,23 @@ export function ScheduleSessionForm({
     )
 
     if (!resolvedTitle && !isAba) {
-      setError('Indiquez un titre ou selectionnez un modele.')
+      setError('Indiquez un titre ou sélectionnez un modèle.')
       return
     }
 
     if (isRecurring && values.weekdays.length === 0) {
-      setError('Selectionnez au moins un jour.')
+      setError('Sélectionnez au moins un jour.')
       return
     }
 
     if (isAba) {
       if (!values.workoutTemplateId || !values.workoutTemplateIdB) {
-        setError('Selectionnez les deux modeles A et B.')
+        setError('Sélectionnez les deux modèles A et B.')
         return
       }
 
       if (values.workoutTemplateId === values.workoutTemplateIdB) {
-        setError('Les deux modeles doivent etre differents.')
+        setError('Les deux modèles doivent être différents.')
         return
       }
     }
@@ -157,7 +157,7 @@ export function ScheduleSessionForm({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : 'Impossible d enregistrer la planification.',
+          : "Impossible d'enregistrer la planification.",
       )
     }
   }
@@ -170,7 +170,7 @@ export function ScheduleSessionForm({
     <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5">
       <div className="space-y-3 rounded-2xl bg-muted/25 p-4">
         <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-          Seance
+          Séance
         </p>
         <div className="space-y-2">
           <Label htmlFor="scheduleTitle">
@@ -184,9 +184,9 @@ export function ScheduleSessionForm({
             }
             placeholder={
               isAba
-                ? 'Par defaut : Push / Pull'
+                ? 'Par défaut : Push / Pull'
                 : selectedTemplate
-                  ? `Par defaut : ${selectedTemplate.name}`
+                  ? `Par défaut : ${selectedTemplate.name}`
                   : 'Push, Legs, Cardio...'
             }
           />
@@ -195,7 +195,7 @@ export function ScheduleSessionForm({
         {isAba ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="scheduleTemplateA">Modele A</Label>
+              <Label htmlFor="scheduleTemplateA">Modèle A</Label>
               <select
                 id="scheduleTemplateA"
                 className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
@@ -207,7 +207,7 @@ export function ScheduleSessionForm({
                   }))
                 }
               >
-                <option value="">Choisir le modele A</option>
+                <option value="">Choisir le modèle A</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>
                     {template.name}
@@ -216,7 +216,7 @@ export function ScheduleSessionForm({
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scheduleTemplateB">Modele B</Label>
+              <Label htmlFor="scheduleTemplateB">Modèle B</Label>
               <select
                 id="scheduleTemplateB"
                 className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
@@ -228,7 +228,7 @@ export function ScheduleSessionForm({
                   }))
                 }
               >
-                <option value="">Choisir le modele B</option>
+                <option value="">Choisir le modèle B</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>
                     {template.name}
@@ -239,7 +239,7 @@ export function ScheduleSessionForm({
           </div>
         ) : (
           <div className="space-y-2">
-            <Label htmlFor="scheduleTemplate">Modele (optionnel)</Label>
+            <Label htmlFor="scheduleTemplate">Modèle (optionnel)</Label>
             <select
               id="scheduleTemplate"
               className="flex h-10 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
@@ -251,7 +251,7 @@ export function ScheduleSessionForm({
                 }))
               }
             >
-              <option value="">Aucun modele</option>
+              <option value="">Aucun modèle</option>
               {templates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name}
@@ -315,7 +315,7 @@ export function ScheduleSessionForm({
 
         {isAba ? (
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Alterne les modeles A et B sur les jours choisis, sans rupture de
+            Alterne les modèles A et B sur les jours choisis, sans rupture de
             sequence (ABABAB...).
           </p>
         ) : null}
@@ -358,7 +358,7 @@ export function ScheduleSessionForm({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Debut</Label>
+                <Label htmlFor="startDate">Début</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -409,7 +409,7 @@ export function ScheduleSessionForm({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="pill" disabled={isPending}>
-          {isPending ? 'Enregistrement...' : editing ? 'Mettre a jour' : 'Planifier'}
+          {isPending ? 'Enregistrement...' : editing ? 'Mettre à jour' : 'Planifier'}
         </Button>
         {onCancel ? (
           <Button type="button" variant="outline" className="rounded-full" onClick={onCancel}>

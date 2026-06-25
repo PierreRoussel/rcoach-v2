@@ -124,8 +124,8 @@ function ExerciseStatsDetailPage() {
                 MUSCLE_GROUP_LABELS[normalizeMuscleGroup(exerciseMeta.muscleGroup)],
                 exerciseMeta.equipment,
                 catalogEntry
-                  ? `${catalogEntry.sessionCount} seance${catalogEntry.sessionCount > 1 ? 's' : ''}`
-                  : 'Jamais realise',
+                  ? `${catalogEntry.sessionCount} séance${catalogEntry.sessionCount > 1 ? 's' : ''}`
+                  : 'Jamais réalisé',
               ]
                 .filter(Boolean)
                 .join(' · ')

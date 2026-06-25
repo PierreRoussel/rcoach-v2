@@ -72,7 +72,7 @@ export function useFoodMutations() {
     }
 
     if (!user?.id) {
-      throw new Error('Utilisateur non connecte.')
+      throw new Error('Utilisateur non connecté.')
     }
 
     return {
@@ -94,7 +94,7 @@ export function useFoodMutations() {
         return data.insert_foods_one
       } catch {
         if (!user?.id) {
-          throw new Error('Utilisateur non connecte.')
+          throw new Error('Utilisateur non connecté.')
         }
 
         return syncFoodUpsert(nhost, payload, user.id)
@@ -124,7 +124,7 @@ export function useFoodMutations() {
       return data.insert_foods_one
     } catch {
       if (!user?.id) {
-        throw new Error('Utilisateur non connecte.')
+        throw new Error('Utilisateur non connecté.')
       }
 
       return syncFoodUpsert(nhost, mapOffDraftToFoodInsert(draft), user.id, draft.offProductId)

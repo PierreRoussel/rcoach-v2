@@ -61,12 +61,12 @@ function ProfileEditor({
           role,
         },
       })
-      setMessage('Profil mis a jour.')
+      setMessage('Profil mis à jour.')
     } catch (saveError) {
       setMessage(
         saveError instanceof Error
           ? saveError.message
-          : 'Impossible de mettre a jour le profil.',
+          : 'Impossible de mettre à jour le profil.',
       )
     }
   }
@@ -82,7 +82,7 @@ function ProfileEditor({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="unitSystem">Unite de poids</Label>
+        <Label htmlFor="unitSystem">Unité de poids</Label>
         <select
           id="unitSystem"
           className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
@@ -116,12 +116,12 @@ function ProfileEditor({
           className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
           value={role}
           onChange={(event) =>
-            setRole(event.target.value as 'athlete' | 'coach' | 'both')
+            setRole(event.target.value as 'athlète' | 'coach' | 'both')
           }
         >
-          <option value="athlete">Athlete</option>
+          <option value="athlète">Athlète</option>
           <option value="coach">Coach</option>
-          <option value="both">Athlete + Coach</option>
+          <option value="both">Athlète + Coach</option>
         </select>
       </div>
       <p className="font-data text-xs text-muted-foreground">
@@ -161,7 +161,7 @@ function RpePreferenceToggle({
       setMessage(
         saveError instanceof Error
           ? saveError.message
-          : 'Impossible de mettre a jour la preference.',
+          : 'Impossible de mettre à jour la préférence.',
       )
     }
   }
@@ -172,7 +172,7 @@ function RpePreferenceToggle({
         <Label htmlFor="rpeEnabled">Suivi du RPE</Label>
         <p className="text-xs text-muted-foreground">
           Evaluez l&apos;effort percu de 1 a 10 (par pas de 0.5) a chaque set
-          pendant vos seances.
+          pendant vos séances.
         </p>
         {message ? <FormMessage>{message}</FormMessage> : null}
       </div>
@@ -201,26 +201,26 @@ function LogoutSection() {
     <Card className="rounded-2xl border-border">
       <CardHeader>
         <CardTitle className="font-display font-black">Session</CardTitle>
-        <CardDescription>Deconnectez-vous de votre compte sur cet appareil.</CardDescription>
+        <CardDescription>Déconnectez-vous de votre compte sur cet appareil.</CardDescription>
       </CardHeader>
       <CardContent>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button type="button" variant="outline" className="w-full rounded-xl">
-              Se deconnecter
+              Se déconnecter
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Se deconnecter ?</AlertDialogTitle>
+              <AlertDialogTitle>Se déconnecter ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Voulez-vous vraiment vous deconnecter ?
+                Voulez-vous vraiment vous déconnecter ?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction onClick={() => void handleSignOut()}>
-                Se deconnecter
+                Se déconnecter
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -239,7 +239,7 @@ function ProfilePage() {
       <PageHeader
         eyebrow="Compte"
         title="Profil"
-        description="Informations du compte et preferences d'affichage."
+        description="Informations du compte et préférences d'affichage."
       />
 
       <Card className="rounded-2xl border-border">
@@ -248,7 +248,7 @@ function ProfilePage() {
             <div>
               <CardTitle className="font-display font-black">Calendrier</CardTitle>
               <CardDescription>
-                Votre regularite et les prochaines seances prevues.
+                Votre régularité et les prochaines séances prévues.
               </CardDescription>
             </div>
             <Button variant="soft" size="sm" className="rounded-full" asChild>
@@ -275,12 +275,12 @@ function ProfilePage() {
         <CardHeader>
           <CardTitle className="font-display font-black">Nutrition</CardTitle>
           <CardDescription>
-            Objectifs caloriques, macros et repartition des repas.
+            Objectifs caloriques, macros et répartition des repas.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="soft" asChild>
-            <Link to="/app/diet/settings">Reglages nutrition</Link>
+            <Link to="/app/diet/settings">Réglages nutrition</Link>
           </Button>
         </CardContent>
       </Card>
@@ -289,7 +289,7 @@ function ProfilePage() {
         <CardHeader>
           <CardTitle className="font-display font-black">Identite</CardTitle>
           <CardDescription>
-            Mettez a jour votre nom et vos unites de mesure.
+            Mettez à jour votre nom et vos unités de mesure.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -309,7 +309,7 @@ function ProfilePage() {
         <CardHeader>
           <CardTitle className="font-display font-black">Entrainement</CardTitle>
           <CardDescription>
-            Preferences liees au suivi de vos seances.
+            Préférences liées au suivi de vos séances.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -331,7 +331,7 @@ function ProfilePage() {
         <CardHeader>
           <CardTitle>Montre Wear OS</CardTitle>
           <CardDescription>
-            Disponible via l application Android Capacitor pendant une seance active.
+            Disponible via l'application Android Capacitor pendant une séance active.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
@@ -339,8 +339,8 @@ function ProfilePage() {
             Plateforme actuelle : {Capacitor.isNativePlatform() ? Capacitor.getPlatform() : 'web/PWA'}
           </p>
           <p>
-            Installez l APK Android, ouvrez une seance active et verifiez le bandeau
-            « Montre Wear OS connectee » sur l ecran seance.
+            Installez l'APK Android, ouvrez une séance active et vérifiez le bandeau
+            « Montre Wear OS connectée » sur l'écran séance.
           </p>
           <p>Voir docs/wear-os-testing.md pour le pairing emulateur.</p>
         </CardContent>

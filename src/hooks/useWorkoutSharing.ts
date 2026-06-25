@@ -81,7 +81,7 @@ export function useEnableWorkoutShare() {
       })
 
       if (!data.update_workouts_by_pk?.share_token) {
-        throw new Error('Impossible d activer le partage.')
+        throw new Error("Impossible d'activer le partage.")
       }
 
       return data.update_workouts_by_pk
@@ -111,7 +111,7 @@ export function useCreateTemplateFromWorkout() {
       const exercises = workoutToTemplateExercises(workout, defaultRestSeconds)
 
       if (exercises.length === 0) {
-        throw new Error('Cette seance ne contient aucun exercice a convertir.')
+        throw new Error('Cette séance ne contient aucun exercice à convertir.')
       }
 
       const template = await insertWorkoutTemplateWithFallbacks(nhost, {

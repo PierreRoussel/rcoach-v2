@@ -29,8 +29,8 @@ export function SessionNameDialog({
   onOpenChange,
   onConfirm,
   isPending = false,
-  title = 'Nouvelle seance',
-  description = 'Donnez un nom a votre modele avant de choisir les exercices.',
+  title = 'Nouvelle séance',
+  description = 'Donnez un nom à votre modèle avant de choisir les exercices.',
   placeholder = 'Push A, Upper, Legs...',
   confirmLabel = 'Continuer',
   defaultName = '',
@@ -48,7 +48,7 @@ export function SessionNameDialog({
   async function handleConfirm() {
     const trimmed = name.trim() || defaultName.trim()
     if (!trimmed) {
-      setError('Indiquez un nom pour la seance.')
+      setError('Indiquez un nom pour la séance.')
       return
     }
 
@@ -61,7 +61,7 @@ export function SessionNameDialog({
       setError(
         confirmError instanceof Error
           ? confirmError.message
-          : 'Impossible de creer la seance.',
+          : 'Impossible de créer la séance.',
       )
     }
   }

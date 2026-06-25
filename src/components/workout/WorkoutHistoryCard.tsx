@@ -59,7 +59,7 @@ export function WorkoutHistoryCard({
         'relative w-full pr-12 transition-colors',
         variant === 'standalone'
           ? 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm hover:shadow-md'
-          : 'border-border bg-card px-4 py-3 hover:bg-muted/20',
+          : 'w-full border-border px-4 py-3 hover:bg-muted/20',
         className,
       )}
     >

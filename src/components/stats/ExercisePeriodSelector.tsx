@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 const PERIOD_OPTIONS: Array<{ value: StatsPeriod; label: string }> = [
   { value: '3m', label: '3 mois' },
   { value: 'month', label: 'Ce mois' },
-  { value: 'year', label: 'Cette annee' },
+  { value: 'year', label: 'Cette année' },
   { value: 'all', label: 'Toujours' },
 ]
 

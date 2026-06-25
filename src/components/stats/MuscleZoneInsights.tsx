@@ -53,7 +53,7 @@ function ZoneInsightCard({ zone }: { zone: TopExerciseByZone }) {
             </p>
             <p className="text-xs text-muted-foreground">
               1RM est. {zone.strength.oneRmKg} kg
-              {zone.strength.isEstimated ? ' · repere zone' : ''}
+              {zone.strength.isEstimated ? ' · repère zone' : ''}
             </p>
           </div>
         ) : (
@@ -102,7 +102,7 @@ export function MuscleZoneInsights({ zones }: MuscleZoneInsightsProps) {
   if (zones.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Aucun exercice enregistre par zone pour le moment.
+        Aucun exercice enregistré par zone pour le moment.
       </p>
     )
   }

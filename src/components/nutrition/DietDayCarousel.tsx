@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { AnimateIn } from '@/design-system'
 import { addDays, buildDateWindow, formatFrenchDateLabel } from '@/lib/nutrition/dates'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +23,7 @@ type DietDayCarouselProps = {
   onDateChange: (date: string) => void
   renderDay: (date: string) => ReactNode
   className?: string
+  animateEntrance?: boolean
 }
 
 export function DietDayCarousel({
@@ -29,6 +31,7 @@ export function DietDayCarousel({
   onDateChange,
   renderDay,
   className,
+  animateEntrance = false,
 }: DietDayCarouselProps) {
   const dates = buildDateWindow(date, 14)
   const activeIndex = dates.indexOf(date)
@@ -101,46 +104,53 @@ export function DietDayCarousel({
     onDateChange(nextDate)
   }
 
+  const dateHeader = (
+    <div className="flex items-center justify-between gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="size-9 rounded-full"
+        onClick={() => handleChevronChange(addDays(displayDate, -1))}
+      >
+        <ChevronLeft className="size-4" />
+      </Button>
+
+      <div className="text-center">
+        <div className="font-display text-xl font-black text-foreground">
+          {formatFrenchDateLabel(displayDate)}
+        </div>
+        <div className="text-xs text-muted-foreground">{displayDate}</div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="size-9 rounded-full"
+        onClick={() => handleChevronChange(addDays(displayDate, 1))}
+      >
+        <ChevronRight className="size-4" />
+      </Button>
+    </div>
+  )
+
+  const daySlides = (
+    <div ref={carouselRef} className="overflow-hidden">
+      <div className="flex touch-pan-y">
+        {dates.map((day) => (
+          <div key={day} className="min-w-0 shrink-0 grow-0 basis-full">
+            {renderDay(day)}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="size-9 rounded-full"
-          onClick={() => handleChevronChange(addDays(displayDate, -1))}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-
-        <div className="text-center">
-          <div className="font-display text-xl font-black text-foreground">
-            {formatFrenchDateLabel(displayDate)}
-          </div>
-          <div className="text-xs text-muted-foreground">{displayDate}</div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="size-9 rounded-full"
-          onClick={() => handleChevronChange(addDays(displayDate, 1))}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-      </div>
-
-      <div ref={carouselRef} className="overflow-hidden">
-        <div className="flex touch-pan-y">
-          {dates.map((day) => (
-            <div key={day} className="min-w-0 shrink-0 grow-0 basis-full">
-              {renderDay(day)}
-            </div>
-          ))}
-        </div>
-      </div>
+      {animateEntrance ? <AnimateIn delay={80}>{dateHeader}</AnimateIn> : dateHeader}
+      {animateEntrance ? <AnimateIn delay={160}>{daySlides}</AnimateIn> : daySlides}
     </div>
   )
 }

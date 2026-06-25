@@ -11,10 +11,10 @@ describe('resolveScheduleTitle', () => {
   it('keeps a custom title when provided', () => {
     expect(
       resolveScheduleTitle(
-        { title: 'Ma seance perso', workoutTemplateId: 'tpl-1' },
+        { title: 'Ma séance perso', workoutTemplateId: 'tpl-1' },
         templates,
       ),
-    ).toBe('Ma seance perso')
+    ).toBe('Ma séance perso')
   })
 
   it('falls back to template name when title is empty', () => {

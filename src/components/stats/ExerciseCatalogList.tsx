@@ -23,7 +23,7 @@ export function ExerciseCatalogList({
   if (visible.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Aucun exercice enregistre pour le moment.
+        Aucun exercice enregistré pour le moment.
       </p>
     )
   }
@@ -51,7 +51,7 @@ export function ExerciseCatalogList({
                   <DisplayExerciseName name={entry.name} />
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {muscleLabel} · {entry.sessionCount} seance
+                  {muscleLabel} · {entry.sessionCount} séance
                   {entry.sessionCount > 1 ? 's' : ''}
                 </p>
               </div>
@@ -59,7 +59,7 @@ export function ExerciseCatalogList({
                 <p className="truncate font-data text-xs font-medium text-foreground">
                   {entry.currentPerformance ?? '—'}
                 </p>
-                <p className="text-[10px] text-muted-foreground">derniere perf.</p>
+                <p className="text-[10px] text-muted-foreground">dernière perf.</p>
               </div>
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </button>

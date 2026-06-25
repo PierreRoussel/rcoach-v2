@@ -28,7 +28,7 @@ function BodyRegion({
       strokeWidth={1.2}
       aria-label={label}
     >
-      <title>{`${label} · ${Math.round(intensity * 100)}% d intensite relative`}</title>
+      <title>{`${label} · ${Math.round(intensity * 100)}% d'intensité relative`}</title>
     </path>
   )
 }

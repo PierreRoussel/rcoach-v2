@@ -42,12 +42,12 @@ function CoachProgramsPage() {
       })
       setName('')
       setDescription('')
-      setMessage('Programme cree.')
+      setMessage('Programme créé.')
     } catch (createError) {
       setMessage(
         createError instanceof Error
           ? createError.message
-          : 'Impossible de creer le programme.',
+          : 'Impossible de créer le programme.',
       )
     }
   }
@@ -57,7 +57,7 @@ function CoachProgramsPage() {
       <PageHeader
         eyebrow="Coach"
         title="Programmes"
-        description="Creez des templates de seances avec jours et exercices cibles."
+        description="Créez des templates de séances avec jours et exercices cibles."
       />
 
       <Card className="rounded-2xl border-border">
@@ -94,7 +94,7 @@ function CoachProgramsPage() {
             disabled={createProgram.isPending}
           >
             <Plus className="size-4" />
-            {createProgram.isPending ? 'Creation...' : 'Creer'}
+            {createProgram.isPending ? 'Création...' : 'Créer'}
           </Button>
           {message ? <FormMessage>{message}</FormMessage> : null}
         </CardContent>
@@ -102,7 +102,7 @@ function CoachProgramsPage() {
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
-          <CardTitle className="font-display font-black">Bibliotheque</CardTitle>
+          <CardTitle className="font-display font-black">Bibliothèque</CardTitle>
           <CardDescription>
             {programs?.length ?? 0} programme(s) template.
           </CardDescription>

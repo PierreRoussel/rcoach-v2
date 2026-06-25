@@ -81,8 +81,8 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
             <StatCard
               icon={<Activity className="size-4 text-primary" />}
               value={String(totalSessions)}
-              label="Seances"
-              sub="total enregistrees"
+              label="Séances"
+              sub="total enregistrées"
               tone="primary"
             />
             <StatCard
@@ -98,7 +98,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
             icon={<Dumbbell className="size-4 text-primary" />}
             value={String(activeZones)}
             label="Zones actives"
-            sub="groupes musculaires travailles"
+            sub="groupes musculaires travaillés"
             tone="accent"
             className="w-full"
           />
@@ -115,7 +115,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
                 <div>
                   <CardTitle className="font-display font-black">Calendrier</CardTitle>
                   <CardDescription>
-                    Jours avec seance realisee ou planifiee.
+                    Jours avec séance réalisée ou planifiée.
                   </CardDescription>
                 </div>
                 <Button variant="soft" size="sm" className="rounded-full" asChild>
@@ -142,7 +142,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
                 Volume hebdomadaire
               </CardTitle>
               <CardDescription>
-                Repartition du volume d&apos;entrainement par semaine.
+                Répartition du volume d&apos;entrainement par semaine.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -170,7 +170,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Aucune seance enregistree pour le moment.
+                  Aucune séance enregistrée pour le moment.
                 </p>
               )}
             </CardContent>
@@ -219,8 +219,8 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
                         Exercice phare par zone
                       </CardTitle>
                       <CardDescription>
-                        L&apos;exo le plus utilise par muscle, avec estimation de percentile
-                        de force (1RM estime vs repères population).
+                        L&apos;exo le plus utilisé par muscle, avec estimation de percentile
+                        de force (1RM estimé vs repères population).
                       </CardDescription>
                     </div>
                     <Button

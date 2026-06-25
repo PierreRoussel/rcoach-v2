@@ -44,8 +44,8 @@ function recordKindLabel(kind: PersonalRecordKind): string {
 function recapHeadline(recordsCount: number): { title: string; description: string } {
   if (recordsCount === 0) {
     return {
-      title: 'Seance terminee !',
-      description: 'Seance solide, continue comme ca !',
+      title: 'Séance terminée !',
+      description: 'Séance solide, continue comme ça !',
     }
   }
 
@@ -58,7 +58,7 @@ function recapHeadline(recordsCount: number): { title: string; description: stri
 
   return {
     title: `${recordsCount} nouveaux records !`,
-    description: 'Performance exceptionnelle, tu progresses a vue d oeil.',
+    description: "Performance exceptionnelle, tu progresses à vue d'œil.",
   }
 }
 
@@ -101,7 +101,7 @@ export function WorkoutRecapDialog({
           <StatCard
             icon={<Clock className="size-4 text-primary" />}
             value={duration ?? '—'}
-            label="Duree"
+            label="Durée"
             tone="primary"
             className="p-3"
           />
@@ -123,7 +123,7 @@ export function WorkoutRecapDialog({
 
         <p className="text-center font-data text-xs text-muted-foreground">
           {recap.completedSets}{' '}
-          {recap.completedSets > 1 ? 'series validees' : 'serie validee'}
+          {recap.completedSets > 1 ? 'séries validées' : 'série validée'}
         </p>
 
         {recap.heartRate ? (
@@ -189,7 +189,7 @@ export function WorkoutRecapDialog({
             className="w-full"
             onClick={handleContinue}
           >
-            Voir l historique
+            Voir l'historique
           </Button>
         </DialogFooter>
       </DialogContent>

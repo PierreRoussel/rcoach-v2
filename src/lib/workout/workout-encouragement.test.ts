@@ -49,7 +49,7 @@ describe('getWorkoutEncouragementMessage', () => {
     const exercises = [makeExercise('Bench Press', 3, 3)]
 
     expect(getWorkoutEncouragementMessage(exercises, null)).toBe(
-      'Toutes les series sont faites — terminez la seance !',
+      'Toutes les séries sont faites — terminez la séance !',
     )
   })
 
@@ -57,7 +57,7 @@ describe('getWorkoutEncouragementMessage', () => {
     const exercises = [makeExercise('Bench Press', 3, 2)]
 
     expect(getWorkoutEncouragementMessage(exercises, null)).toBe(
-      "Plus qu'1 serie de Bench Press !",
+      "Plus qu'1 série de Bench Press !",
     )
   })
 
@@ -76,7 +76,7 @@ describe('getWorkoutEncouragementMessage', () => {
     const exercises = [makeExercise('Deadlift', 4, 2)]
 
     expect(getWorkoutEncouragementMessage(exercises, null)).toBe(
-      'Plus que 2 series de Deadlift !',
+      'Plus que 2 séries de Deadlift !',
     )
   })
 })

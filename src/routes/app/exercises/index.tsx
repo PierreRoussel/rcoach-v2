@@ -67,10 +67,10 @@ function ExercisesPage() {
         equipment: equipment || inferred.equipment,
         is_public: false,
       })
-      setFormSuccess(`Exercice "${trimmed}" ajoute a votre catalogue.`)
+      setFormSuccess(`Exercice "${trimmed}" ajouté à votre catalogue.`)
       setName('')
     } catch {
-      setFormError('Impossible de creer cet exercice.')
+      setFormError('Impossible de créer cet exercice.')
     }
   }
 
@@ -79,7 +79,7 @@ function ExercisesPage() {
       <PageHeader
         eyebrow="Catalogue"
         title="Exercices"
-        description="Bibliotheque complete, filtres rapides et ajout d'exercices personnels."
+        description="Bibliothèque complète, filtres rapides et ajout d'exercices personnels."
       />
 
       <div className="grid grid-cols-2 gap-3">
@@ -114,7 +114,7 @@ function ExercisesPage() {
         <CardHeader>
           <CardTitle className="font-display font-black">Ajouter un exercice</CardTitle>
           <CardDescription>
-            Les metadonnees sont pre-remplies depuis le nom si possible.
+            Les métadonnées sont pré-remplies depuis le nom si possible.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -168,7 +168,7 @@ function ExercisesPage() {
             </div>
             <Button type="submit" variant="pill" disabled={createExercise.isPending}>
               <Plus className="size-4" />
-              {createExercise.isPending ? 'Creation...' : 'Ajouter'}
+              {createExercise.isPending ? 'Création...' : 'Ajouter'}
             </Button>
             {formError ? <FormMessage>{formError}</FormMessage> : null}
             {formSuccess ? (
@@ -181,7 +181,7 @@ function ExercisesPage() {
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="font-display font-black">
-            {filtered.length} resultats
+            {filtered.length} résultats
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -212,7 +212,7 @@ function ExercisesPage() {
             ))}
           </ul>
           <Button variant="outline" className="mt-4 rounded-full" asChild>
-            <Link to="/app/workout/active">Demarrer une seance</Link>
+            <Link to="/app/workout/active">Démarrer une séance</Link>
           </Button>
         </CardContent>
       </Card>

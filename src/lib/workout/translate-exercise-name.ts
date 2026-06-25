@@ -29,19 +29,26 @@ export function translateExerciseName(
   return entry
 }
 
+function foldAccents(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+}
+
 export function exerciseNameMatchesQuery(
   canonicalName: string,
   query: string,
   locale: ExerciseLocale,
 ): boolean {
-  const normalized = query.trim().toLowerCase()
+  const normalized = foldAccents(query.trim())
   if (!normalized) {
     return true
   }
 
   const displayName = translateExerciseName(canonicalName, locale)
   return (
-    canonicalName.toLowerCase().includes(normalized) ||
-    displayName.toLowerCase().includes(normalized)
+    foldAccents(canonicalName).includes(normalized) ||
+    foldAccents(displayName).includes(normalized)
   )
 }

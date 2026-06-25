@@ -78,7 +78,7 @@ function CoachLayout() {
         </nav>
         <div className="mt-8 space-y-2">
           <Button variant="soft" size="sm" className="w-full rounded-full" asChild>
-            <Link to="/app">Vue athlete</Link>
+            <Link to="/app">Vue athlète</Link>
           </Button>
           <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut}>
             Deconnexion

@@ -35,7 +35,7 @@ function CoachHomePage() {
       <PageHeader
         eyebrow="Coach"
         title="Dashboard"
-        description="Suivez l activite de vos clients et vos invitations en attente."
+        description="Suivez l'activité de vos clients et vos invitations en attente."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -53,7 +53,7 @@ function CoachHomePage() {
         />
         <StatCard
           icon={<Activity className="size-4" />}
-          label="Seances 7 jours"
+          label="Séances 7 jours"
           value={String(stats.sessionsLast7Days)}
           tone="accent"
         />
@@ -83,11 +83,11 @@ function CoachHomePage() {
                 {pendingCount} invitation{pendingCount > 1 ? 's' : ''} en attente
               </p>
               <p className="text-sm text-muted-foreground">
-                Activez vos clients pour suivre leur activite.
+                Activez vos clients pour suivre leur activité.
               </p>
             </div>
             <Button variant="pill" asChild>
-              <Link to="/coach/clients">Gerer les clients</Link>
+              <Link to="/coach/clients">Gérer les clients</Link>
             </Button>
           </CardContent>
         </Card>
@@ -101,7 +101,7 @@ function CoachHomePage() {
                 Mes clients actifs
               </CardTitle>
               <CardDescription>
-                Derniere activite et volume sur les 7 derniers jours.
+                Dernière activité et volume sur les 7 derniers jours.
               </CardDescription>
             </div>
             <Pill tone="primary">{clientRows.length}</Pill>
@@ -122,15 +122,15 @@ function CoachHomePage() {
                 Vue d&apos;ensemble
               </CardTitle>
               <CardDescription>
-                Connecte en tant que {profile?.display_name ?? '—'}
+                Connecté en tant que {profile?.display_name ?? '—'}
               </CardDescription>
             </div>
-            <Pill tone="primary">{profile?.role ?? 'athlete'}</Pill>
+            <Pill tone="primary">{profile?.role ?? 'athlète'}</Pill>
           </div>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button variant="pill" asChild>
-            <Link to="/coach/clients">Gerer les clients</Link>
+            <Link to="/coach/clients">Gérer les clients</Link>
           </Button>
           <Button variant="soft" asChild>
             <Link to="/coach/programs">Programmes</Link>

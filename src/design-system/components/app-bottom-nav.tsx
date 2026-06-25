@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 
 const items = [
   { to: '/app', label: 'Home', icon: Activity, exact: true },
-  { to: '/app/sessions', label: 'Seances', icon: List },
-  { to: '/app/diet', label: 'Diete', icon: UtensilsCrossed },
+  { to: '/app/sessions', label: 'Séances', icon: List },
+  { to: '/app/diet', label: 'Diète', icon: UtensilsCrossed },
   { to: '/app/profile', label: 'Profil', icon: UserRound },
 ] as const
 

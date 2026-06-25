@@ -11,7 +11,7 @@ import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/
 import { useFrequentFoods } from '@/hooks/useFrequentFoods'
 import { useFoodSearch, type FoodSearchResult } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
-import { scanBarcode } from '@/lib/nutrition/barcode-scanner'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { Food, MealType } from '@/lib/nutrition/types'
 
@@ -41,6 +41,7 @@ function AddFoodPage() {
   const { toggleFavorite } = useFoodFavoriteMutations()
   const { ensureOffFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
+  const { requestScan, scanner } = useBarcodeScanner()
 
   const favoriteFoodIds = useMemo(
     () => new Set(favorites.map((favorite) => favorite.food_id)),
@@ -114,7 +115,7 @@ function AddFoodPage() {
     setMessage(null)
 
     try {
-      const barcode = await scanBarcode()
+      const barcode = await requestScan()
       if (!barcode) {
         return
       }
@@ -158,7 +159,7 @@ function AddFoodPage() {
         <div className="min-w-0 space-y-1">
           <h1 className="font-display text-2xl font-black text-foreground">Ajouter un aliment</h1>
           <p className="text-sm text-muted-foreground">
-            Recherchez, scannez ou creez un aliment.
+            Recherchez, scannez ou créez un aliment.
           </p>
         </div>
       </div>
@@ -227,7 +228,7 @@ function AddFoodPage() {
                   favoriteId: favorite?.id,
                 })
               }}
-              emptyLabel="Vos aliments frequents apparaitront ici."
+              emptyLabel="Vos aliments fréquents apparaîtront ici."
             />
           </section>
         </div>
@@ -247,7 +248,7 @@ function AddFoodPage() {
               favoriteId: favorite?.id,
             })
           }}
-          emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun resultat.'}
+          emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun résultat.'}
         />
       )}
 
@@ -275,7 +276,7 @@ function AddFoodPage() {
             .then((result) => {
               setSelectedFood(null)
               if (result.offline) {
-                setMessage('Enregistre localement. Synchronisation a la reconnexion.')
+                setMessage('Enregistré localement. Synchronisation à la reconnexion.')
               }
               void navigate({
                 to: '/app/diet/meals/$mealType',
@@ -286,6 +287,8 @@ function AddFoodPage() {
             .catch((error: Error) => setMessage(error.message))
         }}
       />
+
+      {scanner}
     </div>
   )
 }

@@ -70,7 +70,7 @@ function EditSessionTemplatePage() {
   if (error || !template || !initial) {
     return (
       <p className="text-sm text-destructive">
-        {error instanceof Error ? error.message : 'Modele introuvable.'}
+        {error instanceof Error ? error.message : 'Modèle introuvable.'}
       </p>
     )
   }

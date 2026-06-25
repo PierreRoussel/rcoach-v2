@@ -27,7 +27,7 @@ import {
 } from '@/lib/health/health-connect-preferences'
 
 const HEALTH_CONNECT_PLAY_STORE_URL =
-  'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata'
+  'https://play.google.com/store/apps/détails?id=com.google.android.apps.healthdata'
 
 type ConnectionState =
   | 'unsupported'
@@ -71,7 +71,7 @@ function statusPill(state: ConnectionState) {
       return (
         <Pill tone="secondary">
           <Link2 className="size-3" />
-          Compte lie
+          Compte lié
         </Pill>
       )
     case 'permissions_missing':
@@ -88,24 +88,24 @@ function statusPill(state: ConnectionState) {
     case 'unsupported':
       return <Pill tone="default">Android uniquement</Pill>
     default:
-      return <Pill tone="default">Non connecte</Pill>
+      return <Pill tone="default">Non connecté</Pill>
   }
 }
 
 function statusDescription(state: ConnectionState) {
   switch (state) {
     case 'connected':
-      return 'Vos seances terminees sont envoyees automatiquement vers Health Connect (Google Fit, Samsung Health, etc.).'
+      return 'Vos séances terminées sont envoyées automatiquement vers Health Connect (Google Fit, Samsung Health, etc.).'
     case 'permissions_missing':
-      return 'La synchronisation est activee mais Health Connect n a pas les autorisations necessaires.'
+      return "La synchronisation est activée mais Health Connect n'a pas les autorisations nécessaires."
     case 'not_installed':
-      return 'Installez Health Connect depuis le Play Store pour lier votre compte et synchroniser vos seances.'
+      return 'Installez Health Connect depuis le Play Store pour lier votre compte et synchroniser vos séances.'
     case 'not_supported':
-      return 'Health Connect n est pas disponible sur cet appareil.'
+      return "Health Connect n'est pas disponible sur cet appareil."
     case 'unsupported':
-      return 'Disponible sur l application Android. Installez l APK pour connecter Health Connect.'
+      return "Disponible sur l'application Android. Installez l'APK pour connecter Health Connect."
     default:
-      return 'Liez Health Connect pour enregistrer vos seances de musculation dans votre ecosysteme sante Google.'
+      return 'Liez Health Connect pour enregistrer vos séances de musculation dans votre écosystème santé Google.'
   }
 }
 
@@ -163,13 +163,13 @@ export function HealthConnectProfileCard() {
       }
 
       if (availability !== 'Available') {
-        setMessage('Health Connect n est pas disponible sur cet appareil.')
+        setMessage("Health Connect n'est pas disponible sur cet appareil.")
         return
       }
 
       const permissionResult = await requestHealthConnectPermissions()
       if (!permissionResult.granted) {
-        setMessage('Autorisations refusees. Vous pouvez les modifier dans Health Connect.')
+        setMessage('Autorisations refusées. Vous pouvez les modifier dans Health Connect.')
         setHealthConnectSyncEnabled(false)
         setSyncEnabled(false)
         await refreshStatus()
@@ -178,7 +178,7 @@ export function HealthConnectProfileCard() {
 
       setHealthConnectSyncEnabled(true)
       setSyncEnabled(true)
-      setMessage('Compte Health Connect lie avec succes.')
+      setMessage('Compte Health Connect lié avec succès.')
       await refreshStatus()
     } catch (connectError) {
       setMessage(
@@ -195,7 +195,7 @@ export function HealthConnectProfileCard() {
     setMessage(null)
     setHealthConnectSyncEnabled(false)
     setSyncEnabled(false)
-    setMessage('Synchronisation Health Connect desactivee.')
+    setMessage('Synchronisation Health Connect désactivée.')
     await refreshStatus()
   }
 
@@ -219,9 +219,9 @@ export function HealthConnectProfileCard() {
               <Activity className="size-5" />
             </div>
             <div>
-              <CardTitle className="font-display font-black">Sante Connect</CardTitle>
+              <CardTitle className="font-display font-black">Santé Connect</CardTitle>
               <CardDescription className="mt-1">
-                Synchronisez vos seances avec Health Connect (Google).
+                Synchronisez vos séances avec Health Connect (Google).
               </CardDescription>
             </div>
           </div>
@@ -231,7 +231,7 @@ export function HealthConnectProfileCard() {
 
       <CardContent className="space-y-4 pt-4">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Verification de la connexion...</p>
+          <p className="text-sm text-muted-foreground">Vérification de la connexion...</p>
         ) : (
           <p className="text-sm leading-relaxed text-muted-foreground">
             {statusDescription(connectionState)}
@@ -244,10 +244,10 @@ export function HealthConnectProfileCard() {
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5">
             <div className="space-y-0.5">
               <Label htmlFor="healthConnectSync" className="text-sm font-semibold">
-                Synchroniser les seances
+                Synchroniser les séances
               </Label>
               <p className="text-xs text-muted-foreground">
-                Envoi automatique a la fin de chaque seance.
+                Envoi automatique à la fin de chaque séance.
               </p>
             </div>
             <Switch
@@ -278,7 +278,7 @@ export function HealthConnectProfileCard() {
               onClick={() => void handleDisconnect()}
             >
               <Unlink className="size-4" />
-              Deconnecter
+              Déconnecter
             </Button>
           )}
 
@@ -290,7 +290,7 @@ export function HealthConnectProfileCard() {
               onClick={() => void openHealthConnectSettings()}
             >
               <ExternalLink className="size-4" />
-              Gerer les autorisations
+              Gérer les autorisations
             </Button>
           ) : null}
         </div>

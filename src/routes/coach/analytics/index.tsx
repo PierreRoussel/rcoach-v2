@@ -42,7 +42,7 @@ function CoachAnalyticsPage() {
       <PageHeader
         eyebrow="Coach"
         title="Analytics"
-        description="Volume et activite recente de vos clients actifs."
+        description="Volume et activité recente de vos clients actifs."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -54,7 +54,7 @@ function CoachAnalyticsPage() {
         />
         <StatCard
           icon={<Activity className="size-4" />}
-          label="Seances recentes"
+          label="Séances récentes"
           value={String(totalSessions)}
           tone="secondary"
         />
@@ -74,7 +74,7 @@ function CoachAnalyticsPage() {
             Volume par client
           </CardTitle>
           <CardDescription>
-            Somme poids x reps sur les seances visibles (hors echauffement).
+            Somme poids x reps sur les séances visibles (hors échauffement).
           </CardDescription>
         </CardHeader>
         <CardContent className="h-72">
@@ -88,7 +88,7 @@ function CoachAnalyticsPage() {
           ) : null}
           {volumeByClient.length === 0 && !isLoading ? (
             <p className="text-sm text-muted-foreground">
-              Aucune donnee — activez des clients et attendez leurs seances.
+              Aucune donnée — activez des clients et attendez leurs séances.
             </p>
           ) : null}
           {volumeByClient.length > 0 ? (
@@ -108,9 +108,9 @@ function CoachAnalyticsPage() {
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="font-display font-black">
-            Seances recentes
+            Séances récentes
           </CardTitle>
-          <CardDescription>Dernieres seances de vos clients actifs.</CardDescription>
+          <CardDescription>Dernières séances de vos clients actifs.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {workouts?.slice(0, 15).map((workout) => (

@@ -62,7 +62,7 @@ export function PortionPickerSheet({
           <SheetTitle>{food.name}</SheetTitle>
           <SheetDescription>
             {food.brand ? `${food.brand} · ` : ''}
-            Choisissez la quantite a ajouter.
+            Choisissez la quantité à ajouter.
           </SheetDescription>
         </SheetHeader>
 
@@ -76,7 +76,7 @@ export function PortionPickerSheet({
 
           {mode === 'grams' ? (
             <div className="space-y-2">
-              <Label htmlFor="grams">Quantite (g)</Label>
+              <Label htmlFor="grams">Quantité (g)</Label>
               <Input
                 id="grams"
                 value={grams}

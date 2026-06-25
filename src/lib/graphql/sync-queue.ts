@@ -82,6 +82,6 @@ export async function syncWorkoutDraft(
     await graphqlRequest(nhost, INSERT_WORKOUT, { object })
   } catch {
     await enqueueWorkoutInsert(object)
-    throw new Error('Synchronisation reportee — reessayez quand vous serez en ligne.')
+    throw new Error('Synchronisation reportée — réessayez quand vous serez en ligne.')
   }
 }

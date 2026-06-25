@@ -44,14 +44,14 @@ export function CoachClientActivityList({
 
           <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">Derniere seance</p>
+              <p className="text-xs text-muted-foreground">Dernière séance</p>
               <p className="font-medium">
                 {formatRelativeWorkoutDate(row.lastWorkoutAt)}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">7 derniers jours</p>
-              <p className="font-medium">{row.sessionsLast7Days} seance(s)</p>
+              <p className="font-medium">{row.sessionsLast7Days} séance(s)</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Volume 7 j</p>

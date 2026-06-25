@@ -104,7 +104,7 @@ export function ExercisePicker({
               <p className="text-sm text-muted-foreground">Chargement...</p>
             ) : null}
             {!isLoading && available.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun exercice trouve.</p>
+              <p className="text-sm text-muted-foreground">Aucun exercice trouvé.</p>
             ) : null}
             {available.map((exercise) => (
               <button

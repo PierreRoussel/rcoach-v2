@@ -22,10 +22,10 @@ export function CoachRecentSessions({ workouts }: CoachRecentSessionsProps) {
         <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle className="font-display font-black">
-              Activite recente
+              Activité recente
             </CardTitle>
             <CardDescription>
-              Dernieres seances de vos clients actifs.
+              Dernières séances de vos clients actifs.
             </CardDescription>
           </div>
           <Button variant="soft" size="sm" className="rounded-full" asChild>
@@ -36,7 +36,7 @@ export function CoachRecentSessions({ workouts }: CoachRecentSessionsProps) {
       <CardContent className="space-y-3">
         {workouts.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Aucune seance recente a afficher.
+            Aucune séance recente à afficher.
           </p>
         ) : null}
         {workouts.map((workout) => (

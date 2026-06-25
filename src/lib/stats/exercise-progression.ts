@@ -457,9 +457,9 @@ function getLoadComparisonPeriodLabels(period: StatsPeriod): {
     case '3m':
       return { baseline: 'Il y a 3 mois', current: "Aujourd'hui" }
     case 'month':
-      return { baseline: 'Debut du mois', current: "Aujourd'hui" }
+      return { baseline: 'Début du mois', current: "Aujourd'hui" }
     case 'year':
-      return { baseline: "Debut d'annee", current: "Aujourd'hui" }
+      return { baseline: "Début d'année", current: "Aujourd'hui" }
     case 'all':
     default:
       return { baseline: 'Au debut', current: 'Maintenant' }

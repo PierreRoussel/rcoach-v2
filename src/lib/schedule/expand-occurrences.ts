@@ -137,7 +137,7 @@ function expandRecurringOccurrences(
 
     const occurrenceIndex = countSessionOccurrencesUpTo(session, day)
     const { templateId, templateName } = resolveTemplate(session, occurrenceIndex)
-    const fallbackTitle = session.title || 'Seance planifiee'
+    const fallbackTitle = session.title || 'Séance planifiée'
 
     occurrences.push({
       date: format(day, 'yyyy-MM-dd'),
@@ -174,7 +174,7 @@ export function expandSessionOccurrences(
       occurrences.push({
         date: format(date, 'yyyy-MM-dd'),
         sessionId: session.id,
-        title: session.title || templateName || 'Seance planifiee',
+        title: session.title || templateName || 'Séance planifiée',
         workoutTemplateId: session.workout_template_id,
         workoutTemplateName: templateName,
         timeLocal: session.time_local,

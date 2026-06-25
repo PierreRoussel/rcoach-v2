@@ -21,7 +21,7 @@ export function NutritionStreakBadge({
         type="button"
         onClick={onClick}
         className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        aria-label={`Serie nutrition : ${streak} jour${streak > 1 ? 's' : ''}`}
+        aria-label={`Série nutrition : ${streak} jour${streak > 1 ? 's' : ''}`}
       >
         <Pill tone="solid-primary" className="shrink-0 shadow-sm">
           <Flame className="size-3 fill-current" />

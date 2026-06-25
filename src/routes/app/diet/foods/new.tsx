@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Barcode } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/design-system'
 import { useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
-import { scanBarcode } from '@/lib/nutrition/barcode-scanner'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { getOffProductByBarcode, mapOffDraftToFoodInsert } from '@/lib/nutrition/open-food-facts'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { MealType } from '@/lib/nutrition/types'
@@ -50,6 +51,7 @@ function NewFoodPage() {
 
   const { createFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
+  const { requestScan, scanner } = useBarcodeScanner()
 
   useEffect(() => {
     if (!search.barcode) {
@@ -86,7 +88,7 @@ function NewFoodPage() {
     setMessage(null)
 
     try {
-      const code = await scanBarcode()
+      const code = await requestScan()
       if (!code) {
         return
       }
@@ -152,7 +154,7 @@ function NewFoodPage() {
 
       setCreatedFood(food)
     } catch (createError) {
-      setMessage(createError instanceof Error ? createError.message : 'Creation impossible.')
+      setMessage(createError instanceof Error ? createError.message : 'Création impossible.')
     }
   }
 
@@ -160,7 +162,7 @@ function NewFoodPage() {
     <div className="space-y-4 pb-8">
       <PageHeader
         title="Nouvel aliment"
-        description={step === 0 ? 'Choisissez le mode d ajout.' : 'Renseignez les informations nutritionnelles.'}
+        description={step === 0 ? "Choisissez le mode d'ajout." : 'Renseignez les informations nutritionnelles.'}
       />
 
       {step === 0 ? (
@@ -174,9 +176,16 @@ function NewFoodPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="barcode">Code-barres</Label>
-            <Input id="barcode" value={barcode} onChange={(event) => setBarcode(event.target.value)} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" className="rounded-full" onClick={() => void handleScan()}>
+              <Barcode className="size-4" />
+              {barcode ? 'Rescanner' : 'Scanner le code-barres'}
+            </Button>
+            {barcode ? (
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {barcode}
+              </span>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Nom</Label>
@@ -189,7 +198,7 @@ function NewFoodPage() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Calories / 100 g" value={calories} onChange={setCalories} />
             <Field label="Glucides / 100 g" value={carbsG} onChange={setCarbsG} />
-            <Field label="Proteines / 100 g" value={proteinG} onChange={setProteinG} />
+            <Field label="Protéines / 100 g" value={proteinG} onChange={setProteinG} />
             <Field label="Lipides / 100 g" value={fatG} onChange={setFatG} />
             <Field label="Sel / 100 g" value={saltG} onChange={setSaltG} />
             <Field label="Sucre / 100 g" value={sugarG} onChange={setSugarG} />
@@ -197,7 +206,7 @@ function NewFoodPage() {
             <Field label="Portion (g)" value={servingSizeG} onChange={setServingSizeG} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="servingLabel">Libelle portion</Label>
+            <Label htmlFor="servingLabel">Libellé portion</Label>
             <Input
               id="servingLabel"
               value={servingLabel}
@@ -205,7 +214,7 @@ function NewFoodPage() {
             />
           </div>
           <Button type="button" className="w-full" onClick={() => void handleCreateFood()} disabled={!name.trim()}>
-            Enregistrer l aliment
+            Enregistrer l'aliment
           </Button>
         </div>
       )}
@@ -235,7 +244,7 @@ function NewFoodPage() {
             })
             .then((result) => {
               if (result.offline) {
-                setMessage('Enregistre localement. Synchronisation a la reconnexion.')
+                setMessage('Enregistré localement. Synchronisation à la reconnexion.')
               }
               void navigate({
                 to: '/app/diet/meals/$mealType',
@@ -246,6 +255,8 @@ function NewFoodPage() {
             .catch((error: Error) => setMessage(error.message))
         }}
       />
+
+      {scanner}
     </div>
   )
 }

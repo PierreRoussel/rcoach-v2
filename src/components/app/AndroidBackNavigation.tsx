@@ -4,6 +4,12 @@ import { useCanGoBack, useRouter } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
 function closeTopLayer() {
+  const openDrawer = document.querySelector('[data-vaul-drawer][data-state="open"]')
+  if (openDrawer) {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    return true
+  }
+
   const openDialog = document.querySelector('[role="dialog"][data-state="open"]')
   if (openDialog) {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))

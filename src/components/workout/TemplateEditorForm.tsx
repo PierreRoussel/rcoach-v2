@@ -159,18 +159,18 @@ export function TemplateEditorForm({
 
     const trimmedName = name.trim()
     if (!trimmedName) {
-      setError('Indiquez un nom pour la seance.')
+      setError('Indiquez un nom pour la séance.')
       return
     }
 
     try {
       await onSave(trimmedName, exercises)
-      setMessage('Seance sauvegardee.')
+      setMessage('Séance sauvegardée.')
     } catch (saveError) {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : 'Impossible de sauvegarder la seance.',
+          : 'Impossible de sauvegarder la séance.',
       )
     }
   }
@@ -185,7 +185,7 @@ export function TemplateEditorForm({
 
     const trimmedName = name.trim()
     if (!trimmedName) {
-      setError('Indiquez un nom pour la seance.')
+      setError('Indiquez un nom pour la séance.')
       return
     }
     if (exercises.length === 0) {
@@ -199,7 +199,7 @@ export function TemplateEditorForm({
       setError(
         startError instanceof Error
           ? startError.message
-          : 'Impossible de demarrer la seance.',
+          : 'Impossible de démarrer la séance.',
       )
     }
   }
@@ -211,7 +211,7 @@ export function TemplateEditorForm({
           <Input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Nom de la seance"
+            placeholder="Nom de la séance"
             className="h-10 min-w-0 flex-1 border-0 bg-transparent px-1 font-display text-lg font-black shadow-none focus-visible:ring-0"
           />
           {templateId ? (
@@ -236,7 +236,7 @@ export function TemplateEditorForm({
               disabled={isSaving}
             >
               <Play className="size-4" />
-              Demarrer
+              Démarrer
             </Button>
           ) : null}
         </div>

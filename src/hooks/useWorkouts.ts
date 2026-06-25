@@ -162,7 +162,7 @@ export function useDeleteWorkout() {
       }>(nhost, DELETE_WORKOUT, { id: workoutId })
 
       if (!data.delete_workouts_by_pk) {
-        throw new Error('Seance introuvable ou deja supprimee.')
+        throw new Error('Séance introuvable ou déjà supprimée.')
       }
 
       return data.delete_workouts_by_pk

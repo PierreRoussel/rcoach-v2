@@ -37,7 +37,7 @@ export function NutritionHomeSummaryTile() {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-display text-sm font-bold text-foreground">Diete aujourd hui</p>
+            <p className="font-display text-sm font-bold text-foreground">Diète aujourd'hui</p>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
           </div>
 

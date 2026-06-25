@@ -42,15 +42,15 @@ export function getWorkoutEncouragementMessage(
 
   if (nextIndex == null) {
     if (steps.length === 0) {
-      return 'Planifiez des series pour commencer'
+      return 'Planifiez des séries pour commencer'
     }
 
-    return 'Toutes les series sont faites — terminez la seance !'
+    return 'Toutes les séries sont faites — terminez la séance !'
   }
 
   const nextStep = steps[nextIndex]
   if (!nextStep) {
-    return 'Continuez comme ca !'
+    return 'Continuez comme ça !'
   }
 
   const exercise = exercises[nextStep.exerciseIndex]
@@ -68,11 +68,11 @@ export function getWorkoutEncouragementMessage(
   )
 
   if (pendingInExercise === 1) {
-    return `Plus qu'1 serie de ${exerciseName} !`
+    return `Plus qu'1 série de ${exerciseName} !`
   }
 
   if (pendingInExercise === 2) {
-    return `Plus que 2 series de ${exerciseName} !`
+    return `Plus que 2 séries de ${exerciseName} !`
   }
 
   if (exercisesWithPending === 1) {
@@ -80,8 +80,8 @@ export function getWorkoutEncouragementMessage(
   }
 
   if (totalPending <= 3) {
-    return `Encore ${totalPending} series et c'est fini !`
+    return `Encore ${totalPending} séries et c'est fini !`
   }
 
-  return `Prochaine etape : ${exerciseName}`
+  return `Prochaine étape : ${exerciseName}`
 }

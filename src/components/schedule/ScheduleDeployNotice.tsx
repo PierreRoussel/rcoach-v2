@@ -9,14 +9,14 @@ export function ScheduleDeployNotice() {
     <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
       <p className="font-medium">{SCHEDULE_NOT_DEPLOYED_MESSAGE}</p>
       <p className="text-muted-foreground">
-        Le calendrier affiche deja vos seances realisees. Pour planifier des
-        seances, deployez les migrations et metadonnees Nhost du depot (
+        Le calendrier affiche déjà vos séances réalisées. Pour planifier des
+        séances, déployez les migrations et métadonnées Nhost du dépôt (
         <code className="text-xs">nhost/migrations</code>, dont{' '}
         <code className="text-xs">1740700000000_scheduled_sessions</code>).
       </p>
       <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
         <li>
-          Creez un token sur{' '}
+          Créez un token sur{' '}
           <a
             href="https://app.nhost.io/account/tokens"
             target="_blank"
@@ -34,7 +34,7 @@ export function ScheduleDeployNotice() {
           </code>
         </li>
         <li>
-          Verifiez avec{' '}
+          Vérifiez avec{' '}
           <code className="text-xs text-foreground">npm run verify:graphql</code>
         </li>
       </ol>
@@ -51,7 +51,7 @@ export function ScheduleDeployNotice() {
         </a>
         . Vous pouvez aussi configurer le secret{' '}
         <code className="text-xs">NHOST_PAT</code> sur GitHub pour l&apos;action
-        Deploy Nhost.
+        Déployer Nhost.
       </p>
     </div>
   )

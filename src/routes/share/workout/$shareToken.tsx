@@ -25,7 +25,7 @@ function SharedWorkoutPage() {
       <div className="mx-auto min-h-svh max-w-lg bg-background p-4">
         <BrandLogo compact />
         <p className="mt-6 text-sm text-destructive">
-          {error instanceof Error ? error.message : 'Seance introuvable.'}
+          {error instanceof Error ? error.message : 'Séance introuvable.'}
         </p>
       </div>
     )
@@ -35,7 +35,7 @@ function SharedWorkoutPage() {
     <div className="mx-auto min-h-svh max-w-lg bg-background p-4">
       <BrandLogo compact />
       <div className="mt-6 space-y-4">
-        <PageHeader eyebrow="Seance partagee" title={workout.title} />
+        <PageHeader eyebrow="Séance partagee" title={workout.title} />
         <WorkoutDetailContent
           workout={workout}
           authorName={workout.user?.display_name}

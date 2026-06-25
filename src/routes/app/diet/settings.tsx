@@ -14,7 +14,7 @@ function NutritionSettingsPage() {
       <div className="flex items-start justify-between gap-3">
         <PageHeader
           title="Nutrition"
-          description="Ajustez vos objectifs caloriques, macros et repartition des repas."
+          description="Ajustez vos objectifs caloriques, macros et répartition des repas."
         />
         <Button variant="outline" size="sm" className="shrink-0" asChild>
           <Link to="/app/diet">Retour</Link>

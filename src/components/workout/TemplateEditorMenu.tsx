@@ -27,7 +27,7 @@ export function TemplateEditorMenu({
           variant="outline"
           size="icon"
           className="shrink-0 rounded-full"
-          aria-label="Actions de la seance"
+          aria-label="Actions de la séance"
         >
           <MoreVertical className="size-4" />
         </Button>

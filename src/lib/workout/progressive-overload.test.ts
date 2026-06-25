@@ -46,7 +46,7 @@ describe('suggestProgressiveOverload', () => {
       last,
     )
 
-    expect(suggestion?.message).toContain('Derniere seance : 5 reps @ 7.5')
+    expect(suggestion?.message).toContain('Dernière séance : 5 reps @ 7.5')
   })
 })
 

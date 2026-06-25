@@ -140,7 +140,7 @@ function CatalogTab() {
             <div>
               <CardTitle className="font-display font-black">Planning</CardTitle>
               <CardDescription>
-                Planifiez vos seances et suivez votre calendrier d entrainement.
+                Planifiez vos séances et suivez votre calendrier d'entraînement.
               </CardDescription>
             </div>
             <Button variant="soft" size="sm" className="rounded-full" asChild>
@@ -156,9 +156,9 @@ function CatalogTab() {
         <CardHeader className="px-4 pb-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <CardTitle className="font-display font-black">Mes modeles</CardTitle>
+              <CardTitle className="font-display font-black">Mes modèles</CardTitle>
               <CardDescription>
-                Seances pre-construites, pretes a demarrer.
+                Séances pré-construites, prêtes à démarrer.
               </CardDescription>
             </div>
             <Button variant="pill" size="sm" onClick={() => setDialogOpen(true)}>
@@ -178,7 +178,7 @@ function CatalogTab() {
               </p>
               {templatesMissing ? (
                 <p className="mt-2 text-muted-foreground">
-                  Backend non a jour — redeployez Nhost (migrations workout_templates)
+                  Backend non à jour — redéployez Nhost (migrations workout_templates)
                   puis relancez l&apos;application.
                 </p>
               ) : null}
@@ -187,10 +187,10 @@ function CatalogTab() {
           {!isLoading && !error && templates?.length === 0 ? (
             <div className="mx-4 mb-4 rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
               <p className="text-sm text-muted-foreground">
-                Aucun modele pour le moment.
+                Aucun modèle pour le moment.
               </p>
               <Button variant="pill" className="mt-4" onClick={() => setDialogOpen(true)}>
-                Creer une seance
+                Créer une séance
               </Button>
             </div>
           ) : null}
@@ -225,7 +225,7 @@ function CatalogTab() {
                           onClick={() => void handleStart(template)}
                         >
                           <Play className="size-4" />
-                          Demarrer
+                          Démarrer
                         </Button>
                         <Button variant="soft" size="sm" className="min-w-0 flex-1" asChild>
                           <Link
@@ -293,7 +293,7 @@ function HistoryTab() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle className="font-display font-black">Historique</CardTitle>
-            <CardDescription>Seances terminees et synchronisees.</CardDescription>
+            <CardDescription>Séances terminées et synchronisées.</CardDescription>
           </div>
           <Pill tone="purple">
             <CalendarDays className="size-3" />
@@ -313,10 +313,10 @@ function HistoryTab() {
         {!isLoading && !error && workouts.length === 0 ? (
           <div className="mx-4 mb-4 rounded-2xl border border-dashed border-border bg-soft-primary/30 p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Aucune seance enregistree pour le moment.
+              Aucune séance enregistrée pour le moment.
             </p>
             <Button variant="pill" className="mt-4" asChild>
-              <Link to="/app/workout/active">Demarrer une seance</Link>
+              <Link to="/app/workout/active">Démarrer une séance</Link>
             </Button>
           </div>
         ) : null}
@@ -338,9 +338,9 @@ function HistoryTab() {
               <p className="text-sm text-muted-foreground">Chargement...</p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                {loadedCount} seance{loadedCount > 1 ? 's' : ''} affichee
+                {loadedCount} séance{loadedCount > 1 ? 's' : ''} affichée
                 {loadedCount > 1 ? 's' : ''}
-                {hasNextPage ? ' — faites defiler pour en voir plus' : ''}
+                {hasNextPage ? ' — faites défiler pour en voir plus' : ''}
               </p>
             )}
           </div>

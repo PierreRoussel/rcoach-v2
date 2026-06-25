@@ -4,10 +4,10 @@ import { mealCaloriesFromPercent } from '@/lib/nutrition/linked-percentages'
 export type MealDistributionKey = 'breakfast' | 'lunch' | 'snack' | 'dinner'
 
 const MEAL_LABELS: Record<MealDistributionKey, string> = {
-  breakfast: 'Petit dejeuner',
+  breakfast: 'Petit déjeuner',
   lunch: 'Repas',
-  snack: 'Gouter',
-  dinner: 'Diner',
+  snack: 'Goûter',
+  dinner: 'Dîner',
 }
 
 const MEAL_ORDER: MealDistributionKey[] = ['breakfast', 'lunch', 'snack', 'dinner']

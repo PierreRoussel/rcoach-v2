@@ -88,7 +88,7 @@ function ProgramDetailPage() {
       <PageHeader
         eyebrow="Programme"
         title={program.name}
-        description={program.description ?? 'Template de seances'}
+        description={program.description ?? 'Template de séances'}
       />
 
       <Card className="rounded-2xl border-border">
@@ -141,7 +141,7 @@ function ProgramDetailPage() {
                   {activeDay.name}
                 </CardTitle>
                 <CardDescription>
-                  Exercices, series cibles et notes pour ce jour.
+                  Exercices, séries cibles et notes pour ce jour.
                 </CardDescription>
               </div>
               <ExercisePicker onSelect={(exercise) => void handleAddExercise(exercise)} />

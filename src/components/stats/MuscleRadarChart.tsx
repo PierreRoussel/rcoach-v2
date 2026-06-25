@@ -18,7 +18,7 @@ export function MuscleRadarChart({ data }: MuscleRadarChartProps) {
   if (data.every((point) => point.value === 0)) {
     return (
       <p className="text-sm text-muted-foreground">
-        Pas assez de donnees pour le graphique radar.
+        Pas assez de données pour le graphique radar.
       </p>
     )
   }
@@ -44,7 +44,7 @@ export function MuscleRadarChart({ data }: MuscleRadarChartProps) {
               borderRadius: 12,
               fontSize: 12,
             }}
-            formatter={(value) => [`${value ?? 0}%`, 'Frequence relative']}
+            formatter={(value) => [`${value ?? 0}%`, 'Fréquence relative']}
           />
           <Radar
             name="Zones"

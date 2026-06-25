@@ -19,27 +19,27 @@ function AppHomePage() {
       <AnimateIn as="section" className="rounded-3xl border border-border bg-gradient-hero-animated p-5">
         <StaggerGroup baseDelay={80}>
           <PageHeader
-            eyebrow="Athlete"
+            eyebrow="Athlète"
             title="Courir plus, manger plus"
-            description="Demarrez une seance et suivez votre nutrition au quotidien."
+            description="Démarrez une séance et suivez votre nutrition au quotidien."
           />
         </StaggerGroup>
         <StaggerGroup baseDelay={160} className="mt-4 flex flex-wrap gap-2">
           <Button variant="pill" asChild>
             <Link to="/app/workout/active">
-              {startedAt ? 'Reprendre la seance' : 'Demarrer une seance'}
+              {startedAt ? 'Reprendre la séance' : 'Démarrer une séance'}
+            </Link>
+          </Button>
+          <Button variant="secondary" className="rounded-full hover:scale-[1.02]" asChild>
+            <Link to="/app/diet">
+              <UtensilsCrossed className="size-4" />
+              Diète
             </Link>
           </Button>
           <Button variant="soft" asChild>
             <Link to="/app/sessions">
               <History className="size-4" />
-              Mes seances
-            </Link>
-          </Button>
-          <Button variant="outline" className="rounded-full" asChild>
-            <Link to="/app/diet">
-              <UtensilsCrossed className="size-4" />
-              Diete
+              Mes séances
             </Link>
           </Button>
         </StaggerGroup>
@@ -50,7 +50,7 @@ function AppHomePage() {
       </AnimateIn>
 
       <AnimateIn delay={400}>
-        <RecentWorkoutsFeed limit={5} showViewAll />
+        <RecentWorkoutsFeed limit={5} showViewAll fullWidth />
       </AnimateIn>
     </div>
   )

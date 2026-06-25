@@ -29,7 +29,7 @@ export function ExerciseProgressChart({ timeline }: ExerciseProgressChartProps) 
   if (chartData.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Pas assez de donnees pour afficher la progression sur cette periode.
+        Pas assez de données pour afficher la progression sur cette période.
       </p>
     )
   }

@@ -60,7 +60,7 @@ export function WorkoutDetailContent({
         <CardHeader>
           <CardTitle className="font-display font-black">Exercices</CardTitle>
           <CardDescription>
-            {workout.workout_exercises.length} exercice(s) enregistres.
+            {workout.workout_exercises.length} exercice(s) enregistrés.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

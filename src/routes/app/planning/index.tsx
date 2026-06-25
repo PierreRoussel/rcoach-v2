@@ -152,8 +152,8 @@ function PlanningPage() {
         <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-primary/10 blur-2xl" />
         <PageHeader
           eyebrow="Planning"
-          title="Calendrier d entrainement"
-          description="Visualisez vos seances, planifiez les prochaines et suivez votre regularite."
+          title="Calendrier d'entraînement"
+          description="Visualisez vos séances, planifiez les prochaines et suivez votre régularité."
           className="relative"
         />
         <div className="relative mt-4 flex flex-wrap gap-2">
@@ -163,7 +163,7 @@ function PlanningPage() {
           </Pill>
           <Pill tone="secondary">
             <ListChecks className="size-3" />
-            {activeCount} regle{activeCount > 1 ? 's' : ''} active{activeCount > 1 ? 's' : ''}
+            {activeCount} règle{activeCount > 1 ? 's' : ''} active{activeCount > 1 ? 's' : ''}
           </Pill>
         </div>
       </section>
@@ -185,7 +185,7 @@ function PlanningPage() {
           <div>
             <h2 className="font-display text-lg font-black">Calendrier</h2>
             <p className="text-xs text-muted-foreground">
-              Touchez un jour pour le detail et demarrer une seance.
+              Touchez un jour pour le détail et démarrer une séance.
             </p>
           </div>
           {!showForm ? (
@@ -223,7 +223,7 @@ function PlanningPage() {
               {editing ? 'Modifier la planification' : 'Nouvelle planification'}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Titre libre ou modele, ponctuel, hebdomadaire ou alternance ABA.
+              Titre libre ou modèle, ponctuel, hebdomadaire ou alternance ABA.
             </p>
           </div>
           <ScheduleSessionForm
@@ -245,16 +245,16 @@ function PlanningPage() {
 
       <section className="space-y-3">
         <div className="px-1">
-          <h2 className="font-display text-lg font-black">Regles de planification</h2>
+          <h2 className="font-display text-lg font-black">Règles de planification</h2>
           <p className="text-xs text-muted-foreground">
-            {sessions.length} entree{sessions.length > 1 ? 's' : ''} au total
+            {sessions.length} entrée{sessions.length > 1 ? 's' : ''} au total
           </p>
         </div>
 
         {sessions.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/15 px-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">
-              Aucune seance planifiee. Ajoutez votre premiere regle.
+              Aucune séance planifiée. Ajoutez votre première règle.
             </p>
             {!showForm ? (
               <Button
@@ -265,7 +265,7 @@ function PlanningPage() {
                 onClick={() => setShowForm(true)}
               >
                 <CalendarPlus className="size-4" />
-                Creer une planification
+                Créer une planification
               </Button>
             ) : null}
           </div>

@@ -76,19 +76,19 @@ export type HighRpeComparison = {
 
 export function formatHighRpeComparison(comparison: HighRpeComparison): string {
   if (!comparison.hasEnoughData) {
-    return 'Pas assez de series a RPE ≥ 8 — logguez votre effort pour suivre la progression.'
+    return 'Pas assez de séries à RPE ≥ 8 — logguez votre effort pour suivre la progression.'
   }
 
   if (comparison.currentOneRm == null && comparison.baselineOneRm == null) {
-    return 'Aucune serie a RPE ≥ 8 sur cette periode.'
+    return 'Aucune série à RPE ≥ 8 sur cette période.'
   }
 
   if (comparison.currentOneRm == null) {
-    return 'Aucune serie a RPE ≥ 8 sur la periode selectionnee.'
+    return 'Aucune série à RPE ≥ 8 sur la période sélectionnée.'
   }
 
   if (comparison.baselineOneRm == null) {
-    return `1RM estime (RPE ≥ 8) : ${Math.round(comparison.currentOneRm)} kg.`
+    return `1RM estimé (RPE ≥ 8) : ${Math.round(comparison.currentOneRm)} kg.`
   }
 
   const delta = comparison.deltaKg ?? 0
@@ -97,7 +97,7 @@ export function formatHighRpeComparison(comparison: HighRpeComparison): string {
     comparison.deltaPercent != null
       ? ` (${sign}${comparison.deltaPercent.toFixed(1)} %)`
       : ''
-  const baselineLabel = comparison.baselinePeriodLabel?.toLowerCase() ?? 'debut de periode'
+  const baselineLabel = comparison.baselinePeriodLabel?.toLowerCase() ?? 'début de période'
 
   return `${sign}${delta.toFixed(1)} kg est. 1RM vs ${baselineLabel}${percent}`
 }

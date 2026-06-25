@@ -118,8 +118,8 @@ export function ExerciseStatsPanel({
             MUSCLE_GROUP_LABELS[normalizeMuscleGroup(exerciseMeta.muscleGroup)],
             exerciseMeta.equipment,
             catalogEntry
-              ? `${catalogEntry.sessionCount} seance${catalogEntry.sessionCount > 1 ? 's' : ''}`
-              : 'Jamais realise',
+              ? `${catalogEntry.sessionCount} séance${catalogEntry.sessionCount > 1 ? 's' : ''}`
+              : 'Jamais réalisé',
           ]
             .filter(Boolean)
             .join(' · ')}
@@ -131,7 +131,7 @@ export function ExerciseStatsPanel({
       {catalogEntry == null ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/15 px-4 py-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Cet exercice n&apos;a pas encore ete realise dans une seance enregistree.
+            Cet exercice n&apos;a pas encore été réalisé dans une séance enregistrée.
           </p>
         </div>
       ) : (
@@ -144,7 +144,7 @@ export function ExerciseStatsPanel({
                 Performance actuelle
               </CardTitle>
               <CardDescription>
-                Meilleure serie sur la periode selectionnee.
+                Meilleure série sur la période sélectionnée.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -153,7 +153,7 @@ export function ExerciseStatsPanel({
               </p>
               {bestPerformance.date ? (
                 <p className="text-xs text-muted-foreground">
-                  Pic de la periode · {bestPerformance.date}
+                  Pic de la période · {bestPerformance.date}
                 </p>
               ) : null}
               {bestPerformance.best1Rm != null ? (
@@ -173,7 +173,7 @@ export function ExerciseStatsPanel({
             <CardHeader>
               <CardTitle className="font-display font-black">Progression</CardTitle>
               <CardDescription>
-                Evolution du 1RM estime par seance.
+                Évolution du 1RM estimé par séance.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -184,16 +184,16 @@ export function ExerciseStatsPanel({
           <Card className="rounded-2xl border-border">
             <CardHeader>
               <CardTitle className="font-display font-black">
-                Seances recentes
+                Séances récentes
               </CardTitle>
               <CardDescription>
-                Les 10 dernieres occurrences dans la periode.
+                Les 10 dernieres occurrences dans la période.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {sessions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Aucune seance sur cette periode.
+                  Aucune séance sur cette période.
                 </p>
               ) : (
                 <ul className="divide-y divide-border/70 rounded-xl border border-border">

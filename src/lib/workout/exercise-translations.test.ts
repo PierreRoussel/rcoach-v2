@@ -54,7 +54,7 @@ describe('translateExerciseName', () => {
   it('translates known exercises to french', () => {
     expect(translateExerciseName('Squat (Barbell)', 'fr')).toBe('Squat (Barre)')
     expect(translateExerciseName('Bench Press (Barbell)', 'fr')).toBe(
-      'Developpe couche (Barre)',
+      'Développé couché (Barre)',
     )
   })
 

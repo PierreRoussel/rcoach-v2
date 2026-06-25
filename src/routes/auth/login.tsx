@@ -44,7 +44,7 @@ function LoginPage() {
 
       await navigate({ to: '/app' })
     } catch {
-      setError('Connexion impossible. Verifiez vos identifiants.')
+      setError('Connexion impossible. Vérifiez vos identifiants.')
     } finally {
       setIsSubmitting(false)
     }
@@ -57,7 +57,7 @@ function LoginPage() {
           <CardTitle className="font-display text-2xl font-black">
             Bon retour
           </CardTitle>
-          <CardDescription>Connectez-vous a votre compte RCoach.</CardDescription>
+          <CardDescription>Connectez-vous à votre compte RCoach.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -91,7 +91,7 @@ function LoginPage() {
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Pas de compte ?{' '}
             <Link className="font-semibold text-primary underline-offset-4 hover:underline" to="/auth/register">
-              Creer un compte
+              Créer un compte
             </Link>
           </p>
         </CardContent>
