@@ -70,6 +70,21 @@ function buildMealEntryObject(input: AddMealEntryInput) {
   }
 }
 
+function buildMealEntryRestoreObject(entry: MealLogEntry) {
+  return {
+    logged_date: entry.logged_date,
+    meal_type: entry.meal_type,
+    food_id: entry.food_id,
+    custom_name: entry.custom_name,
+    quantity_g: entry.quantity_g,
+    servings: entry.servings,
+    calories: entry.calories,
+    carbs_g: entry.carbs_g,
+    protein_g: entry.protein_g,
+    fat_g: entry.fat_g,
+  }
+}
+
 export function useMealLogMutations() {
   const { nhost, user } = useAuth()
   const queryClient = useQueryClient()
@@ -227,5 +242,62 @@ export function useMealLogMutations() {
     },
   })
 
-  return { addEntry, addQuickEntry, updateEntry, deleteEntry }
+  const restoreEntry = useMutation({
+    mutationFn: async (input: { entry: MealLogEntry }): Promise<MealMutationResult> => {
+      const object = buildMealEntryRestoreObject(input.entry)
+
+      try {
+        const data = await graphqlRequest<{
+          insert_meal_log_entries_one: MealLogEntry
+        }>(nhost, INSERT_MEAL_LOG_ENTRY, { object })
+
+        return {
+          entry: data.insert_meal_log_entries_one,
+          offline: false,
+        }
+      } catch {
+        const entryId = await syncMealEntryInsert(nhost, {
+          object,
+          food: input.entry.food ?? undefined,
+        })
+
+        if (input.entry.food) {
+          return {
+            entry: buildPendingMealLogEntry({
+              id: entryId,
+              userId: user?.id ?? 'offline',
+              loggedDate: input.entry.logged_date,
+              mealType: input.entry.meal_type,
+              food: input.entry.food,
+              portion:
+                input.entry.quantity_g != null
+                  ? { mode: 'grams', quantityG: Number(input.entry.quantity_g) }
+                  : { mode: 'servings', servings: Number(input.entry.servings ?? 1) },
+            }),
+            offline: true,
+          }
+        }
+
+        return {
+          entry: buildPendingQuickMealLogEntry({
+            id: entryId,
+            userId: user?.id ?? 'offline',
+            loggedDate: input.entry.logged_date,
+            mealType: input.entry.meal_type,
+            name: input.entry.custom_name ?? 'Aliment',
+            calories: Number(input.entry.calories),
+            carbsG: Number(input.entry.carbs_g),
+            proteinG: Number(input.entry.protein_g),
+            fatG: Number(input.entry.fat_g),
+          }),
+          offline: true,
+        }
+      }
+    },
+    onSuccess: async (_data, variables) => {
+      await invalidate(variables.entry.logged_date)
+    },
+  })
+
+  return { addEntry, addQuickEntry, updateEntry, deleteEntry, restoreEntry }
 }

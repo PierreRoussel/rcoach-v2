@@ -21,6 +21,7 @@ import {
   type OffFoodDraft,
 } from '@/lib/nutrition/open-food-facts'
 import type { Food } from '@/lib/nutrition/types'
+import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export type FoodSearchResult = {
@@ -38,6 +39,7 @@ export type FoodSearchResult = {
   offProductId?: string | null
   food?: Food
   offDraft?: OffFoodDraft
+  quickAddPortion?: PortionInput
 }
 
 export type FoodSearchOptions = {

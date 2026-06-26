@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Plus, UtensilsCrossed } from 'lucide-react'
+import { ArrowLeft, Plus, Undo2, UtensilsCrossed } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
@@ -11,6 +12,8 @@ import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { SwipeToDeleteRow } from '@/components/ui/SwipeToDeleteRow'
+import { Toaster } from '@/components/ui/sonner'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
@@ -28,6 +31,9 @@ const mealParamsSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'snack', 'dinner']),
 })
 
+// Bottom nav (4.25rem) + "Ajouter plus" bar (3.5rem) + gap (0.75rem) — see .meal-detail-toaster in diet-page.css
+const MEAL_TOAST_BOTTOM_OFFSET = 'calc(4.25rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom))'
+
 export const Route = createFileRoute('/app/diet/meals/$mealType')({
   validateSearch: mealSearchSchema,
   params: {
@@ -43,7 +49,7 @@ function MealDetailPage() {
   const dateLabel = formatFrenchDateLabel(date)
   const { data: settings } = useNutritionSettings()
   const { data: daySummary } = useNutritionDay(date, settings)
-  const { updateEntry, deleteEntry } = useMealLogMutations()
+  const { updateEntry, deleteEntry, restoreEntry } = useMealLogMutations()
   const [editingEntry, setEditingEntry] = useState<MealLogEntry | null>(null)
   const [detailEntry, setDetailEntry] = useState<MealLogEntry | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -64,11 +70,33 @@ function MealDetailPage() {
     fat: (daySummary?.targets.fatG ?? 0) * mealCalorieShare,
   }
 
-  async function handleDeleteEntry(entryId: string) {
+  async function handleDeleteEntry(entry: MealLogEntry) {
     setDeleteError(null)
 
     try {
-      await deleteEntry.mutateAsync({ id: entryId, loggedDate: date })
+      await deleteEntry.mutateAsync({ id: entry.id, loggedDate: date })
+
+      toast('Aliment supprimé', {
+        duration: 5000,
+        closeButton: false,
+        action: {
+          label: (
+            <span className="inline-flex items-center gap-1.5">
+              <Undo2 className="size-3.5" aria-hidden />
+              Annuler
+            </span>
+          ),
+          onClick: () => {
+            void restoreEntry
+              .mutateAsync({ entry })
+              .catch((error: Error) => {
+                setDeleteError(
+                  error.message || "Impossible de restaurer cet aliment.",
+                )
+              })
+          },
+        },
+      })
     } catch (error) {
       setDeleteError(
         error instanceof Error ? error.message : 'Impossible de supprimer cet aliment.',
@@ -186,29 +214,34 @@ function MealDetailPage() {
           ) : (
             <div className="divide-y divide-border/70">
               {entries.map((entry) => (
-                <MealEntryRow
+                <SwipeToDeleteRow
                   key={entry.id}
-                  name={getMealEntryName(entry)}
-                  brand={isQuickMealEntry(entry) ? 'Ajout rapide' : entry.food?.brand ?? null}
-                  calories={Number(entry.calories)}
-                  quantityG={entry.quantity_g}
-                  servings={entry.servings}
-                  servingSizeG={Number(entry.food.serving_size_g)}
-                  onSelect={() => setDetailEntry(entry)}
-                  onEdit={
-                    isQuickMealEntry(entry) || !entry.food
-                      ? undefined
-                      : () => setEditingEntry(entry)
-                  }
-                  onDelete={() => void handleDeleteEntry(entry.id)}
-                />
+                  disabled={deleteEntry.isPending}
+                  onDelete={() => void handleDeleteEntry(entry)}
+                >
+                  <MealEntryRow
+                    name={getMealEntryName(entry)}
+                    brand={isQuickMealEntry(entry) ? 'Ajout rapide' : entry.food?.brand ?? null}
+                    calories={Number(entry.calories)}
+                    quantityG={entry.quantity_g}
+                    servings={entry.servings}
+                    servingSizeG={Number(entry.food?.serving_size_g ?? 100)}
+                    onSelect={() => setDetailEntry(entry)}
+                    onEdit={
+                      isQuickMealEntry(entry) || !entry.food
+                        ? undefined
+                        : () => setEditingEntry(entry)
+                    }
+                    onDelete={() => void handleDeleteEntry(entry)}
+                  />
+                </SwipeToDeleteRow>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 mx-auto max-w-lg border-t border-border/70 bg-background px-4 py-3">
+      <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-20 mx-auto max-w-lg bg-background px-4 py-2">
         <Button className="w-full rounded-full shadow-sm" size="lg" asChild>
           <Link to="/app/diet/add" search={{ date, mealType }}>
             <Plus className="size-5" />
@@ -260,6 +293,20 @@ function MealDetailPage() {
               portion,
             })
             .then(() => setEditingEntry(null))
+        }}
+      />
+
+      <Toaster
+        className="meal-detail-toaster"
+        position="bottom-center"
+        closeButton={false}
+        offset={{ bottom: MEAL_TOAST_BOTTOM_OFFSET }}
+        mobileOffset={{ bottom: MEAL_TOAST_BOTTOM_OFFSET }}
+        toastOptions={{
+          closeButton: false,
+          classNames: {
+            toast: 'ml-3.5 mr-2 w-[calc(100%-1.375rem)]',
+          },
         }}
       />
     </div>

@@ -1658,6 +1658,8 @@ export const LIST_FREQUENT_FOODS = `
       limit: 200
     ) {
       food_id
+      quantity_g
+      servings
       food {
         id
         name

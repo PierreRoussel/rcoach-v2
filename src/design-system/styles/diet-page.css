@@ -275,3 +275,46 @@ body:has(nav a[href='/app/diet'].bg-soft-primary) main > div.space-y-4 > .rounde
 .meal-detail-page .meal-detail-calorie-progress [data-slot='progress-indicator'] {
   background: var(--meal-accent);
 }
+
+/* Undo toast: above fixed "Ajouter plus" bar, aligned with its container */
+.meal-detail-toaster[data-sonner-toaster][data-y-position='bottom'] {
+  bottom: calc(4.25rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(100%, 32rem);
+  max-width: 32rem;
+  box-sizing: border-box;
+  --width: 100%;
+}
+
+@media (max-width: 600px) {
+  .meal-detail-toaster[data-sonner-toaster][data-x-position='center'] {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(100%, 32rem);
+  }
+
+  .meal-detail-toaster [data-sonner-toast] {
+    left: auto;
+    right: auto;
+  }
+}
+
+.meal-detail-toaster [data-sonner-toast] [data-button][data-action] {
+  height: 2rem;
+  border-radius: 9999px;
+  padding-inline: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  gap: 0.375rem;
+  color: var(--primary);
+  background: var(--soft-primary);
+  border: none;
+}
+
+.meal-detail-toaster [data-sonner-toast] [data-button][data-action]:hover {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}

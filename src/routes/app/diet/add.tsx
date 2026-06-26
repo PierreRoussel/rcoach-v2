@@ -1,21 +1,22 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Zap } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
-import { FoodQuickActions, FoodSearchList } from '@/components/nutrition/FoodSearchList'
+import { FoodQuickActions, FoodSearchList, type FoodQuickAddState } from '@/components/nutrition/FoodSearchList'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { QuickAddSheet } from '@/components/nutrition/QuickAddSheet'
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
-import { useFrequentFoods } from '@/hooks/useFrequentFoods'
+import { useFrequentFoods, type FrequentFood } from '@/hooks/useFrequentFoods'
 import { useRecentFoods } from '@/hooks/useRecentFoods'
 import { useFoodSearch, OFF_MIN_QUERY_LENGTH, type FoodSearchResult } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { toDateKey } from '@/lib/nutrition/dates'
+import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food, MealType } from '@/lib/nutrition/types'
 
 const addSearchSchema = z.object({
@@ -26,7 +27,9 @@ const addSearchSchema = z.object({
 
 type AddFoodTab = 'frequent' | 'recent' | 'favorites'
 
-function mapFoodToSearchResult(food: Food): FoodSearchResult {
+const QUICK_ADD_SUCCESS_MS = 1500
+
+function mapFoodToSearchResult(food: Food, quickAddPortion?: PortionInput): FoodSearchResult {
   return {
     id: food.id,
     name: food.name,
@@ -41,6 +44,7 @@ function mapFoodToSearchResult(food: Food): FoodSearchResult {
     barcode: food.barcode,
     offProductId: food.off_product_id,
     food,
+    quickAddPortion,
   }
 }
 
@@ -56,10 +60,14 @@ function AddFoodPage() {
   const mealType = (search.mealType ?? 'breakfast') as MealType
   const activeTab = search.tab ?? 'frequent'
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const quickAddResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [query, setQuery] = useState('')
   const [searchOffExternally, setSearchOffExternally] = useState(false)
   const [selectedFood, setSelectedFood] = useState<Food | null>(null)
+  const [selectedPortion, setSelectedPortion] = useState<PortionInput | null>(null)
   const [quickAddOpen, setQuickAddOpen] = useState(false)
+  const [quickAddState, setQuickAddState] = useState<FoodQuickAddState>(null)
+  const [pinnedFrequentFoods, setPinnedFrequentFoods] = useState<FrequentFood[] | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   const trimmedQuery = query.trim()
@@ -78,6 +86,35 @@ function AddFoodPage() {
     setSearchOffExternally(false)
   }, [trimmedQuery])
 
+  useEffect(() => {
+    return () => {
+      if (quickAddResetTimerRef.current) {
+        clearTimeout(quickAddResetTimerRef.current)
+      }
+    }
+  }, [])
+
+  function clearQuickAddResetTimer() {
+    if (quickAddResetTimerRef.current) {
+      clearTimeout(quickAddResetTimerRef.current)
+      quickAddResetTimerRef.current = null
+    }
+  }
+
+  function scheduleQuickAddReset() {
+    clearQuickAddResetTimer()
+    quickAddResetTimerRef.current = setTimeout(() => {
+      setQuickAddState(null)
+      quickAddResetTimerRef.current = null
+    }, QUICK_ADD_SUCCESS_MS)
+  }
+
+  useEffect(() => {
+    if (frequentFoods.length > 0 && pinnedFrequentFoods === null) {
+      setPinnedFrequentFoods(frequentFoods)
+    }
+  }, [frequentFoods, pinnedFrequentFoods])
+
   const favoriteFoodIds = useMemo(
     () => new Set(favorites.map((favorite) => favorite.food_id)),
     [favorites],
@@ -89,8 +126,11 @@ function AddFoodPage() {
   )
 
   const frequentResults = useMemo<FoodSearchResult[]>(
-    () => frequentFoods.map(mapFoodToSearchResult),
-    [frequentFoods],
+    () =>
+      (pinnedFrequentFoods ?? frequentFoods).map((item) =>
+        mapFoodToSearchResult(item.food, item.portion),
+      ),
+    [frequentFoods, pinnedFrequentFoods],
   )
 
   const recentResults = useMemo<FoodSearchResult[]>(
@@ -120,6 +160,8 @@ function AddFoodPage() {
             results={frequentResults}
             favoriteFoodIds={favoriteFoodIds}
             onSelect={(result) => void handleSelect(result)}
+            onQuickAdd={(result) => void handleQuickAdd(result)}
+            quickAddState={quickAddState}
             onToggleFavorite={handleToggleFavorite}
             emptyLabel="Vos aliments fréquents apparaîtront ici."
           />
@@ -133,6 +175,8 @@ function AddFoodPage() {
             results={recentResults}
             favoriteFoodIds={favoriteFoodIds}
             onSelect={(result) => void handleSelect(result)}
+            onQuickAdd={(result) => void handleQuickAdd(result)}
+            quickAddState={quickAddState}
             onToggleFavorite={handleToggleFavorite}
             emptyLabel="Vos derniers aliments journalisés apparaîtront ici."
           />
@@ -146,13 +190,15 @@ function AddFoodPage() {
             results={favoriteResults}
             favoriteFoodIds={favoriteFoodIds}
             onSelect={(result) => void handleSelect(result)}
+            onQuickAdd={(result) => void handleQuickAdd(result)}
+            quickAddState={quickAddState}
             onToggleFavorite={handleToggleFavorite}
             emptyLabel="Aucun favori pour le moment."
           />
         ),
       },
     ],
-    [favoriteFoodIds, favoriteResults, frequentResults, recentResults, favorites],
+    [favoriteFoodIds, favoriteResults, frequentResults, quickAddState, recentResults, favorites],
   )
 
   const handleBrowseTabChange = (nextTab: AddFoodTab) => {
@@ -186,6 +232,39 @@ function AddFoodPage() {
     }
 
     setSelectedFood(food)
+    setSelectedPortion(result.quickAddPortion ?? null)
+  }
+
+  async function handleQuickAdd(result: FoodSearchResult) {
+    setMessage(null)
+    clearQuickAddResetTimer()
+    setQuickAddState({ foodId: result.id, status: 'adding' })
+
+    try {
+      const food = await resolveFood(result)
+      if (!food) {
+        setMessage('Impossible de charger cet aliment.')
+        setQuickAddState(null)
+        return
+      }
+
+      const addResult = await addEntry.mutateAsync({
+        loggedDate: date,
+        mealType,
+        food,
+        portion: result.quickAddPortion ?? { mode: 'servings', servings: 1 },
+      })
+
+      if (addResult.offline) {
+        setMessage('Enregistré localement. Synchronisation à la reconnexion.')
+      }
+
+      setQuickAddState({ foodId: result.id, status: 'success' })
+      scheduleQuickAddReset()
+    } catch (error) {
+      setQuickAddState(null)
+      setMessage(error instanceof Error ? error.message : "Impossible d'ajouter cet aliment.")
+    }
   }
 
   async function handleScan() {
@@ -283,6 +362,8 @@ function AddFoodPage() {
           results={results}
           favoriteFoodIds={favoriteFoodIds}
           onSelect={(result) => void handleSelect(result)}
+          onQuickAdd={(result) => void handleQuickAdd(result)}
+          quickAddState={quickAddState}
           onToggleFavorite={handleToggleFavorite}
           emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun résultat.'}
         />
@@ -302,9 +383,11 @@ function AddFoodPage() {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedFood(null)
+            setSelectedPortion(null)
           }
         }}
         food={selectedFood}
+        initialPortion={selectedPortion ?? undefined}
         isSubmitting={addEntry.isPending}
         onConfirm={(portion) => {
           if (!selectedFood) {
@@ -370,7 +453,7 @@ function AddFoodPage() {
         onClick={() => setQuickAddOpen(true)}
         aria-label="Ajout rapide"
       >
-        <Zap className="size-6" />
+        <Plus className="size-6" />
       </Button>
 
       {scanner}

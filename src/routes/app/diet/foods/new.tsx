@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Barcode } from 'lucide-react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Barcode } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { PageHeader } from '@/design-system'
 import { useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
@@ -163,10 +162,23 @@ function NewFoodPage() {
 
   return (
     <div className="space-y-4 pb-8">
-      <PageHeader
-        title="Nouvel aliment"
-        description={step === 0 ? "Choisissez le mode d'ajout." : 'Renseignez les informations nutritionnelles.'}
-      />
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
+          <Link
+            to="/app/diet/add"
+            search={{ date, mealType }}
+            aria-label="Retour à l'ajout d'aliment"
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
+        </Button>
+        <div className="min-w-0 space-y-1">
+          <h1 className="font-display text-2xl font-black text-foreground">Nouvel aliment</h1>
+          <p className="text-sm text-muted-foreground">
+            {step === 0 ? "Choisissez le mode d'ajout." : 'Renseignez les informations nutritionnelles.'}
+          </p>
+        </div>
+      </div>
 
       {step === 0 ? (
         <div className="grid gap-3">
