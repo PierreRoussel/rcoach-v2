@@ -1,7 +1,10 @@
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { useCanGoBack, useRouter } from '@tanstack/react-router'
+import { useCanGoBack, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
+
+import { isDietMealPath } from '@/hooks/useDietMealBackNavigation'
+import { toDateKey } from '@/lib/nutrition/dates'
 
 function closeTopLayer() {
   const openDrawer = document.querySelector('[data-vaul-drawer][data-state="open"]')
@@ -28,11 +31,17 @@ function closeTopLayer() {
 export function AndroidBackNavigation() {
   const router = useRouter()
   const canGoBack = useCanGoBack()
+  const location = useRouterState({ select: (state) => state.location })
   const canGoBackRef = useRef(canGoBack)
+  const locationRef = useRef(location)
 
   useEffect(() => {
     canGoBackRef.current = canGoBack
   }, [canGoBack])
+
+  useEffect(() => {
+    locationRef.current = location
+  }, [location])
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
@@ -41,6 +50,17 @@ export function AndroidBackNavigation() {
 
     const listenerPromise = App.addListener('backButton', () => {
       if (closeTopLayer()) {
+        return
+      }
+
+      const { pathname, search } = locationRef.current
+      if (isDietMealPath(pathname)) {
+        const date =
+          typeof search === 'object' && search && 'date' in search && typeof search.date === 'string'
+            ? search.date
+            : toDateKey(new Date())
+
+        void router.navigate({ to: '/app/diet', search: { date } })
         return
       }
 

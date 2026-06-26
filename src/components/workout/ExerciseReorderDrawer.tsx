@@ -9,12 +9,12 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import {
   prepareForSortableDrag,
   restorePointerInteraction,
@@ -108,7 +108,7 @@ export function ExerciseReorderDrawer({
   }
 
   return (
-    <Sheet
+    <Drawer
       open={open}
       onOpenChange={(next) => {
         onOpenChange(next)
@@ -117,15 +117,15 @@ export function ExerciseReorderDrawer({
         }
       }}
     >
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
-        <SheetHeader>
-          <SheetTitle className="font-display font-black">
+      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+        <DrawerHeader>
+          <DrawerTitle className="font-display font-black">
             Reorganiser les exercices
-          </SheetTitle>
-          <SheetDescription>
+          </DrawerTitle>
+          <DrawerDescription>
             Glissez les exercices pour changer leur ordre dans la séance.
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -144,7 +144,7 @@ export function ExerciseReorderDrawer({
             </div>
           </SortableContext>
         </DndContext>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   )
 }

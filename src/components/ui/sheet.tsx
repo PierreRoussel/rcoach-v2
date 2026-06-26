@@ -4,11 +4,29 @@ import * as React from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 
+import { useOverlayBackClose } from "@/hooks/useOverlayBackClose";
 import { restorePointerInteraction } from "@/lib/ui/restore-pointer-interaction";
 import { cn } from "@/lib/utils";
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+function Sheet({
+  open,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  const isControlled = open !== undefined && onOpenChange !== undefined
+  const noop = React.useCallback(() => {}, [])
+  const handleOpenChange = useOverlayBackClose(open ?? false, onOpenChange ?? noop, undefined, {
+    enabled: isControlled,
+  })
+
+  return (
+    <SheetPrimitive.Root
+      data-slot="sheet"
+      open={open}
+      onOpenChange={isControlled ? handleOpenChange : onOpenChange}
+      {...props}
+    />
+  );
 }
 
 function SheetTrigger({

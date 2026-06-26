@@ -410,6 +410,7 @@ function AddFoodPage() {
                 to: '/app/diet/meals/$mealType',
                 params: { mealType },
                 search: { date },
+                replace: true,
               })
             })
             .catch((error: Error) => setMessage(error.message))
@@ -440,6 +441,7 @@ function AddFoodPage() {
                 to: '/app/diet/meals/$mealType',
                 params: { mealType },
                 search: { date },
+                replace: true,
               })
             })
             .catch((error: Error) => setMessage(error.message))

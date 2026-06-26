@@ -10,12 +10,12 @@ import { Flame, GripVertical, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import {
   prepareForSortableDrag,
   restorePointerInteraction,
@@ -201,16 +201,16 @@ export function SetOptionsDrawer({
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
-        <SheetHeader>
-          <SheetTitle className="font-display font-black">
+    <Drawer open={open} onOpenChange={handleOpenChange}>
+      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+        <DrawerHeader>
+          <DrawerTitle className="font-display font-black">
             {selectedSet ? setLabel(selectedSet, selectedIndex ?? 0) : 'Série'}
-          </SheetTitle>
-          <SheetDescription>
+          </DrawerTitle>
+          <DrawerDescription>
             {displayExerciseName || 'Options de la série sélectionnée'}
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-6">
           <Button
@@ -268,7 +268,7 @@ export function SetOptionsDrawer({
             Supprimer cette série
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   )
 }

@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 
 import { ExerciseStatsPanel } from '@/components/stats/ExerciseStatsPanel'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import type { StatsPeriod } from '@/lib/stats/exercise-progression'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
@@ -44,20 +44,17 @@ export function ExerciseStatsDrawer({
   const displayExerciseName = useExerciseDisplayName(exercise?.exerciseName)
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[92vh] overflow-y-auto rounded-t-2xl px-4 pb-8"
-      >
-        <SheetHeader className="text-left">
-          <SheetTitle className="font-display font-black">
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92vh] overflow-y-auto rounded-t-2xl px-4 pb-8">
+        <DrawerHeader className="text-left">
+          <DrawerTitle className="font-display font-black">
             {displayExerciseName || 'Statistiques'}
-          </SheetTitle>
-          <SheetDescription>
+          </DrawerTitle>
+          <DrawerDescription>
             {[muscleLabel, exercise?.equipment].filter(Boolean).join(' · ') ||
               "Progression et historique de l'exercice"}
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         {exercise ? (
           <div className="mt-4">
@@ -71,7 +68,7 @@ export function ExerciseStatsDrawer({
             />
           </div>
         ) : null}
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   )
 }

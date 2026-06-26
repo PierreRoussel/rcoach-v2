@@ -3,12 +3,33 @@
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
+import { useOverlayBackClose } from "@/hooks/useOverlayBackClose";
+import { restorePointerInteraction } from "@/lib/ui/restore-pointer-interaction";
 import { cn } from "@/lib/utils";
 
 function Drawer({
+  open,
+  onOpenChange,
+  dismissible = true,
+  shouldScaleBackground = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
+  const isControlled = open !== undefined && onOpenChange !== undefined
+  const noop = React.useCallback(() => {}, [])
+  const handleOpenChange = useOverlayBackClose(open ?? false, onOpenChange ?? noop, undefined, {
+    enabled: isControlled,
+  })
+
+  return (
+    <DrawerPrimitive.Root
+      data-slot="drawer"
+      open={open}
+      onOpenChange={isControlled ? handleOpenChange : onOpenChange}
+      dismissible={dismissible}
+      shouldScaleBackground={shouldScaleBackground}
+      {...props}
+    />
+  );
 }
 
 function DrawerTrigger({
@@ -55,6 +76,10 @@ function DrawerContent({
       <DrawerOverlay />
       <DrawerPrimitive.Content
         data-slot="drawer-content"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          restorePointerInteraction();
+        }}
         className={cn(
           "group/drawer-content bg-background fixed z-50 flex h-auto flex-col",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",

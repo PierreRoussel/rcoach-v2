@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress'
 import { SwipeToDeleteRow } from '@/components/ui/SwipeToDeleteRow'
 import { Toaster } from '@/components/ui/sonner'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
+import { useDietMealBackNavigation } from '@/hooks/useDietMealBackNavigation'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { formatFrenchDateLabel, toDateKey } from '@/lib/nutrition/dates'
@@ -53,6 +54,8 @@ function MealDetailPage() {
   const [editingEntry, setEditingEntry] = useState<MealLogEntry | null>(null)
   const [detailEntry, setDetailEntry] = useState<MealLogEntry | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  useDietMealBackNavigation(date)
 
   const meal = daySummary?.meals.find((item) => item.mealType === mealType)
   const entries = meal?.entries ?? []
@@ -123,7 +126,7 @@ function MealDetailPage() {
               className="meal-detail-back size-9 shrink-0 rounded-full border-border/70 bg-card/80 shadow-sm backdrop-blur-sm"
               asChild
             >
-              <Link to="/app/diet" search={{ date }} aria-label="Retour au journal">
+              <Link to="/app/diet" search={{ date }} replace aria-label="Retour au journal">
                 <ArrowLeft className="size-5" />
               </Link>
             </Button>

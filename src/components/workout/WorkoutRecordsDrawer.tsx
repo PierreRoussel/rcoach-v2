@@ -6,7 +6,6 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { WorkoutPersonalRecordsList } from '@/components/workout/WorkoutPersonalRecordsList'
-import { useOverlayBackClose } from '@/hooks/useOverlayBackClose'
 import type { PersonalRecordHit } from '@/lib/stats/workout-metrics'
 
 type WorkoutRecordsDrawerProps = {
@@ -22,10 +21,8 @@ export function WorkoutRecordsDrawer({
   records,
   workoutTitle,
 }: WorkoutRecordsDrawerProps) {
-  const handleOpenChange = useOverlayBackClose(open, onOpenChange, 'workout-records-drawer')
-
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} dismissible shouldScaleBackground={false}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-0">
         <DrawerHeader className="px-4 text-left">
           <DrawerTitle className="font-display font-black">

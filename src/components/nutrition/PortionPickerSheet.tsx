@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatNutrient, scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food } from '@/lib/nutrition/types'
@@ -90,15 +90,15 @@ export function PortionPickerSheet({
   )
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
-        <SheetHeader>
-          <SheetTitle>{food.name}</SheetTitle>
-          <SheetDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+        <DrawerHeader>
+          <DrawerTitle>{food.name}</DrawerTitle>
+          <DrawerDescription>
             {food.brand ? `${food.brand} · ` : ''}
             Choisissez la quantité à ajouter.
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-4">
           <Tabs value={mode} onValueChange={(value) => setMode(value as 'grams' | 'servings')}>
@@ -152,7 +152,7 @@ export function PortionPickerSheet({
           <FoodNutrientBadges food={food} />
         </div>
 
-        <SheetFooter className="px-4 pb-4">
+        <DrawerFooter className="px-4 pb-4">
           <Button
             type="button"
             className="w-full"
@@ -167,8 +167,8 @@ export function PortionPickerSheet({
           >
             {confirmLabel}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   )
 }

@@ -13,12 +13,12 @@ import { MUSCLE_GROUPS } from '@/lib/workout/exercise-meta'
 import { exerciseNameMatchesQuery } from '@/lib/workout/translate-exercise-name'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 
 type ExerciseSearchDrawerProps = {
   catalog: ExerciseCatalogEntry[]
@@ -95,14 +95,14 @@ export function ExerciseSearchDrawer({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl px-0">
-        <SheetHeader className="px-4 text-left">
-          <SheetTitle className="font-display font-black">Choisir un exercice</SheetTitle>
-          <SheetDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh] rounded-t-3xl px-0">
+        <DrawerHeader className="px-4 text-left">
+          <DrawerTitle className="font-display font-black">Choisir un exercice</DrawerTitle>
+          <DrawerDescription>
             Les plus fréquents en premier, puis le catalogue complet.
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <div className="space-y-3 px-4 pt-2">
           <div className="relative">
@@ -183,7 +183,7 @@ export function ExerciseSearchDrawer({
             </ul>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   )
 }

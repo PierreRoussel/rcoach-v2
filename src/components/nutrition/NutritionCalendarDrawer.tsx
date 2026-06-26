@@ -6,7 +6,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { useOverlayBackClose } from '@/hooks/useOverlayBackClose'
 
 type NutritionCalendarDrawerProps = {
   open: boolean
@@ -21,10 +20,8 @@ export function NutritionCalendarDrawer({
   dailyTarget,
   streak,
 }: NutritionCalendarDrawerProps) {
-  const handleOpenChange = useOverlayBackClose(open, onOpenChange, 'nutrition-calendar-drawer')
-
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} dismissible shouldScaleBackground={false}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[90vh] overflow-y-auto rounded-t-2xl px-0">
         <DrawerHeader className="px-4 text-left">
           <DrawerTitle className="font-display font-black">Serie nutrition</DrawerTitle>

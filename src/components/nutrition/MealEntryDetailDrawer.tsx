@@ -14,7 +14,6 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { useFoodPortionTypes } from '@/hooks/useFoodRenameAndPortions'
-import { useOverlayBackClose } from '@/hooks/useOverlayBackClose'
 import { formatNutrient } from '@/lib/nutrition/nutrient-math'
 import { getMealEntryName, isQuickMealEntry, formatMealEntryQuantity } from '@/lib/nutrition/meal-entry-display'
 import type { MealLogEntry } from '@/lib/nutrition/types'
@@ -32,7 +31,6 @@ export function MealEntryDetailDrawer({
   entry,
   onEdit,
 }: MealEntryDetailDrawerProps) {
-  const handleOpenChange = useOverlayBackClose(open, onOpenChange, 'meal-entry-detail-drawer')
   const quickEntry = entry ? isQuickMealEntry(entry) : false
   const { data: portionTypes = [] } = useFoodPortionTypes(
     quickEntry ? null : (entry?.food?.id ?? null),
@@ -54,7 +52,7 @@ export function MealEntryDetailDrawer({
   }
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} dismissible shouldScaleBackground={false}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-0">
         <DrawerHeader className="space-y-0 px-4 text-left">
           <div className="flex items-start justify-between gap-2">
@@ -158,7 +156,7 @@ export function MealEntryDetailDrawer({
               variant="outline"
               className="w-full rounded-full"
               onClick={() => {
-                handleOpenChange(false)
+                onOpenChange(false)
                 onEdit()
               }}
             >

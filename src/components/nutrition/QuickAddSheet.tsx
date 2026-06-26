@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 
 export type QuickAddValues = {
   name: string
@@ -75,14 +75,14 @@ export function QuickAddSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
-        <SheetHeader>
-          <SheetTitle>Ajout rapide</SheetTitle>
-          <SheetDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+        <DrawerHeader>
+          <DrawerTitle>Ajout rapide</DrawerTitle>
+          <DrawerDescription>
             Saisissez les valeurs nutritionnelles sans créer d&apos;aliment en base.
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-4">
           <div className="space-y-2">
@@ -126,7 +126,7 @@ export function QuickAddSheet({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
 
-        <SheetFooter className="px-4 pb-6">
+        <DrawerFooter className="px-4 pb-6">
           <Button
             type="button"
             className="w-full rounded-full"
@@ -135,9 +135,9 @@ export function QuickAddSheet({
           >
             {isSubmitting ? 'Ajout...' : 'Ajouter au repas'}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   )
 }
 
