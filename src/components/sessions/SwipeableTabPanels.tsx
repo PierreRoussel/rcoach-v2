@@ -67,6 +67,7 @@ export function SwipeableTabPanels<T extends string>({
   const prefersReducedMotion = usePrefersReducedMotion()
   const activeIndex = tabs.findIndex((tab) => tab.id === value)
   const resolvedIndex = activeIndex >= 0 ? activeIndex : 0
+  const [activeTabId, setActiveTabId] = useState(value)
   const [mountedIndices, setMountedIndices] = useState(
     () => expandMountedIndices(new Set(), resolvedIndex, tabs.length),
   )
@@ -81,20 +82,29 @@ export function SwipeableTabPanels<T extends string>({
   })
 
   useEffect(() => {
+    setActiveTabId(value)
+  }, [value])
+
+  useEffect(() => {
     setMountedIndices((current) => {
       const next = expandMountedIndices(current, resolvedIndex, tabs.length)
       return setsAreEqual(current, next) ? current : next
     })
   }, [resolvedIndex, tabs.length])
 
-  const syncUrlFromSwipe = useCallback(() => {
+  const syncFromSwipe = useCallback(() => {
     if (!api) {
       return
     }
 
     const index = api.selectedScrollSnap()
     const tab = tabs[index]
-    if (tab && tab.id !== value) {
+    if (!tab) {
+      return
+    }
+
+    setActiveTabId(tab.id)
+    if (tab.id !== value) {
       onChange(tab.id)
     }
   }, [api, onChange, tabs, value])
@@ -104,11 +114,11 @@ export function SwipeableTabPanels<T extends string>({
       return
     }
 
-    api.on('settle', syncUrlFromSwipe)
+    api.on('select', syncFromSwipe)
     return () => {
-      api.off('settle', syncUrlFromSwipe)
+      api.off('select', syncFromSwipe)
     }
-  }, [api, syncUrlFromSwipe])
+  }, [api, syncFromSwipe])
 
   useEffect(() => {
     if (!api || api.selectedScrollSnap() === resolvedIndex) {
@@ -119,7 +129,7 @@ export function SwipeableTabPanels<T extends string>({
   }, [api, prefersReducedMotion, resolvedIndex])
 
   function handleTabChange(next: string) {
-    if (next === value) {
+    if (next === activeTabId) {
       return
     }
 
@@ -129,13 +139,16 @@ export function SwipeableTabPanels<T extends string>({
     }
 
     const index = tabs.findIndex((item) => item.id === tab.id)
+    setActiveTabId(tab.id)
     api?.scrollTo(index, !prefersReducedMotion)
-    onChange(tab.id)
+    if (tab.id !== value) {
+      onChange(tab.id)
+    }
   }
 
   return (
     <div className={cn('space-y-3', className)}>
-      <Tabs value={value} onValueChange={handleTabChange}>
+      <Tabs value={activeTabId} onValueChange={handleTabChange}>
         <TabsList className="grid h-auto w-full grid-cols-3 p-1">
           {tabs.map((tab) => (
             <TabsTrigger

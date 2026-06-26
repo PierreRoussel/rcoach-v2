@@ -51,7 +51,7 @@ export function MealEntryRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3 shadow-sm',
+        'flex w-full items-center gap-3 px-3 py-3 transition-colors hover:bg-muted/20 active:bg-muted/30',
         className,
       )}
     >

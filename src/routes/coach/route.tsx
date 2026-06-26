@@ -75,6 +75,16 @@ function CoachLayout() {
           >
             Analytics
           </Link>
+          <Link
+            to="/coach/validate-product-renames"
+            className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"
+            activeProps={{
+              className:
+                'block rounded-xl bg-sidebar-accent px-3 py-2 font-semibold text-sidebar-primary',
+            }}
+          >
+            Renommages produit
+          </Link>
         </nav>
         <div className="mt-8 space-y-2">
           <Button variant="soft" size="sm" className="w-full rounded-full" asChild>

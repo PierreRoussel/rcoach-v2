@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 
+import { MealIconCalorieRing } from '@/components/nutrition/MealIconCalorieRing'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { MEAL_ICONS } from '@/lib/nutrition/meal-visuals'
 import { MEAL_LABELS, type MealType } from '@/lib/nutrition/types'
 
 type MealSummaryCardProps = {
@@ -21,14 +21,14 @@ export function MealSummaryCard({
   targetCalories,
   previewLabel,
 }: MealSummaryCardProps) {
-  const Icon = MEAL_ICONS[mealType]
-
   return (
     <Card className="gap-0 overflow-hidden border-border/70 shadow-sm">
       <div className="flex items-center gap-3 p-4">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-soft-primary">
-            <Icon className="size-5 text-primary" />
-          </div>
+          <MealIconCalorieRing
+            mealType={mealType}
+            consumedCalories={consumedCalories}
+            targetCalories={targetCalories}
+          />
 
           <Link
             to="/app/diet/meals/$mealType"

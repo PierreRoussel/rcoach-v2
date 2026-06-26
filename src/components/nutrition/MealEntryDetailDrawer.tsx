@@ -1,14 +1,19 @@
-import { Pencil } from 'lucide-react'
+import { Pencil, X } from 'lucide-react'
 
+import { FoodItemDrawerMenu } from '@/components/nutrition/FoodItemDrawerMenu'
+import { FoodMacroStat } from '@/components/nutrition/FoodMacroStat'
+import { FoodNutrientBadges } from '@/components/nutrition/FoodNutrientBadges'
 import { Button } from '@/components/ui/button'
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
+import { useFoodPortionTypes } from '@/hooks/useFoodRenameAndPortions'
 import { useOverlayBackClose } from '@/hooks/useOverlayBackClose'
 import { formatNutrient } from '@/lib/nutrition/nutrient-math'
 import type { MealLogEntry } from '@/lib/nutrition/types'
@@ -32,17 +37,6 @@ function formatEntryQuantity(entry: MealLogEntry) {
   return null
 }
 
-function MacroStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-card px-3 py-3 text-center">
-      <div className="font-display text-xl font-black tabular-nums text-foreground">
-        {formatNutrient(value)} g
-      </div>
-      <div className="mt-1 text-xs font-medium text-muted-foreground">{label}</div>
-    </div>
-  )
-}
-
 export function MealEntryDetailDrawer({
   open,
   onOpenChange,
@@ -50,6 +44,7 @@ export function MealEntryDetailDrawer({
   onEdit,
 }: MealEntryDetailDrawerProps) {
   const handleOpenChange = useOverlayBackClose(open, onOpenChange, 'meal-entry-detail-drawer')
+  const { data: portionTypes = [] } = useFoodPortionTypes(entry?.food.id ?? null, open)
 
   if (!entry) {
     return null
@@ -66,9 +61,27 @@ export function MealEntryDetailDrawer({
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} dismissible shouldScaleBackground={false}>
       <DrawerContent className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-0">
-        <DrawerHeader className="px-4 text-left">
-          <DrawerTitle className="font-display font-black">{entry.food.name}</DrawerTitle>
-          {description ? <DrawerDescription>{description}</DrawerDescription> : null}
+        <DrawerHeader className="space-y-0 px-4 text-left">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <DrawerTitle className="font-display font-black">{entry.food.name}</DrawerTitle>
+              {description ? <DrawerDescription>{description}</DrawerDescription> : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <FoodItemDrawerMenu food={entry.food} />
+              <DrawerClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 rounded-full"
+                  aria-label="Fermer"
+                >
+                  <X className="size-4" />
+                </Button>
+              </DrawerClose>
+            </div>
+          </div>
         </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-2">
@@ -83,10 +96,32 @@ export function MealEntryDetailDrawer({
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <MacroStat label="Glucides" value={macros.carbs} />
-            <MacroStat label="Protéines" value={macros.protein} />
-            <MacroStat label="Lipides" value={macros.fat} />
+            <FoodMacroStat label="Glucides" value={macros.carbs} />
+            <FoodMacroStat
+              label="Protéines"
+              value={macros.protein}
+              proteinPer100g={Number(entry.food.protein_g)}
+            />
+            <FoodMacroStat label="Lipides" value={macros.fat} />
           </div>
+
+          <FoodNutrientBadges food={entry.food} />
+
+          {portionTypes.length > 0 ? (
+            <div className="rounded-xl border border-border/70 bg-card px-3 py-3 text-xs">
+              <p className="font-semibold text-foreground">Types de portion</p>
+              <ul className="mt-2 space-y-1 text-muted-foreground">
+                {portionTypes.map((portion) => (
+                  <li key={portion.id} className="flex items-center justify-between gap-2">
+                    <span>{portion.portion_name}</span>
+                    <span className="font-data font-semibold text-foreground">
+                      {formatNutrient(Number(portion.portion_size_g))} g
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="rounded-xl border border-border/70 bg-card px-3 py-3 text-xs text-muted-foreground">
             <p className="font-semibold text-foreground">Valeurs pour 100 g</p>

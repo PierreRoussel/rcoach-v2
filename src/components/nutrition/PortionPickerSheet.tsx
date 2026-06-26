@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { FoodMacroStat } from '@/components/nutrition/FoodMacroStat'
+import { FoodNutrientBadges } from '@/components/nutrition/FoodNutrientBadges'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -98,24 +100,24 @@ export function PortionPickerSheet({
             </div>
           )}
 
-          <div className="grid grid-cols-4 gap-2 rounded-2xl bg-muted/50 p-3 text-center text-sm">
-            <div>
-              <div className="font-bold">{Math.round(preview.calories)}</div>
-              <div className="text-muted-foreground">Cal</div>
+          <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 text-center">
+            <div className="font-display text-3xl font-black tabular-nums text-foreground">
+              {Math.round(preview.calories)}
             </div>
-            <div>
-              <div className="font-bold">{preview.carbsG}</div>
-              <div className="text-muted-foreground">Gluc.</div>
-            </div>
-            <div>
-              <div className="font-bold">{preview.proteinG}</div>
-              <div className="text-muted-foreground">Prot.</div>
-            </div>
-            <div>
-              <div className="font-bold">{preview.fatG}</div>
-              <div className="text-muted-foreground">Lip.</div>
-            </div>
+            <div className="mt-1 text-sm font-medium text-muted-foreground">Calories</div>
           </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <FoodMacroStat label="Glucides" value={preview.carbsG} />
+            <FoodMacroStat
+              label="Protéines"
+              value={preview.proteinG}
+              proteinPer100g={Number(food.protein_g)}
+            />
+            <FoodMacroStat label="Lipides" value={preview.fatG} />
+          </div>
+
+          <FoodNutrientBadges food={food} />
         </div>
 
         <SheetFooter className="px-4 pb-4">

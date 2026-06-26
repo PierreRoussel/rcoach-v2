@@ -1,3 +1,13 @@
+import {
+  FOOD_DB_NUMERIC_MAX,
+  MAX_KCAL_PER_100G,
+  MAX_MACRO_PER_100G,
+  MAX_SERVING_SIZE_G,
+  normalizeOptionalNutrient,
+  normalizeRequiredPer100g,
+  normalizeServingSizeG,
+} from './food-numeric-bounds.mjs'
+
 const FOOD_COLUMNS = [
   'barcode',
   'name',
@@ -33,10 +43,10 @@ export function mapLiteProductToFoodRow(lite) {
   const fatG = nutriments.fat_100g
 
   if (
-    !Number.isFinite(calories) ||
-    !Number.isFinite(carbsG) ||
-    !Number.isFinite(proteinG) ||
-    !Number.isFinite(fatG)
+    !normalizeRequiredPer100g(calories, MAX_KCAL_PER_100G) ||
+    !normalizeRequiredPer100g(carbsG, MAX_MACRO_PER_100G) ||
+    !normalizeRequiredPer100g(proteinG, MAX_MACRO_PER_100G) ||
+    !normalizeRequiredPer100g(fatG, MAX_MACRO_PER_100G)
   ) {
     return null
   }
@@ -44,7 +54,7 @@ export function mapLiteProductToFoodRow(lite) {
   const servingQuantityRaw = lite.serving_quantity
   const servingSizeG =
     typeof servingQuantityRaw === 'number' && Number.isFinite(servingQuantityRaw)
-      ? servingQuantityRaw
+      ? normalizeServingSizeG(servingQuantityRaw)
       : 100
   const servingLabel = lite.serving_size?.trim() || `${servingSizeG} g`
 
@@ -56,19 +66,12 @@ export function mapLiteProductToFoodRow(lite) {
     carbs_g: carbsG,
     protein_g: proteinG,
     fat_g: fatG,
-    salt_g:
-      nutriments.salt_100g != null && Number.isFinite(nutriments.salt_100g)
-        ? nutriments.salt_100g
-        : null,
-    sugar_g:
-      nutriments.sugars_100g != null && Number.isFinite(nutriments.sugars_100g)
-        ? nutriments.sugars_100g
-        : null,
-    saturated_fat_g:
-      nutriments['saturated-fat_100g'] != null &&
-      Number.isFinite(nutriments['saturated-fat_100g'])
-        ? nutriments['saturated-fat_100g']
-        : null,
+    salt_g: normalizeOptionalNutrient(nutriments.salt_100g, FOOD_DB_NUMERIC_MAX),
+    sugar_g: normalizeOptionalNutrient(nutriments.sugars_100g, FOOD_DB_NUMERIC_MAX),
+    saturated_fat_g: normalizeOptionalNutrient(
+      nutriments['saturated-fat_100g'],
+      FOOD_DB_NUMERIC_MAX,
+    ),
     serving_size_g: servingSizeG,
     serving_label: servingLabel,
     source: 'open_food_facts',
@@ -116,4 +119,11 @@ VALUES ${values.join(',\n')}
 ${updateClause}`,
     values: params,
   }
+}
+
+export {
+  FOOD_DB_NUMERIC_MAX,
+  MAX_KCAL_PER_100G,
+  MAX_MACRO_PER_100G,
+  MAX_SERVING_SIZE_G,
 }

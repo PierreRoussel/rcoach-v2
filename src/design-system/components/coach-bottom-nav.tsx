@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Activity, BarChart2, CalendarDays, Users } from 'lucide-react'
+import { Activity, BarChart2, CalendarDays, Tag, Users } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -8,20 +8,21 @@ const items = [
   { to: '/coach/clients', label: 'Clients', icon: Users, exact: false },
   { to: '/coach/programs', label: 'Programmes', icon: CalendarDays, exact: false },
   { to: '/coach/analytics', label: 'Analytics', icon: BarChart2, exact: false },
+  { to: '/coach/validate-product-renames', label: 'Renommages', icon: Tag, exact: false },
 ] as const
 
 export function CoachBottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-card/95 px-2 py-2 text-xs backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card/95 px-1 py-2 text-[10px] backdrop-blur md:hidden">
       {items.map((item) => (
         <Link
           key={item.to}
           to={item.to}
           activeOptions={{ exact: item.exact }}
-          className="rounded-xl px-2 py-2 text-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="rounded-xl px-1 py-2 text-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           activeProps={{
             className: cn(
-              'rounded-xl bg-soft-primary px-2 py-2 text-center font-bold text-primary',
+              'rounded-xl bg-soft-primary px-1 py-2 text-center font-bold text-primary',
             ),
           }}
         >

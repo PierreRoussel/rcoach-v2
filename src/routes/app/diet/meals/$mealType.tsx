@@ -147,51 +147,51 @@ function MealDetailPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-border/70 shadow-sm">
-        <CardContent className="p-3">
-            {deleteError ? (
-              <p className="mb-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                {deleteError}
-              </p>
-            ) : null}
+      <Card className="overflow-hidden border-border/70 shadow-sm">
+        <CardContent className="p-0">
+          {deleteError ? (
+            <p className="m-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {deleteError}
+            </p>
+          ) : null}
 
-            {entries.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-                <div className="flex size-14 items-center justify-center rounded-full border border-border/70 bg-muted">
-                  <UtensilsCrossed className="size-6 text-muted-foreground" />
-                </div>
-                <div className="space-y-1">
-                  <p className="font-display text-base font-bold text-foreground">
-                    Aucun aliment
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Ajoutez votre premier aliment à ce repas.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" className="rounded-full" asChild>
-                  <Link to="/app/diet/add" search={{ date, mealType }}>
-                    <Plus className="size-4" />
-                    Ajouter un aliment
-                  </Link>
-                </Button>
+          {entries.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+              <div className="flex size-14 items-center justify-center rounded-full border border-border/70 bg-muted">
+                <UtensilsCrossed className="size-6 text-muted-foreground" />
               </div>
-            ) : (
-              <div className="space-y-2">
-                {entries.map((entry) => (
-                  <MealEntryRow
-                    key={entry.id}
-                    name={entry.food.name}
-                    brand={entry.food.brand}
-                    calories={Number(entry.calories)}
-                    quantityG={entry.quantity_g}
-                    servings={entry.servings}
-                    onSelect={() => setDetailEntry(entry)}
-                    onEdit={() => setEditingEntry(entry)}
-                    onDelete={() => void handleDeleteEntry(entry.id)}
-                  />
-                ))}
+              <div className="space-y-1">
+                <p className="font-display text-base font-bold text-foreground">
+                  Aucun aliment
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Ajoutez votre premier aliment à ce repas.
+                </p>
               </div>
-            )}
+              <Button variant="outline" size="sm" className="rounded-full" asChild>
+                <Link to="/app/diet/add" search={{ date, mealType }}>
+                  <Plus className="size-4" />
+                  Ajouter un aliment
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/70">
+              {entries.map((entry) => (
+                <MealEntryRow
+                  key={entry.id}
+                  name={entry.food.name}
+                  brand={entry.food.brand}
+                  calories={Number(entry.calories)}
+                  quantityG={entry.quantity_g}
+                  servings={entry.servings}
+                  onSelect={() => setDetailEntry(entry)}
+                  onEdit={() => setEditingEntry(entry)}
+                  onDelete={() => void handleDeleteEntry(entry.id)}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

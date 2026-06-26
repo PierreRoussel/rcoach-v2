@@ -3,10 +3,13 @@ import { useMemo } from 'react'
 
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { SEARCH_MY_FOODS } from '@/lib/graphql/operations'
-import { graphqlRequest } from '@/lib/graphql/request'
 import { cacheFood, searchCachedFoods } from '@/lib/nutrition/offline-food'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
+import {
+  OFF_CATALOG_DB_MIN_LENGTH,
+  searchFoodsInDatabase,
+  USER_FOOD_SEARCH_MIN_LENGTH,
+} from '@/lib/nutrition/food-search'
 import {
   OFF_MIN_QUERY_LENGTH,
   searchOffProducts,
@@ -55,6 +58,7 @@ function mapDbFood(food: Food): FoodSearchResult {
 }
 
 const SEARCH_DEBOUNCE_MS = 700
+const DB_SEARCH_STALE_MS = 60_000
 
 function isBarcodeQuery(query: string) {
   return /^\d{8,14}$/.test(query.trim())
@@ -71,33 +75,32 @@ export function useFoodSearch(
   const trimmed = debouncedQuery.trim()
   const searchOffExternally = options.searchOffExternally ?? false
   const isDebouncing =
-    enabled && query.trim() !== trimmed && query.trim().length >= 2
+    enabled && query.trim() !== trimmed && query.trim().length >= USER_FOOD_SEARCH_MIN_LENGTH
   const isBarcode = isBarcodeQuery(trimmed)
   const offSearchEnabled =
     !isBarcode &&
     isOnline &&
     (trimmed.length >= OFF_MIN_QUERY_LENGTH ||
-      (searchOffExternally && trimmed.length >= 2))
+      (searchOffExternally && trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH))
 
   const dbQuery = useQuery({
     queryKey: ['food-search-db', trimmed],
-    enabled: isAuthenticated && enabled && trimmed.length >= 2 && !isBarcode,
+    enabled: isAuthenticated && enabled && trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH && !isBarcode,
     queryFn: async () => {
       try {
-        const data = await graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_MY_FOODS, {
-          query: `%${trimmed}%`,
-          limit: 20,
-        })
+        const foods = await searchFoodsInDatabase(nhost, trimmed)
 
-        for (const food of data.foods) {
+        for (const food of foods) {
           await cacheFood(food)
         }
 
-        return data.foods
+        return foods
       } catch {
-        return searchCachedFoods(trimmed, 20)
+        return searchCachedFoods(trimmed, 25)
       }
     },
+    staleTime: DB_SEARCH_STALE_MS,
+    retry: false,
   })
 
   const barcodeQuery = useQuery({
@@ -107,7 +110,7 @@ export function useFoodSearch(
       const draft = await resolveOffDraftFromBarcode(nhost, trimmed)
       return draft ? [draft] : []
     },
-    staleTime: 60_000,
+    staleTime: DB_SEARCH_STALE_MS,
     retry: false,
   })
 
@@ -115,7 +118,7 @@ export function useFoodSearch(
     queryKey: ['food-search-off', trimmed, searchOffExternally],
     enabled: enabled && offSearchEnabled,
     queryFn: async () => searchOffProducts(trimmed, 15),
-    staleTime: 60_000,
+    staleTime: DB_SEARCH_STALE_MS,
     retry: false,
   })
 
@@ -171,10 +174,11 @@ export function useFoodSearch(
       enabled &&
       !isBarcode &&
       isOnline &&
-      trimmed.length >= 2 &&
+      trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH &&
       trimmed.length < OFF_MIN_QUERY_LENGTH,
+    catalogSearchEnabled: trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH,
     error: dbQuery.error,
   }
 }
 
-export { OFF_MIN_QUERY_LENGTH }
+export { OFF_MIN_QUERY_LENGTH, OFF_CATALOG_DB_MIN_LENGTH, USER_FOOD_SEARCH_MIN_LENGTH }

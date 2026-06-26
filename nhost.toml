@@ -1,2 +1,8 @@
 [functions.node]
 version = 22
+
+# Pro includes 10 GB Postgres allowance — must be set explicitly per project.
+# Changing capacity triggers a Postgres restart / volume resize on deploy.
+# https://docs.nhost.io/products/database/configuring-postgres
+[postgres.resources.storage]
+capacity = 10

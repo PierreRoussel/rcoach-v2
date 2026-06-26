@@ -19,6 +19,7 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppStatsRouteImport } from './routes/app/stats'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppImportRouteImport } from './routes/app/import'
+import { Route as CoachValidateProductRenamesIndexRouteImport } from './routes/coach/validate-product-renames/index'
 import { Route as CoachProgramsIndexRouteImport } from './routes/coach/programs/index'
 import { Route as CoachClientsIndexRouteImport } from './routes/coach/clients/index'
 import { Route as CoachAnalyticsIndexRouteImport } from './routes/coach/analytics/index'
@@ -91,6 +92,12 @@ const AppImportRoute = AppImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const CoachValidateProductRenamesIndexRoute =
+  CoachValidateProductRenamesIndexRouteImport.update({
+    id: '/validate-product-renames/',
+    path: '/validate-product-renames/',
+    getParentRoute: () => CoachRouteRoute,
+  } as any)
 const CoachProgramsIndexRoute = CoachProgramsIndexRouteImport.update({
   id: '/programs/',
   path: '/programs/',
@@ -227,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
+  '/coach/validate-product-renames/': typeof CoachValidateProductRenamesIndexRoute
   '/app/diet/foods/new': typeof AppDietFoodsNewRoute
   '/app/diet/meals/$mealType': typeof AppDietMealsMealTypeRoute
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
@@ -258,6 +266,7 @@ export interface FileRoutesByTo {
   '/coach/analytics': typeof CoachAnalyticsIndexRoute
   '/coach/clients': typeof CoachClientsIndexRoute
   '/coach/programs': typeof CoachProgramsIndexRoute
+  '/coach/validate-product-renames': typeof CoachValidateProductRenamesIndexRoute
   '/app/diet/foods/new': typeof AppDietFoodsNewRoute
   '/app/diet/meals/$mealType': typeof AppDietMealsMealTypeRoute
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
+  '/coach/validate-product-renames/': typeof CoachValidateProductRenamesIndexRoute
   '/app/diet/foods/new': typeof AppDietFoodsNewRoute
   '/app/diet/meals/$mealType': typeof AppDietMealsMealTypeRoute
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
+    | '/coach/validate-product-renames/'
     | '/app/diet/foods/new'
     | '/app/diet/meals/$mealType'
     | '/app/stats/exercises/$exerciseId'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/coach/analytics'
     | '/coach/clients'
     | '/coach/programs'
+    | '/coach/validate-product-renames'
     | '/app/diet/foods/new'
     | '/app/diet/meals/$mealType'
     | '/app/stats/exercises/$exerciseId'
@@ -391,6 +403,7 @@ export interface FileRouteTypes {
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
+    | '/coach/validate-product-renames/'
     | '/app/diet/foods/new'
     | '/app/diet/meals/$mealType'
     | '/app/stats/exercises/$exerciseId'
@@ -476,6 +489,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/import'
       preLoaderRoute: typeof AppImportRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/coach/validate-product-renames/': {
+      id: '/coach/validate-product-renames/'
+      path: '/validate-product-renames'
+      fullPath: '/coach/validate-product-renames/'
+      preLoaderRoute: typeof CoachValidateProductRenamesIndexRouteImport
+      parentRoute: typeof CoachRouteRoute
     }
     '/coach/programs/': {
       id: '/coach/programs/'
@@ -693,6 +713,7 @@ interface CoachRouteRouteChildren {
   CoachAnalyticsIndexRoute: typeof CoachAnalyticsIndexRoute
   CoachClientsIndexRoute: typeof CoachClientsIndexRoute
   CoachProgramsIndexRoute: typeof CoachProgramsIndexRoute
+  CoachValidateProductRenamesIndexRoute: typeof CoachValidateProductRenamesIndexRoute
 }
 
 const CoachRouteRouteChildren: CoachRouteRouteChildren = {
@@ -701,6 +722,7 @@ const CoachRouteRouteChildren: CoachRouteRouteChildren = {
   CoachAnalyticsIndexRoute: CoachAnalyticsIndexRoute,
   CoachClientsIndexRoute: CoachClientsIndexRoute,
   CoachProgramsIndexRoute: CoachProgramsIndexRoute,
+  CoachValidateProductRenamesIndexRoute: CoachValidateProductRenamesIndexRoute,
 }
 
 const CoachRouteRouteWithChildren = CoachRouteRoute._addFileChildren(

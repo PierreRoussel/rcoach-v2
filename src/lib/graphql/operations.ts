@@ -1430,6 +1430,62 @@ export const DELETE_MEAL_LOG_ENTRY = `
   }
 `
 
+const FOOD_SEARCH_FIELDS = `
+      id
+      user_id
+      barcode
+      name
+      brand
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      salt_g
+      sugar_g
+      saturated_fat_g
+      serving_size_g
+      serving_label
+      source
+      off_product_id
+      created_at
+      updated_at
+`
+
+export const SEARCH_USER_FOODS = `
+  query SearchUserFoods($pattern: String!, $limit: Int = 10) {
+    foods(
+      where: {
+        _and: [
+          { user_id: { _eq: X-Hasura-User-Id } }
+          { search_text: { _ilike: $pattern } }
+        ]
+      }
+      order_by: [{ name: asc }]
+      limit: $limit
+    ) {
+${FOOD_SEARCH_FIELDS}
+    }
+  }
+`
+
+export const SEARCH_OFF_FOODS = `
+  query SearchOffFoods($pattern: String!, $limit: Int = 20) {
+    foods(
+      where: {
+        _and: [
+          { source: { _eq: open_food_facts } }
+          { search_text: { _ilike: $pattern } }
+        ]
+      }
+      order_by: [{ name: asc }]
+      limit: $limit
+    ) {
+${FOOD_SEARCH_FIELDS}
+    }
+  }
+`
+
+/** @deprecated Use SEARCH_USER_FOODS + SEARCH_OFF_FOODS */
 export const SEARCH_MY_FOODS = `
   query SearchMyFoods($query: String!, $limit: Int = 20) {
     foods(
@@ -1612,6 +1668,96 @@ export const LIST_FREQUENT_FOODS = `
         source
         off_product_id
       }
+    }
+  }
+`
+
+export const INSERT_FOOD_RENAME_PROPOSAL = `
+  mutation InsertFoodRenameProposal($foodId: uuid!, $proposedName: String!) {
+    insert_food_rename_proposals_one(
+      object: { food_id: $foodId, proposed_name: $proposedName }
+    ) {
+      id
+      food_id
+      proposed_name
+      status
+      created_at
+    }
+  }
+`
+
+export const LIST_PENDING_FOOD_RENAME_PROPOSALS = `
+  query ListPendingFoodRenameProposals {
+    food_rename_proposals(
+      where: { status: { _eq: pending } }
+      order_by: { created_at: asc }
+    ) {
+      id
+      proposed_name
+      created_at
+      food {
+        id
+        name
+        brand
+        source
+      }
+      proposer {
+        id
+        display_name
+      }
+    }
+  }
+`
+
+export const REVIEW_FOOD_RENAME_PROPOSAL = `
+  mutation ReviewFoodRenameProposal($id: uuid!, $status: food_rename_proposal_status!) {
+    update_food_rename_proposals_by_pk(
+      pk_columns: { id: $id }
+      _set: { status: $status }
+    ) {
+      id
+      status
+      reviewed_at
+      food {
+        id
+        name
+      }
+    }
+  }
+`
+
+export const INSERT_FOOD_PORTION_TYPE = `
+  mutation InsertFoodPortionType(
+    $foodId: uuid!
+    $portionName: String!
+    $portionSizeG: numeric!
+  ) {
+    insert_food_portion_types_one(
+      object: {
+        food_id: $foodId
+        portion_name: $portionName
+        portion_size_g: $portionSizeG
+      }
+    ) {
+      id
+      food_id
+      portion_name
+      portion_size_g
+      created_at
+    }
+  }
+`
+
+export const LIST_FOOD_PORTION_TYPES = `
+  query ListFoodPortionTypes($foodId: uuid!) {
+    food_portion_types(
+      where: { food_id: { _eq: $foodId } }
+      order_by: { created_at: desc }
+    ) {
+      id
+      portion_name
+      portion_size_g
+      created_at
     }
   }
 `

@@ -5,10 +5,12 @@ import { z } from 'zod'
 
 import { FoodQuickActions, FoodSearchList } from '@/components/nutrition/FoodSearchList'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
+import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useFrequentFoods } from '@/hooks/useFrequentFoods'
+import { useRecentFoods } from '@/hooks/useRecentFoods'
 import { useFoodSearch, OFF_MIN_QUERY_LENGTH, type FoodSearchResult } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
@@ -18,7 +20,28 @@ import type { Food, MealType } from '@/lib/nutrition/types'
 const addSearchSchema = z.object({
   date: z.string().optional(),
   mealType: z.enum(['breakfast', 'lunch', 'snack', 'dinner']).optional(),
+  tab: z.enum(['frequent', 'recent', 'favorites']).optional(),
 })
+
+type AddFoodTab = 'frequent' | 'recent' | 'favorites'
+
+function mapFoodToSearchResult(food: Food): FoodSearchResult {
+  return {
+    id: food.id,
+    name: food.name,
+    brand: food.brand,
+    calories: Number(food.calories),
+    carbsG: Number(food.carbs_g),
+    proteinG: Number(food.protein_g),
+    fatG: Number(food.fat_g),
+    servingSizeG: Number(food.serving_size_g),
+    servingLabel: food.serving_label,
+    source: food.source,
+    barcode: food.barcode,
+    offProductId: food.off_product_id,
+    food,
+  }
+}
 
 export const Route = createFileRoute('/app/diet/add')({
   validateSearch: addSearchSchema,
@@ -30,6 +53,7 @@ function AddFoodPage() {
   const search = Route.useSearch()
   const date = search.date ?? toDateKey(new Date())
   const mealType = (search.mealType ?? 'breakfast') as MealType
+  const activeTab = search.tab ?? 'frequent'
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [searchOffExternally, setSearchOffExternally] = useState(false)
@@ -41,7 +65,8 @@ function AddFoodPage() {
     searchOffExternally,
   })
   const { data: favorites = [] } = useFoodFavorites()
-  const { data: frequentFoods = [] } = useFrequentFoods()
+  const { data: frequentFoods = [] } = useFrequentFoods(20)
+  const { data: recentFoods = [] } = useRecentFoods(20)
   const { toggleFavorite } = useFoodFavoriteMutations()
   const { ensureOffFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
@@ -57,44 +82,86 @@ function AddFoodPage() {
   )
 
   const favoriteResults = useMemo<FoodSearchResult[]>(
-    () =>
-      favorites.map((favorite) => ({
-        id: favorite.food.id,
-        name: favorite.food.name,
-        brand: favorite.food.brand,
-        calories: Number(favorite.food.calories),
-        carbsG: Number(favorite.food.carbs_g),
-        proteinG: Number(favorite.food.protein_g),
-        fatG: Number(favorite.food.fat_g),
-        servingSizeG: Number(favorite.food.serving_size_g),
-        servingLabel: favorite.food.serving_label,
-        source: favorite.food.source,
-        barcode: favorite.food.barcode,
-        offProductId: favorite.food.off_product_id,
-        food: favorite.food,
-      })),
+    () => favorites.map((favorite) => mapFoodToSearchResult(favorite.food)),
     [favorites],
   )
 
   const frequentResults = useMemo<FoodSearchResult[]>(
-    () =>
-      frequentFoods.map((food) => ({
-        id: food.id,
-        name: food.name,
-        brand: food.brand,
-        calories: Number(food.calories),
-        carbsG: Number(food.carbs_g),
-        proteinG: Number(food.protein_g),
-        fatG: Number(food.fat_g),
-        servingSizeG: Number(food.serving_size_g),
-        servingLabel: food.serving_label,
-        source: food.source,
-        barcode: food.barcode,
-        offProductId: food.off_product_id,
-        food,
-      })),
+    () => frequentFoods.map(mapFoodToSearchResult),
     [frequentFoods],
   )
+
+  const recentResults = useMemo<FoodSearchResult[]>(
+    () => recentFoods.map(mapFoodToSearchResult),
+    [recentFoods],
+  )
+
+  const handleToggleFavorite = (result: FoodSearchResult) => {
+    if (!result.food) {
+      return
+    }
+
+    const favorite = favorites.find((item) => item.food_id === result.food!.id)
+    void toggleFavorite.mutateAsync({
+      foodId: result.food.id,
+      favoriteId: favorite?.id,
+    })
+  }
+
+  const browseTabs = useMemo(
+    () => [
+      {
+        id: 'frequent' as const,
+        label: 'Fréquents',
+        panel: (
+          <FoodSearchList
+            results={frequentResults}
+            favoriteFoodIds={favoriteFoodIds}
+            onSelect={(result) => void handleSelect(result)}
+            onToggleFavorite={handleToggleFavorite}
+            emptyLabel="Vos aliments fréquents apparaîtront ici."
+          />
+        ),
+      },
+      {
+        id: 'recent' as const,
+        label: 'Récents',
+        panel: (
+          <FoodSearchList
+            results={recentResults}
+            favoriteFoodIds={favoriteFoodIds}
+            onSelect={(result) => void handleSelect(result)}
+            onToggleFavorite={handleToggleFavorite}
+            emptyLabel="Vos derniers aliments journalisés apparaîtront ici."
+          />
+        ),
+      },
+      {
+        id: 'favorites' as const,
+        label: 'Favoris',
+        panel: (
+          <FoodSearchList
+            results={favoriteResults}
+            favoriteFoodIds={favoriteFoodIds}
+            onSelect={(result) => void handleSelect(result)}
+            onToggleFavorite={handleToggleFavorite}
+            emptyLabel="Aucun favori pour le moment."
+          />
+        ),
+      },
+    ],
+    [favoriteFoodIds, favoriteResults, frequentResults, recentResults, favorites],
+  )
+
+  const handleBrowseTabChange = (nextTab: AddFoodTab) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        tab: nextTab,
+      }),
+      replace: true,
+    })
+  }
 
   async function resolveFood(result: FoodSearchResult) {
     if (result.food) {
@@ -204,69 +271,17 @@ function AddFoodPage() {
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
 
       {trimmedQuery.length < 2 ? (
-        <div className="space-y-6">
-          <section className="space-y-2">
-            <h2 className="font-display text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              Favoris
-            </h2>
-            <FoodSearchList
-              results={favoriteResults}
-              favoriteFoodIds={favoriteFoodIds}
-              onSelect={(result) => void handleSelect(result)}
-              onToggleFavorite={(result) => {
-                if (!result.food) {
-                  return
-                }
-
-                const favorite = favorites.find((item) => item.food_id === result.food!.id)
-                void toggleFavorite.mutateAsync({
-                  foodId: result.food.id,
-                  favoriteId: favorite?.id,
-                })
-              }}
-              emptyLabel="Aucun favori pour le moment."
-            />
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="font-display text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              Frequents
-            </h2>
-            <FoodSearchList
-              results={frequentResults}
-              favoriteFoodIds={favoriteFoodIds}
-              onSelect={(result) => void handleSelect(result)}
-              onToggleFavorite={(result) => {
-                if (!result.food) {
-                  return
-                }
-
-                const favorite = favorites.find((item) => item.food_id === result.food!.id)
-                void toggleFavorite.mutateAsync({
-                  foodId: result.food.id,
-                  favoriteId: favorite?.id,
-                })
-              }}
-              emptyLabel="Vos aliments fréquents apparaîtront ici."
-            />
-          </section>
-        </div>
+        <SwipeableTabPanels
+          value={activeTab}
+          onChange={handleBrowseTabChange}
+          tabs={browseTabs}
+        />
       ) : (
         <FoodSearchList
           results={results}
           favoriteFoodIds={favoriteFoodIds}
           onSelect={(result) => void handleSelect(result)}
-          onToggleFavorite={(result) => {
-            if (!result.food) {
-              return
-            }
-
-            const favorite = favorites.find((item) => item.food_id === result.food!.id)
-            void toggleFavorite.mutateAsync({
-              foodId: result.food.id,
-              favoriteId: favorite?.id,
-            })
-          }}
+          onToggleFavorite={handleToggleFavorite}
           emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun résultat.'}
         />
       )}

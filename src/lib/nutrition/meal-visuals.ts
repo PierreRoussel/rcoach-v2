@@ -16,6 +16,13 @@ export const MEAL_ICON_TINT: Record<MealType, string> = {
   dinner: 'bg-soft-purple text-[#6b4fcc]',
 }
 
+export const MEAL_RING_STROKE: Record<MealType, string> = {
+  breakfast: 'text-accent',
+  lunch: 'text-secondary',
+  snack: 'text-primary',
+  dinner: 'text-[#6b4fcc]',
+}
+
 export const MEAL_CARD_TINT: Record<MealType, string> = {
   breakfast: 'bg-soft-accent/40',
   lunch: 'bg-soft-secondary/40',

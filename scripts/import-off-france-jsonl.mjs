@@ -134,12 +134,16 @@ async function importJsonl({
     inserted: 0,
   }
 
-  const client = dryRun ? null : new Client(databaseConfig)
+  const client = dryRun
+    ? null
+    : new Client({
+        ...databaseConfig,
+        keepAlive: true,
+      })
 
   if (client) {
     await client.connect()
     await assertImportReady(client)
-    await client.query('BEGIN')
   }
 
   const batch = []
@@ -184,20 +188,13 @@ async function importJsonl({
 
       if (stats.lines % PROGRESS_EVERY_LINES === 0) {
         console.log(
-          `[off-import] ${stats.lines.toLocaleString('fr-FR')} lignes lues, ${stats.parsed.toLocaleString('fr-FR')} valides, ${stats.inserted.toLocaleString('fr-FR')} écrites`,
+          `[off-import] ${stats.lines.toLocaleString('fr-FR')} lignes lues, ${stats.parsed.toLocaleString('fr-FR')} valides, ${stats.skipped.toLocaleString('fr-FR')} ignorées, ${stats.inserted.toLocaleString('fr-FR')} écrites`,
         )
       }
     }
 
     await flushBatch(client, batch, { upsert, dryRun, stats })
-
-    if (client) {
-      await client.query('COMMIT')
-    }
   } catch (error) {
-    if (client) {
-      await client.query('ROLLBACK')
-    }
     throw error
   } finally {
     if (client) {

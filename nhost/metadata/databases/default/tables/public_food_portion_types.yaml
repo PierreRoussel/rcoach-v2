@@ -1,0 +1,33 @@
+table:
+  name: food_portion_types
+  schema: public
+object_relationships:
+  - name: food
+    using:
+      foreign_key_constraint_on: food_id
+  - name: creator
+    using:
+      foreign_key_constraint_on: created_by
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - food_id
+        - portion_name
+        - portion_size_g
+        - created_by
+        - created_at
+      filter: {}
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        created_by:
+          _eq: X-Hasura-User-Id
+      set:
+        created_by: x-hasura-User-Id
+      columns:
+        - food_id
+        - portion_name
+        - portion_size_g

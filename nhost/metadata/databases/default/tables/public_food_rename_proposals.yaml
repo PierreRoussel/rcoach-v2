@@ -1,0 +1,84 @@
+table:
+  name: food_rename_proposals
+  schema: public
+object_relationships:
+  - name: food
+    using:
+      foreign_key_constraint_on: food_id
+  - name: proposer
+    using:
+      foreign_key_constraint_on: proposed_by
+  - name: reviewer
+    using:
+      foreign_key_constraint_on: reviewed_by
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - food_id
+        - proposed_name
+        - proposed_by
+        - status
+        - reviewed_by
+        - reviewed_at
+        - created_at
+        - updated_at
+      filter:
+        _or:
+          - proposed_by:
+              _eq: X-Hasura-User-Id
+          - _exists:
+              _table:
+                name: profiles
+                schema: public
+              _where:
+                _and:
+                  - id:
+                      _eq: X-Hasura-User-Id
+                  - role:
+                      _in:
+                        - coach
+                        - both
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        proposed_by:
+          _eq: X-Hasura-User-Id
+      set:
+        proposed_by: x-hasura-User-Id
+        status: pending
+      columns:
+        - food_id
+        - proposed_name
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - status
+        - reviewed_by
+        - reviewed_at
+      filter:
+        _and:
+          - status:
+              _eq: pending
+          - _exists:
+              _table:
+                name: profiles
+                schema: public
+              _where:
+                _and:
+                  - id:
+                      _eq: X-Hasura-User-Id
+                  - role:
+                      _in:
+                        - coach
+                        - both
+      check:
+        status:
+          _in:
+            - approved
+            - rejected
+      set:
+        reviewed_by: x-hasura-User-Id

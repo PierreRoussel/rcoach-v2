@@ -20,6 +20,20 @@ array_relationships:
         table:
           name: food_favorites
           schema: public
+  - name: food_rename_proposals
+    using:
+      foreign_key_constraint_on:
+        column: food_id
+        table:
+          name: food_rename_proposals
+          schema: public
+  - name: food_portion_types
+    using:
+      foreign_key_constraint_on:
+        column: food_id
+        table:
+          name: food_portion_types
+          schema: public
 select_permissions:
   - role: user
     permission:
