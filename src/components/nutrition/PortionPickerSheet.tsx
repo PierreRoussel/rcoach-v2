@@ -14,21 +14,55 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { scaleNutrientsPer100g } from '@/lib/nutrition/nutrient-math'
+import { formatNutrient, scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food } from '@/lib/nutrition/types'
 
 type PortionPickerSheetProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   food: Food | null
-  onConfirm: (portion: { mode: 'grams'; quantityG: number } | { mode: 'servings'; servings: number }) => void
+  initialPortion?: PortionInput | null
+  confirmLabel?: string
+  onConfirm: (portion: PortionInput) => void
   isSubmitting?: boolean
+}
+
+function formatPortionFieldValue(value: number) {
+  return formatNutrient(value)
+}
+
+function applyInitialPortion(
+  food: Food,
+  initialPortion: PortionInput | null | undefined,
+  setMode: (mode: 'grams' | 'servings') => void,
+  setGrams: (value: string) => void,
+  setServings: (value: string) => void,
+) {
+  if (initialPortion?.mode === 'grams') {
+    setMode('grams')
+    setGrams(formatPortionFieldValue(initialPortion.quantityG))
+    setServings('1')
+    return
+  }
+
+  if (initialPortion?.mode === 'servings') {
+    setMode('servings')
+    setServings(formatPortionFieldValue(initialPortion.servings))
+    setGrams(formatPortionFieldValue(Number(food.serving_size_g) || 100))
+    return
+  }
+
+  setMode('grams')
+  setGrams(formatPortionFieldValue(Number(food.serving_size_g) || 100))
+  setServings('1')
 }
 
 export function PortionPickerSheet({
   open,
   onOpenChange,
   food,
+  initialPortion = null,
+  confirmLabel = 'Ajouter',
   onConfirm,
   isSubmitting = false,
 }: PortionPickerSheetProps) {
@@ -37,14 +71,12 @@ export function PortionPickerSheet({
   const [servings, setServings] = useState('1')
 
   useEffect(() => {
-    if (!food) {
+    if (!food || !open) {
       return
     }
 
-    setMode('grams')
-    setGrams(String(food.serving_size_g || 100))
-    setServings('1')
-  }, [food])
+    applyInitialPortion(food, initialPortion, setMode, setGrams, setServings)
+  }, [food, initialPortion, open])
 
   if (!food) {
     return null
@@ -133,7 +165,7 @@ export function PortionPickerSheet({
               )
             }
           >
-            Ajouter
+            {confirmLabel}
           </Button>
         </SheetFooter>
       </SheetContent>

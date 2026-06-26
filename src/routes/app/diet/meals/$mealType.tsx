@@ -15,7 +15,7 @@ import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { formatFrenchDateLabel, toDateKey } from '@/lib/nutrition/dates'
-import { getMealEntryName, isQuickMealEntry } from '@/lib/nutrition/meal-entry-display'
+import { getMealEntryName, isQuickMealEntry, mealEntryToPortionInput } from '@/lib/nutrition/meal-entry-display'
 import { MEAL_RING_STROKE } from '@/lib/nutrition/meal-visuals'
 import { MEAL_LABELS, type MealLogEntry, type MealType } from '@/lib/nutrition/types'
 import { cn } from '@/lib/utils'
@@ -243,6 +243,8 @@ function MealDetailPage() {
           }
         }}
         food={editingEntry?.food ?? null}
+        initialPortion={editingEntry ? mealEntryToPortionInput(editingEntry) : null}
+        confirmLabel="Enregistrer"
         isSubmitting={updateEntry.isPending}
         onConfirm={(portion) => {
           if (!editingEntry?.food) {

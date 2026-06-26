@@ -130,7 +130,10 @@ export function useReviewFoodRenameProposal() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['food-rename-proposals'] })
       await queryClient.invalidateQueries({ queryKey: ['food-search-db'] })
-      await queryClient.invalidateQueries({ queryKey: ['meal-log'] })
+      await queryClient.invalidateQueries({ queryKey: ['nutrition-day'] })
+      await queryClient.invalidateQueries({ queryKey: ['frequent-foods'] })
+      await queryClient.invalidateQueries({ queryKey: ['recent-foods'] })
+      await queryClient.invalidateQueries({ queryKey: ['food-favorites'] })
     },
   })
 }

@@ -1,4 +1,4 @@
-import { formatNutrient } from '@/lib/nutrition/nutrient-math'
+import { formatNutrient, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { MealLogEntry } from '@/lib/nutrition/types'
 
 export function isQuickMealEntry(entry: Pick<MealLogEntry, 'food_id'>): boolean {
@@ -48,4 +48,18 @@ export function formatMealEntryQuantity(entry: MealLogEntry) {
     entry.servings,
     Number(entry.food.serving_size_g),
   )
+}
+
+export function mealEntryToPortionInput(
+  entry: Pick<MealLogEntry, 'quantity_g' | 'servings'>,
+): PortionInput | null {
+  if (entry.quantity_g != null) {
+    return { mode: 'grams', quantityG: Number(entry.quantity_g) }
+  }
+
+  if (entry.servings != null) {
+    return { mode: 'servings', servings: Number(entry.servings) }
+  }
+
+  return null
 }
