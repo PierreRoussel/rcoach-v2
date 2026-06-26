@@ -1,10 +1,18 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
 import {
+  FOOD_SEARCH_FIELDS,
   SEARCH_OFF_FOODS,
   SEARCH_USER_FOODS,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import {
+  buildFoodSearchHaystack,
+  extractFoodSearchTokens,
+  matchesAllFoodSearchTokens,
+  normalizeFoodSearchQuery,
+  sortFoodSearchByRelevance,
+} from '@/lib/nutrition/food-search-tokens'
 import type { Food } from '@/lib/nutrition/types'
 
 export const USER_FOOD_SEARCH_MIN_LENGTH = 2
@@ -17,9 +25,7 @@ export type FoodSearchPattern = {
   mode: 'prefix' | 'contains'
 }
 
-export function normalizeFoodSearchQuery(query: string) {
-  return query.trim().toLowerCase().replace(/\s+/g, ' ')
-}
+export { normalizeFoodSearchQuery }
 
 export function buildFoodSearchPattern(query: string): FoodSearchPattern {
   const normalized = normalizeFoodSearchQuery(query)
@@ -56,6 +62,79 @@ function mergeFoodSearchResults(userFoods: Food[], offFoods: Food[], limit: numb
   return Array.from(merged.values()).slice(0, limit)
 }
 
+function buildTokenAndSearchQuery(tokens: string[], scope: 'user' | 'off') {
+  const variableDefinitions = [...tokens.map((_, index) => `$token${index}: String!`), '$limit: Int!'].join(
+    ', ',
+  )
+  const tokenConditions = tokens
+    .map((_, index) => `{ search_text: { _ilike: $token${index} } }`)
+    .join('\n            ')
+  const scopeCondition =
+    scope === 'user'
+      ? '{ user_id: { _eq: X-Hasura-User-Id } }'
+      : "{ source: { _eq: open_food_facts } }"
+
+  return `
+    query SearchFoodsByTokens(${variableDefinitions}) {
+      foods(
+        where: {
+          _and: [
+            ${scopeCondition}
+            ${tokenConditions}
+          ]
+        }
+        order_by: [{ name: asc }]
+        limit: $limit
+      ) {
+${FOOD_SEARCH_FIELDS}
+      }
+    }
+  `
+}
+
+async function searchFoodsByTokens(
+  nhost: NhostClient,
+  tokens: string[],
+  scope: 'user' | 'off',
+  limit: number,
+) {
+  if (tokens.length === 0) {
+    return []
+  }
+
+  const variables = {
+    ...Object.fromEntries(tokens.map((token, index) => [`token${index}`, `%${token}%`])),
+    limit,
+  }
+
+  const response = await graphqlRequest<{ foods: Food[] }>(
+    nhost,
+    buildTokenAndSearchQuery(tokens, scope),
+    variables,
+  )
+
+  return response.foods
+}
+
+function rankFoodSearchResults(foods: Food[], query: string, tokens: string[]) {
+  return sortFoodSearchByRelevance(foods, query, tokens, (food) =>
+    buildFoodSearchHaystack(food.name, food.brand, food.barcode),
+  )
+}
+
+function hasRelevantFoodMatches(foods: Food[], query: string, tokens: string[]) {
+  if (tokens.length < 2) {
+    return foods.length > 0
+  }
+
+  return foods.some((food) =>
+    matchesAllFoodSearchTokens(
+      buildFoodSearchHaystack(food.name, food.brand, food.barcode),
+      tokens,
+    ),
+  )
+}
+
 export async function searchFoodsInDatabase(
   nhost: NhostClient,
   query: string,
@@ -69,6 +148,7 @@ export async function searchFoodsInDatabase(
   const userLimit = options.userLimit ?? 10
   const offLimit = options.offLimit ?? 20
   const totalLimit = options.totalLimit ?? 25
+  const tokens = extractFoodSearchTokens(trimmed)
 
   if (trimmed.length < USER_FOOD_SEARCH_MIN_LENGTH) {
     return []
@@ -109,5 +189,22 @@ export async function searchFoodsInDatabase(
     offFoods = mergeFoodSearchResults([], [...offFoods, ...fallback.foods], offLimit)
   }
 
-  return mergeFoodSearchResults(userFoods, offFoods, totalLimit)
+  let results = mergeFoodSearchResults(userFoods, offFoods, totalLimit)
+
+  if (tokens.length >= 2 && !hasRelevantFoodMatches(results, trimmed, tokens)) {
+    const [tokenUserFoods, tokenOffFoods] = await Promise.all([
+      searchFoodsByTokens(nhost, tokens, 'user', userLimit),
+      trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH
+        ? searchFoodsByTokens(nhost, tokens, 'off', offLimit)
+        : Promise.resolve([]),
+    ])
+
+    results = mergeFoodSearchResults(
+      mergeFoodSearchResults(results, tokenUserFoods, totalLimit),
+      tokenOffFoods,
+      totalLimit,
+    )
+  }
+
+  return rankFoodSearchResults(results, trimmed, tokens).slice(0, totalLimit)
 }

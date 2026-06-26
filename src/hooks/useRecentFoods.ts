@@ -22,6 +22,10 @@ export function useRecentFoods(limit = 20) {
       const foods: Food[] = []
 
       for (const entry of data.meal_log_entries) {
+        if (!entry.food_id || !entry.food) {
+          continue
+        }
+
         if (seen.has(entry.food_id)) {
           continue
         }

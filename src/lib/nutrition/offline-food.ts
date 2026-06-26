@@ -1,4 +1,10 @@
 import { db } from '@/lib/db/dexie'
+import {
+  buildFoodSearchHaystack,
+  extractFoodSearchTokens,
+  matchesAllFoodSearchTokens,
+  normalizeFoodSearchQuery,
+} from '@/lib/nutrition/food-search-tokens'
 import type { Food } from '@/lib/nutrition/types'
 
 export function createLocalFoodId() {
@@ -26,15 +32,21 @@ export async function getCachedFood(id: string) {
 }
 
 export async function searchCachedFoods(query: string, limit = 20) {
-  const normalized = query.trim().toLowerCase()
+  const normalized = normalizeFoodSearchQuery(query)
   if (!normalized) {
     return []
   }
 
+  const tokens = extractFoodSearchTokens(query)
   const foods = await db.foodsCache.toArray()
+
   return foods
     .filter((food) => {
-      const haystack = [food.name, food.brand, food.barcode].filter(Boolean).join(' ').toLowerCase()
+      const haystack = buildFoodSearchHaystack(food.name, food.brand, food.barcode)
+      if (tokens.length >= 2) {
+        return matchesAllFoodSearchTokens(haystack, tokens)
+      }
+
       return haystack.includes(normalized)
     })
     .slice(0, limit)

@@ -11,6 +11,11 @@ import {
   USER_FOOD_SEARCH_MIN_LENGTH,
 } from '@/lib/nutrition/food-search'
 import {
+  buildFoodSearchHaystack,
+  extractFoodSearchTokens,
+  sortFoodSearchByRelevance,
+} from '@/lib/nutrition/food-search-tokens'
+import {
   OFF_MIN_QUERY_LENGTH,
   searchOffProducts,
   type OffFoodDraft,
@@ -124,6 +129,7 @@ export function useFoodSearch(
 
   const results = useMemo(() => {
     const merged = new Map<string, FoodSearchResult>()
+    const tokens = extractFoodSearchTokens(trimmed)
 
     for (const food of dbQuery.data ?? []) {
       const key = food.off_product_id ?? food.id
@@ -154,8 +160,13 @@ export function useFoodSearch(
       })
     }
 
-    return Array.from(merged.values())
-  }, [barcodeQuery.data, dbQuery.data, isBarcode, offQuery.data])
+    return sortFoodSearchByRelevance(
+      Array.from(merged.values()),
+      trimmed,
+      tokens,
+      (result) => buildFoodSearchHaystack(result.name, result.brand, result.barcode),
+    )
+  }, [barcodeQuery.data, dbQuery.data, isBarcode, offQuery.data, trimmed])
 
   return {
     results,

@@ -19,6 +19,7 @@ export function buildPendingMealLogEntry(input: {
     logged_date: input.loggedDate,
     meal_type: input.mealType,
     food_id: input.food.id,
+    custom_name: null,
     quantity_g: input.portion.mode === 'grams' ? input.portion.quantityG : null,
     servings: input.portion.mode === 'servings' ? input.portion.servings : null,
     calories: nutrients.calories,
@@ -28,5 +29,37 @@ export function buildPendingMealLogEntry(input: {
     created_at: now,
     updated_at: now,
     food: input.food,
+  }
+}
+
+export function buildPendingQuickMealLogEntry(input: {
+  id: string
+  userId: string
+  loggedDate: string
+  mealType: MealType
+  name: string
+  calories: number
+  carbsG: number
+  proteinG: number
+  fatG: number
+}): MealLogEntry {
+  const now = new Date().toISOString()
+
+  return {
+    id: input.id,
+    user_id: input.userId,
+    logged_date: input.loggedDate,
+    meal_type: input.mealType,
+    food_id: null,
+    custom_name: input.name.trim(),
+    quantity_g: null,
+    servings: null,
+    calories: input.calories,
+    carbs_g: input.carbsG,
+    protein_g: input.proteinG,
+    fat_g: input.fatG,
+    created_at: now,
+    updated_at: now,
+    food: null,
   }
 }

@@ -62,7 +62,8 @@ export type MealLogEntry = {
   user_id: string
   logged_date: string
   meal_type: MealType
-  food_id: string
+  food_id: string | null
+  custom_name: string | null
   quantity_g: number | null
   servings: number | null
   calories: number
@@ -71,7 +72,7 @@ export type MealLogEntry = {
   fat_g: number
   created_at: string
   updated_at: string
-  food: Food
+  food: Food | null
 }
 
 export type FoodFavorite = {

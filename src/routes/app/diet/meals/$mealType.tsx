@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
 import { MealEntryDetailDrawer } from '@/components/nutrition/MealEntryDetailDrawer'
 import { MealEntryRow } from '@/components/nutrition/MealEntryRow'
+import { MealIconCalorieRing } from '@/components/nutrition/MealIconCalorieRing'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,11 +15,8 @@ import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { formatFrenchDateLabel, toDateKey } from '@/lib/nutrition/dates'
-import {
-  MEAL_CARD_TINT,
-  MEAL_ICON_TINT,
-  MEAL_ICONS,
-} from '@/lib/nutrition/meal-visuals'
+import { getMealEntryName, isQuickMealEntry } from '@/lib/nutrition/meal-entry-display'
+import { MEAL_RING_STROKE } from '@/lib/nutrition/meal-visuals'
 import { MEAL_LABELS, type MealLogEntry, type MealType } from '@/lib/nutrition/types'
 import { cn } from '@/lib/utils'
 
@@ -52,9 +50,9 @@ function MealDetailPage() {
 
   const meal = daySummary?.meals.find((item) => item.mealType === mealType)
   const entries = meal?.entries ?? []
-  const Icon = MEAL_ICONS[mealType as MealType]
   const consumedCalories = meal?.totals.calories ?? 0
   const targetCalories = meal?.targetCalories ?? 0
+  const roundedConsumed = Math.round(consumedCalories)
   const calorieProgress =
     targetCalories > 0 ? Math.min((consumedCalories / targetCalories) * 100, 100) : 0
   const dailyCalorieTarget = daySummary?.targets.calories ?? 0
@@ -80,56 +78,66 @@ function MealDetailPage() {
 
   return (
     <div
-      className="meal-détail-page space-y-5 pb-28"
+      className="meal-detail-page space-y-3 pb-28"
       data-meal-type={mealType}
     >
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="icon"
-          className="size-9 shrink-0 rounded-full border-border/70 bg-card shadow-sm"
-          asChild
-        >
-          <Link to="/app/diet" search={{ date }} aria-label="Retour au journal">
-            <ArrowLeft className="size-5" />
-          </Link>
-        </Button>
+      <Card className="meal-detail-summary-card overflow-hidden border-border/70 shadow-md">
+        <CardContent className="relative space-y-4 p-4">
+          <div
+            className="meal-detail-summary-glow pointer-events-none absolute -right-10 -top-10 size-36 rounded-full blur-3xl"
+            aria-hidden
+          />
 
-        <div
-          className={cn(
-            'flex size-11 shrink-0 items-center justify-center rounded-full',
-            MEAL_ICON_TINT[mealType as MealType],
-          )}
-        >
-          <Icon className="size-5" />
-        </div>
+          <div className="relative flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              className="meal-detail-back size-9 shrink-0 rounded-full border-border/70 bg-card/80 shadow-sm backdrop-blur-sm"
+              asChild
+            >
+              <Link to="/app/diet" search={{ date }} aria-label="Retour au journal">
+                <ArrowLeft className="size-5" />
+              </Link>
+            </Button>
 
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-black leading-tight text-foreground">
-            {MEAL_LABELS[mealType as MealType]}
-          </h1>
-          <p className="text-sm capitalize text-muted-foreground">{dateLabel}</p>
-        </div>
-      </div>
+            <MealIconCalorieRing
+              mealType={mealType as MealType}
+              consumedCalories={consumedCalories}
+              targetCalories={targetCalories}
+              className="shrink-0 drop-shadow-sm"
+            />
 
-      <Card
-        className={cn(
-          'overflow-hidden border-border/70 shadow-sm',
-          MEAL_CARD_TINT[mealType as MealType],
-        )}
-      >
-        <CardContent className="space-y-3 p-3">
-          <div className="space-y-2">
-            <div>
-              <div className="font-display text-2xl font-black leading-none tabular-nums text-foreground">
-                {Math.round(consumedCalories)}
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                sur <span className="font-semibold text-foreground">{targetCalories}</span> Cal
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="meal-detail-eyebrow text-[11px] font-semibold uppercase tracking-wide">
+                Repas du jour
+              </p>
+              <h1 className="font-display text-2xl font-black leading-tight text-foreground">
+                {MEAL_LABELS[mealType as MealType]}
+              </h1>
+              <p className="mt-0.5 text-sm capitalize text-muted-foreground">{dateLabel}</p>
             </div>
-            <Progress value={calorieProgress} className="h-2 bg-muted" />
           </div>
+
+          <div className="meal-detail-divider" aria-hidden />
+
+          <div className="relative space-y-2">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{roundedConsumed}</span> sur{' '}
+                <span className="font-semibold text-foreground">{targetCalories}</span> Cal
+              </p>
+              <span
+                className={cn(
+                  'text-xs font-bold tabular-nums',
+                  MEAL_RING_STROKE[mealType as MealType],
+                )}
+              >
+                {Math.round(calorieProgress)}%
+              </span>
+            </div>
+            <Progress value={calorieProgress} className="meal-detail-calorie-progress h-2.5" />
+          </div>
+
           <MacroProgressBars
             carbs={{
               current: meal?.totals.carbsG ?? 0,
@@ -147,7 +155,7 @@ function MealDetailPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-border/70 shadow-sm">
+      <Card className="meal-detail-entries overflow-hidden border-border/70 shadow-sm">
         <CardContent className="p-0">
           {deleteError ? (
             <p className="m-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -180,13 +188,18 @@ function MealDetailPage() {
               {entries.map((entry) => (
                 <MealEntryRow
                   key={entry.id}
-                  name={entry.food.name}
-                  brand={entry.food.brand}
+                  name={getMealEntryName(entry)}
+                  brand={isQuickMealEntry(entry) ? 'Ajout rapide' : entry.food?.brand ?? null}
                   calories={Number(entry.calories)}
                   quantityG={entry.quantity_g}
                   servings={entry.servings}
+                  servingSizeG={Number(entry.food.serving_size_g)}
                   onSelect={() => setDetailEntry(entry)}
-                  onEdit={() => setEditingEntry(entry)}
+                  onEdit={
+                    isQuickMealEntry(entry) || !entry.food
+                      ? undefined
+                      : () => setEditingEntry(entry)
+                  }
                   onDelete={() => void handleDeleteEntry(entry.id)}
                 />
               ))}
@@ -213,7 +226,7 @@ function MealDetailPage() {
         }}
         entry={detailEntry}
         onEdit={
-          detailEntry
+          detailEntry && detailEntry.food && !isQuickMealEntry(detailEntry)
             ? () => {
                 setEditingEntry(detailEntry)
                 setDetailEntry(null)
@@ -232,7 +245,7 @@ function MealDetailPage() {
         food={editingEntry?.food ?? null}
         isSubmitting={updateEntry.isPending}
         onConfirm={(portion) => {
-          if (!editingEntry) {
+          if (!editingEntry?.food) {
             return
           }
 

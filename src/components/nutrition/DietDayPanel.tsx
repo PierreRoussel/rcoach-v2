@@ -9,6 +9,7 @@ import { NutritionStreakBadge } from '@/components/nutrition/NutritionStreakBadg
 import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn, Pill, StaggerGroup } from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
+import { getMealEntryName } from '@/lib/nutrition/meal-entry-display'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { NutritionSettings } from '@/lib/nutrition/types'
 import { cn } from '@/lib/utils'
@@ -70,7 +71,7 @@ export function DietDayPanel({
     return new Map(
       daySummary.meals.map((meal) => [
         meal.mealType,
-        meal.entries[0]?.food.name ?? null,
+        meal.entries[0] ? getMealEntryName(meal.entries[0]) : null,
       ]),
     )
   }, [daySummary])

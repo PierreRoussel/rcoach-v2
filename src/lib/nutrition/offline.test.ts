@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildLocalFood, toLocalFoodId } from '@/lib/nutrition/offline-food'
-import { buildPendingMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
+import { buildPendingMealLogEntry, buildPendingQuickMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
 
 describe('offline food', () => {
   it('creates a local food with prefixed id', () => {
@@ -51,7 +51,26 @@ describe('offline meal entry', () => {
     })
 
     expect(entry.calories).toBe(195)
-    expect(entry.food.name).toBe('Riz')
+    expect(entry.food?.name).toBe('Riz')
     expect(entry.meal_type).toBe('lunch')
+  })
+
+  it('builds a pending quick meal log entry', () => {
+    const entry = buildPendingQuickMealLogEntry({
+      id: 'entry-2',
+      userId: 'user-1',
+      loggedDate: '2026-06-25',
+      mealType: 'snack',
+      name: 'Barre maison',
+      calories: 220,
+      carbsG: 30,
+      proteinG: 8,
+      fatG: 9,
+    })
+
+    expect(entry.food_id).toBeNull()
+    expect(entry.custom_name).toBe('Barre maison')
+    expect(entry.calories).toBe(220)
+    expect(entry.food).toBeNull()
   })
 })

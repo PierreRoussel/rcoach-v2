@@ -6,7 +6,7 @@ import {
   UPDATE_MEAL_LOG_ENTRY,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import { buildPendingMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
+import { buildPendingMealLogEntry, buildPendingQuickMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
 import { scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -24,9 +24,34 @@ export type AddMealEntryInput = {
   portion: PortionInput
 }
 
+export type AddQuickMealEntryInput = {
+  loggedDate: string
+  mealType: MealType
+  name: string
+  calories: number
+  carbsG: number
+  proteinG: number
+  fatG: number
+}
+
 export type MealMutationResult = {
   entry: MealLogEntry
   offline: boolean
+}
+
+function buildQuickMealEntryObject(input: AddQuickMealEntryInput) {
+  return {
+    logged_date: input.loggedDate,
+    meal_type: input.mealType,
+    food_id: null,
+    custom_name: input.name.trim(),
+    quantity_g: null,
+    servings: null,
+    calories: input.calories,
+    carbs_g: input.carbsG,
+    protein_g: input.proteinG,
+    fat_g: input.fatG,
+  }
 }
 
 function buildMealEntryObject(input: AddMealEntryInput) {
@@ -86,6 +111,43 @@ export function useMealLogMutations() {
             mealType: input.mealType,
             food: input.food,
             portion: input.portion,
+          }),
+          offline: true,
+        }
+      }
+    },
+    onSuccess: async (_data, variables) => {
+      await invalidate(variables.loggedDate)
+    },
+  })
+
+  const addQuickEntry = useMutation({
+    mutationFn: async (input: AddQuickMealEntryInput): Promise<MealMutationResult> => {
+      const object = buildQuickMealEntryObject(input)
+
+      try {
+        const data = await graphqlRequest<{
+          insert_meal_log_entries_one: MealLogEntry
+        }>(nhost, INSERT_MEAL_LOG_ENTRY, { object })
+
+        return {
+          entry: data.insert_meal_log_entries_one,
+          offline: false,
+        }
+      } catch {
+        const entryId = await syncMealEntryInsert(nhost, { object })
+
+        return {
+          entry: buildPendingQuickMealLogEntry({
+            id: entryId,
+            userId: user?.id ?? 'offline',
+            loggedDate: input.loggedDate,
+            mealType: input.mealType,
+            name: input.name,
+            calories: input.calories,
+            carbsG: input.carbsG,
+            proteinG: input.proteinG,
+            fatG: input.fatG,
           }),
           offline: true,
         }
@@ -165,5 +227,5 @@ export function useMealLogMutations() {
     },
   })
 
-  return { addEntry, updateEntry, deleteEntry }
+  return { addEntry, addQuickEntry, updateEntry, deleteEntry }
 }

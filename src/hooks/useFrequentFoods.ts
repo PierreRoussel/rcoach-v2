@@ -21,6 +21,10 @@ export function useFrequentFoods(limit = 8) {
       const counts = new Map<string, { food: Food; count: number }>()
 
       for (const entry of data.meal_log_entries) {
+        if (!entry.food_id || !entry.food) {
+          continue
+        }
+
         const current = counts.get(entry.food_id)
         if (current) {
           current.count += 1

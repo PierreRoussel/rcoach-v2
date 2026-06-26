@@ -1329,6 +1329,7 @@ export const LIST_MEAL_LOG_ENTRIES_FOR_DATE = `
       logged_date
       meal_type
       food_id
+      custom_name
       quantity_g
       servings
       calories
@@ -1368,6 +1369,7 @@ export const INSERT_MEAL_LOG_ENTRY = `
       logged_date
       meal_type
       food_id
+      custom_name
       quantity_g
       servings
       calories
@@ -1400,6 +1402,7 @@ export const UPDATE_MEAL_LOG_ENTRY = `
       logged_date
       meal_type
       food_id
+      custom_name
       quantity_g
       servings
       calories
@@ -1430,7 +1433,7 @@ export const DELETE_MEAL_LOG_ENTRY = `
   }
 `
 
-const FOOD_SEARCH_FIELDS = `
+export const FOOD_SEARCH_FIELDS = `
       id
       user_id
       barcode

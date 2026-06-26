@@ -16,6 +16,7 @@ import {
 import { useFoodPortionTypes } from '@/hooks/useFoodRenameAndPortions'
 import { useOverlayBackClose } from '@/hooks/useOverlayBackClose'
 import { formatNutrient } from '@/lib/nutrition/nutrient-math'
+import { getMealEntryName, isQuickMealEntry, formatMealEntryQuantity } from '@/lib/nutrition/meal-entry-display'
 import type { MealLogEntry } from '@/lib/nutrition/types'
 
 type MealEntryDetailDrawerProps = {
@@ -25,18 +26,6 @@ type MealEntryDetailDrawerProps = {
   onEdit?: () => void
 }
 
-function formatEntryQuantity(entry: MealLogEntry) {
-  if (entry.quantity_g != null) {
-    return `${formatNutrient(entry.quantity_g)} g`
-  }
-
-  if (entry.servings != null) {
-    return `${formatNutrient(entry.servings)} portion${entry.servings > 1 ? 's' : ''}`
-  }
-
-  return null
-}
-
 export function MealEntryDetailDrawer({
   open,
   onOpenChange,
@@ -44,14 +33,20 @@ export function MealEntryDetailDrawer({
   onEdit,
 }: MealEntryDetailDrawerProps) {
   const handleOpenChange = useOverlayBackClose(open, onOpenChange, 'meal-entry-detail-drawer')
-  const { data: portionTypes = [] } = useFoodPortionTypes(entry?.food.id ?? null, open)
+  const quickEntry = entry ? isQuickMealEntry(entry) : false
+  const { data: portionTypes = [] } = useFoodPortionTypes(
+    quickEntry ? null : (entry?.food?.id ?? null),
+    open,
+  )
 
   if (!entry) {
     return null
   }
 
-  const quantityLabel = formatEntryQuantity(entry)
-  const description = [entry.food.brand, quantityLabel].filter(Boolean).join(' · ')
+  const quantityLabel = formatMealEntryQuantity(entry)
+  const description = quickEntry
+    ? 'Ajout rapide'
+    : [entry.food?.brand, quantityLabel].filter(Boolean).join(' · ')
   const macros = {
     carbs: Number(entry.carbs_g),
     protein: Number(entry.protein_g),
@@ -64,11 +59,11 @@ export function MealEntryDetailDrawer({
         <DrawerHeader className="space-y-0 px-4 text-left">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1 space-y-1.5">
-              <DrawerTitle className="font-display font-black">{entry.food.name}</DrawerTitle>
+              <DrawerTitle className="font-display font-black">{getMealEntryName(entry)}</DrawerTitle>
               {description ? <DrawerDescription>{description}</DrawerDescription> : null}
             </div>
             <div className="flex shrink-0 items-center gap-0.5">
-              <FoodItemDrawerMenu food={entry.food} />
+              {entry.food ? <FoodItemDrawerMenu food={entry.food} /> : null}
               <DrawerClose asChild>
                 <Button
                   type="button"
@@ -100,14 +95,14 @@ export function MealEntryDetailDrawer({
             <FoodMacroStat
               label="Protéines"
               value={macros.protein}
-              proteinPer100g={Number(entry.food.protein_g)}
+              proteinPer100g={entry.food ? Number(entry.food.protein_g) : undefined}
             />
             <FoodMacroStat label="Lipides" value={macros.fat} />
           </div>
 
-          <FoodNutrientBadges food={entry.food} />
+          {entry.food ? <FoodNutrientBadges food={entry.food} /> : null}
 
-          {portionTypes.length > 0 ? (
+          {!quickEntry && portionTypes.length > 0 ? (
             <div className="rounded-xl border border-border/70 bg-card px-3 py-3 text-xs">
               <p className="font-semibold text-foreground">Types de portion</p>
               <ul className="mt-2 space-y-1 text-muted-foreground">
@@ -123,38 +118,40 @@ export function MealEntryDetailDrawer({
             </div>
           ) : null}
 
-          <div className="rounded-xl border border-border/70 bg-card px-3 py-3 text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground">Valeurs pour 100 g</p>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-              <div>
-                <dt>Calories</dt>
-                <dd className="font-data font-semibold text-foreground">
-                  {Math.round(Number(entry.food.calories))} Cal
-                </dd>
-              </div>
-              <div>
-                <dt>Glucides</dt>
-                <dd className="font-data font-semibold text-foreground">
-                  {formatNutrient(Number(entry.food.carbs_g))} g
-                </dd>
-              </div>
-              <div>
-                <dt>Protéines</dt>
-                <dd className="font-data font-semibold text-foreground">
-                  {formatNutrient(Number(entry.food.protein_g))} g
-                </dd>
-              </div>
-              <div>
-                <dt>Lipides</dt>
-                <dd className="font-data font-semibold text-foreground">
-                  {formatNutrient(Number(entry.food.fat_g))} g
-                </dd>
-              </div>
-            </dl>
-          </div>
+          {entry.food ? (
+            <div className="rounded-xl border border-border/70 bg-card px-3 py-3 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">Valeurs pour 100 g</p>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                <div>
+                  <dt>Calories</dt>
+                  <dd className="font-data font-semibold text-foreground">
+                    {Math.round(Number(entry.food.calories))} Cal
+                  </dd>
+                </div>
+                <div>
+                  <dt>Glucides</dt>
+                  <dd className="font-data font-semibold text-foreground">
+                    {formatNutrient(Number(entry.food.carbs_g))} g
+                  </dd>
+                </div>
+                <div>
+                  <dt>Protéines</dt>
+                  <dd className="font-data font-semibold text-foreground">
+                    {formatNutrient(Number(entry.food.protein_g))} g
+                  </dd>
+                </div>
+                <div>
+                  <dt>Lipides</dt>
+                  <dd className="font-data font-semibold text-foreground">
+                    {formatNutrient(Number(entry.food.fat_g))} g
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
         </div>
 
-        {onEdit ? (
+        {onEdit && entry.food ? (
           <DrawerFooter className="px-4 pb-6">
             <Button
               type="button"

@@ -17,7 +17,7 @@ const badgeToneClasses: Record<
   string
 > = {
   low: 'border-secondary/40 bg-soft-secondary text-secondary-foreground',
-  high: 'border-accent/45 bg-soft-accent text-accent-foreground',
+  high: 'border-[var(--nutrient-warning-border)] bg-[var(--nutrient-warning-bg)] text-[var(--nutrient-warning-fg)]',
 }
 
 function NutrientBadge({

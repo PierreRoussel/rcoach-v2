@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Zap } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { FoodQuickActions, FoodSearchList } from '@/components/nutrition/FoodSearchList'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
+import { QuickAddSheet } from '@/components/nutrition/QuickAddSheet'
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,7 @@ function AddFoodPage() {
   const [query, setQuery] = useState('')
   const [searchOffExternally, setSearchOffExternally] = useState(false)
   const [selectedFood, setSelectedFood] = useState<Food | null>(null)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
   const trimmedQuery = query.trim()
@@ -69,7 +71,7 @@ function AddFoodPage() {
   const { data: recentFoods = [] } = useRecentFoods(20)
   const { toggleFavorite } = useFoodFavoriteMutations()
   const { ensureOffFood, lookupBarcode } = useFoodMutations()
-  const { addEntry } = useMealLogMutations()
+  const { addEntry, addQuickEntry } = useMealLogMutations()
   const { requestScan, scanner } = useBarcodeScanner()
 
   useEffect(() => {
@@ -213,7 +215,7 @@ function AddFoodPage() {
   }
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4 pb-24">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
           {search.mealType ? (
@@ -330,6 +332,46 @@ function AddFoodPage() {
             .catch((error: Error) => setMessage(error.message))
         }}
       />
+
+      <QuickAddSheet
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        isSubmitting={addQuickEntry.isPending}
+        onConfirm={(values) => {
+          void addQuickEntry
+            .mutateAsync({
+              loggedDate: date,
+              mealType,
+              name: values.name,
+              calories: values.calories,
+              carbsG: values.carbsG,
+              proteinG: values.proteinG,
+              fatG: values.fatG,
+            })
+            .then((result) => {
+              setQuickAddOpen(false)
+              if (result.offline) {
+                setMessage('Enregistré localement. Synchronisation à la reconnexion.')
+              }
+              void navigate({
+                to: '/app/diet/meals/$mealType',
+                params: { mealType },
+                search: { date },
+              })
+            })
+            .catch((error: Error) => setMessage(error.message))
+        }}
+      />
+
+      <Button
+        type="button"
+        size="icon"
+        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom)+0.75rem)] right-4 z-30 size-14 rounded-full shadow-lg"
+        onClick={() => setQuickAddOpen(true)}
+        aria-label="Ajout rapide"
+      >
+        <Zap className="size-6" />
+      </Button>
 
       {scanner}
     </div>

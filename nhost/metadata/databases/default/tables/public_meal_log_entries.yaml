@@ -17,6 +17,7 @@ select_permissions:
         - logged_date
         - meal_type
         - food_id
+        - custom_name
         - quantity_g
         - servings
         - calories
@@ -53,6 +54,7 @@ insert_permissions:
         - logged_date
         - meal_type
         - food_id
+        - custom_name
         - quantity_g
         - servings
         - calories
@@ -64,6 +66,7 @@ update_permissions:
     permission:
       columns:
         - meal_type
+        - custom_name
         - quantity_g
         - servings
         - calories

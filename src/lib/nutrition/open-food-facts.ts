@@ -1,6 +1,12 @@
 import { Capacitor } from '@capacitor/core'
 
 import type { Food } from '@/lib/nutrition/types'
+import {
+  buildFoodSearchHaystack,
+  extractFoodSearchTokens,
+  matchesAllFoodSearchTokens,
+  sortFoodSearchByRelevance,
+} from '@/lib/nutrition/food-search-tokens'
 
 const OFF_DIRECT_API = 'https://world.openfoodfacts.org'
 const OFF_SEARCH_DIRECT_API = 'https://search.openfoodfacts.org'
@@ -289,17 +295,79 @@ async function searchOffProductsSearchALicious(
   return mapOffProducts(data.hits ?? [])
 }
 
+async function searchOffProductsPrimary(query: string, pageSize: number): Promise<OffFoodDraft[]> {
+  try {
+    const results = await searchOffProductsSearchALicious(query, pageSize)
+    if (results.length > 0) {
+      return results
+    }
+  } catch {
+    // Fall back to legacy search below.
+  }
+
+  return searchOffProductsLegacy(query, pageSize)
+}
+
+function offDraftHaystack(draft: OffFoodDraft) {
+  return buildFoodSearchHaystack(draft.name, draft.brand, draft.barcode)
+}
+
+async function searchOffProductsByTokens(tokens: string[], pageSize: number) {
+  const merged = new Map<string, OffFoodDraft>()
+  const sortedTokens = [...tokens].sort((left, right) => right.length - left.length)
+
+  for (const token of sortedTokens) {
+    const hits = await searchOffProductsPrimary(token, pageSize)
+    for (const draft of hits) {
+      merged.set(draft.offProductId, draft)
+    }
+
+    const matching = [...merged.values()].filter((draft) =>
+      matchesAllFoodSearchTokens(offDraftHaystack(draft), tokens),
+    )
+    if (matching.length >= pageSize) {
+      break
+    }
+  }
+
+  return [...merged.values()]
+}
+
 export async function searchOffProducts(query: string, pageSize = 20): Promise<OffFoodDraft[]> {
   const trimmed = query.trim()
   if (!trimmed) {
     return []
   }
 
-  try {
-    return await searchOffProductsSearchALicious(trimmed, pageSize)
-  } catch {
-    return searchOffProductsLegacy(trimmed, pageSize)
+  const tokens = extractFoodSearchTokens(trimmed)
+  let results = await searchOffProductsPrimary(trimmed, pageSize)
+
+  if (tokens.length >= 2) {
+    const matching = results.filter((draft) =>
+      matchesAllFoodSearchTokens(offDraftHaystack(draft), tokens),
+    )
+
+    if (matching.length > 0) {
+      return sortFoodSearchByRelevance(matching, trimmed, tokens, offDraftHaystack).slice(
+        0,
+        pageSize,
+      )
+    }
+
+    const tokenResults = await searchOffProductsByTokens(tokens, pageSize)
+    const tokenMatches = tokenResults.filter((draft) =>
+      matchesAllFoodSearchTokens(offDraftHaystack(draft), tokens),
+    )
+
+    if (tokenMatches.length > 0) {
+      return sortFoodSearchByRelevance(tokenMatches, trimmed, tokens, offDraftHaystack).slice(
+        0,
+        pageSize,
+      )
+    }
   }
+
+  return sortFoodSearchByRelevance(results, trimmed, tokens, offDraftHaystack).slice(0, pageSize)
 }
 
 export async function getOffProductByBarcode(barcode: string): Promise<OffFoodDraft | null> {
