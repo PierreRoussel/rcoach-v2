@@ -1,5 +1,5 @@
 export const SWIPE_DIRECTION_LOCK_PX = 8
-export const SWIPE_DELETE_COMPLETE_RATIO = 0.92
+export const SWIPE_DELETE_COMPLETE_RATIO = 0.7
 
 export function clampFullSwipeOffset(offset: number, rowWidth: number) {
   if (rowWidth <= 0) {

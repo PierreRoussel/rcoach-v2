@@ -5,6 +5,24 @@ type UseOverlayBackCloseOptions = {
   enabled?: boolean
 }
 
+function pushOverlayHistoryEntry(historyKey: string) {
+  window.history.pushState(
+    { ...window.history.state, [historyKey]: true },
+    '',
+    window.location.href,
+  )
+}
+
+function historyHasOverlayEntry(historyKey: string) {
+  const state = window.history.state
+
+  return (
+    state != null &&
+    typeof state === 'object' &&
+    (state as Record<string, unknown>)[historyKey] === true
+  )
+}
+
 export function useOverlayBackClose(
   open: boolean,
   onOpenChange: (open: boolean) => void,
@@ -17,6 +35,7 @@ export function useOverlayBackClose(
   const historyPushedRef = useRef(false)
   const closingFromPopStateRef = useRef(false)
   const closingFromRouteChangeRef = useRef(false)
+  const suppressHistoryBackRef = useRef(false)
   const locationKey = useRouterState({
     select: (state) => state.location.href,
   })
@@ -27,10 +46,15 @@ export function useOverlayBackClose(
       return
     }
 
-    window.history.pushState({ [resolvedHistoryKey]: true }, '')
+    pushOverlayHistoryEntry(resolvedHistoryKey)
     historyPushedRef.current = true
 
     const handlePopState = () => {
+      if (suppressHistoryBackRef.current) {
+        suppressHistoryBackRef.current = false
+        return
+      }
+
       closingFromPopStateRef.current = true
       historyPushedRef.current = false
       onOpenChange(false)
@@ -75,16 +99,19 @@ export function useOverlayBackClose(
 
         onOpenChange(false)
 
-        if (historyPushedRef.current) {
+        if (historyPushedRef.current && historyHasOverlayEntry(resolvedHistoryKey)) {
           historyPushedRef.current = false
+          suppressHistoryBackRef.current = true
           window.history.back()
+          return
         }
 
+        historyPushedRef.current = false
         return
       }
 
       onOpenChange(next)
     },
-    [enabled, onOpenChange, open],
+    [enabled, onOpenChange, open, resolvedHistoryKey],
   )
 }

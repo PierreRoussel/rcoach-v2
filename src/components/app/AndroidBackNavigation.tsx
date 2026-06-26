@@ -3,8 +3,18 @@ import { Capacitor } from '@capacitor/core'
 import { useCanGoBack, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
-import { isDietMealPath } from '@/hooks/useDietMealBackNavigation'
+import { handleMealPageBack, isDietMealPath } from '@/hooks/useDietMealBackNavigation'
 import { toDateKey } from '@/lib/nutrition/dates'
+
+function isDietJournalPath(pathname: string) {
+  return pathname === '/app/diet' || pathname === '/app/diet/'
+}
+
+function resolveDietDate(search: unknown) {
+  return typeof search === 'object' && search && 'date' in search && typeof search.date === 'string'
+    ? search.date
+    : toDateKey(new Date())
+}
 
 function closeTopLayer() {
   const openDrawer = document.querySelector('[data-vaul-drawer][data-state="open"]')
@@ -54,13 +64,17 @@ export function AndroidBackNavigation() {
       }
 
       const { pathname, search } = locationRef.current
-      if (isDietMealPath(pathname)) {
-        const date =
-          typeof search === 'object' && search && 'date' in search && typeof search.date === 'string'
-            ? search.date
-            : toDateKey(new Date())
 
-        void router.navigate({ to: '/app/diet', search: { date } })
+      if (isDietMealPath(pathname)) {
+        handleMealPageBack(
+          (options) => router.navigate(options),
+          resolveDietDate(search),
+        )
+        return
+      }
+
+      if (isDietJournalPath(pathname) || pathname.startsWith('/app/diet/')) {
+        void router.navigate({ to: '/app' })
         return
       }
 

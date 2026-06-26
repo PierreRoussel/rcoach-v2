@@ -12,8 +12,8 @@ describe('full swipe delete', () => {
     expect(clampFullSwipeOffset(12, 320)).toBe(0)
   })
 
-  it('requires swiping almost the full row width', () => {
-    expect(shouldTriggerFullSwipeDelete(-300, 320)).toBe(true)
+  it('requires swiping at least 70% of the row width', () => {
+    expect(shouldTriggerFullSwipeDelete(-224, 320)).toBe(true)
     expect(shouldTriggerFullSwipeDelete(-200, 320)).toBe(false)
   })
 
