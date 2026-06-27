@@ -42,4 +42,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.ensure_user_profile() TO user;
+GRANT EXECUTE ON FUNCTION public.ensure_user_profile() TO "user";
