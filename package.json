@@ -29,6 +29,7 @@
     "test:ciqual-import": "node scripts/test-ciqual-import.mjs",
     "import:ciqual": "node scripts/import-ciqual-xml.mjs",
     "ingest:exercise-demos": "tsx scripts/ingest-exercise-demos.mjs",
+    "import:wger-exercises": "tsx scripts/import-wger-exercises.mjs",
     "check:postgres": "node scripts/check-postgres-connection.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

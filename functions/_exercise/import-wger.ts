@@ -1,0 +1,212 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+import { buildTemplateCoachingCues } from './coaching.ts'
+import {
+  insertPublicExercise,
+  listExerciseCatalog,
+  updateExerciseWgerId,
+  type ExerciseCatalogEntry,
+} from './hasura.ts'
+import { coachingCuesFromWgerDescription } from './wger.ts'
+import {
+  iterateWgerExerciseInfos,
+  type WgerCategoryKey,
+  WGER_CATEGORY_IDS,
+} from './wger.ts'
+import {
+  mapWgerExercise,
+  normalizeCatalogName,
+  type MappedWgerExercise,
+} from './wger-map.ts'
+
+type ManualWgerMap = Record<string, number>
+
+export type ImportWgerOptions = {
+  dryRun?: boolean
+  limit?: number
+  category?: WgerCategoryKey
+  linkExisting?: boolean
+  enrich?: (exerciseId: string) => Promise<void>
+}
+
+export type ImportWgerResult = {
+  linked: number
+  inserted: number
+  skippedExisting: number
+  skippedDuplicateName: number
+  skippedNoEnglish: number
+  failed: number
+}
+
+function loadManualWgerMap(): ManualWgerMap {
+  try {
+    const mapPath = resolve(process.cwd(), 'scripts/wger-exercise-map.json')
+    const raw = JSON.parse(readFileSync(mapPath, 'utf8')) as Record<string, unknown>
+    const entries = Object.entries(raw).filter(([key]) => !key.startsWith('_'))
+    return Object.fromEntries(
+      entries.filter(([, value]) => typeof value === 'number'),
+    ) as ManualWgerMap
+  } catch {
+    return {}
+  }
+}
+
+function buildCoachingCues(
+  mapped: MappedWgerExercise,
+  descriptionFr: string,
+  descriptionEn: string,
+) {
+  const wgerCues = coachingCuesFromWgerDescription(descriptionFr || descriptionEn)
+  const template = buildTemplateCoachingCues({
+    muscleGroup: mapped.muscle_group,
+    equipment: mapped.equipment,
+    trackingMode: mapped.tracking_mode,
+  })
+
+  return {
+    summary: wgerCues.summary ?? template.summary,
+    setup: wgerCues.setup ?? template.setup,
+    execution: wgerCues.execution ?? template.execution,
+    cues: template.cues,
+    mistakes: template.mistakes,
+  }
+}
+
+function buildCatalogIndexes(catalog: ExerciseCatalogEntry[]) {
+  const byWgerId = new Map<number, ExerciseCatalogEntry>()
+  const byNormalizedName = new Map<string, ExerciseCatalogEntry>()
+
+  for (const entry of catalog) {
+    if (entry.wger_exercise_id != null) {
+      byWgerId.set(entry.wger_exercise_id, entry)
+    }
+    byNormalizedName.set(normalizeCatalogName(entry.name), entry)
+  }
+
+  return { byWgerId, byNormalizedName }
+}
+
+export async function linkExistingExercisesFromManualMap(options?: {
+  dryRun?: boolean
+}): Promise<number> {
+  const manualMap = loadManualWgerMap()
+  const catalog = await listExerciseCatalog()
+  const byName = new Map(catalog.map((entry) => [entry.name, entry]))
+  let linked = 0
+
+  for (const [name, wgerId] of Object.entries(manualMap)) {
+    const exercise = byName.get(name)
+    if (!exercise || exercise.wger_exercise_id != null) {
+      continue
+    }
+
+    if (options?.dryRun) {
+      linked += 1
+      continue
+    }
+
+    await updateExerciseWgerId(exercise.id, wgerId)
+    exercise.wger_exercise_id = wgerId
+    linked += 1
+  }
+
+  return linked
+}
+
+export async function importWgerExercises(
+  options: ImportWgerOptions = {},
+): Promise<ImportWgerResult> {
+  const result: ImportWgerResult = {
+    linked: 0,
+    inserted: 0,
+    skippedExisting: 0,
+    skippedDuplicateName: 0,
+    skippedNoEnglish: 0,
+    failed: 0,
+  }
+
+  if (options.linkExisting !== false) {
+    result.linked = await linkExistingExercisesFromManualMap({
+      dryRun: options.dryRun,
+    })
+  }
+
+  let catalog = await listExerciseCatalog()
+  let indexes = buildCatalogIndexes(catalog)
+  const pendingNames = new Set<string>()
+
+  const categoryId =
+    options.category != null ? WGER_CATEGORY_IDS[options.category] : undefined
+
+  for await (const source of iterateWgerExerciseInfos({ categoryId })) {
+    if (options.limit != null && result.inserted >= options.limit) {
+      break
+    }
+
+    if (indexes.byWgerId.has(source.id)) {
+      result.skippedExisting += 1
+      continue
+    }
+
+    const mapped = mapWgerExercise(source)
+    const normalizedName = normalizeCatalogName(mapped.name)
+
+    if (indexes.byNormalizedName.has(normalizedName) || pendingNames.has(normalizedName)) {
+      result.skippedDuplicateName += 1
+      continue
+    }
+
+    const coaching_cues = buildCoachingCues(
+      mapped,
+      source.descriptionFr,
+      source.descriptionEn,
+    )
+
+    if (options.dryRun) {
+      console.log(
+        `[import:wger] would insert #${source.id} → ${mapped.name} (${mapped.muscle_group}/${mapped.equipment})`,
+      )
+      pendingNames.add(normalizedName)
+      result.inserted += 1
+      continue
+    }
+
+    try {
+      const exerciseId = await insertPublicExercise({
+        ...mapped,
+        coaching_cues,
+        content_status: 'partial',
+        content_source: 'wger',
+      })
+
+      pendingNames.add(normalizedName)
+      indexes.byWgerId.set(source.id, {
+        id: exerciseId,
+        name: mapped.name,
+        wger_exercise_id: source.id,
+      })
+      indexes.byNormalizedName.set(normalizedName, {
+        id: exerciseId,
+        name: mapped.name,
+        wger_exercise_id: source.id,
+      })
+
+      if (options.enrich) {
+        await options.enrich(exerciseId)
+      }
+
+      console.log(`[import:wger] inserted #${source.id} → ${mapped.name}`)
+      result.inserted += 1
+    } catch (error) {
+      result.failed += 1
+      console.error(
+        `[import:wger] failed #${source.id} (${mapped.name}): ${
+          error instanceof Error ? error.message : error
+        }`,
+      )
+    }
+  }
+
+  return result
+}

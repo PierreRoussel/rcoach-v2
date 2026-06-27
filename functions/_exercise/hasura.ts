@@ -89,6 +89,7 @@ export type ExerciseRow = {
   tracking_mode: string | null
   is_public: boolean
   created_by: string | null
+  wger_exercise_id: number | null
   demo_file_id: string | null
   demo_poster_file_id: string | null
   description_fr: string | null
@@ -109,6 +110,7 @@ export async function getExerciseById(exerciseId: string): Promise<ExerciseRow |
         tracking_mode
         is_public
         created_by
+        wger_exercise_id
         demo_file_id
         demo_poster_file_id
         description_fr
@@ -141,6 +143,7 @@ export async function findPublicCatalogMatch(name: string): Promise<ExerciseRow 
         tracking_mode
         is_public
         created_by
+        wger_exercise_id
         demo_file_id
         demo_poster_file_id
         description_fr
@@ -189,6 +192,7 @@ export async function listPublicExercises(): Promise<ExerciseRow[]> {
         tracking_mode
         is_public
         created_by
+        wger_exercise_id
         demo_file_id
         demo_poster_file_id
         description_fr
@@ -201,4 +205,84 @@ export async function listPublicExercises(): Promise<ExerciseRow[]> {
   )
 
   return data.exercises
+}
+
+export type ExerciseCatalogEntry = {
+  id: string
+  name: string
+  wger_exercise_id: number | null
+}
+
+export async function listExerciseCatalog(): Promise<ExerciseCatalogEntry[]> {
+  const data = await graphqlAdminRequest<{ exercises: ExerciseCatalogEntry[] }>(
+    `query ListExerciseCatalog {
+      exercises(where: { is_public: { _eq: true } }, order_by: { name: asc }) {
+        id
+        name
+        wger_exercise_id
+      }
+    }`,
+  )
+
+  return data.exercises
+}
+
+export async function insertPublicExercise(input: {
+  name: string
+  muscle_group: string
+  equipment: string
+  tracking_mode: string
+  wger_exercise_id: number
+  description_fr?: string | null
+  description_en?: string | null
+  coaching_cues?: unknown
+  content_status?: string
+  content_source?: string | null
+}): Promise<string> {
+  const data = await graphqlAdminRequest<{ insert_exercises_one: { id: string } | null }>(
+    `mutation InsertPublicExercise($object: exercises_insert_input!) {
+      insert_exercises_one(object: $object) {
+        id
+      }
+    }`,
+    {
+      object: {
+        name: input.name,
+        muscle_group: input.muscle_group,
+        equipment: input.equipment,
+        tracking_mode: input.tracking_mode,
+        is_public: true,
+        wger_exercise_id: input.wger_exercise_id,
+        description_fr: input.description_fr ?? null,
+        description_en: input.description_en ?? null,
+        coaching_cues: input.coaching_cues ?? null,
+        content_status: input.content_status ?? 'pending',
+        content_source: input.content_source ?? 'wger',
+      },
+    },
+  )
+
+  const id = data.insert_exercises_one?.id
+  if (!id) {
+    throw new Error(`Failed to insert exercise "${input.name}".`)
+  }
+
+  return id
+}
+
+export async function updateExerciseWgerId(
+  exerciseId: string,
+  wgerExerciseId: number,
+): Promise<void> {
+  await graphqlAdminRequest(
+    `mutation LinkExerciseWgerId($id: uuid!, $wgerExerciseId: Int!) {
+      update_exercises_by_pk(
+        pk_columns: { id: $id }
+        _set: { wger_exercise_id: $wgerExerciseId }
+      ) {
+        id
+      }
+    }`,
+    { id: exerciseId, wgerExerciseId },
+  )
 }

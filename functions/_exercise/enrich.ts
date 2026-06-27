@@ -78,8 +78,8 @@ export async function enrichExerciseContent(exerciseId: string): Promise<{
   }
 
   const manualMap = await loadManualWgerMap()
-  const manualWgerId = manualMap[exercise.name]
-  const wgerMatch = await findBestWgerMatch(exercise.name, manualWgerId)
+  const manualWgerId = exercise.wger_exercise_id ?? manualMap[exercise.name] ?? undefined
+  const wgerMatch = await findBestWgerMatch(exercise.name, manualWgerId ?? undefined)
 
   if (!wgerMatch) {
     const template = buildTemplateCoachingCues({

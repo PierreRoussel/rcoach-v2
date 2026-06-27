@@ -1,6 +1,6 @@
 const WGER_BASE = 'https://wger.de/api/v2'
-const WGER_LANGUAGE_EN = 2
-const WGER_LANGUAGE_FR = 12
+export const WGER_LANGUAGE_EN = 2
+export const WGER_LANGUAGE_FR = 12
 
 export type WgerVideo = {
   id: number
@@ -36,12 +36,129 @@ type WgerExerciseInfoRaw = {
   id: number
   uuid: string
   category: { id: number; name: string }
-  muscles: Array<{ id: number; name: string }>
+  muscles: Array<{ id: number; name: string; name_en?: string }>
+  muscles_secondary?: Array<{ id: number; name: string; name_en?: string }>
   equipment: Array<{ id: number; name: string }>
   videos?: WgerVideo[]
   images?: Array<{ image: string }>
   translations?: WgerTranslation[]
 }
+
+export type WgerImportInfo = {
+  id: number
+  nameEn: string
+  nameFr: string | null
+  descriptionEn: string
+  descriptionFr: string
+  categoryName: string
+  muscles: Array<{ name_en?: string; name: string }>
+  musclesSecondary: Array<{ name_en?: string; name: string }>
+  equipment: Array<{ name: string }>
+  videos: WgerVideo[]
+  images: Array<{ image: string }>
+}
+
+export function parseWgerImportInfo(raw: WgerExerciseInfoRaw): WgerImportInfo | null {
+  const english = raw.translations?.find((entry) => entry.language === WGER_LANGUAGE_EN)
+  if (!english?.name?.trim()) {
+    return null
+  }
+
+  const french = raw.translations?.find((entry) => entry.language === WGER_LANGUAGE_FR)
+
+  return {
+    id: raw.id,
+    nameEn: english.name.trim(),
+    nameFr: french?.name?.trim() ?? null,
+    descriptionEn: translationDescription(english),
+    descriptionFr: translationDescription(french ?? null),
+    categoryName: raw.category?.name ?? 'Legs',
+    muscles: (raw.muscles ?? []).map((entry) => ({
+      name: entry.name,
+      name_en: entry.name_en,
+    })),
+    musclesSecondary: (raw.muscles_secondary ?? []).map((entry) => ({
+      name: entry.name,
+      name_en: entry.name_en,
+    })),
+    equipment: (raw.equipment ?? []).map((entry) => ({ name: entry.name })),
+    videos: raw.videos ?? [],
+    images: raw.images ?? [],
+  }
+}
+
+export async function listWgerExerciseInfoPage(input: {
+  offset: number
+  limit: number
+  categoryId?: number
+}): Promise<{ results: WgerExerciseInfoRaw[]; count: number; hasMore: boolean }> {
+  const params = new URLSearchParams({
+    limit: String(input.limit),
+    offset: String(input.offset),
+  })
+
+  if (input.categoryId != null) {
+    params.set('category', String(input.categoryId))
+  }
+
+  const payload = await wgerFetch<{
+    count: number
+    next: string | null
+    results: WgerExerciseInfoRaw[]
+  }>(`/exerciseinfo/?${params.toString()}`)
+
+  return {
+    results: payload.results ?? [],
+    count: payload.count ?? 0,
+    hasMore: Boolean(payload.next),
+  }
+}
+
+export async function* iterateWgerExerciseInfos(options?: {
+  categoryId?: number
+  pageSize?: number
+  delayMs?: number
+}): AsyncGenerator<WgerImportInfo> {
+  const pageSize = options?.pageSize ?? 100
+  const delayMs = options?.delayMs ?? 250
+  let offset = 0
+  let hasMore = true
+
+  while (hasMore) {
+    const page = await listWgerExerciseInfoPage({
+      offset,
+      limit: pageSize,
+      categoryId: options?.categoryId,
+    })
+
+    for (const raw of page.results) {
+      const parsed = parseWgerImportInfo(raw)
+      if (parsed) {
+        yield parsed
+      }
+    }
+
+    hasMore = page.hasMore
+    offset += pageSize
+
+    if (hasMore && delayMs > 0) {
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, delayMs))
+    }
+  }
+}
+
+export const WGER_CATEGORY_IDS = {
+  abs: 10,
+  arms: 8,
+  back: 12,
+  calves: 14,
+  cardio: 15,
+  chest: 11,
+  legs: 9,
+  shoulders: 13,
+} as const
+
+export type WgerCategoryKey = keyof typeof WGER_CATEGORY_IDS
 
 export function normalizeExerciseSearchName(name: string): string {
   return name
