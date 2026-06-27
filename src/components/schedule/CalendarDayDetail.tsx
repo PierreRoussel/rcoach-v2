@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfMonth } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarClock, CalendarDays, Dumbbell, Play } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { useCalendarData } from '@/hooks/useCalendarData'
 import {
   formatDayMarkerTitle,
   getDayMarker,
@@ -149,19 +150,16 @@ export function CalendarDayDetail({
   )
 }
 
-type WorkoutCalendarPanelProps = WorkoutCalendarProps & {
-  markers: CalendarMarkers
+type WorkoutCalendarPanelProps = Omit<WorkoutCalendarProps, 'markers' | 'streak' | 'month' | 'onMonthChange'> & {
   onStartPlanned?: (occurrence: ScheduleOccurrence) => void
   onPlanDate?: (date: Date) => void
   isStarting?: boolean
 }
 
 export function WorkoutCalendarPanel({
-  markers,
   onStartPlanned,
   onPlanDate,
   isStarting,
-  streak,
   mode = 'compact',
   className,
   ...calendarProps
@@ -169,6 +167,24 @@ export function WorkoutCalendarPanel({
   const [selected, setSelected] = useState<Date | undefined>(
     mode === 'full' ? new Date() : undefined,
   )
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => startOfMonth(selected ?? new Date()),
+  )
+  const { markers, weeklyStreak, isLoading, error } = useCalendarData({
+    visibleMonth,
+  })
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">Chargement du calendrier...</p>
+  }
+
+  if (error) {
+    return (
+      <p className="text-sm text-destructive">
+        {error instanceof Error ? error.message : 'Erreur de chargement'}
+      </p>
+    )
+  }
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -176,7 +192,9 @@ export function WorkoutCalendarPanel({
         {...calendarProps}
         markers={markers}
         mode={mode}
-        streak={streak}
+        streak={weeklyStreak}
+        month={visibleMonth}
+        onMonthChange={setVisibleMonth}
         selected={selected}
         onSelect={setSelected}
       />

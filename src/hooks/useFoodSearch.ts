@@ -11,11 +11,8 @@ import {
   USER_FOOD_SEARCH_MIN_LENGTH,
 } from '@/lib/nutrition/food-search'
 import {
-  buildFoodSearchHaystack,
   extractFoodSearchTokens,
-  scoreCiqualFoodMatch,
-  scoreFoodSearchMatch,
-  sortFoodSearchByRelevance,
+  sortFoodSearchResultsGrouped,
 } from '@/lib/nutrition/food-search-tokens'
 import {
   OFF_MIN_QUERY_LENGTH,
@@ -174,15 +171,16 @@ export function useFoodSearch(
       })
     }
 
-    return sortFoodSearchByRelevance(
+    return sortFoodSearchResultsGrouped(
       Array.from(merged.values()),
       trimmed,
       tokens,
-      (result) => buildFoodSearchHaystack(result.name, result.brand, result.barcode),
-      (result, haystack) =>
-        result.source === 'ciqual'
-          ? scoreCiqualFoodMatch(result.name, trimmed, tokens)
-          : scoreFoodSearchMatch(haystack, trimmed, tokens),
+      (result) => ({
+        source: result.source,
+        name: result.name,
+        brand: result.brand,
+        barcode: result.barcode,
+      }),
     )
   }, [barcodeQuery.data, dbQuery.data, isBarcode, offQuery.data, trimmed])
 

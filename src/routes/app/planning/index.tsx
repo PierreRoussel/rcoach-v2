@@ -19,7 +19,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { PageHeader, Pill } from '@/design-system'
-import { useCalendarData } from '@/hooks/useCalendarData'
 import {
   useCreateScheduledSession,
   useDeleteScheduledSession,
@@ -27,6 +26,7 @@ import {
   useUpdateScheduledSession,
 } from '@/hooks/useScheduledSessions'
 import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
+import { useWorkoutWeeklyStreak } from '@/hooks/useWorkouts'
 import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
 import { resolveScheduleTitle } from '@/lib/schedule/resolve-schedule-title'
 import type { ScheduledSessionRecord } from '@/lib/graphql/operations'
@@ -75,10 +75,11 @@ function PlanningPage() {
     ? parseISO(`${initialDateParam}T12:00:00`)
     : undefined
 
-  const { markers, weeklyStreak, isLoading, error, scheduleMissing } =
-    useCalendarData()
-  const { data: sessionsResult } = useScheduledSessions({ includeInactive: true })
+  const { streak: weeklyStreak } = useWorkoutWeeklyStreak()
+  const { data: sessionsResult, isLoading: sessionsLoading, error: sessionsError } =
+    useScheduledSessions({ includeInactive: true })
   const sessions = sessionsResult?.sessions ?? []
+  const scheduleMissing = sessionsResult ? !sessionsResult.deployed : false
   const activeCount = sessions.filter((session) => session.is_active).length
   const { data: templates } = useWorkoutTemplates()
   const createSession = useCreateScheduledSession()
@@ -180,13 +181,13 @@ function PlanningPage() {
 
       {scheduleMissing ? <ScheduleDeployNotice /> : null}
 
-      {isLoading ? (
+      {sessionsLoading ? (
         <p className="text-sm text-muted-foreground">Chargement du calendrier...</p>
       ) : null}
 
-      {error && !scheduleMissing ? (
+      {sessionsError && !scheduleMissing ? (
         <p className="text-sm text-destructive">
-          {error instanceof Error ? error.message : 'Erreur de chargement'}
+          {sessionsError instanceof Error ? sessionsError.message : 'Erreur de chargement'}
         </p>
       ) : null}
 
@@ -215,9 +216,7 @@ function PlanningPage() {
         </div>
 
         <WorkoutCalendarPanel
-          markers={markers}
           mode="full"
-          streak={weeklyStreak}
           onStartPlanned={(occurrence) => void startPlannedSession(occurrence)}
           onPlanDate={openPlanForm}
           isStarting={isStarting}

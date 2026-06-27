@@ -2,7 +2,8 @@ import { Link } from '@tanstack/react-router'
 
 import { BrandLogo } from '@/design-system'
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
-import { useCalendarData } from '@/hooks/useCalendarData'
+import { useTodayReminders } from '@/hooks/useScheduledSessions'
+import { useMyLastCompletedWorkout } from '@/hooks/useWorkouts'
 import { useActiveWorkoutElapsed } from '@/hooks/useActiveWorkoutElapsed'
 import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
@@ -28,7 +29,8 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
   const startedAt = useActiveWorkoutStore((state) => state.startedAt)
   const workoutTitle = useActiveWorkoutStore((state) => state.title)
   const elapsed = useActiveWorkoutElapsed(startedAt)
-  const { workouts, todayReminders } = useCalendarData()
+  const { data: lastCompletedWorkout } = useMyLastCompletedWorkout()
+  const { todayReminders } = useTodayReminders()
   const { startPlannedSession, isStarting } = useStartPlannedSession()
 
   const firstName = getFirstName(displayName)
@@ -46,7 +48,7 @@ export function AppWelcomeHeader({ displayName }: AppWelcomeHeaderProps) {
     )
   })
 
-  const mostRecentWorkout = workouts[0]
+  const mostRecentWorkout = lastCompletedWorkout
   const todayMessage = formatTodayReminderMessage(todayReminders)
   const primaryReminder = todayReminders[0]
 

@@ -19,6 +19,7 @@ export function scrollElementIntoViewWhenReady(
     maxAttempts?: number
     behavior?: ScrollBehavior
     block?: ScrollLogicalPosition
+    onScroll?: () => void
   },
 ) {
   const maxAttempts = options?.maxAttempts ?? 20
@@ -43,6 +44,7 @@ export function scrollElementIntoViewWhenReady(
       behavior: options?.behavior ?? 'smooth',
       block: options?.block ?? 'start',
     })
+    options?.onScroll?.()
   }
 
   const startTimer = window.setTimeout(() => {

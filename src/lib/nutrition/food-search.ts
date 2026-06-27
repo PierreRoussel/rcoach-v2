@@ -13,8 +13,8 @@ import {
   matchesAllFoodSearchTokens,
   normalizeFoodSearchQuery,
   scoreCiqualFoodMatch,
-  scoreFoodSearchMatch,
   sortFoodSearchByRelevance,
+  sortFoodSearchResultsGrouped,
 } from '@/lib/nutrition/food-search-tokens'
 import type { Food } from '@/lib/nutrition/types'
 
@@ -22,8 +22,7 @@ export const USER_FOOD_SEARCH_MIN_LENGTH = 2
 export const OFF_CATALOG_DB_MIN_LENGTH = 3
 export const OFF_CATALOG_CONTAINS_MIN_LENGTH = 5
 export const OFF_CATALOG_FALLBACK_MIN_RESULTS = 12
-export const CIQUAL_SEARCH_FETCH_LIMIT = 40
-export const CIQUAL_SEARCH_LIMIT = 15
+export const CIQUAL_SEARCH_LIMIT = 3
 export const OFF_CATALOG_SEARCH_LIMIT = 10
 
 export type FoodSearchPattern = {
@@ -176,16 +175,12 @@ function rankCiqualFoodSearchResults(foods: Food[], query: string, tokens: strin
 }
 
 function rankFoodSearchResults(foods: Food[], query: string, tokens: string[]) {
-  return sortFoodSearchByRelevance(
-    foods,
-    query,
-    tokens,
-    (food) => buildFoodSearchHaystack(food.name, food.brand, food.barcode),
-    (food, haystack) =>
-      food.source === 'ciqual'
-        ? scoreCiqualFoodMatch(food.name, query, tokens)
-        : scoreFoodSearchMatch(haystack, query, tokens),
-  )
+  return sortFoodSearchResultsGrouped(foods, query, tokens, (food) => ({
+    source: food.source,
+    name: food.name,
+    brand: food.brand,
+    barcode: food.barcode,
+  }))
 }
 
 function hasRelevantFoodMatches(foods: Food[], query: string, tokens: string[]) {
@@ -205,17 +200,16 @@ async function searchCiqualFoods(
   nhost: NhostClient,
   query: string,
   containsPattern: string,
-  fetchLimit: number,
-  resultLimit: number,
+  limit: number,
 ) {
   const response = await graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_CIQUAL_FOODS, {
     namePrefix: buildCiqualNamePrefixPattern(query),
     containsPattern,
-    limit: fetchLimit,
+    limit,
   })
 
   const tokens = extractFoodSearchTokens(query)
-  return rankCiqualFoodSearchResults(response.foods, query, tokens).slice(0, resultLimit)
+  return rankCiqualFoodSearchResults(response.foods, query, tokens).slice(0, limit)
 }
 
 async function searchCatalogFoods(
@@ -226,13 +220,7 @@ async function searchCatalogFoods(
   offLimit: number,
 ) {
   const [ciqualFoods, offResponse] = await Promise.all([
-    searchCiqualFoods(
-      nhost,
-      query,
-      containsPattern,
-      CIQUAL_SEARCH_FETCH_LIMIT,
-      ciqualLimit,
-    ),
+    searchCiqualFoods(nhost, query, containsPattern, ciqualLimit),
     graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_OFF_CATALOG_FOODS, {
       pattern: containsPattern,
       limit: offLimit,
@@ -318,7 +306,7 @@ export async function searchFoodsInDatabase(
     const [tokenUserFoods, tokenCiqualFoods, tokenOffFoods] = await Promise.all([
       searchFoodsByTokens(nhost, tokens, 'user', userLimit, userId),
       trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH
-        ? searchFoodsByTokens(nhost, tokens, 'ciqual', CIQUAL_SEARCH_FETCH_LIMIT).then((foods) =>
+        ? searchFoodsByTokens(nhost, tokens, 'ciqual', ciqualLimit).then((foods) =>
             rankCiqualFoodSearchResults(foods, trimmed, tokens).slice(0, ciqualLimit),
           )
         : Promise.resolve([]),

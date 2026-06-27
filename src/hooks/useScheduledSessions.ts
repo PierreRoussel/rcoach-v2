@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
 
 import {
   DELETE_SCHEDULED_SESSION,
@@ -16,6 +17,7 @@ import {
   toScheduleDeployError,
 } from '@/lib/graphql/schema-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import { getTodayReminders } from '@/lib/schedule/today-reminders'
 
 export {
   isGraphqlScheduleMissingError,
@@ -144,4 +146,19 @@ export function useDeleteScheduledSession() {
       await queryClient.invalidateQueries({ queryKey: ['calendar'] })
     },
   })
+}
+
+export function useTodayReminders(now = new Date()) {
+  const { data: sessionsResult, isLoading } = useScheduledSessions()
+
+  const todayReminders = useMemo(
+    () => getTodayReminders(sessionsResult?.sessions ?? [], now),
+    [sessionsResult?.sessions, now],
+  )
+
+  return {
+    todayReminders,
+    isLoading,
+    scheduleAvailable: sessionsResult?.deployed ?? true,
+  }
 }

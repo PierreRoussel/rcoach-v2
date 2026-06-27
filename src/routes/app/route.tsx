@@ -2,6 +2,8 @@ import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { AppWelcomeHeader } from '@/components/app/AppWelcomeHeader'
+import { ActiveWorkoutProgressBar } from '@/components/workout/ActiveWorkoutProgressBar'
+import { ActiveWorkoutResumeFab } from '@/components/workout/ActiveWorkoutResumeFab'
 import { Button } from '@/components/ui/button'
 import { AppBottomNav } from '@/design-system'
 import { requireAuth } from '@/lib/auth/guards'
@@ -56,8 +58,8 @@ function AppLayout() {
 
   return (
     <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5">
           <AppWelcomeHeader displayName={resolveDisplayName(profile?.display_name, user)} />
           {showCoachLink ? (
             <Button variant="soft" size="sm" className="shrink-0" asChild>
@@ -65,12 +67,14 @@ function AppLayout() {
             </Button>
           ) : null}
         </div>
+        <ActiveWorkoutProgressBar />
       </header>
 
       <main className="flex-1 p-4 pb-20">
         <Outlet />
       </main>
 
+      <ActiveWorkoutResumeFab />
       <AppBottomNav />
     </div>
   )

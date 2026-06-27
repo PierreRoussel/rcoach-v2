@@ -1,6 +1,6 @@
-import { format, isAfter, isBefore, parseISO, startOfDay } from 'date-fns'
+import { format, isAfter, isBefore, parseISO, startOfDay, endOfMonth, startOfMonth } from 'date-fns'
 
-import type { WorkoutSummary } from '@/lib/graphql/operations'
+import type { CalendarWorkoutSummary } from '@/lib/graphql/operations'
 import {
   datesMatchWorkoutDay,
   expandAllOccurrences,
@@ -13,7 +13,7 @@ export type DayMarkerKind = 'done' | 'planned' | 'missed' | 'mixed'
 export type DayMarker = {
   date: string
   kinds: Set<DayMarkerKind>
-  workouts: WorkoutSummary[]
+  workouts: CalendarWorkoutSummary[]
   planned: ScheduleOccurrence[]
 }
 
@@ -29,7 +29,7 @@ function emptyMarker(date: string): DayMarker {
 }
 
 export function buildCalendarMarkers(
-  workouts: WorkoutSummary[],
+  workouts: CalendarWorkoutSummary[],
   sessions: ScheduledSession[],
   rangeStart: Date,
   rangeEnd: Date,
@@ -97,8 +97,15 @@ export function getMarkerKind(marker: DayMarker | undefined): DayMarkerKind | nu
   return null
 }
 
-export function workoutMatchesDay(workout: WorkoutSummary, date: Date): boolean {
+export function workoutMatchesDay(workout: CalendarWorkoutSummary, date: Date): boolean {
   return datesMatchWorkoutDay(workout.started_at, date)
+}
+
+export function monthCalendarRange(month: Date): { start: Date; end: Date } {
+  return {
+    start: startOfMonth(month),
+    end: endOfMonth(month),
+  }
 }
 
 export function defaultCalendarRange(now = new Date()): { start: Date; end: Date } {

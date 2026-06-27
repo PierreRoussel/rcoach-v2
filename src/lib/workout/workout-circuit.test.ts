@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildCircuitSteps,
+  countCompletedSets,
+  computeWorkoutProgressPercent,
+  countPlannedSets,
   findLastCompletedStep,
   findNextPendingStepIndex,
   findNextStepIndexAfter,
@@ -323,5 +326,16 @@ describe('workout-circuit', () => {
       { exerciseIndex: 3, setIndex: 1 },
       { exerciseIndex: 4, setIndex: 1 },
     ])
+  })
+
+  it('computes workout progress from completed sets', () => {
+    const exercises = [
+      makeExercise('a', 'Bench', 2, { completed: true }),
+      makeExercise('b', 'Row', 2),
+    ]
+
+    expect(countPlannedSets(exercises)).toBe(4)
+    expect(countCompletedSets(exercises)).toBe(2)
+    expect(computeWorkoutProgressPercent(exercises)).toBe(50)
   })
 })

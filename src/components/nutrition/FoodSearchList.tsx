@@ -1,4 +1,4 @@
-import { Barcode, Check, Loader2, Plus, Search, Star } from 'lucide-react'
+import { Barcode, Check, Leaf, Loader2, Plus, Search, Star } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { FoodSearchResult } from '@/hooks/useFoodSearch'
@@ -102,7 +102,15 @@ export function FoodSearchList({
               className="min-w-0 flex-1 text-left"
               onClick={() => onSelect(result)}
             >
-              <div className="truncate font-semibold text-foreground">{result.name}</div>
+              <div className="flex min-w-0 items-center gap-1.5 font-semibold text-foreground">
+                <span className="truncate">{result.name}</span>
+                {result.source === 'ciqual' ? (
+                  <Leaf
+                    className="size-3.5 shrink-0 fill-primary/75 text-primary/75"
+                    aria-label="Aliment CIQUAL"
+                  />
+                ) : null}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {[result.brand, formatPortionLine(result)].filter(Boolean).join(' · ')}
               </div>

@@ -43,6 +43,13 @@ export type WorkoutSummary = {
   }>
 }
 
+export type WorkoutHeaderSummary = Pick<
+  WorkoutSummary,
+  'id' | 'title' | 'started_at' | 'ended_at'
+>
+
+export type CalendarWorkoutSummary = WorkoutHeaderSummary
+
 export type WorkoutTemplateSet = {
   set_index: number
   weight_kg: number | null
@@ -211,6 +218,60 @@ export const LIST_MY_WORKOUTS = `
           rpe
         }
       }
+    }
+  }
+`
+
+export const GET_MY_LAST_COMPLETED_WORKOUT = `
+  query GetMyLastCompletedWorkout($userId: uuid!) {
+    workouts(
+      where: {
+        user_id: { _eq: $userId }
+        ended_at: { _is_null: false }
+      }
+      order_by: { started_at: desc }
+      limit: 1
+    ) {
+      id
+      title
+      started_at
+      ended_at
+    }
+  }
+`
+
+export const LIST_MY_WORKOUTS_IN_RANGE = `
+  query ListMyWorkoutsInRange(
+    $userId: uuid!
+    $start: timestamptz!
+    $end: timestamptz!
+  ) {
+    workouts(
+      where: {
+        user_id: { _eq: $userId }
+        started_at: { _gte: $start, _lte: $end }
+      }
+      order_by: { started_at: desc }
+    ) {
+      id
+      title
+      started_at
+      ended_at
+    }
+  }
+`
+
+export const LIST_MY_WORKOUT_STREAK_DATES = `
+  query ListMyWorkoutStreakDates($userId: uuid!, $since: timestamptz!) {
+    workouts(
+      where: {
+        user_id: { _eq: $userId }
+        ended_at: { _is_null: false }
+        started_at: { _gte: $since }
+      }
+      order_by: { started_at: desc }
+    ) {
+      started_at
     }
   }
 `
@@ -1481,7 +1542,7 @@ ${FOOD_SEARCH_FIELDS}
 `
 
 export const SEARCH_CIQUAL_FOODS = `
-  query SearchCiqualFoods($namePrefix: String!, $containsPattern: String!, $limit: Int = 40) {
+  query SearchCiqualFoods($namePrefix: String!, $containsPattern: String!, $limit: Int = 3) {
     foods(
       where: {
         _and: [

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card'
 import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
+import { WorkoutSessionConflictDialog } from '@/components/workout/WorkoutSessionConflictDialog'
 import { Pill } from '@/design-system'
 import {
   DEFAULT_GLOBAL_REST_SECONDS,
@@ -92,6 +93,14 @@ function SessionsPage() {
 function CatalogTab() {
   const navigate = useNavigate()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [conflictOpen, setConflictOpen] = useState(false)
+  const [pendingTemplate, setPendingTemplate] = useState<
+    NonNullable<ReturnType<typeof useWorkoutTemplates>['data']>[number] | null
+  >(null)
+  const [isStartingTemplate, setIsStartingTemplate] = useState(false)
+  const startedAt = useActiveWorkoutStore((state) => state.startedAt)
+  const currentSessionTitle = useActiveWorkoutStore((state) => state.title)
+  const cancelWorkout = useActiveWorkoutStore((state) => state.cancelWorkout)
   const startWorkoutFromTemplate = useActiveWorkoutStore(
     (state) => state.startWorkoutFromTemplate,
   )
@@ -126,8 +135,58 @@ function CatalogTab() {
     await navigate({ to: '/app/workout/active' })
   }
 
+  function requestStart(template: NonNullable<typeof templates>[number]) {
+    if (startedAt) {
+      setPendingTemplate(template)
+      setConflictOpen(true)
+      return
+    }
+
+    void handleStart(template)
+  }
+
+  async function handleAbandonAndStart() {
+    if (!pendingTemplate) {
+      return
+    }
+
+    const template = pendingTemplate
+    setIsStartingTemplate(true)
+
+    try {
+      setConflictOpen(false)
+      setPendingTemplate(null)
+      await cancelWorkout()
+      await handleStart(template)
+    } finally {
+      setIsStartingTemplate(false)
+    }
+  }
+
+  function handleResumeCurrentSession() {
+    setConflictOpen(false)
+    setPendingTemplate(null)
+    void navigate({ to: '/app/workout/active' })
+  }
+
+  function handleConflictOpenChange(open: boolean) {
+    setConflictOpen(open)
+    if (!open) {
+      setPendingTemplate(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <WorkoutSessionConflictDialog
+        open={conflictOpen}
+        onOpenChange={handleConflictOpenChange}
+        currentSessionTitle={currentSessionTitle}
+        nextSessionLabel={pendingTemplate?.name ?? 'cette séance'}
+        onResume={handleResumeCurrentSession}
+        onAbandonAndStart={() => void handleAbandonAndStart()}
+        isPending={isStartingTemplate}
+      />
       <SessionNameDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -161,10 +220,28 @@ function CatalogTab() {
                 Séances pré-construites, prêtes à démarrer.
               </CardDescription>
             </div>
-            <Button variant="pill" size="sm" onClick={() => setDialogOpen(true)}>
-              <Plus className="size-4" />
-              Nouveau
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                variant="soft"
+                size="sm"
+                className="rounded-full"
+                onClick={() => setDialogOpen(true)}
+              >
+                <Plus className="size-4" />
+                Nouveau
+              </Button>
+              <Button
+                variant="pill"
+                size="icon"
+                className="rounded-full"
+                aria-label="Démarrer une séance"
+                asChild
+              >
+                <Link to="/app/workout/active">
+                  <Play className="size-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="px-0 pb-0">
@@ -222,7 +299,7 @@ function CatalogTab() {
                           variant="pill"
                           size="sm"
                           className="min-w-0 flex-1"
-                          onClick={() => void handleStart(template)}
+                          onClick={() => requestStart(template)}
                         >
                           <Play className="size-4" />
                           Démarrer

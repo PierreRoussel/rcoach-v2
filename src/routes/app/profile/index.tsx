@@ -29,7 +29,6 @@ import { FriendsSection } from '@/components/social/FriendsSection'
 import { GoalsSection } from '@/components/goals/GoalsSection'
 import { ThemeSetting } from '@/design-system'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
-import { useCalendarData } from '@/hooks/useCalendarData'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { Capacitor } from '@capacitor/core'
@@ -131,7 +130,6 @@ function LogoutSection() {
 function ProfilePage() {
   const queryClient = useQueryClient()
   const { data: profile } = useMyProfile()
-  const { markers, weeklyStreak, isLoading: calendarLoading } = useCalendarData()
 
   useEffect(() => {
     void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
@@ -158,15 +156,7 @@ function ProfilePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {calendarLoading ? (
-            <p className="text-sm text-muted-foreground">Chargement...</p>
-          ) : (
-            <WorkoutCalendarPanel
-              markers={markers}
-              mode="compact"
-              streak={weeklyStreak}
-            />
-          )}
+          <WorkoutCalendarPanel mode="compact" />
         </CardContent>
       </Card>
 

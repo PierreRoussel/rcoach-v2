@@ -398,20 +398,25 @@ function SortableExerciseItem({
       {hasSetsSection ? (
         <CollapsibleContent
           className={cn(
-            'border-t border-border/60 py-3',
-            embedded ? 'px-0' : 'px-3',
+            'border-t border-border/60',
+            embedded ? 'px-0 pb-0 pt-0' : 'px-3 py-3',
           )}
         >
           {renderSetsContent(index)}
           {onAddSet ? (
-            <div className={cn('pt-2', embedded ? 'px-4' : 'px-0')}>
+            <div className={embedded ? undefined : 'pt-2'}>
               <Button
                 type="button"
-                variant="outline"
+                variant={embedded ? 'ghost' : 'outline'}
                 size="sm"
+                className={cn(
+                  embedded
+                    ? 'h-9 w-full rounded-none border-0 border-t border-dashed border-border/70 bg-transparent text-xs font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                    : null,
+                )}
                 onClick={() => onAddSet(index)}
               >
-                <Plus className="size-4" />
+                <Plus className={cn('size-4', embedded && 'size-3.5 opacity-70')} />
                 Ajouter une série
               </Button>
             </div>

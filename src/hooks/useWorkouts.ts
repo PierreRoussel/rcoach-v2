@@ -1,20 +1,27 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import { startOfDay, subWeeks } from 'date-fns'
 
 import {
   DELETE_WORKOUT,
+  GET_MY_LAST_COMPLETED_WORKOUT,
   GET_WORKOUT_BY_ID,
   GET_WORKOUT_BY_ID_WITHOUT_SHARE,
   LIST_MY_WORKOUTS,
+  LIST_MY_WORKOUTS_IN_RANGE,
+  LIST_MY_WORKOUT_STREAK_DATES,
   HISTORY_WORKOUTS_INITIAL_PAGE_SIZE,
   HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
   LIST_MY_WORKOUTS_PAGE,
   WORKOUTS_PAGE_SIZE,
+  type CalendarWorkoutSummary,
   type WorkoutDetail,
+  type WorkoutHeaderSummary,
   type WorkoutSummary,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
+import { computeWeeklyStreak } from '@/lib/schedule/weekly-streak'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useMyWorkouts() {
@@ -34,6 +41,90 @@ export function useMyWorkouts() {
       return data.workouts
     },
   })
+}
+
+export function useMyLastCompletedWorkout() {
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
+
+  return useQuery({
+    queryKey: ['workouts', 'mine', userId, 'last-completed'],
+    enabled: isAuthenticated && Boolean(userId),
+    queryFn: async (): Promise<WorkoutHeaderSummary | null> => {
+      const data = await graphqlRequest<{ workouts: WorkoutHeaderSummary[] }>(
+        nhost,
+        GET_MY_LAST_COMPLETED_WORKOUT,
+        { userId: userId! },
+      )
+
+      return data.workouts[0] ?? null
+    },
+  })
+}
+
+const STREAK_LOOKBACK_WEEKS = 104
+
+function formatRangeKey(date: Date) {
+  return date.toISOString()
+}
+
+export function useMyWorkoutsInRange(range: { start: Date; end: Date } | null) {
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
+  const startKey = range ? formatRangeKey(range.start) : null
+  const endKey = range ? formatRangeKey(range.end) : null
+
+  return useQuery({
+    queryKey: ['workouts', 'mine', userId, 'range', startKey, endKey],
+    enabled: isAuthenticated && Boolean(userId) && Boolean(range),
+    queryFn: async (): Promise<CalendarWorkoutSummary[]> => {
+      const data = await graphqlRequest<{ workouts: CalendarWorkoutSummary[] }>(
+        nhost,
+        LIST_MY_WORKOUTS_IN_RANGE,
+        {
+          userId: userId!,
+          start: range!.start.toISOString(),
+          end: range!.end.toISOString(),
+        },
+      )
+
+      return data.workouts
+    },
+  })
+}
+
+export function useWorkoutStreakDates(now = new Date()) {
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
+  const since = useMemo(
+    () => subWeeks(startOfDay(now), STREAK_LOOKBACK_WEEKS).toISOString(),
+    [now],
+  )
+
+  return useQuery({
+    queryKey: ['workouts', 'mine', userId, 'streak-dates', since],
+    enabled: isAuthenticated && Boolean(userId),
+    queryFn: async (): Promise<Array<{ started_at: string }>> => {
+      const data = await graphqlRequest<{
+        workouts: Array<{ started_at: string }>
+      }>(nhost, LIST_MY_WORKOUT_STREAK_DATES, {
+        userId: userId!,
+        since,
+      })
+
+      return data.workouts
+    },
+  })
+}
+
+export function useWorkoutWeeklyStreak(now = new Date()) {
+  const { data: workouts, isLoading, error } = useWorkoutStreakDates(now)
+  const streak = useMemo(
+    () => computeWeeklyStreak(workouts ?? [], now),
+    [workouts, now],
+  )
+
+  return { streak, isLoading, error }
 }
 
 export type WorkoutsPageResult = {

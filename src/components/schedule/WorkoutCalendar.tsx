@@ -1,4 +1,4 @@
-import { addMonths, format, parseISO, subMonths } from 'date-fns'
+import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -21,6 +21,8 @@ export type WorkoutCalendarProps = {
   mode?: 'compact' | 'full'
   selected?: Date
   onSelect?: (date: Date | undefined) => void
+  month?: Date
+  onMonthChange?: (month: Date) => void
   className?: string
   streak?: number
 }
@@ -62,6 +64,8 @@ export function WorkoutCalendar({
   mode = 'compact',
   selected,
   onSelect,
+  month: controlledMonth,
+  onMonthChange,
   className,
   streak,
 }: WorkoutCalendarProps) {
@@ -71,15 +75,31 @@ export function WorkoutCalendar({
 
   const currentSelected = onSelect ? selected : (selected ?? internalSelected)
 
-  const [displayMonth, setDisplayMonth] = useState(
-    () => currentSelected ?? new Date(),
+  const [internalMonth, setInternalMonth] = useState(
+    () => controlledMonth ?? currentSelected ?? new Date(),
   )
+  const displayMonth = controlledMonth ?? internalMonth
+
+  function setDisplayMonth(month: Date) {
+    if (!controlledMonth) {
+      setInternalMonth(month)
+    }
+    onMonthChange?.(month)
+  }
 
   useEffect(() => {
-    if (currentSelected) {
-      setDisplayMonth(currentSelected)
+    if (!currentSelected) {
+      return
     }
-  }, [currentSelected?.getFullYear(), currentSelected?.getMonth()])
+
+    const nextMonth = startOfMonth(currentSelected)
+    if (controlledMonth) {
+      onMonthChange?.(nextMonth)
+      return
+    }
+
+    setInternalMonth(nextMonth)
+  }, [controlledMonth, currentSelected, onMonthChange])
 
   const modifiers = useMemo(
     () => ({

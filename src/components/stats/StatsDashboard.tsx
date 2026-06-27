@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/card'
 import { StatsSummaryCard } from '@/components/stats/StatsSummaryCard'
 import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
-import { useCalendarData } from '@/hooks/useCalendarData'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
 import { useExerciseCatalogStats } from '@/hooks/useExerciseCatalogStats'
 import {
@@ -41,7 +40,6 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
     isCapped,
     fetchNextPage,
   } = useAllMyWorkouts()
-  const { markers, weeklyStreak, isLoading: calendarLoading } = useCalendarData()
   const exerciseCatalog = useExerciseCatalogStats(workouts)
   const [searchOpen, setSearchOpen] = useState(false)
   const {
@@ -124,15 +122,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
               </div>
             </CardHeader>
             <CardContent>
-              {calendarLoading ? (
-                <p className="text-sm text-muted-foreground">Chargement...</p>
-              ) : (
-                <WorkoutCalendarPanel
-                  markers={markers}
-                  mode="compact"
-                  streak={weeklyStreak}
-                />
-              )}
+              <WorkoutCalendarPanel mode="compact" />
             </CardContent>
           </Card>
 

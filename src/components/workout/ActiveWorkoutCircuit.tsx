@@ -32,10 +32,12 @@ import {
   type TemplateSetHistory,
 } from '@/lib/workout/template-set-history'
 import type { OverloadSuggestion } from '@/lib/workout/progressive-overload'
+import { scrollElementIntoViewWhenReady } from '@/lib/stats/scroll-to-featured'
 
 type ActiveWorkoutCircuitProps = {
   exercises: ActiveExerciseEntry[]
   lastCompletedStep: CircuitStep | null
+  workoutStartedAt: string | null
   rpeEnabled: boolean
   showLastSetColumn?: boolean
   templateSetHistory?: TemplateSetHistory
@@ -77,6 +79,7 @@ type ActiveWorkoutCircuitProps = {
 export function ActiveWorkoutCircuit({
   exercises,
   lastCompletedStep,
+  workoutStartedAt,
   rpeEnabled,
   showLastSetColumn = false,
   templateSetHistory,
@@ -116,18 +119,27 @@ export function ActiveWorkoutCircuit({
     setOptions != null ? exercises[setOptions.exerciseIndex] ?? null : null
 
   useEffect(() => {
-    if (!targetStep || hasAutoScrolledRef.current) {
+    hasAutoScrolledRef.current = false
+  }, [workoutStartedAt])
+
+  useEffect(() => {
+    if (!targetStep || hasAutoScrolledRef.current || exercises.length === 0) {
       return
     }
 
-    const node = stepRefs.current.get(stepKey(targetStep))
-    if (!node) {
-      return
-    }
+    const key = stepKey(targetStep)
 
-    node.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    hasAutoScrolledRef.current = true
-  }, [nextPendingStepIndex, targetStep])
+    return scrollElementIntoViewWhenReady(
+      () => stepRefs.current.get(key) ?? null,
+      {
+        behavior: 'smooth',
+        block: 'center',
+        onScroll: () => {
+          hasAutoScrolledRef.current = true
+        },
+      },
+    )
+  }, [exercises.length, nextPendingStepIndex, targetStep])
 
   function renderSetRow(exerciseIndex: number, setIndex: number) {
     const exercise = exercises[exerciseIndex]
@@ -219,7 +231,6 @@ export function ActiveWorkoutCircuit({
           {rpeEnabled ? (
             <RpeSelect
               value={set.rpe}
-              disabled={isCompleted}
               onChange={(rpe) =>
                 onUpdateSet(exerciseIndex, setIndex, { rpe })
               }

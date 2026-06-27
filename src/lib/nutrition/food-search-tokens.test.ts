@@ -6,6 +6,7 @@ import {
   matchesAllFoodSearchTokens,
   scoreCiqualFoodMatch,
   scoreFoodSearchMatch,
+  sortFoodSearchResultsGrouped,
 } from '@/lib/nutrition/food-search-tokens'
 
 describe('extractFoodSearchTokens', () => {
@@ -50,5 +51,25 @@ describe('scoreCiqualFoodMatch', () => {
     const sauce = scoreCiqualFoodMatch('Sauce tomate aux oignons, préemballée', 'tomate', ['tomate'])
 
     expect(raw).toBeGreaterThan(sauce)
+  })
+})
+
+describe('sortFoodSearchResultsGrouped', () => {
+  it('keeps CIQUAL foods first and sorts each group by relevance', () => {
+    const items = [
+      { source: 'open_food_facts', name: 'Tomate cerise bio', brand: null, barcode: null },
+      { source: 'ciqual', name: 'Sauce tomate, préemballée', brand: null, barcode: null },
+      { source: 'ciqual', name: 'Tomate ronde, crue', brand: null, barcode: null },
+      { source: 'user', name: 'Ma tomate maison', brand: null, barcode: null },
+    ]
+
+    const sorted = sortFoodSearchResultsGrouped(items, 'tomate', ['tomate'], (item) => item)
+
+    expect(sorted.map((item) => item.name)).toEqual([
+      'Tomate ronde, crue',
+      'Sauce tomate, préemballée',
+      'Tomate cerise bio',
+      'Ma tomate maison',
+    ])
   })
 })

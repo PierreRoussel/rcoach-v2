@@ -241,6 +241,19 @@ export function countCompletedSets(exercises: CircuitExercise[]): number {
   )
 }
 
+export function countPlannedSets(exercises: CircuitExercise[]): number {
+  return exercises.reduce((total, exercise) => total + exercise.sets.length, 0)
+}
+
+export function computeWorkoutProgressPercent(exercises: CircuitExercise[]): number {
+  const total = countPlannedSets(exercises)
+  if (total === 0) {
+    return 0
+  }
+
+  return Math.min(100, (countCompletedSets(exercises) / total) * 100)
+}
+
 export function getStepLabel(
   exercises: CircuitExercise[],
   step: CircuitStep | null,

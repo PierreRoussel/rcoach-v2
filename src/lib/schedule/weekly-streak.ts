@@ -2,11 +2,13 @@ import { getISOWeek, getISOWeekYear, parseISO, startOfDay, subWeeks } from 'date
 
 import type { WorkoutSummary } from '@/lib/graphql/operations'
 
+type WorkoutStreakSource = Pick<WorkoutSummary, 'started_at'> | { started_at: string }
+
 function weekKey(date: Date): string {
   return `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
 }
 
-export function getWeeksWithWorkouts(workouts: WorkoutSummary[]): Set<string> {
+export function getWeeksWithWorkouts(workouts: WorkoutStreakSource[]): Set<string> {
   const weeks = new Set<string>()
 
   for (const workout of workouts) {
@@ -16,7 +18,7 @@ export function getWeeksWithWorkouts(workouts: WorkoutSummary[]): Set<string> {
   return weeks
 }
 
-export function computeWeeklyStreak(workouts: WorkoutSummary[], now = new Date()): number {
+export function computeWeeklyStreak(workouts: WorkoutStreakSource[], now = new Date()): number {
   const weeksWithWorkouts = getWeeksWithWorkouts(workouts)
   let streak = 0
   let cursor = startOfDay(now)

@@ -148,3 +148,50 @@ export function sortFoodSearchByRelevance<T>(
     return rightScore - leftScore
   })
 }
+
+export type FoodSearchSortInput = {
+  source: string
+  name: string
+  brand?: string | null
+  barcode?: string | null
+}
+
+export function scoreFoodSearchItem(
+  item: FoodSearchSortInput,
+  query: string,
+  tokens: string[],
+) {
+  const haystack = buildFoodSearchHaystack(item.name, item.brand, item.barcode)
+
+  return item.source === 'ciqual'
+    ? scoreCiqualFoodMatch(item.name, query, tokens)
+    : scoreFoodSearchMatch(haystack, query, tokens)
+}
+
+export function sortFoodSearchResultsGrouped<T>(
+  items: T[],
+  query: string,
+  tokens: string[],
+  getSortInput: (item: T) => FoodSearchSortInput,
+) {
+  const ciqualItems: T[] = []
+  const otherItems: T[] = []
+
+  for (const item of items) {
+    if (getSortInput(item).source === 'ciqual') {
+      ciqualItems.push(item)
+      continue
+    }
+
+    otherItems.push(item)
+  }
+
+  const sortGroup = (group: T[]) =>
+    [...group].sort(
+      (left, right) =>
+        scoreFoodSearchItem(getSortInput(right), query, tokens) -
+        scoreFoodSearchItem(getSortInput(left), query, tokens),
+    )
+
+  return [...sortGroup(ciqualItems), ...sortGroup(otherItems)]
+}

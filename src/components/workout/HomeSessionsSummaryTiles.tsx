@@ -2,8 +2,8 @@ import { useMemo, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { CalendarDays, ChevronRight, Clock, Dumbbell, History } from 'lucide-react'
 
-import { useCalendarData } from '@/hooks/useCalendarData'
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
+import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useMyWorkouts } from '@/hooks/useWorkouts'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
 import {
@@ -277,13 +277,14 @@ function NextSessionTile({
 export function HomeSessionsSummaryTiles() {
   const { data: workouts, isLoading: workoutsLoading } = useMyWorkouts()
   const {
-    sessions,
-    scheduleAvailable,
-    isLoading: calendarLoading,
-  } = useCalendarData()
+    data: sessionsResult,
+    isLoading: sessionsLoading,
+  } = useScheduledSessions()
+  const sessions = sessionsResult?.sessions ?? []
+  const scheduleAvailable = sessionsResult?.deployed ?? true
   const exerciseLocale = useExerciseLocale()
 
-  const isLoading = workoutsLoading || calendarLoading
+  const isLoading = workoutsLoading || sessionsLoading
   const lastWorkout = findLastCompletedWorkout(workouts ?? [])
   const nextOccurrence = useMemo(
     () =>

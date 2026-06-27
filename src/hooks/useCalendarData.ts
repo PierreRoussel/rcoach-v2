@@ -1,19 +1,39 @@
 import { useMemo } from 'react'
 
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
-import { useMyWorkouts } from '@/hooks/useWorkouts'
+import { useMyWorkoutsInRange, useWorkoutStreakDates } from '@/hooks/useWorkouts'
 import {
   buildCalendarMarkers,
-  defaultCalendarRange,
+  monthCalendarRange,
   type CalendarMarkers,
 } from '@/lib/schedule/calendar-markers'
 import type { ScheduledSession } from '@/lib/schedule/expand-occurrences'
 import { getTodayReminders } from '@/lib/schedule/today-reminders'
 import { computeWeeklyStreak } from '@/lib/schedule/weekly-streak'
 
-export function useCalendarData(now = new Date()) {
-  const { data: workouts, isLoading: workoutsLoading, error: workoutsError } =
-    useMyWorkouts()
+export type CalendarDataOptions = {
+  now?: Date
+  visibleMonth?: Date
+}
+
+export function useCalendarData(options?: CalendarDataOptions) {
+  const now = options?.now ?? new Date()
+  const visibleMonth = options?.visibleMonth ?? now
+  const monthRange = useMemo(
+    () => monthCalendarRange(visibleMonth),
+    [visibleMonth.getFullYear(), visibleMonth.getMonth()],
+  )
+
+  const {
+    data: monthWorkouts,
+    isLoading: monthWorkoutsLoading,
+    error: monthWorkoutsError,
+  } = useMyWorkoutsInRange(monthRange)
+  const {
+    data: streakWorkouts,
+    isLoading: streakLoading,
+    error: streakError,
+  } = useWorkoutStreakDates(now)
   const {
     data: sessionsResult,
     isLoading: sessionsLoading,
@@ -23,23 +43,21 @@ export function useCalendarData(now = new Date()) {
   const sessions = sessionsResult?.sessions ?? []
   const scheduleDeployed = sessionsResult?.deployed ?? true
 
-  const range = useMemo(() => defaultCalendarRange(now), [now])
-
   const markers: CalendarMarkers = useMemo(
     () =>
       buildCalendarMarkers(
-        workouts ?? [],
+        monthWorkouts ?? [],
         sessions as ScheduledSession[],
-        range.start,
-        range.end,
+        monthRange.start,
+        monthRange.end,
         now,
       ),
-    [workouts, sessions, range.start, range.end, now],
+    [monthWorkouts, sessions, monthRange.start, monthRange.end, now],
   )
 
   const weeklyStreak = useMemo(
-    () => computeWeeklyStreak(workouts ?? [], now),
-    [workouts, now],
+    () => computeWeeklyStreak(streakWorkouts ?? [], now),
+    [streakWorkouts, now],
   )
 
   const todayReminders = useMemo(
@@ -48,14 +66,14 @@ export function useCalendarData(now = new Date()) {
   )
 
   return {
-    workouts: workouts ?? [],
+    workouts: monthWorkouts ?? [],
     sessions: sessions as ScheduledSession[],
     markers,
-    range,
+    range: monthRange,
     weeklyStreak,
     todayReminders,
-    isLoading: workoutsLoading || sessionsLoading,
-    error: workoutsError ?? sessionsError,
+    isLoading: monthWorkoutsLoading || streakLoading || sessionsLoading,
+    error: monthWorkoutsError ?? streakError ?? sessionsError,
     scheduleAvailable: scheduleDeployed,
     scheduleMissing: !scheduleDeployed,
   }

@@ -1,8 +1,10 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ListOrdered } from 'lucide-react'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { ArrowLeft, ListOrdered } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
+import { ActiveWorkoutFinishFab } from '@/components/workout/ActiveWorkoutFinishFab'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { RestTimerBar } from '@/components/workout/RestTimerBar'
 import { HoldTimerBar } from '@/components/workout/HoldTimerBar'
@@ -12,6 +14,16 @@ import {
   type WorkoutRecapData,
 } from '@/components/workout/WorkoutRecapDialog'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   Card,
   CardContent,
@@ -42,6 +54,7 @@ import {
   buildCircuitSteps,
   countCompletedSets,
   getValidatedExercisesForSync,
+  isWorkoutComplete,
 } from '@/lib/workout/workout-circuit'
 import { buildExerciseSetHistoryFromWorkouts } from '@/lib/workout/template-set-history'
 import {
@@ -64,7 +77,9 @@ export const Route = createFileRoute('/app/workout/active')({
 function ActiveWorkoutPage() {
   const { templateId: initialTemplateId } = Route.useSearch()
   const { nhost } = useAuth()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const router = useRouter()
   const { data: profile } = useMyProfile()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: allWorkouts } = useMyWorkouts()
@@ -116,6 +131,8 @@ function ActiveWorkoutPage() {
   const [recapOpen, setRecapOpen] = useState(false)
   const [recapData, setRecapData] = useState<WorkoutRecapData | null>(null)
   const [isRecapFlow, setIsRecapFlow] = useState(false)
+  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false)
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
 
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
@@ -145,6 +162,11 @@ function ActiveWorkoutPage() {
 
   const steps = buildCircuitSteps(activeExercises)
   const completedCount = countCompletedSets(activeExercises)
+  const allSetsComplete = isWorkoutComplete(
+    steps,
+    activeExercises,
+    lastCompletedStep,
+  )
 
   useRestTimerAudio(isResting, restSecondsLeft)
 
@@ -177,6 +199,8 @@ function ActiveWorkoutPage() {
     : null
 
   async function handleFinish() {
+    setFinishConfirmOpen(false)
+
     if (completedCount === 0) {
       setError('Validez au moins une série avant de terminer.')
       return
@@ -223,6 +247,8 @@ function ActiveWorkoutPage() {
 
       void pushWorkoutSession(draft, endedAt).catch(() => undefined)
 
+      await queryClient.invalidateQueries({ queryKey: ['workouts'] })
+
       const heartRate = await heartRatePromise
       const volumeKg = computeDraftVolume(validatedExercises)
       const workoutSummary = draftToWorkoutSummary(
@@ -267,11 +293,29 @@ function ActiveWorkoutPage() {
   if (!startedAt && !isRecapFlow) {
     return (
       <div className="space-y-4">
-        <PageHeader
-          eyebrow="Séance active"
-          title="Nouvelle séance"
-          description="Composez votre séance, réordonnez les exercices et suivez votre surcharge."
-        />
+        <div className="space-y-1">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Séance active
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-9 shrink-0 -ml-2"
+              aria-label="Retour"
+              onClick={() => router.history.back()}
+            >
+              <ArrowLeft className="size-5" />
+            </Button>
+            <h1 className="font-display text-2xl font-black text-foreground">
+              Nouvelle séance
+            </h1>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Composez votre séance, réordonnez les exercices et suivez votre surcharge.
+          </p>
+        </div>
         <StartWorkoutForm initialTemplateId={initialTemplateId} />
       </div>
     )
@@ -339,6 +383,7 @@ function ActiveWorkoutPage() {
           <ActiveWorkoutCircuit
             exercises={activeExercises}
             lastCompletedStep={lastCompletedStep}
+            workoutStartedAt={startedAt}
             rpeEnabled={rpeEnabled}
             templateSetHistory={showLastSetColumn ? setHistory : undefined}
             showLastSetColumn={showLastSetColumn}
@@ -416,17 +461,68 @@ function ActiveWorkoutPage() {
           type="button"
           variant="pill"
           disabled={isSaving}
-          onClick={() => void handleFinish()}
+          onClick={() => {
+            if (completedCount === 0) {
+              setError('Validez au moins une série avant de terminer.')
+              return
+            }
+
+            setError(null)
+            setFinishConfirmOpen(true)
+          }}
         >
           {isSaving ? 'Enregistrement...' : 'Terminer la séance'}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => void cancelWorkout()}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={isSaving}
+          onClick={() => setCancelConfirmOpen(true)}
+        >
           Annuler
         </Button>
-        <Button variant="outline" size="sm" className="rounded-full" asChild>
-          <Link to="/app/exercises">Catalogue</Link>
-        </Button>
       </div>
+
+      <AlertDialog open={finishConfirmOpen} onOpenChange={setFinishConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Terminer la séance ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Votre séance sera enregistrée avec les séries validées ({completedCount}{' '}
+              série{completedCount > 1 ? 's' : ''}).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuer la séance</AlertDialogCancel>
+            <AlertDialogAction disabled={isSaving} onClick={() => void handleFinish()}>
+              Terminer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annuler la séance ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La séance en cours sera abandonnée et vos progrès ne seront pas enregistrés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuer la séance</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => {
+                setCancelConfirmOpen(false)
+                void cancelWorkout()
+              }}
+            >
+              Abandonner
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {message ? (
         <p className="text-sm text-secondary-foreground">{message}</p>
@@ -449,6 +545,16 @@ function ActiveWorkoutPage() {
           nextStepLabel={nextStepLabel}
           onAdjust={adjustRest}
           onSkip={skipRest}
+        />
+      ) : null}
+
+      {allSetsComplete ? (
+        <ActiveWorkoutFinishFab
+          disabled={isSaving}
+          onFinish={() => {
+            setError(null)
+            setFinishConfirmOpen(true)
+          }}
         />
       ) : null}
     </div>
