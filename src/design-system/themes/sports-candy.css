@@ -64,7 +64,6 @@
   );
 }
 
-.dark,
 [data-theme='sports-candy'].dark {
   --background: #18143a;
   --foreground: #eae6fa;

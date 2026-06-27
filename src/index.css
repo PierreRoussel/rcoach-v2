@@ -3,6 +3,7 @@
 @import 'tw-animate-css';
 
 @import '@/design-system/themes/sports-candy.css';
+@import '@/design-system/themes/pro.css';
 @import '@/design-system/styles/base.css';
 @import '@/design-system/styles/motion.css';
 @import '@/design-system/styles/diet-page.css';

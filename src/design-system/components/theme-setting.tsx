@@ -2,6 +2,7 @@ import { Monitor, Moon, Sun } from 'lucide-react'
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { useTheme, type ColorModePreference } from '@/design-system/theme-provider'
+import { themeSupportsColorModePreference } from '@/design-system/themes'
 
 const options: {
   value: ColorModePreference
@@ -14,7 +15,11 @@ const options: {
 ]
 
 export function ThemeSetting() {
-  const { colorModePreference, setColorModePreference } = useTheme()
+  const { themeId, colorModePreference, setColorModePreference } = useTheme()
+
+  if (!themeSupportsColorModePreference(themeId)) {
+    return null
+  }
 
   return (
     <ToggleGroup

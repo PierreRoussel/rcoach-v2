@@ -27,7 +27,9 @@ import { FormMessage } from '@/components/ui/form'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
 import { FriendsSection } from '@/components/social/FriendsSection'
 import { GoalsSection } from '@/components/goals/GoalsSection'
-import { ThemeSetting } from '@/design-system'
+import { ThemePicker, ThemeSetting } from '@/design-system'
+import { themeSupportsColorModePreference } from '@/design-system/themes'
+import { useTheme } from '@/design-system/theme-provider'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -128,6 +130,8 @@ function LogoutSection() {
 }
 
 function ProfilePage() {
+  const { themeId } = useTheme()
+  const showColorModeSetting = themeSupportsColorModePreference(themeId)
   const queryClient = useQueryClient()
   const { data: profile } = useMyProfile()
 
@@ -209,8 +213,18 @@ function ProfilePage() {
             Choisissez le theme d&apos;affichage de l&apos;application.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <Label>Theme</Label>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Palette</Label>
+            <ThemePicker />
+          </div>
+
+          {showColorModeSetting ? (
+            <div className="space-y-2">
+              <Label>Mode clair / sombre</Label>
+              <ThemeSetting />
+            </div>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -231,8 +245,6 @@ function ProfilePage() {
               <p>Voir docs/wear-os-testing.md pour le pairing emulateur.</p>
             </CardContent>
           </Card>
-
-          <ThemeSetting />
         </CardContent>
       </Card>
 

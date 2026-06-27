@@ -11,6 +11,7 @@ import {
   defaultThemeId,
   themeIds,
   themes,
+  themeSupportsColorModePreference,
   type ThemeId,
 } from '@/design-system/themes'
 
@@ -123,15 +124,33 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       colorModePreference: preferences.colorModePreference,
       colorMode: resolvedColorMode,
       setThemeId: (themeId) => {
-        setPreferences((current) => ({ ...current, themeId }))
+        setPreferences((current) => ({
+          ...current,
+          themeId,
+          ...(themes[themeId].defaultColorModePreference
+            ? { colorModePreference: themes[themeId].defaultColorModePreference! }
+            : {}),
+        }))
       },
       setColorModePreference: (colorModePreference) => {
+        if (!themeSupportsColorModePreference(preferences.themeId)) {
+          return
+        }
+
         setPreferences((current) => ({ ...current, colorModePreference }))
       },
       setColorMode: (colorMode) => {
+        if (!themeSupportsColorModePreference(preferences.themeId)) {
+          return
+        }
+
         setPreferences((current) => ({ ...current, colorModePreference: colorMode }))
       },
       toggleColorMode: () => {
+        if (!themeSupportsColorModePreference(preferences.themeId)) {
+          return
+        }
+
         setPreferences((current) => ({
           ...current,
           colorModePreference:
