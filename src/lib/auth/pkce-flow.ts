@@ -17,8 +17,17 @@ export function consumePkceVerifier(): string | null {
   return verifier
 }
 
+export function resolveOAuthRedirectOrigin() {
+  const override = import.meta.env.VITE_OAUTH_REDIRECT_ORIGIN?.trim()
+  if (override) {
+    return override.replace(/\/$/, '')
+  }
+
+  return window.location.origin
+}
+
 export function buildOAuthRedirectUrl() {
-  return `${window.location.origin}/auth/verify`
+  return `${resolveOAuthRedirectOrigin()}/auth/verify`
 }
 
 export async function startGoogleSignIn(nhost: NhostClient) {
@@ -30,7 +39,14 @@ export async function startGoogleSignIn(nhost: NhostClient) {
 }
 
 export async function redirectToGoogleSignIn(nhost: NhostClient) {
+  const redirectTo = buildOAuthRedirectUrl()
   const url = await startGoogleSignIn(nhost)
+
+  if (import.meta.env.DEV) {
+    console.info(
+      `[OAuth] redirectTo=${redirectTo} — add this exact URL in Nhost Dashboard → Authentication → URL Configuration → Allowed redirect URLs`,
+    )
+  }
 
   if (Capacitor.isNativePlatform()) {
     await Browser.open({ url, windowName: '_system' })

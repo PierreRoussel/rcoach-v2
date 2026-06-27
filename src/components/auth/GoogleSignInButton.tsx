@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { FormMessage } from '@/components/ui/form'
-import { redirectToGoogleSignIn } from '@/lib/auth/pkce-flow'
+import { buildOAuthRedirectUrl, redirectToGoogleSignIn } from '@/lib/auth/pkce-flow'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { cn } from '@/lib/utils'
 
@@ -36,9 +36,10 @@ function GoogleIcon({ className }: { className?: string }) {
 
 type GoogleSignInButtonProps = {
   className?: string
+  compact?: boolean
 }
 
-export function GoogleSignInButton({ className }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ className, compact = false }: GoogleSignInButtonProps) {
   const { nhost } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -60,7 +61,10 @@ export function GoogleSignInButton({ className }: GoogleSignInButtonProps) {
       <Button
         type="button"
         variant="outline"
-        className="h-12 w-full rounded-full border-border/80 bg-card text-foreground hover:bg-accent"
+        className={cn(
+          'w-full rounded-full border-border/80 bg-card text-foreground hover:bg-accent',
+          compact ? 'h-11' : 'h-12',
+        )}
         disabled={isSubmitting}
         onClick={() => void handleClick()}
       >
@@ -68,6 +72,12 @@ export function GoogleSignInButton({ className }: GoogleSignInButtonProps) {
         {isSubmitting ? 'Redirection...' : 'Continuer avec Google'}
       </Button>
       {error ? <FormMessage>{error}</FormMessage> : null}
+      {import.meta.env.DEV ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          URL OAuth à autoriser dans Nhost :{' '}
+          <code className="break-all font-mono text-[11px]">{buildOAuthRedirectUrl()}</code>
+        </p>
+      ) : null}
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border/80" />
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

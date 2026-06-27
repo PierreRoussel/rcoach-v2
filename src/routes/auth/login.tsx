@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { redirectIfAuthenticated } from '@/lib/auth/guards'
+import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/login')({
@@ -42,7 +42,8 @@ function LoginPage() {
         return
       }
 
-      await navigate({ to: '/app/onboarding' })
+      const destination = await resolveDefaultAuthenticatedPath()
+      await navigate({ to: destination })
     } catch {
       setError('Connexion impossible. Vérifiez vos identifiants.')
     } finally {

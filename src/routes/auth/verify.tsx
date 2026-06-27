@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
+import { resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
 import { exchangeAuthCode } from '@/lib/auth/pkce-flow'
 import { syncOAuthProfile } from '@/lib/auth/sync-oauth-profile'
 import { ensureUserProfile } from '@/lib/onboarding/ensure-user-profile'
@@ -62,7 +63,8 @@ function VerifyPage() {
           return
         }
 
-        await navigate({ to: '/app/onboarding' })
+        const destination = await resolveDefaultAuthenticatedPath()
+        await navigate({ to: destination })
       } catch (verifyError) {
         setStatus('error')
         setError(

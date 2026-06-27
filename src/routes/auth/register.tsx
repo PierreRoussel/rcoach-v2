@@ -13,7 +13,7 @@ import {
   buildEmailVerificationRedirectUrl,
   storePkceChallenge,
 } from '@/lib/auth/pkce-flow'
-import { redirectIfAuthenticated } from '@/lib/auth/guards'
+import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
 import { validateNewPassword } from '@/lib/auth/password-policy'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -65,7 +65,8 @@ function RegisterPage() {
       }
 
       if (response.body.session != null) {
-        await navigate({ to: '/app/onboarding' })
+        const destination = await resolveDefaultAuthenticatedPath()
+        await navigate({ to: destination })
         return
       }
 
@@ -92,8 +93,8 @@ function RegisterPage() {
         </p>
       }
     >
-      <GoogleSignInButton />
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <GoogleSignInButton className="space-y-3" compact />
+      <form className="space-y-3" onSubmit={handleSubmit}>
         <FormField>
           <Label htmlFor="displayName">Nom affiché</Label>
           <Input
@@ -101,7 +102,7 @@ function RegisterPage() {
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             placeholder="Leo"
-            className="h-12"
+            className="h-11"
           />
         </FormField>
         <FormField>
@@ -113,7 +114,7 @@ function RegisterPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
-            className="h-12"
+            className="h-11"
           />
         </FormField>
         <PasswordField
@@ -124,12 +125,15 @@ function RegisterPage() {
           autoComplete="new-password"
           required
           minLength={8}
+          inputClassName="h-11"
         />
-        {password ? <PasswordRequirementsList validation={validation} password={password} /> : null}
+        {password ? (
+          <PasswordRequirementsList validation={validation} password={password} compact />
+        ) : null}
         {error ? <FormMessage>{error}</FormMessage> : null}
         {success ? <p className="text-sm text-foreground">{success}</p> : null}
         <Button
-          className="h-12 w-full rounded-full"
+          className="h-11 w-full rounded-full"
           variant="pill"
           type="submit"
           disabled={!canSubmit}

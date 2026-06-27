@@ -11,7 +11,24 @@ export function requireAuth() {
 
 export function redirectIfAuthenticated() {
   if (nhost.getUserSession()) {
-    throw redirect({ to: '/app/onboarding' })
+    throw redirect({ to: '/app' })
+  }
+}
+
+export async function resolveDefaultAuthenticatedPath(): Promise<'/app' | '/app/onboarding'> {
+  const session = nhost.getUserSession()
+  const userId = session?.user?.id
+
+  if (!userId) {
+    return '/app/onboarding'
+  }
+
+  try {
+    const profile = await fetchMyProfile(nhost, userId)
+    return isAppOnboardingComplete(profile) ? '/app' : '/app/onboarding'
+  } catch {
+    // Avoid locking out returning users when profile fetch fails transiently.
+    return '/app'
   }
 }
 
@@ -48,8 +65,6 @@ export async function requireAppOnboardingComplete() {
     if (isRouterRedirect(error)) {
       throw error
     }
-
-    throw redirect({ to: '/app/onboarding' })
   }
 }
 

@@ -23,7 +23,7 @@ export function AuthMarketingHero({
   compact = false,
 }: AuthMarketingHeroProps) {
   const content = AUTH_MARKETING_CONTENT[variant]
-  const showMockups = variant !== 'recovery'
+  const showMockups = variant !== 'recovery' && variant !== 'register'
 
   return (
     <div className={cn('relative flex flex-col items-center text-center', className)}>
@@ -46,7 +46,11 @@ export function AuthMarketingHero({
       <p
         className={cn(
           'relative z-10 max-w-xs text-muted-foreground',
-          compact ? 'mt-1 text-xs leading-snug' : 'mt-2 text-sm leading-relaxed',
+          compact
+            ? variant === 'register'
+              ? 'mt-0.5 line-clamp-2 text-[11px] leading-snug'
+              : 'mt-1 text-xs leading-snug'
+            : 'mt-2 text-sm leading-relaxed',
         )}
       >
         {content.description}
