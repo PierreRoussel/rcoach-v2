@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { BarChart2, ChevronDown, GripVertical, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
+import { BarChart2, ChevronDown, GripVertical, Info, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 
@@ -62,6 +62,7 @@ type SortableExerciseListProps = {
   onAddSet?: (index: number) => void
   onReplace?: (index: number, exercise: Exercise) => void
   onViewStats?: (index: number) => void
+  onViewDetails?: (index: number) => void
   renderBelowTitle?: (index: number) => ReactNode
 }
 
@@ -137,6 +138,7 @@ function ExerciseActionsMenu({
   onOpenReorder,
   onReplaceRequest,
   onViewStats,
+  onViewDetails,
 }: {
   index: number
   exercises: ActiveExerciseEntry[]
@@ -146,6 +148,7 @@ function ExerciseActionsMenu({
   onOpenReorder?: () => void
   onReplaceRequest?: (index: number) => void
   onViewStats?: (index: number) => void
+  onViewDetails?: (index: number) => void
 }) {
   const exercise = exercises[index]
   const partnerOptions = buildSupersetPartnerOptions(exercises, index)
@@ -156,7 +159,8 @@ function ExerciseActionsMenu({
     !onOpenReorder &&
     !onRemove &&
     !onReplaceRequest &&
-    !onViewStats
+    !onViewStats &&
+    !onViewDetails
   ) {
     return null
   }
@@ -187,6 +191,12 @@ function ExerciseActionsMenu({
             Remplacer
           </DropdownMenuItem>
         ) : null}
+        {onViewDetails ? (
+          <DropdownMenuItem onClick={() => onViewDetails(index)}>
+            <Info className="size-4" />
+            Détails de l&apos;exercice
+          </DropdownMenuItem>
+        ) : null}
         {onViewStats ? (
           <DropdownMenuItem onClick={() => onViewStats(index)}>
             <BarChart2 className="size-4" />
@@ -194,7 +204,7 @@ function ExerciseActionsMenu({
           </DropdownMenuItem>
         ) : null}
         {hasSupersetActions &&
-        (onOpenReorder || onReplaceRequest || onViewStats) ? (
+        (onOpenReorder || onReplaceRequest || onViewStats || onViewDetails) ? (
           <DropdownMenuSeparator />
         ) : null}
         {hasSupersetActions && partnerOptions.length > 0 ? (
@@ -248,7 +258,7 @@ function ExerciseActionsMenu({
         ) : null}
         {onRemove ? (
           <>
-            {onOpenReorder || hasSupersetActions || onReplaceRequest || onViewStats ? (
+            {onOpenReorder || hasSupersetActions || onReplaceRequest || onViewStats || onViewDetails ? (
               <DropdownMenuSeparator />
             ) : null}
             <DropdownMenuItem
@@ -282,6 +292,7 @@ function SortableExerciseItem({
   onAddSet,
   onReplaceRequest,
   onViewStats,
+  onViewDetails,
   renderSetsContent,
   renderBelowTitle,
   supersetBadge,
@@ -302,6 +313,7 @@ function SortableExerciseItem({
   onAddSet?: (index: number) => void
   onReplaceRequest?: (index: number) => void
   onViewStats?: (index: number) => void
+  onViewDetails?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
   renderBelowTitle?: (index: number) => ReactNode
   supersetBadge?: number
@@ -360,11 +372,7 @@ function SortableExerciseItem({
           {renderBelowTitle?.(index)}
           {showSetCount ? (
             <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {exercise.muscleGroup ?? exercise.equipment ?? '—'}
-            </p>
-          )}
+          ) : null}
         </button>
         {hasSetsSection ? (
           <CollapsibleTrigger asChild>
@@ -388,6 +396,7 @@ function SortableExerciseItem({
           onOpenReorder={onOpenReorder}
           onReplaceRequest={onReplaceRequest}
           onViewStats={onViewStats}
+          onViewDetails={onViewDetails}
         />
         {showDeleteButton ? (
           <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
@@ -398,8 +407,7 @@ function SortableExerciseItem({
       {hasSetsSection ? (
         <CollapsibleContent
           className={cn(
-            'border-t border-border/60',
-            embedded ? 'px-0 pb-0 pt-0' : 'px-3 py-3',
+            embedded ? 'px-0 pb-0 pt-0' : 'border-t border-border/60 px-3 py-3',
           )}
         >
           {renderSetsContent(index)}
@@ -488,6 +496,7 @@ export function SortableExerciseList({
   onAddSet,
   onReplace,
   onViewStats,
+  onViewDetails,
   renderBelowTitle,
 }: SortableExerciseListProps) {
   const sensors = useSortableSensors()
@@ -544,6 +553,7 @@ export function SortableExerciseList({
         onAddSet={onAddSet}
         onReplaceRequest={onReplace ? handleReplaceRequest : undefined}
         onViewStats={onViewStats}
+        onViewDetails={onViewDetails}
         renderSetsContent={renderSetsContent}
         renderBelowTitle={renderBelowTitle}
         supersetBadge={isSplitSuperset(exercises, index)}

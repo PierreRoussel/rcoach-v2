@@ -45,8 +45,8 @@ export function ExerciseStatsDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92vh] overflow-y-auto rounded-t-2xl px-4 pb-8">
-        <DrawerHeader className="text-left">
+      <DrawerContent className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl px-0">
+        <DrawerHeader className="shrink-0 px-4 pb-2 text-left">
           <DrawerTitle className="font-display font-black">
             {displayExerciseName || 'Statistiques'}
           </DrawerTitle>
@@ -56,8 +56,8 @@ export function ExerciseStatsDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
-        {exercise ? (
-          <div className="mt-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[calc(2rem+env(safe-area-inset-bottom))]">
+          {exercise ? (
             <ExerciseStatsPanel
               exerciseId={exercise.exerciseId}
               fallbackName={exercise.exerciseName}
@@ -65,9 +65,11 @@ export function ExerciseStatsDrawer({
               fallbackEquipment={exercise.equipment}
               period={period}
               onPeriodChange={setPeriod}
+              layout="drawer"
+              showSummaryLine={false}
             />
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </DrawerContent>
     </Drawer>
   )

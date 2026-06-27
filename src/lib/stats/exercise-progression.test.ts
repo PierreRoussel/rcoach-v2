@@ -87,6 +87,20 @@ describe('buildExerciseTimeline', () => {
       timeline[0]?.highRpeBest1Rm ?? 0,
     )
   })
+
+  it('shows reps for bodyweight sessions without load', () => {
+    const workouts = [
+      workout('1', '2026-06-01T10:00:00Z', 'ex-a', [
+        { set_index: 0, weight_kg: null, reps: 12, set_type: 'normal', rpe: 9 },
+        { set_index: 1, weight_kg: null, reps: 10, set_type: 'normal', rpe: 8 },
+      ]),
+    ]
+
+    const timeline = buildExerciseTimeline(workouts, 'ex-a', 'all')
+
+    expect(timeline[0]?.topSetLabel).toBe('12 reps @9')
+    expect(timeline[0]?.best1Rm).toBeNull()
+  })
 })
 
 describe('compareHighRpePerformance', () => {

@@ -10,6 +10,8 @@ import { useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
+import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
+import { cacheFood } from '@/lib/nutrition/offline-food'
 import { mapOffDraftToFoodInsert } from '@/lib/nutrition/open-food-facts'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { toDateKey } from '@/lib/nutrition/dates'
@@ -64,6 +66,13 @@ function NewFoodPage() {
   }, [search.barcode])
 
   async function prefillFromBarcode(code: string) {
+    const existingFood = await findFoodByBarcodeInDatabase(nhost, code)
+    if (existingFood) {
+      await cacheFood(existingFood)
+      setCreatedFood(existingFood)
+      return
+    }
+
     const draft = await resolveOffDraftFromBarcode(nhost, code)
     if (!draft) {
       setBarcode(code)

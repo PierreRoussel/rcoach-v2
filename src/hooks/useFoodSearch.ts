@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { cacheFood, searchCachedFoods } from '@/lib/nutrition/offline-food'
+import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
 import {
   OFF_CATALOG_DB_MIN_LENGTH,
@@ -43,6 +44,24 @@ export type FoodSearchResult = {
 
 export type FoodSearchOptions = {
   searchOffExternally?: boolean
+}
+
+export function mapOffDraftToFoodSearchResult(draft: OffFoodDraft): FoodSearchResult {
+  return {
+    id: `off:${draft.offProductId}`,
+    name: draft.name,
+    brand: draft.brand,
+    calories: draft.calories,
+    carbsG: draft.carbsG,
+    proteinG: draft.proteinG,
+    fatG: draft.fatG,
+    servingSizeG: draft.servingSizeG,
+    servingLabel: draft.servingLabel,
+    source: 'open_food_facts_live',
+    barcode: draft.barcode,
+    offProductId: draft.offProductId,
+    offDraft: draft,
+  }
 }
 
 function mapDbFood(food: Food): FoodSearchResult {
@@ -121,8 +140,14 @@ export function useFoodSearch(
     queryKey: ['food-search-barcode', trimmed],
     enabled: enabled && isBarcode && isOnline,
     queryFn: async () => {
+      const food = await findFoodByBarcodeInDatabase(nhost, trimmed)
+      if (food) {
+        await cacheFood(food)
+        return [mapDbFood(food)]
+      }
+
       const draft = await resolveOffDraftFromBarcode(nhost, trimmed)
-      return draft ? [draft] : []
+      return draft ? [mapOffDraftToFoodSearchResult(draft)] : []
     },
     staleTime: DB_SEARCH_STALE_MS,
     retry: false,
@@ -137,8 +162,23 @@ export function useFoodSearch(
   })
 
   const results = useMemo(() => {
-    const merged = new Map<string, FoodSearchResult>()
     const tokens = extractFoodSearchTokens(trimmed)
+
+    if (isBarcode) {
+      return sortFoodSearchResultsGrouped(
+        barcodeQuery.data ?? [],
+        trimmed,
+        tokens,
+        (result) => ({
+          source: result.source,
+          name: result.name,
+          brand: result.brand,
+          barcode: result.barcode,
+        }),
+      )
+    }
+
+    const merged = new Map<string, FoodSearchResult>()
 
     for (const food of dbQuery.data ?? []) {
       const key = food.ciqual_code
@@ -147,28 +187,12 @@ export function useFoodSearch(
       merged.set(key, mapDbFood(food))
     }
 
-    const offDrafts = isBarcode ? (barcodeQuery.data ?? []) : (offQuery.data ?? [])
-
-    for (const draft of offDrafts) {
+    for (const draft of offQuery.data ?? []) {
       if (merged.has(draft.offProductId)) {
         continue
       }
 
-      merged.set(draft.offProductId, {
-        id: `off:${draft.offProductId}`,
-        name: draft.name,
-        brand: draft.brand,
-        calories: draft.calories,
-        carbsG: draft.carbsG,
-        proteinG: draft.proteinG,
-        fatG: draft.fatG,
-        servingSizeG: draft.servingSizeG,
-        servingLabel: draft.servingLabel,
-        source: 'open_food_facts_live',
-        barcode: draft.barcode,
-        offProductId: draft.offProductId,
-        offDraft: draft,
-      })
+      merged.set(draft.offProductId, mapOffDraftToFoodSearchResult(draft))
     }
 
     return sortFoodSearchResultsGrouped(

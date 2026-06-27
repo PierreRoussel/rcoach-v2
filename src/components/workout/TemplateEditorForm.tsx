@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Play, Save } from 'lucide-react'
 
+import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import {
+  ExerciseStatsDrawer,
+  type ExerciseStatsDrawerTarget,
+} from '@/components/stats/ExerciseStatsDrawer'
 import { TemplateEditorMenu } from '@/components/workout/TemplateEditorMenu'
 import { TemplateExerciseSetsEditor } from '@/components/workout/TemplateExerciseSetsEditor'
 import { Button } from '@/components/ui/button'
@@ -57,6 +62,10 @@ export function TemplateEditorForm({
   const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
   const [activeIndex, setActiveIndex] = useState(0)
   const [reorderOpen, setReorderOpen] = useState(false)
+  const [detailExercise, setDetailExercise] = useState<ActiveExerciseEntry | null>(null)
+  const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(
+    null,
+  )
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -271,6 +280,25 @@ export function TemplateEditorForm({
             embedded
             onOpenReorder={() => setReorderOpen(true)}
             onAddSet={handleAddSet}
+            onViewDetails={(index) => {
+              const exercise = activeEntries[index]
+              if (exercise) {
+                setDetailExercise(exercise)
+              }
+            }}
+            onViewStats={(index) => {
+              const exercise = activeEntries[index]
+              if (!exercise) {
+                return
+              }
+
+              setStatsExercise({
+                exerciseId: exercise.exerciseId,
+                exerciseName: exercise.exerciseName,
+                muscleGroup: exercise.muscleGroup,
+                equipment: exercise.equipment,
+              })
+            }}
             renderSetsContent={(index) => (
               <TemplateExerciseSetsEditor
                 exercise={exercises[index]!}
@@ -291,6 +319,26 @@ export function TemplateEditorForm({
           </div>
         </CardContent>
       </Card>
+
+      <ExerciseDetailDrawer
+        open={detailExercise != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailExercise(null)
+          }
+        }}
+        exercise={detailExercise}
+      />
+
+      <ExerciseStatsDrawer
+        open={statsExercise != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatsExercise(null)
+          }
+        }}
+        exercise={statsExercise}
+      />
 
       {message ? <FormMessage>{message}</FormMessage> : null}
       {error ? (

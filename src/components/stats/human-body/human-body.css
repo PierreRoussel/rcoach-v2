@@ -1,5 +1,7 @@
 .human-body-heatmap {
-  --human-body-outline: color-mix(in srgb, var(--border) 80%, var(--muted));
+  /* ~MUI grey[400] — visible on light card backgrounds */
+  --human-body-outline: color-mix(in srgb, var(--muted-foreground) 48%, var(--muted));
+  --human-body-silhouette: color-mix(in srgb, var(--muted) 62%, var(--card));
 }
 
 .human-body-heatmap .human-body-svg {
@@ -10,7 +12,17 @@
 
 .human-body-heatmap .human-body-svg #body-back > path,
 .human-body-heatmap .human-body-svg #body-front > path {
-  fill: color-mix(in srgb, var(--muted) 45%, var(--card));
+  fill: var(--human-body-silhouette);
+}
+
+.human-body-heatmap .human-body-svg #outline-back path,
+.human-body-heatmap .human-body-svg #outline-front path {
+  fill: var(--human-body-outline);
+}
+
+.human-body-heatmap .human-body-svg #outline-back,
+.human-body-heatmap .human-body-svg #outline-front {
+  pointer-events: none;
 }
 
 .human-body-heatmap .muscle {
@@ -26,4 +38,12 @@
 .human-body-heatmap .muscle:hover path {
   stroke: color-mix(in srgb, var(--foreground) 25%, transparent);
   stroke-width: 0.6;
+}
+
+.human-body-heatmap--compact .human-body-svg {
+  max-height: 9.5rem;
+}
+
+.human-body-heatmap--compact .rounded-3xl {
+  border-radius: 1.25rem;
 }

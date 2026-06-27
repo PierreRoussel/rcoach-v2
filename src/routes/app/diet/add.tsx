@@ -12,12 +12,16 @@ import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useFrequentFoods, type FrequentFood } from '@/hooks/useFrequentFoods'
 import { useRecentFoods } from '@/hooks/useRecentFoods'
-import { useFoodSearch, OFF_MIN_QUERY_LENGTH, type FoodSearchResult } from '@/hooks/useFoodSearch'
+import { useFoodSearch, OFF_MIN_QUERY_LENGTH, mapOffDraftToFoodSearchResult, type FoodSearchResult } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
+import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
+import { cacheFood } from '@/lib/nutrition/offline-food'
+import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food, MealType } from '@/lib/nutrition/types'
+import { useAuth } from '@/lib/nhost/AuthProvider'
 
 const addSearchSchema = z.object({
   date: z.string().optional(),
@@ -89,9 +93,10 @@ function AddFoodPage() {
     enabled: shouldLoadMealLogFoods,
   })
   const { toggleFavorite } = useFoodFavoriteMutations()
-  const { ensureOffFood, lookupBarcode } = useFoodMutations()
+  const { ensureOffFood } = useFoodMutations()
   const { addEntry, addQuickEntry } = useMealLogMutations()
   const { requestScan, scanner } = useBarcodeScanner()
+  const { nhost } = useAuth()
 
   useEffect(() => {
     setSearchOffExternally(false)
@@ -287,9 +292,16 @@ function AddFoodPage() {
         return
       }
 
-      const food = await lookupBarcode(barcode)
-      if (food) {
-        setSelectedFood(food)
+      const existingFood = await findFoodByBarcodeInDatabase(nhost, barcode)
+      if (existingFood) {
+        await cacheFood(existingFood)
+        await handleSelect(mapFoodToSearchResult(existingFood))
+        return
+      }
+
+      const draft = await resolveOffDraftFromBarcode(nhost, barcode)
+      if (draft) {
+        await handleSelect(mapOffDraftToFoodSearchResult(draft))
         return
       }
 

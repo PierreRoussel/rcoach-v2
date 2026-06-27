@@ -30,6 +30,7 @@ type ExerciseStatsPanelProps = {
   period: StatsPeriod
   onPeriodChange: (period: StatsPeriod) => void
   showSummaryLine?: boolean
+  layout?: 'full' | 'drawer'
 }
 
 export function ExerciseStatsPanel({
@@ -40,7 +41,9 @@ export function ExerciseStatsPanel({
   period,
   onPeriodChange,
   showSummaryLine = true,
+  layout = 'full',
 }: ExerciseStatsPanelProps) {
+  const isDrawerLayout = layout === 'drawer'
   const { data: profile } = useMyProfile()
   const rpeEnabled = profile?.rpe_enabled ?? false
   const { workouts, isLoading, isLoadingAll, error } = useStatsWorkouts(
@@ -129,7 +132,9 @@ export function ExerciseStatsPanel({
         </p>
       ) : null}
 
-      <ExercisePeriodSelector value={period} onChange={onPeriodChange} />
+      {!isDrawerLayout ? (
+        <ExercisePeriodSelector value={period} onChange={onPeriodChange} />
+      ) : null}
 
       {catalogEntry == null ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/15 px-4 py-6 text-center">
@@ -139,38 +144,42 @@ export function ExerciseStatsPanel({
         </div>
       ) : (
         <>
-          <ExerciseLoadComparisonCard comparison={loadComparison} />
+          {!isDrawerLayout ? (
+            <>
+              <ExerciseLoadComparisonCard comparison={loadComparison} />
 
-          <Card className="rounded-2xl border-border">
-            <CardHeader>
-              <CardTitle className="font-display font-black">
-                Performance actuelle
-              </CardTitle>
-              <CardDescription>
-                Meilleure série sur la période sélectionnée.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="font-data text-2xl font-bold">
-                {bestPerformance.label ?? '—'}
-              </p>
-              {bestPerformance.date ? (
-                <p className="text-xs text-muted-foreground">
-                  Pic de la période · {bestPerformance.date}
-                </p>
-              ) : null}
-              {bestPerformance.best1Rm != null ? (
-                <Pill tone="solid-accent">
-                  {Math.round(bestPerformance.best1Rm)} kg est. 1RM
-                </Pill>
-              ) : null}
-            </CardContent>
-          </Card>
+              <Card className="rounded-2xl border-border">
+                <CardHeader>
+                  <CardTitle className="font-display font-black">
+                    Performance actuelle
+                  </CardTitle>
+                  <CardDescription>
+                    Meilleure série sur la période sélectionnée.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="font-data text-2xl font-bold">
+                    {bestPerformance.label ?? '—'}
+                  </p>
+                  {bestPerformance.date ? (
+                    <p className="text-xs text-muted-foreground">
+                      Pic de la période · {bestPerformance.date}
+                    </p>
+                  ) : null}
+                  {bestPerformance.best1Rm != null ? (
+                    <Pill tone="solid-accent">
+                      {Math.round(bestPerformance.best1Rm)} kg est. 1RM
+                    </Pill>
+                  ) : null}
+                </CardContent>
+              </Card>
 
-          <ExerciseHighRpeCard
-            comparison={highRpeComparison}
-            rpeEnabled={rpeEnabled}
-          />
+              <ExerciseHighRpeCard
+                comparison={highRpeComparison}
+                rpeEnabled={rpeEnabled}
+              />
+            </>
+          ) : null}
 
           <Card className="rounded-2xl border-border">
             <CardHeader>

@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ActiveSetOptionsDrawer } from '@/components/workout/ActiveSetOptionsDrawer'
+import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
 import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
@@ -110,6 +111,7 @@ export function ActiveWorkoutCircuit({
   const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(
     null,
   )
+  const [detailExercise, setDetailExercise] = useState<ActiveExerciseEntry | null>(null)
   const [setOptions, setSetOptions] = useState<{
     exerciseIndex: number
     setIndex: number
@@ -291,6 +293,14 @@ export function ActiveWorkoutCircuit({
             equipment: exercise.equipment,
           })
         }}
+        onViewDetails={(index) => {
+          const exercise = exercises[index]
+          if (!exercise) {
+            return
+          }
+
+          setDetailExercise(exercise)
+        }}
         onAddSet={onAddPlannedSet}
         showSetCount={false}
         dragHandle="subtle"
@@ -398,6 +408,16 @@ export function ActiveWorkoutCircuit({
           }
         }}
         exercise={statsExercise}
+      />
+
+      <ExerciseDetailDrawer
+        open={detailExercise != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailExercise(null)
+          }
+        }}
+        exercise={detailExercise}
       />
 
       <ExerciseReorderDrawer

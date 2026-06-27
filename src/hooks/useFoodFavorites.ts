@@ -2,13 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   DELETE_FOOD_FAVORITE,
-  GET_FOOD_BY_BARCODE,
   GET_FOOD_BY_OFF_ID,
   INSERT_FOOD,
   INSERT_FOOD_FAVORITE,
   LIST_FOOD_FAVORITES,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
 import type { Food } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -139,17 +139,10 @@ export function useFoodMutations() {
       return null
     }
 
-    try {
-      const existing = await graphqlRequest<{ foods: Food[] }>(nhost, GET_FOOD_BY_BARCODE, {
-        barcode: normalized,
-      })
-
-      if (existing.foods[0]) {
-        await cacheFood(existing.foods[0])
-        return existing.foods[0]
-      }
-    } catch {
-      // Fall back to live OFF lookup.
+    const existing = await findFoodByBarcodeInDatabase(nhost, normalized)
+    if (existing) {
+      await cacheFood(existing)
+      return existing
     }
 
     const draft = await getOffProductByBarcode(normalized)

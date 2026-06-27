@@ -1,19 +1,43 @@
 import type { Ref } from 'react'
 
-export type HumanBodySvgProps = {
-  svgRef?: Ref<SVGSVGElement>
+import { cn } from '@/lib/utils'
+
+export type HumanBodySide = 'both' | 'front' | 'back'
+
+const VIEWBOX_BY_SIDE: Record<HumanBodySide, string> = {
+  both: '0 0 500 600',
+  front: '0 0 250 600',
+  back: '250 0 250 600',
 }
 
-export function HumanBodySvg({ svgRef }: HumanBodySvgProps) {
+export type HumanBodySvgProps = {
+  svgRef?: Ref<SVGSVGElement>
+  className?: string
+  side?: HumanBodySide
+}
+
+export function HumanBodySvg({
+  svgRef,
+  className,
+  side = 'both',
+}: HumanBodySvgProps) {
+  const ariaLabel =
+    side === 'front'
+      ? 'Silhouette musculaire de face'
+      : side === 'back'
+        ? 'Silhouette musculaire de dos'
+        : 'Carte musculaire face et dos'
+
   return (
     <svg
       ref={svgRef}
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 500 600"
+      viewBox={VIEWBOX_BY_SIDE[side]}
+      preserveAspectRatio="xMidYMid meet"
       fill="none"
-      className="human-body-svg"
+      className={cn('human-body-svg', className)}
       role="img"
-      aria-label="Carte musculaire face et dos"
+      aria-label={ariaLabel}
     >
       <g id="body">
         <g id="back">

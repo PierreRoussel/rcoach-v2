@@ -45,6 +45,40 @@ export function bestSetByOneRm(sets: WorkoutSet[]): WorkoutSet | null {
   return best
 }
 
+export function bestHighlightSet(sets: WorkoutSet[]): WorkoutSet | null {
+  const weightedBest = bestSetByOneRm(sets)
+  if (weightedBest) {
+    return weightedBest
+  }
+
+  const workingSets = sets.filter(isWorkingSet)
+  if (workingSets.length === 0) {
+    return null
+  }
+
+  let best: WorkoutSet | null = null
+  let bestScore = -1
+
+  for (const set of workingSets) {
+    const weight = set.weight_kg ?? 0
+    if (weight > 0) {
+      continue
+    }
+
+    const reps = set.reps ?? 0
+    const duration = set.duration_seconds ?? 0
+    const distance = set.distance_km ?? 0
+    const score = reps > 0 ? reps : duration > 0 ? duration : distance
+
+    if (score > bestScore) {
+      bestScore = score
+      best = set
+    }
+  }
+
+  return best
+}
+
 export function bestHighRpeSet(sets: WorkoutSet[]): WorkoutSet | null {
   const candidates = sets.filter(
     (set) => isWorkingSet(set) && isHighRpeSet(set.rpe),

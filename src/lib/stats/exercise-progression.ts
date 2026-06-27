@@ -17,6 +17,7 @@ import {
   bestHighRpeOneRm,
   bestHighRpeSet,
   bestSetByOneRm,
+  bestHighlightSet,
   buildHighRpeComparison,
   isWorkingSet,
   setEstimatedOneRm,
@@ -207,7 +208,7 @@ function buildTimelinePoint(
   sets: WorkoutSet[],
 ): ExerciseTimelinePoint {
   const workingSets = sets.filter(isWorkingSet)
-  const bestSet = bestSetByOneRm(workingSets)
+  const bestSet = bestHighlightSet(workingSets)
 
   return {
     date: workout.started_at,
@@ -272,7 +273,7 @@ export function buildExerciseCatalog(
 
   return [...byExercise.values()]
     .map((entry) => {
-      const bestSet = bestSetByOneRm(entry.lastSets.filter(isWorkingSet))
+      const bestSet = bestHighlightSet(entry.lastSets.filter(isWorkingSet))
 
       return {
         exerciseId: entry.exerciseId,
