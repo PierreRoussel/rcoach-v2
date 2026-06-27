@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { z } from 'zod'
 
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { Button } from '@/components/ui/button'
 import { FormField, FormMessage } from '@/components/ui/form'
@@ -64,6 +65,7 @@ function LoginPage() {
         </p>
       }
     >
+      <GoogleSignInButton />
       <form className="space-y-4" onSubmit={handleSubmit}>
         <FormField>
           <Label htmlFor="email">Email</Label>

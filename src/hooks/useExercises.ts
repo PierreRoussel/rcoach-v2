@@ -11,6 +11,7 @@ import {
   summarizePerformance,
   type PerformanceSummary,
 } from '@/lib/workout/progressive-overload'
+import { requestExerciseContentEnrichment } from '@/lib/workout/enrich-exercise-content'
 import {
   exerciseNameMatchesQuery,
   translateExerciseName,
@@ -57,6 +58,7 @@ export function useCreateExercise() {
             equipment: input.equipment,
             is_public: input.is_public ?? false,
             tracking_mode: input.tracking_mode ?? 'auto',
+            content_status: 'pending',
           },
         },
       )
@@ -64,6 +66,7 @@ export function useCreateExercise() {
     },
     onSuccess: (exercise) => {
       if (exercise) {
+        void requestExerciseContentEnrichment(nhost, exercise.id)
         queryClient.setQueryData<Exercise[]>(['exercises', 'all'], (current) => {
           if (!current) {
             return [exercise]
@@ -75,6 +78,8 @@ export function useCreateExercise() {
 
           return [exercise, ...current]
         })
+
+        void queryClient.invalidateQueries({ queryKey: ['exercise-content', exercise.id] })
       }
 
       void queryClient.invalidateQueries({ queryKey: ['exercises'] })

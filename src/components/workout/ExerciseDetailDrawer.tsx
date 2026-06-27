@@ -2,6 +2,8 @@ import { Dumbbell } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 
 import { ExerciseBodyMap } from '@/components/workout/ExerciseBodyMap'
+import { ExerciseCoachingText } from '@/components/workout/ExerciseCoachingText'
+import { ExerciseDemoPlayer } from '@/components/workout/ExerciseDemoPlayer'
 import {
   Drawer,
   DrawerContent,
@@ -10,9 +12,15 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { Pill } from '@/design-system'
+import { useExerciseContent } from '@/hooks/useExerciseContent'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+import {
+  buildTemplateCoachingCues,
+  resolveExerciseCoaching,
+  type ExerciseContentStatus,
+} from '@/lib/workout/exercise-coaching'
 import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
 
 export type ExerciseDetailDrawerTarget = Pick<
@@ -49,6 +57,7 @@ export function ExerciseDetailDrawer({
   exercise,
 }: ExerciseDetailDrawerProps) {
   const displayExerciseName = useExerciseDisplayName(exercise?.exerciseName)
+  const { data: content, isLoading } = useExerciseContent(exercise?.exerciseId, open)
 
   const muscleLabel = useMemo(() => {
     if (!exercise?.muscleGroup) {
@@ -60,6 +69,27 @@ export function ExerciseDetailDrawer({
 
   const equipmentLabel = formatEquipmentLabel(exercise?.equipment)
 
+  const coaching = useMemo(() => {
+    const fallback = buildTemplateCoachingCues({
+      muscleGroup: content?.muscle_group ?? exercise?.muscleGroup,
+      equipment: content?.equipment ?? exercise?.equipment,
+      trackingMode: content?.tracking_mode,
+    })
+
+    if (!content && !isLoading) {
+      return fallback
+    }
+
+    return resolveExerciseCoaching(
+      content?.coaching_cues,
+      content?.description_fr,
+      fallback,
+    )
+  }, [content, exercise?.equipment, exercise?.muscleGroup, isLoading])
+
+  const contentStatus = (content?.content_status ??
+    (isLoading ? 'pending' : 'partial')) as ExerciseContentStatus
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[88vh] overflow-y-auto rounded-t-2xl px-4 pb-8">
@@ -68,12 +98,22 @@ export function ExerciseDetailDrawer({
             {displayExerciseName || "Détails de l'exercice"}
           </DrawerTitle>
           <DrawerDescription>
-            Zone musculaire et équipement.
+            Démonstration, consignes d&apos;exécution, zone musculaire et équipement.
           </DrawerDescription>
         </DrawerHeader>
 
         {exercise ? (
           <div className="mt-2 space-y-5">
+            <ExerciseDemoPlayer
+              demoFileId={content?.demo_file_id}
+              posterFileId={content?.demo_poster_file_id}
+              muscleGroup={content?.muscle_group ?? exercise.muscleGroup}
+              contentStatus={contentStatus}
+              exerciseName={displayExerciseName || exercise.exerciseName}
+            />
+
+            <ExerciseCoachingText coaching={coaching} />
+
             <ExerciseBodyMap muscleGroup={exercise.muscleGroup} />
 
             <div className="grid gap-4 sm:grid-cols-2">

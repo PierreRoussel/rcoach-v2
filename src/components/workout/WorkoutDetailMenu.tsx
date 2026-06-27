@@ -47,6 +47,7 @@ function openDeleteDialogAfterMenuClose(
 
 type WorkoutMenuData = (WorkoutDetail | WorkoutSummary) & {
   share_token?: string | null
+  workout_template_id?: string | null
 }
 
 type WorkoutDetailMenuProps = {
@@ -60,10 +61,11 @@ export function WorkoutDetailMenu({
 }: WorkoutDetailMenuProps) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const { data: existingTemplate } = useTemplateBySourceWorkout(
+  const { data: savedTemplate } = useTemplateBySourceWorkout(
     workout.id,
-    menuOpen,
+    menuOpen && !workout.workout_template_id,
   )
+  const linkedTemplateId = workout.workout_template_id ?? savedTemplate?.id ?? null
   const enableShare = useEnableWorkoutShare()
   const createTemplate = useCreateTemplateFromWorkout()
   const deleteWorkout = useDeleteWorkout()
@@ -180,7 +182,7 @@ export function WorkoutDetailMenu({
               to="/app/planning"
               search={buildPlanningSearchParams({
                 title: workout.title,
-                templateId: existingTemplate?.id,
+                templateId: linkedTemplateId ?? undefined,
                 openScheduleForm: true,
               })}
             >
@@ -188,16 +190,16 @@ export function WorkoutDetailMenu({
               Programmer une recurrence
             </Link>
           </DropdownMenuItem>
-          {existingTemplate ? (
+          {linkedTemplateId ? (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link
                   to="/app/sessions/$templateId"
-                  params={{ templateId: existingTemplate.id }}
+                  params={{ templateId: linkedTemplateId }}
                 >
                   <BookmarkPlus className="size-4" />
-                  Voir le modèle
+                  Consulter le modèle
                 </Link>
               </DropdownMenuItem>
             </>

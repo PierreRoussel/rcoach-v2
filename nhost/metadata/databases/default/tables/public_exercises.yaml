@@ -25,6 +25,13 @@ select_permissions:
         - is_public
         - created_at
         - tracking_mode
+        - description_fr
+        - description_en
+        - coaching_cues
+        - demo_file_id
+        - demo_poster_file_id
+        - content_status
+        - content_source
       filter:
         _or:
           - is_public:
@@ -38,6 +45,11 @@ select_permissions:
         - name
         - muscle_group
         - equipment
+        - description_fr
+        - coaching_cues
+        - demo_file_id
+        - demo_poster_file_id
+        - content_status
       filter:
         workout_exercises:
           workout:
@@ -57,6 +69,7 @@ insert_permissions:
         - equipment
         - is_public
         - tracking_mode
+        - content_status
 update_permissions:
   - role: user
     permission:

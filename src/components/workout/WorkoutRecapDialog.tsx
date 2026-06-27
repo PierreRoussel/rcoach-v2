@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { StatCard } from '@/design-system'
+import { HumanBodyHeatmap } from '@/components/stats/BodyHeatmap'
 import { WorkoutPersonalRecordsList } from '@/components/workout/WorkoutPersonalRecordsList'
 import type { HeartRateRecap } from '@/lib/health/read-heart-rate-summary'
 import {
@@ -28,6 +29,7 @@ export type WorkoutRecapData = {
   estimatedCaloriesKcal: number
   records: PersonalRecordHit[]
   heartRate?: HeartRateRecap | null
+  bodyIntensities: Record<string, number>
 }
 
 type WorkoutRecapDialogProps = {
@@ -70,6 +72,7 @@ export function WorkoutRecapDialog({
 
   const duration = formatWorkoutDuration(recap.startedAt, recap.endedAt)
   const headline = recapHeadline(recap.records.length)
+  const hasBodyMap = Object.values(recap.bodyIntensities).some((value) => value > 0)
 
   function handleContinue() {
     onOpenChange(false)
@@ -123,6 +126,15 @@ export function WorkoutRecapDialog({
             className="p-3"
           />
         </div>
+
+        {hasBodyMap ? (
+          <HumanBodyHeatmap
+            intensities={recap.bodyIntensities}
+            compact
+            showLegend={false}
+            legendVariant="exercise"
+          />
+        ) : null}
 
         <p className="text-center font-data text-xs text-muted-foreground">
           {recap.completedSets}{' '}

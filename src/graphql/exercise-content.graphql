@@ -1,0 +1,15 @@
+query GetExerciseContent($id: uuid!) {
+  exercises_by_pk(id: $id) {
+    id
+    name
+    muscle_group
+    equipment
+    tracking_mode
+    description_fr
+    coaching_cues
+    demo_file_id
+    demo_poster_file_id
+    content_status
+    content_source
+  }
+}

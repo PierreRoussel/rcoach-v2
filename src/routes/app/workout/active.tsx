@@ -50,6 +50,7 @@ import {
   draftToWorkoutSummary,
   estimateWorkoutCalories,
 } from '@/lib/stats/workout-metrics'
+import { computeWorkoutBodyIntensities } from '@/lib/stats/exercise-body-intensities'
 import {
   buildCircuitSteps,
   countCompletedSets,
@@ -276,6 +277,7 @@ function ActiveWorkoutPage() {
         }),
         records: detectWorkoutPersonalRecords(workoutSummary, allWorkouts ?? []),
         heartRate,
+        bodyIntensities: computeWorkoutBodyIntensities(validatedExercises),
       })
       setRecapOpen(true)
     } catch (finishError) {

@@ -1,5 +1,6 @@
 import { generatePKCEPair } from '@nhost/nhost-js/auth'
 import type { NhostClient } from '@nhost/nhost-js'
+import { Capacitor } from '@capacitor/core'
 
 export const PKCE_VERIFIER_KEY = 'nhost_pkce_verifier'
 
@@ -13,6 +14,30 @@ export function consumePkceVerifier(): string | null {
   const verifier = localStorage.getItem(PKCE_VERIFIER_KEY)
   localStorage.removeItem(PKCE_VERIFIER_KEY)
   return verifier
+}
+
+export function buildOAuthRedirectUrl() {
+  return `${window.location.origin}/auth/verify`
+}
+
+export async function startGoogleSignIn(nhost: NhostClient) {
+  const codeChallenge = await storePkceChallenge()
+  return nhost.auth.signInProviderURL('google', {
+    redirectTo: buildOAuthRedirectUrl(),
+    codeChallenge,
+  })
+}
+
+export async function redirectToGoogleSignIn(nhost: NhostClient) {
+  const url = await startGoogleSignIn(nhost)
+
+  if (Capacitor.isNativePlatform()) {
+    const { Browser } = await import('@capacitor/browser')
+    await Browser.open({ url, windowName: '_system' })
+    return
+  }
+
+  window.location.href = url
 }
 
 export async function exchangeAuthCode(nhost: NhostClient, code: string) {

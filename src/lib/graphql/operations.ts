@@ -18,6 +18,13 @@ export type Exercise = {
   equipment: string | null
   is_public: boolean
   tracking_mode?: string | null
+  description_fr?: string | null
+  description_en?: string | null
+  coaching_cues?: unknown
+  demo_file_id?: string | null
+  demo_poster_file_id?: string | null
+  content_status?: string | null
+  content_source?: string | null
 }
 
 export type WorkoutSummary = {
@@ -26,6 +33,7 @@ export type WorkoutSummary = {
   started_at: string
   ended_at: string | null
   share_token?: string | null
+  workout_template_id?: string | null
   workout_exercises: Array<{
     id: string
     exercise: {
@@ -221,6 +229,7 @@ export const LIST_MY_WORKOUTS = `
       title
       started_at
       ended_at
+      workout_template_id
       workout_exercises {
         id
         exercise {
@@ -255,6 +264,7 @@ export const GET_MY_LAST_COMPLETED_WORKOUT = `
       title
       started_at
       ended_at
+      workout_template_id
       workout_exercises {
         id
         exercise {
@@ -327,6 +337,7 @@ export const LIST_MY_WORKOUTS_PAGE = `
       title
       started_at
       ended_at
+      workout_template_id
       workout_exercises {
         id
         exercise {
@@ -369,6 +380,7 @@ export const LIST_MY_WORKOUTS_STATS_PAGE = `
       title
       started_at
       ended_at
+      workout_template_id
       workout_exercises {
         id
         exercise {
@@ -404,6 +416,7 @@ export const LIST_MY_WORKOUTS_STATS_ALL_PAGE = `
       title
       started_at
       ended_at
+      workout_template_id
       workout_exercises {
         id
         exercise {
@@ -437,6 +450,14 @@ export const GET_MY_PROFILE = `
       friend_code
       onboarding_completed_at
       created_at
+    }
+  }
+`
+
+export const GET_MY_AUTH_PROVIDERS = `
+  query GetMyAuthProviders {
+    authUserProviders {
+      providerId
     }
   }
 `
@@ -517,6 +538,25 @@ export const INSERT_EXERCISE = `
       equipment
       is_public
       tracking_mode
+      content_status
+    }
+  }
+`
+
+export const GET_EXERCISE_CONTENT = `
+  query GetExerciseContent($id: uuid!) {
+    exercises_by_pk(id: $id) {
+      id
+      name
+      muscle_group
+      equipment
+      tracking_mode
+      description_fr
+      coaching_cues
+      demo_file_id
+      demo_poster_file_id
+      content_status
+      content_source
     }
   }
 `
@@ -856,6 +896,7 @@ const GET_WORKOUT_BY_ID_FIELDS = `
       started_at
       ended_at
       notes
+      workout_template_id
       workout_exercises(order_by: { sort_order: asc }) {
         id
         sort_order

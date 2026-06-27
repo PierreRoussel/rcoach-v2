@@ -30,6 +30,7 @@ mutation InsertExercise($object: exercises_insert_input!) {
     equipment
     is_public
     created_by
+    content_status
   }
 }
 
