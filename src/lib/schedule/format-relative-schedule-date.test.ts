@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
+import {
+  formatRelativeScheduleDate,
+  isScheduleDateToday,
+} from '@/lib/schedule/format-relative-schedule-date'
 
 const now = new Date('2026-06-22T10:00:00')
 
@@ -13,5 +16,14 @@ describe('formatRelativeScheduleDate', () => {
 
   it('falls back to a short absolute date after one week', () => {
     expect(formatRelativeScheduleDate('2026-07-01', now)).toBe('1 juil.')
+  })
+})
+
+describe('isScheduleDateToday', () => {
+  const now = new Date('2026-06-22T10:00:00')
+
+  it('returns true only for the current calendar day', () => {
+    expect(isScheduleDateToday('2026-06-22', now)).toBe(true)
+    expect(isScheduleDateToday('2026-06-23', now)).toBe(false)
   })
 })

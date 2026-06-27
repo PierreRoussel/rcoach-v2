@@ -2,7 +2,7 @@ import type { NhostClient } from '@nhost/nhost-js'
 
 import {
   FOOD_SEARCH_FIELDS,
-  SEARCH_OFF_FOODS,
+  SEARCH_CATALOG_FOODS,
   SEARCH_USER_FOODS,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
@@ -45,15 +45,25 @@ export function buildFoodSearchContainsPattern(query: string) {
   return normalized ? `%${normalized}%` : '%'
 }
 
-function mergeFoodSearchResults(userFoods: Food[], offFoods: Food[], limit: number) {
+function catalogFoodKey(food: Food) {
+  if (food.ciqual_code) {
+    return `ciqual:${food.ciqual_code}`
+  }
+  if (food.off_product_id) {
+    return `off:${food.off_product_id}`
+  }
+  return food.id
+}
+
+function mergeFoodSearchResults(userFoods: Food[], catalogFoods: Food[], limit: number) {
   const merged = new Map<string, Food>()
 
   for (const food of userFoods) {
     merged.set(food.id, food)
   }
 
-  for (const food of offFoods) {
-    const key = food.off_product_id ?? food.id
+  for (const food of catalogFoods) {
+    const key = catalogFoodKey(food)
     if (!merged.has(key)) {
       merged.set(key, food)
     }
@@ -62,7 +72,7 @@ function mergeFoodSearchResults(userFoods: Food[], offFoods: Food[], limit: numb
   return Array.from(merged.values()).slice(0, limit)
 }
 
-function buildTokenAndSearchQuery(tokens: string[], scope: 'user' | 'off') {
+function buildTokenAndSearchQuery(tokens: string[], scope: 'user' | 'catalog') {
   const variableDefinitions = [...tokens.map((_, index) => `$token${index}: String!`), '$limit: Int!'].join(
     ', ',
   )
@@ -72,7 +82,7 @@ function buildTokenAndSearchQuery(tokens: string[], scope: 'user' | 'off') {
   const scopeCondition =
     scope === 'user'
       ? '{ user_id: { _eq: X-Hasura-User-Id } }'
-      : "{ source: { _eq: open_food_facts } }"
+      : '{ source: { _in: [open_food_facts, ciqual] } }'
 
   return `
     query SearchFoodsByTokens(${variableDefinitions}) {
@@ -95,7 +105,7 @@ ${FOOD_SEARCH_FIELDS}
 async function searchFoodsByTokens(
   nhost: NhostClient,
   tokens: string[],
-  scope: 'user' | 'off',
+  scope: 'user' | 'catalog',
   limit: number,
 ) {
   if (tokens.length === 0) {
@@ -140,13 +150,13 @@ export async function searchFoodsInDatabase(
   query: string,
   options: {
     userLimit?: number
-    offLimit?: number
+    catalogLimit?: number
     totalLimit?: number
   } = {},
 ) {
   const trimmed = query.trim()
   const userLimit = options.userLimit ?? 10
-  const offLimit = options.offLimit ?? 20
+  const catalogLimit = options.catalogLimit ?? options.offLimit ?? 20
   const totalLimit = options.totalLimit ?? 25
   const tokens = extractFoodSearchTokens(trimmed)
 
@@ -166,42 +176,42 @@ export async function searchFoodsInDatabase(
 
   if (trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH) {
     requests.push(
-      graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_OFF_FOODS, {
+      graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_CATALOG_FOODS, {
         pattern,
-        limit: offLimit,
+        limit: catalogLimit,
       }),
     )
   }
 
   const responses = await Promise.all(requests)
   const userFoods = responses[0]?.foods ?? []
-  let offFoods = responses[1]?.foods ?? []
+  let catalogFoods = responses[1]?.foods ?? []
 
   if (
     mode === 'prefix' &&
     trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH &&
-    offFoods.length < OFF_CATALOG_FALLBACK_MIN_RESULTS
+    catalogFoods.length < OFF_CATALOG_FALLBACK_MIN_RESULTS
   ) {
-    const fallback = await graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_OFF_FOODS, {
+    const fallback = await graphqlRequest<{ foods: Food[] }>(nhost, SEARCH_CATALOG_FOODS, {
       pattern: buildFoodSearchContainsPattern(trimmed),
-      limit: offLimit,
+      limit: catalogLimit,
     })
-    offFoods = mergeFoodSearchResults([], [...offFoods, ...fallback.foods], offLimit)
+    catalogFoods = mergeFoodSearchResults([], [...catalogFoods, ...fallback.foods], catalogLimit)
   }
 
-  let results = mergeFoodSearchResults(userFoods, offFoods, totalLimit)
+  let results = mergeFoodSearchResults(userFoods, catalogFoods, totalLimit)
 
   if (tokens.length >= 2 && !hasRelevantFoodMatches(results, trimmed, tokens)) {
-    const [tokenUserFoods, tokenOffFoods] = await Promise.all([
+    const [tokenUserFoods, tokenCatalogFoods] = await Promise.all([
       searchFoodsByTokens(nhost, tokens, 'user', userLimit),
       trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH
-        ? searchFoodsByTokens(nhost, tokens, 'off', offLimit)
+        ? searchFoodsByTokens(nhost, tokens, 'catalog', catalogLimit)
         : Promise.resolve([]),
     ])
 
     results = mergeFoodSearchResults(
       mergeFoodSearchResults(results, tokenUserFoods, totalLimit),
-      tokenOffFoods,
+      tokenCatalogFoods,
       totalLimit,
     )
   }

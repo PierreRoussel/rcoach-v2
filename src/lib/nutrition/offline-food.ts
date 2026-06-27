@@ -61,7 +61,8 @@ export function buildLocalFood(
 
   return {
     id: toLocalFoodId(localId),
-    user_id: object.source === 'open_food_facts' ? null : userId,
+    user_id:
+      object.source === 'open_food_facts' || object.source === 'ciqual' ? null : userId,
     barcode: (object.barcode as string | null) ?? null,
     name: String(object.name ?? ''),
     brand: (object.brand as string | null) ?? null,
@@ -74,8 +75,14 @@ export function buildLocalFood(
     saturated_fat_g: (object.saturated_fat_g as number | null) ?? null,
     serving_size_g: Number(object.serving_size_g ?? 100),
     serving_label: String(object.serving_label ?? '100 g'),
-    source: object.source === 'open_food_facts' ? 'open_food_facts' : 'user',
+    source:
+      object.source === 'open_food_facts'
+        ? 'open_food_facts'
+        : object.source === 'ciqual'
+          ? 'ciqual'
+          : 'user',
     off_product_id: (object.off_product_id as string | null) ?? null,
+    ciqual_code: (object.ciqual_code as string | null) ?? null,
     created_at: now,
     updated_at: now,
   }

@@ -10,7 +10,7 @@ import {
   getNextScheduledOccurrence,
   type ScheduleOccurrence,
 } from '@/lib/schedule/expand-occurrences'
-import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
+import { formatRelativeScheduleDate, isScheduleDateToday } from '@/lib/schedule/format-relative-schedule-date'
 import {
   computeWorkoutVolume,
   formatWorkoutDateTime,
@@ -59,6 +59,7 @@ type SessionSummaryTileProps = {
   title: string
   icon: typeof History
   tone: 'primary' | 'secondary'
+  highlighted?: boolean
   children: ReactNode
   to: string
   params?: Record<string, string>
@@ -70,14 +71,16 @@ function SessionSummaryTile({
   title,
   icon: Icon,
   tone,
+  highlighted = false,
   children,
   to,
   params,
   search,
   ariaLabel,
 }: SessionSummaryTileProps) {
-  const iconClass =
-    tone === 'primary'
+  const iconClass = highlighted
+    ? 'bg-primary/15 text-primary'
+    : tone === 'primary'
       ? 'bg-soft-primary text-primary'
       : 'bg-soft-secondary text-secondary-foreground'
 
@@ -87,8 +90,10 @@ function SessionSummaryTile({
       params={params}
       search={search}
       className={cn(
-        'flex min-h-[9.5rem] flex-col rounded-2xl border border-border/70 bg-card px-3 py-3 shadow-sm',
-        'transition-colors active:bg-muted/40',
+        'flex min-h-[9.5rem] flex-col rounded-2xl px-3 py-3 shadow-sm transition-colors',
+        highlighted
+          ? 'border border-primary/35 bg-gradient-to-br from-soft-primary via-card to-soft-accent active:opacity-90'
+          : 'border border-border/70 bg-card active:bg-muted/40',
       )}
       aria-label={ariaLabel}
     >
@@ -240,12 +245,14 @@ function NextSessionTile({
     nextOccurrence.date,
     nextOccurrence.timeLocal,
   )
+  const isToday = isScheduleDateToday(nextOccurrence.date)
 
   return (
     <SessionSummaryTile
       title="Prochaine séance"
       icon={CalendarDays}
       tone="secondary"
+      highlighted={isToday}
       to="/app/planning"
       ariaLabel={`Voir la prochaine séance ${nextOccurrence.title}`}
     >

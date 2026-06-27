@@ -1450,6 +1450,7 @@ export const FOOD_SEARCH_FIELDS = `
       serving_label
       source
       off_product_id
+      ciqual_code
       created_at
       updated_at
 `
@@ -1471,22 +1472,25 @@ ${FOOD_SEARCH_FIELDS}
   }
 `
 
-export const SEARCH_OFF_FOODS = `
-  query SearchOffFoods($pattern: String!, $limit: Int = 20) {
+export const SEARCH_CATALOG_FOODS = `
+  query SearchCatalogFoods($pattern: String!, $limit: Int = 20) {
     foods(
       where: {
         _and: [
-          { source: { _eq: open_food_facts } }
+          { source: { _in: [open_food_facts, ciqual] } }
           { search_text: { _ilike: $pattern } }
         ]
       }
-      order_by: [{ name: asc }]
+      order_by: [{ source: asc }, { name: asc }]
       limit: $limit
     ) {
 ${FOOD_SEARCH_FIELDS}
     }
   }
 `
+
+/** @deprecated Use SEARCH_CATALOG_FOODS */
+export const SEARCH_OFF_FOODS = SEARCH_CATALOG_FOODS
 
 /** @deprecated Use SEARCH_USER_FOODS + SEARCH_OFF_FOODS */
 export const SEARCH_MY_FOODS = `
@@ -1497,7 +1501,7 @@ export const SEARCH_MY_FOODS = `
           {
             _or: [
               { user_id: { _is_null: false } }
-              { source: { _eq: open_food_facts } }
+              { source: { _in: [open_food_facts, ciqual] } }
             ]
           }
           {

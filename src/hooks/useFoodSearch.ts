@@ -134,7 +134,9 @@ export function useFoodSearch(
     const tokens = extractFoodSearchTokens(trimmed)
 
     for (const food of dbQuery.data ?? []) {
-      const key = food.off_product_id ?? food.id
+      const key = food.ciqual_code
+        ? `ciqual:${food.ciqual_code}`
+        : (food.off_product_id ?? food.id)
       merged.set(key, mapDbFood(food))
     }
 

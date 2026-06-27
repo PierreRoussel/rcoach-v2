@@ -54,6 +54,7 @@ select_permissions:
         - serving_label
         - source
         - off_product_id
+        - ciqual_code
         - created_at
         - updated_at
       filter:
@@ -61,7 +62,9 @@ select_permissions:
           - user_id:
               _eq: X-Hasura-User-Id
           - source:
-              _eq: open_food_facts
+              _in:
+                - open_food_facts
+                - ciqual
 insert_permissions:
   - role: user
     permission:

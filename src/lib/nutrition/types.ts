@@ -1,6 +1,6 @@
 export type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner'
 
-export type FoodSource = 'user' | 'open_food_facts'
+export type FoodSource = 'user' | 'open_food_facts' | 'ciqual'
 
 export type NutritionSex = 'male' | 'female'
 
@@ -53,6 +53,7 @@ export type Food = {
   serving_label: string
   source: FoodSource
   off_product_id: string | null
+  ciqual_code: string | null
   created_at: string
   updated_at: string
 }

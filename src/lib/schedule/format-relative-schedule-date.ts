@@ -5,6 +5,13 @@ function parseDateOnly(value: string): Date {
   return startOfDay(parseISO(value.length === 10 ? `${value}T12:00:00` : value))
 }
 
+export function isScheduleDateToday(date: string | Date, now = new Date()): boolean {
+  const target =
+    typeof date === 'string' ? parseDateOnly(date) : startOfDay(date)
+
+  return differenceInCalendarDays(target, startOfDay(now)) === 0
+}
+
 export function formatRelativeScheduleDate(
   date: string | Date,
   now = new Date(),
