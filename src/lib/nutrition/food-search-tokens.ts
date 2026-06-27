@@ -79,9 +79,10 @@ export function scoreFoodSearchMatch(
   haystack: string,
   query: string,
   tokens: string[],
+  options: { sourceBoost?: number } = {},
 ) {
   const normalizedQuery = normalizeFoodSearchQuery(query)
-  let score = 0
+  let score = options.sourceBoost ?? 0
 
   if (normalizedQuery && haystack.includes(normalizedQuery)) {
     score += 100
@@ -98,15 +99,52 @@ export function scoreFoodSearchMatch(
   return score
 }
 
+export function scoreCiqualFoodMatch(name: string, query: string, tokens: string[]) {
+  const haystack = buildFoodSearchHaystack(name)
+  let score = scoreFoodSearchMatch(haystack, query, tokens, { sourceBoost: 50 })
+
+  const normalizedQuery = normalizeFoodSearchQuery(query)
+  const nameLower = name.toLowerCase()
+
+  if (normalizedQuery && nameLower.startsWith(normalizedQuery)) {
+    score += 35
+  }
+
+  if (
+    normalizedQuery &&
+    (nameLower.startsWith(`${normalizedQuery},`) ||
+      nameLower.startsWith(`${normalizedQuery} `))
+  ) {
+    score += 25
+  }
+
+  if (/\bcrue\b|\bcru\b/i.test(name)) {
+    score += 15
+  }
+
+  if (/\b(sauce|préemball|appertis|purée|concentré|jus de)\b/i.test(name)) {
+    score -= 20
+  }
+
+  return score
+}
+
 export function sortFoodSearchByRelevance<T>(
   items: T[],
   query: string,
   tokens: string[],
   getHaystack: (item: T) => string,
+  getScore?: (item: T, haystack: string) => number,
 ) {
   return [...items].sort((left, right) => {
-    const rightScore = scoreFoodSearchMatch(getHaystack(right), query, tokens)
-    const leftScore = scoreFoodSearchMatch(getHaystack(left), query, tokens)
-  return rightScore - leftScore
+    const leftHaystack = getHaystack(left)
+    const rightHaystack = getHaystack(right)
+    const rightScore = getScore
+      ? getScore(right, rightHaystack)
+      : scoreFoodSearchMatch(rightHaystack, query, tokens)
+    const leftScore = getScore
+      ? getScore(left, leftHaystack)
+      : scoreFoodSearchMatch(leftHaystack, query, tokens)
+    return rightScore - leftScore
   })
 }

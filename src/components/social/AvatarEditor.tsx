@@ -4,7 +4,10 @@ import { Camera, Loader2, Trash2 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useUpdateProfile } from '@/hooks/useProfile'
-import { uploadAvatar } from '@/lib/storage/upload-avatar'
+import {
+  removeStoredAvatar,
+  replaceStoredAvatar,
+} from '@/lib/storage/upload-avatar'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -37,10 +40,11 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
         throw new Error('Session expirée.')
       }
 
-      const nextUrl = await uploadAvatar(nhost, userId, file)
-      await updateProfile.mutateAsync({
-        profileId,
-        changes: { avatar_url: nextUrl },
+      await replaceStoredAvatar(nhost, userId, file, avatarUrl, async (nextUrl) => {
+        await updateProfile.mutateAsync({
+          profileId,
+          changes: { avatar_url: nextUrl },
+        })
       })
       setMessage('Photo de profil mise à jour.')
     } catch (error) {
@@ -57,9 +61,11 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
     setIsUploading(true)
 
     try {
-      await updateProfile.mutateAsync({
-        profileId,
-        changes: { avatar_url: null },
+      await removeStoredAvatar(nhost, avatarUrl, async () => {
+        await updateProfile.mutateAsync({
+          profileId,
+          changes: { avatar_url: null },
+        })
       })
       setMessage('Photo de profil retirée.')
     } catch (error) {

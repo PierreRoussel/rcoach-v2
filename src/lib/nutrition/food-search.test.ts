@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildCiqualNamePrefixPattern,
   buildFoodSearchContainsPattern,
   buildFoodSearchPattern,
 } from '@/lib/nutrition/food-search'
@@ -38,5 +39,11 @@ describe('buildFoodSearchPattern', () => {
 describe('buildFoodSearchContainsPattern', () => {
   it('wraps the normalized query', () => {
     expect(buildFoodSearchContainsPattern('  Foo Bar ')).toBe('%foo bar%')
+  })
+})
+
+describe('buildCiqualNamePrefixPattern', () => {
+  it('builds a case-normalized name prefix', () => {
+    expect(buildCiqualNamePrefixPattern('  Tomate ')).toBe('tomate%')
   })
 })

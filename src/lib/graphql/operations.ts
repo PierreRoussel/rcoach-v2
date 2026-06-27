@@ -1455,13 +1455,62 @@ export const FOOD_SEARCH_FIELDS = `
       updated_at
 `
 
+const FOOD_TEXT_MATCH = (variable: string) => `{
+            _or: [
+              { name: { _ilike: ${variable} } }
+              { brand: { _ilike: ${variable} } }
+              { barcode: { _ilike: ${variable} } }
+            ]
+          }`
+
 export const SEARCH_USER_FOODS = `
-  query SearchUserFoods($pattern: String!, $limit: Int = 10) {
+  query SearchUserFoods($userId: uuid!, $pattern: String!, $limit: Int = 10) {
     foods(
       where: {
         _and: [
-          { user_id: { _eq: X-Hasura-User-Id } }
-          { search_text: { _ilike: $pattern } }
+          { user_id: { _eq: $userId } }
+          ${FOOD_TEXT_MATCH('$pattern')}
+        ]
+      }
+      order_by: [{ name: asc }]
+      limit: $limit
+    ) {
+${FOOD_SEARCH_FIELDS}
+    }
+  }
+`
+
+export const SEARCH_CIQUAL_FOODS = `
+  query SearchCiqualFoods($namePrefix: String!, $containsPattern: String!, $limit: Int = 40) {
+    foods(
+      where: {
+        _and: [
+          { source: { _eq: ciqual } }
+          {
+            _or: [
+              { name: { _ilike: $namePrefix } }
+              { name: { _ilike: $containsPattern } }
+              { brand: { _ilike: $containsPattern } }
+              { barcode: { _ilike: $containsPattern } }
+            ]
+          }
+        ]
+      }
+      order_by: [{ name: asc }]
+      limit: $limit
+    ) {
+${FOOD_SEARCH_FIELDS}
+    }
+  }
+`
+
+export const SEARCH_OFF_CATALOG_FOODS = `
+  query SearchOffCatalogFoods($pattern: String!, $limit: Int = 10) {
+    foods(
+      where: {
+        _and: [
+          { source: { _eq: open_food_facts } }
+          ${FOOD_TEXT_MATCH('$pattern')}
         ]
       }
       order_by: [{ name: asc }]
@@ -1478,7 +1527,7 @@ export const SEARCH_CATALOG_FOODS = `
       where: {
         _and: [
           { source: { _in: [open_food_facts, ciqual] } }
-          { search_text: { _ilike: $pattern } }
+          ${FOOD_TEXT_MATCH('$pattern')}
         ]
       }
       order_by: [{ source: asc }, { name: asc }]

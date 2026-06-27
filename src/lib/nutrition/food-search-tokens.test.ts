@@ -4,6 +4,7 @@ import {
   extractFoodSearchTokens,
   foodSearchTokenMatches,
   matchesAllFoodSearchTokens,
+  scoreCiqualFoodMatch,
   scoreFoodSearchMatch,
 } from '@/lib/nutrition/food-search-tokens'
 
@@ -40,5 +41,14 @@ describe('scoreFoodSearchMatch', () => {
     ])
 
     expect(exact).toBeGreaterThan(partial)
+  })
+})
+
+describe('scoreCiqualFoodMatch', () => {
+  it('prefers raw simple ingredients over processed tomato products', () => {
+    const raw = scoreCiqualFoodMatch('Tomate ronde, crue', 'tomate', ['tomate'])
+    const sauce = scoreCiqualFoodMatch('Sauce tomate aux oignons, préemballée', 'tomate', ['tomate'])
+
+    expect(raw).toBeGreaterThan(sauce)
   })
 })

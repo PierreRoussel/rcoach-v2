@@ -13,6 +13,8 @@ import {
 import {
   buildFoodSearchHaystack,
   extractFoodSearchTokens,
+  scoreCiqualFoodMatch,
+  scoreFoodSearchMatch,
   sortFoodSearchByRelevance,
 } from '@/lib/nutrition/food-search-tokens'
 import {
@@ -76,7 +78,7 @@ export function useFoodSearch(
   enabled = true,
   options: FoodSearchOptions = {},
 ) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
   const isOnline = useOnlineStatus()
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
   const trimmed = debouncedQuery.trim()
@@ -84,18 +86,17 @@ export function useFoodSearch(
   const isDebouncing =
     enabled && query.trim() !== trimmed && query.trim().length >= USER_FOOD_SEARCH_MIN_LENGTH
   const isBarcode = isBarcodeQuery(trimmed)
-  const offSearchEnabled =
-    !isBarcode &&
-    isOnline &&
-    (trimmed.length >= OFF_MIN_QUERY_LENGTH ||
-      (searchOffExternally && trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH))
+  const dbSearchEnabled =
+    isAuthenticated && enabled && trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH && !isBarcode
 
   const dbQuery = useQuery({
     queryKey: ['food-search-db', trimmed],
-    enabled: isAuthenticated && enabled && trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH && !isBarcode,
+    enabled: dbSearchEnabled,
     queryFn: async () => {
       try {
-        const foods = await searchFoodsInDatabase(nhost, trimmed)
+        const foods = await searchFoodsInDatabase(nhost, trimmed, {
+          userId: user?.id,
+        })
 
         for (const food of foods) {
           await cacheFood(food)
@@ -109,6 +110,15 @@ export function useFoodSearch(
     staleTime: DB_SEARCH_STALE_MS,
     retry: false,
   })
+
+  const offSearchEnabled =
+    !isBarcode &&
+    isOnline &&
+    trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH &&
+    (searchOffExternally ||
+      (dbQuery.isSuccess &&
+        (dbQuery.data?.length ?? 0) === 0 &&
+        trimmed.length >= OFF_MIN_QUERY_LENGTH))
 
   const barcodeQuery = useQuery({
     queryKey: ['food-search-barcode', trimmed],
@@ -169,6 +179,10 @@ export function useFoodSearch(
       trimmed,
       tokens,
       (result) => buildFoodSearchHaystack(result.name, result.brand, result.barcode),
+      (result, haystack) =>
+        result.source === 'ciqual'
+          ? scoreCiqualFoodMatch(result.name, trimmed, tokens)
+          : scoreFoodSearchMatch(haystack, trimmed, tokens),
     )
   }, [barcodeQuery.data, dbQuery.data, isBarcode, offQuery.data, trimmed])
 
@@ -192,6 +206,7 @@ export function useFoodSearch(
       trimmed.length >= USER_FOOD_SEARCH_MIN_LENGTH &&
       trimmed.length < OFF_MIN_QUERY_LENGTH,
     catalogSearchEnabled: trimmed.length >= OFF_CATALOG_DB_MIN_LENGTH,
+    hasSearchedLocalCatalog: dbQuery.isSuccess,
     error: dbQuery.error,
   }
 }

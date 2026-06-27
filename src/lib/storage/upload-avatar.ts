@@ -3,6 +3,17 @@ import { generateServiceUrl } from '@nhost/nhost-js'
 
 const AVATAR_BUCKET_ID = 'avatars'
 const AVATAR_MAX_SIZE = 256
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function getStorageBaseUrl(nhost: NhostClient): string {
+  const subdomain = import.meta.env.VITE_NHOST_SUBDOMAIN
+  const region = import.meta.env.VITE_NHOST_REGION
+
+  return (
+    nhost.storage.baseURL || generateServiceUrl('storage', subdomain, region)
+  )
+}
 
 async function resizeImageToWebp(file: File, maxSize = AVATAR_MAX_SIZE): Promise<Blob> {
   const bitmap = await createImageBitmap(file)
@@ -37,12 +48,39 @@ async function resizeImageToWebp(file: File, maxSize = AVATAR_MAX_SIZE): Promise
 }
 
 export function getAvatarPublicUrl(nhost: NhostClient, fileId: string): string {
-  const subdomain = import.meta.env.VITE_NHOST_SUBDOMAIN
-  const region = import.meta.env.VITE_NHOST_REGION
-  const base =
-    nhost.storage.baseURL ||
-    generateServiceUrl('storage', subdomain, region)
-  return `${base}/files/${fileId}`
+  return `${getStorageBaseUrl(nhost)}/files/${fileId}`
+}
+
+export function parseStoredAvatarFileId(
+  avatarUrl: string | null | undefined,
+  nhost: NhostClient,
+): string | null {
+  if (!avatarUrl) {
+    return null
+  }
+
+  const prefix = `${getStorageBaseUrl(nhost)}/files/`
+  if (!avatarUrl.startsWith(prefix)) {
+    return null
+  }
+
+  const fileId = avatarUrl.slice(prefix.length).split('?')[0]?.split('#')[0]
+  if (!fileId || !UUID_PATTERN.test(fileId)) {
+    return null
+  }
+
+  return fileId
+}
+
+export async function deleteStoredAvatarFile(
+  nhost: NhostClient,
+  fileId: string,
+): Promise<void> {
+  const response = await nhost.storage.deleteFile(fileId)
+
+  if (response.status >= 300) {
+    throw new Error('Impossible de supprimer l’ancienne photo de profil.')
+  }
 }
 
 export async function uploadAvatar(
@@ -63,4 +101,60 @@ export async function uploadAvatar(
   }
 
   return getAvatarPublicUrl(nhost, uploaded.id)
+}
+
+export async function replaceStoredAvatar(
+  nhost: NhostClient,
+  userId: string,
+  file: File,
+  previousAvatarUrl: string | null,
+  saveAvatarUrl: (nextUrl: string) => Promise<void>,
+): Promise<string> {
+  const previousFileId = parseStoredAvatarFileId(previousAvatarUrl, nhost)
+  const nextUrl = await uploadAvatar(nhost, userId, file)
+  const nextFileId = parseStoredAvatarFileId(nextUrl, nhost)
+
+  try {
+    await saveAvatarUrl(nextUrl)
+  } catch (error) {
+    if (nextFileId) {
+      try {
+        await deleteStoredAvatarFile(nhost, nextFileId)
+      } catch {
+        // Best effort rollback if profile update fails.
+      }
+    }
+
+    throw error
+  }
+
+  if (previousFileId && previousFileId !== nextFileId) {
+    try {
+      await deleteStoredAvatarFile(nhost, previousFileId)
+    } catch {
+      // Profile already points to the new avatar; keep going.
+    }
+  }
+
+  return nextUrl
+}
+
+export async function removeStoredAvatar(
+  nhost: NhostClient,
+  previousAvatarUrl: string | null,
+  clearAvatarUrl: () => Promise<void>,
+): Promise<void> {
+  const previousFileId = parseStoredAvatarFileId(previousAvatarUrl, nhost)
+
+  await clearAvatarUrl()
+
+  if (!previousFileId) {
+    return
+  }
+
+  try {
+    await deleteStoredAvatarFile(nhost, previousFileId)
+  } catch {
+    // Profile no longer references the old avatar.
+  }
 }

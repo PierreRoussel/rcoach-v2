@@ -71,7 +71,7 @@ function AddFoodPage() {
   const [message, setMessage] = useState<string | null>(null)
 
   const trimmedQuery = query.trim()
-  const { results, isLoading, canTriggerOffSearch } = useFoodSearch(query, true, {
+  const { results, isLoading, canTriggerOffSearch, hasSearchedLocalCatalog } = useFoodSearch(query, true, {
     searchOffExternally,
   })
   const { data: favorites = [] } = useFoodFavorites()
@@ -371,10 +371,11 @@ function AddFoodPage() {
 
       {trimmedQuery.length >= OFF_MIN_QUERY_LENGTH &&
       !isLoading &&
+      hasSearchedLocalCatalog &&
       results.length === 0 ? (
         <p className="px-1 text-center text-xs text-muted-foreground">
-          Aucun aliment local. La recherche Open Food Facts est lancée automatiquement à partir de{' '}
-          {OFF_MIN_QUERY_LENGTH} caractères.
+          Aucun aliment local trouvé. Open Food Facts est consulté automatiquement à partir de{' '}
+          {OFF_MIN_QUERY_LENGTH} caractères si le catalogue local est vide.
         </p>
       ) : null}
 

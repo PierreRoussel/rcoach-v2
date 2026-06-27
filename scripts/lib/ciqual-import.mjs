@@ -28,6 +28,15 @@ const FOOD_COLUMNS = [
 
 const CONFLICT_TARGET = `(ciqual_code) WHERE (source = 'ciqual' AND ciqual_code IS NOT NULL)`
 
+function resolveCiqualMacro(nutrients, code) {
+  const value = nutrients[code]
+  if (value == null) {
+    return 0
+  }
+
+  return normalizeRequiredPer100g(value, MAX_MACRO_PER_100G) ? value : null
+}
+
 export function mapCiqualFoodToRow(alim, nutrients) {
   if (!alim?.alimCode || !alim?.name || !nutrients) {
     return null
@@ -35,14 +44,14 @@ export function mapCiqualFoodToRow(alim, nutrients) {
 
   const calories = nutrients[CIQUAL_NUTRIENT_CODES.calories]
   const carbsG = nutrients[CIQUAL_NUTRIENT_CODES.carbs]
-  const proteinG = nutrients[CIQUAL_NUTRIENT_CODES.protein]
-  const fatG = nutrients[CIQUAL_NUTRIENT_CODES.fat]
+  const proteinG = resolveCiqualMacro(nutrients, CIQUAL_NUTRIENT_CODES.protein)
+  const fatG = resolveCiqualMacro(nutrients, CIQUAL_NUTRIENT_CODES.fat)
 
   if (
     !normalizeRequiredPer100g(calories, MAX_KCAL_PER_100G) ||
     !normalizeRequiredPer100g(carbsG, MAX_MACRO_PER_100G) ||
-    !normalizeRequiredPer100g(proteinG, MAX_MACRO_PER_100G) ||
-    !normalizeRequiredPer100g(fatG, MAX_MACRO_PER_100G)
+    proteinG == null ||
+    fatG == null
   ) {
     return null
   }

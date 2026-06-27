@@ -41,7 +41,16 @@ if (!query?.text.includes('ciqual_code') || query.values.length !== 16) {
 
 const incomplete = mapCiqualFoodToRow(alim, { 328: 18 })
 if (incomplete != null) {
-  throw new Error('Expected incomplete nutrients to be rejected')
+  throw new Error('Expected missing carbs to be rejected')
+}
+
+const missingFat = mapCiqualFoodToRow(alim, {
+  328: 17.5,
+  25000: 0.5,
+  31000: 3.42,
+})
+if (!missingFat || missingFat.fat_g !== 0) {
+  throw new Error('Expected missing CIQUAL fat to default to 0 g/100g')
 }
 
 console.log('CIQUAL import mapping test OK.')
