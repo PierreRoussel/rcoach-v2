@@ -4,6 +4,7 @@ import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 export type ReplaceExerciseSelection = {
   id: string
   name: string
+  name_fr?: string | null
   muscle_group?: string | null
   equipment?: string | null
 }
@@ -16,6 +17,7 @@ export function replaceActiveExercise(
     ...current,
     exerciseId: exercise.id,
     exerciseName: exercise.name,
+    exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group ?? null,
     equipment: exercise.equipment ?? null,
     sets: current.sets.map((set) => ({
@@ -33,6 +35,7 @@ export function replaceTemplateExercise(
     ...current,
     exerciseId: exercise.id,
     exerciseName: exercise.name,
+    exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group ?? null,
     equipment: exercise.equipment ?? null,
   }

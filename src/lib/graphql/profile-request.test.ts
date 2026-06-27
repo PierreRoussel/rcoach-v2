@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_EXERCISE_LOCALE } from '@/lib/workout/exercise-translations'
+import { DEFAULT_EXERCISE_LOCALE } from '@/lib/workout/exercise-locale'
 
 function withDefaultExerciseLocale(profile: {
   id: string

@@ -19,6 +19,7 @@ select_permissions:
       columns:
         - id
         - name
+        - name_fr
         - muscle_group
         - equipment
         - created_by
@@ -43,6 +44,7 @@ select_permissions:
       columns:
         - id
         - name
+        - name_fr
         - muscle_group
         - equipment
         - description_fr
@@ -65,6 +67,7 @@ insert_permissions:
         created_by: x-hasura-User-Id
       columns:
         - name
+        - name_fr
         - muscle_group
         - equipment
         - is_public
@@ -75,6 +78,7 @@ update_permissions:
     permission:
       columns:
         - name
+        - name_fr
         - muscle_group
         - equipment
         - is_public

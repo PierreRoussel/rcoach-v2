@@ -14,6 +14,7 @@ export type Profile = {
 export type Exercise = {
   id: string
   name: string
+  name_fr?: string | null
   muscle_group: string | null
   equipment: string | null
   is_public: boolean
@@ -39,6 +40,7 @@ export type WorkoutSummary = {
     exercise: {
       id: string
       name: string
+      name_fr?: string | null
       muscle_group: string | null
       equipment: string | null
     }
@@ -97,6 +99,7 @@ export type WorkoutDetail = Omit<WorkoutSummary, 'workout_exercises'> & {
     exercise: {
       id: string
       name: string
+      name_fr?: string | null
       muscle_group: string | null
       equipment: string | null
     }
@@ -236,6 +239,7 @@ export const LIST_MY_WORKOUTS = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -271,6 +275,7 @@ export const GET_MY_LAST_COMPLETED_WORKOUT = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -344,6 +349,7 @@ export const LIST_MY_WORKOUTS_PAGE = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -387,6 +393,7 @@ export const LIST_MY_WORKOUTS_STATS_PAGE = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -423,6 +430,7 @@ export const LIST_MY_WORKOUTS_STATS_ALL_PAGE = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -509,6 +517,7 @@ export const LIST_PUBLIC_EXERCISES = `
     ) {
       id
       name
+      name_fr
       muscle_group
       equipment
       is_public
@@ -521,6 +530,7 @@ export const LIST_ALL_EXERCISES = `
     exercises(order_by: { name: asc }) {
       id
       name
+      name_fr
       muscle_group
       equipment
       is_public
@@ -533,9 +543,10 @@ export const LIST_ALL_EXERCISES = `
 export const INSERT_EXERCISE = `
   mutation InsertExercise($object: exercises_insert_input!) {
     insert_exercises_one(object: $object) {
-      id
-      name
-      muscle_group
+        id
+        name
+        name_fr
+        muscle_group
       equipment
       is_public
       tracking_mode
@@ -547,9 +558,10 @@ export const INSERT_EXERCISE = `
 export const GET_EXERCISE_CONTENT = `
   query GetExerciseContent($id: uuid!) {
     exercises_by_pk(id: $id) {
-      id
-      name
-      muscle_group
+        id
+        name
+        name_fr
+        muscle_group
       equipment
       tracking_mode
       description_fr
@@ -578,6 +590,7 @@ export const GET_LAST_EXERCISE_PERFORMANCE = `
       }
       exercise {
         name
+        name_fr
         equipment
         muscle_group
         tracking_mode
@@ -761,9 +774,10 @@ export const LIST_MY_PROGRAMS = `
           target_reps
           notes
           exercise {
-            id
-            name
-            muscle_group
+        id
+        name
+        name_fr
+        muscle_group
             equipment
           }
         }
@@ -791,9 +805,10 @@ export const GET_PROGRAM = `
           target_reps
           notes
           exercise {
-            id
-            name
-            muscle_group
+        id
+        name
+        name_fr
+        muscle_group
             equipment
           }
         }
@@ -904,6 +919,7 @@ const GET_WORKOUT_BY_ID_FIELDS = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -954,6 +970,7 @@ export const GET_SHARED_WORKOUT_BY_TOKEN = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
         }
@@ -1020,6 +1037,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
           tracking_mode
@@ -1054,6 +1072,7 @@ export const GET_WORKOUT_TEMPLATE = `
         exercise {
           id
           name
+          name_fr
           muscle_group
           equipment
           tracking_mode

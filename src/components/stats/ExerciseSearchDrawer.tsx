@@ -5,7 +5,6 @@ import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pill } from '@/design-system'
-import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { filterExercises, useAllExercises } from '@/hooks/useExercises'
 import type { ExerciseCatalogEntry } from '@/lib/stats/exercise-progression'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
@@ -29,6 +28,7 @@ type ExerciseSearchDrawerProps = {
 type DrawerRow = {
   exerciseId: string
   name: string
+  nameFr?: string | null
   muscleGroup: string | null
   sessionCount: number
   currentPerformance: string | null
@@ -41,25 +41,29 @@ export function ExerciseSearchDrawer({
 }: ExerciseSearchDrawerProps) {
   const navigate = useNavigate()
   const { data: allExercises = [], isLoading } = useAllExercises()
-  const exerciseLocale = useExerciseLocale()
   const [query, setQuery] = useState('')
   const [muscleGroup, setMuscleGroup] = useState<string>('all')
 
   const rows = useMemo(() => {
-    const fromCatalog = catalog.map<DrawerRow>((entry) => ({
-      exerciseId: entry.exerciseId,
-      name: entry.name,
-      muscleGroup: entry.muscleGroup,
-      sessionCount: entry.sessionCount,
-      currentPerformance: entry.currentPerformance,
-    }))
+    const fromCatalog = catalog.map<DrawerRow>((entry) => {
+      const exercise = allExercises.find((item) => item.id === entry.exerciseId)
+      return {
+        exerciseId: entry.exerciseId,
+        name: exercise?.name ?? entry.name,
+        nameFr: exercise?.name_fr ?? null,
+        muscleGroup: entry.muscleGroup,
+        sessionCount: entry.sessionCount,
+        currentPerformance: entry.currentPerformance,
+      }
+    })
 
     const catalogIds = new Set(fromCatalog.map((entry) => entry.exerciseId))
-    const extras = filterExercises(allExercises, query, muscleGroup, exerciseLocale)
+    const extras = filterExercises(allExercises, query, muscleGroup)
       .filter((exercise) => !catalogIds.has(exercise.id))
       .map<DrawerRow>((exercise) => ({
         exerciseId: exercise.id,
         name: exercise.name,
+        nameFr: exercise.name_fr ?? null,
         muscleGroup: exercise.muscle_group,
         sessionCount: 0,
         currentPerformance: null,
@@ -68,12 +72,17 @@ export function ExerciseSearchDrawer({
     const filteredCatalog =
       query.trim() || muscleGroup !== 'all'
         ? fromCatalog.filter((entry) => {
-            const exercise = allExercises.find((item) => item.id === entry.exerciseId)
-            if (!exercise) {
-              return exerciseNameMatchesQuery(entry.name, query, exerciseLocale)
+            if (muscleGroup !== 'all') {
+              const normalizedGroup = entry.muscleGroup?.toLowerCase()
+              if (normalizedGroup !== muscleGroup) {
+                return false
+              }
             }
 
-            return filterExercises([exercise], query, muscleGroup, exerciseLocale).length > 0
+            return exerciseNameMatchesQuery(
+              { name: entry.name, name_fr: entry.nameFr },
+              query,
+            )
           })
         : fromCatalog
 
@@ -84,7 +93,7 @@ export function ExerciseSearchDrawer({
 
       return left.name.localeCompare(right.name, 'fr')
     })
-  }, [allExercises, catalog, exerciseLocale, muscleGroup, query])
+  }, [allExercises, catalog, muscleGroup, query])
 
   function handleSelect(exerciseId: string) {
     onOpenChange(false)
@@ -156,7 +165,7 @@ export function ExerciseSearchDrawer({
                   >
                     <div className="min-w-0">
                       <p className="truncate font-display font-bold">
-                        <DisplayExerciseName name={row.name} />
+                        <DisplayExerciseName name={row.name} nameFr={row.nameFr} />
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {MUSCLE_GROUP_LABELS[normalizeMuscleGroup(row.muscleGroup)]}

@@ -11,8 +11,8 @@ import {
 } from '@/lib/stats/workout-metrics'
 import { countWorkoutSets } from '@/hooks/useWorkouts'
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
-import { translateExerciseName } from '@/lib/workout/translate-exercise-name'
-import type { ExerciseLocale } from '@/lib/workout/exercise-translations'
+import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
+import type { ExerciseLocale } from '@/lib/workout/exercise-locale'
 import { cn } from '@/lib/utils'
 
 const VISIBLE_EXERCISES = 3
@@ -33,7 +33,7 @@ function formatExerciseSummary(
   const setCount = entry.sets.length
   const equipment = entry.exercise.equipment
   const suffix = equipment ? ` (${equipment})` : ''
-  const exerciseName = translateExerciseName(entry.exercise.name, locale)
+  const exerciseName = resolveExerciseDisplayName(entry.exercise, locale)
 
   return `${setCount} série${setCount > 1 ? 's' : ''} de ${exerciseName}${suffix}`
 }

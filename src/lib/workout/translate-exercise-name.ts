@@ -1,32 +1,41 @@
-import {
-  EXERCISE_TRANSLATIONS,
-  type ExerciseLocale,
-} from '@/lib/workout/exercise-translations'
+import type { ExerciseLocale } from '@/lib/workout/exercise-locale'
 
-export const DEFAULT_EXERCISE_LOCALE: ExerciseLocale = 'fr'
+export type { ExerciseLocale } from '@/lib/workout/exercise-locale'
+export { DEFAULT_EXERCISE_LOCALE } from '@/lib/workout/exercise-locale'
 
-export function translateExerciseName(
-  canonicalName: string,
+export type ExerciseNameSource = {
+  name: string
+  name_fr?: string | null
+}
+
+export function resolveExerciseDisplayName(
+  exercise: ExerciseNameSource,
   locale: ExerciseLocale,
 ): string {
-  if (!canonicalName.trim()) {
-    return canonicalName
+  const canonicalName = exercise.name.trim()
+  if (!canonicalName) {
+    return ''
   }
 
   if (locale === 'en') {
     return canonicalName
   }
 
-  const entry = EXERCISE_TRANSLATIONS[canonicalName]?.[locale]
-  if (entry === undefined) {
-    return canonicalName
+  const storedFrench = exercise.name_fr?.trim()
+  if (storedFrench) {
+    return storedFrench
   }
 
-  if (entry === null) {
-    return canonicalName
-  }
+  return canonicalName
+}
 
-  return entry
+/** @deprecated Préférez resolveExerciseDisplayName avec name_fr depuis la base. */
+export function translateExerciseName(
+  canonicalName: string,
+  locale: ExerciseLocale,
+  nameFr?: string | null,
+): string {
+  return resolveExerciseDisplayName({ name: canonicalName, name_fr: nameFr }, locale)
 }
 
 function foldAccents(value: string): string {
@@ -37,18 +46,19 @@ function foldAccents(value: string): string {
 }
 
 export function exerciseNameMatchesQuery(
-  canonicalName: string,
+  exercise: ExerciseNameSource,
   query: string,
-  locale: ExerciseLocale,
 ): boolean {
   const normalized = foldAccents(query.trim())
   if (!normalized) {
     return true
   }
 
-  const displayName = translateExerciseName(canonicalName, locale)
-  return (
-    foldAccents(canonicalName).includes(normalized) ||
-    foldAccents(displayName).includes(normalized)
-  )
+  const candidates = [exercise.name.trim()]
+  const french = exercise.name_fr?.trim()
+  if (french) {
+    candidates.push(french)
+  }
+
+  return candidates.some((candidate) => foldAccents(candidate).includes(normalized))
 }

@@ -29,6 +29,7 @@ export type TemplateSetDraft = {
 export type TemplateExerciseDraft = {
   exerciseId: string
   exerciseName: string
+  exerciseNameFr?: string | null
   muscleGroup: string | null
   equipment: string | null
   supersetId: number | null
@@ -94,6 +95,7 @@ export function templateToDraft(
       return {
         exerciseId: entry.exercise.id,
         exerciseName: entry.exercise.name,
+        exerciseNameFr: entry.exercise.name_fr ?? null,
         muscleGroup: entry.exercise.muscle_group,
         equipment: entry.exercise.equipment,
         supersetId: entry.superset_id ?? null,
@@ -228,6 +230,7 @@ export function exerciseToDraft(exercise: Exercise): TemplateExerciseDraft {
   return {
     exerciseId: exercise.id,
     exerciseName: exercise.name,
+    exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group,
     equipment: exercise.equipment,
     supersetId: null,

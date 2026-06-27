@@ -13,6 +13,7 @@ export type CircuitSet = {
 export type CircuitExercise = {
   exerciseId: string
   exerciseName: string
+  exerciseNameFr?: string | null
   supersetId?: number | null
   defaultRestSeconds?: number
   sets: CircuitSet[]

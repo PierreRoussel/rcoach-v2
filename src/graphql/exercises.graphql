@@ -5,6 +5,7 @@ query ListPublicExercises {
   ) {
     id
     name
+    name_fr
     muscle_group
     equipment
     is_public
@@ -15,6 +16,7 @@ query ListAllExercises {
   exercises(order_by: { name: asc }) {
     id
     name
+    name_fr
     muscle_group
     equipment
     is_public
@@ -26,6 +28,7 @@ mutation InsertExercise($object: exercises_insert_input!) {
   insert_exercises_one(object: $object) {
     id
     name
+    name_fr
     muscle_group
     equipment
     is_public

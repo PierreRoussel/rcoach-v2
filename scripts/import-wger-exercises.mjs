@@ -105,7 +105,7 @@ try {
   })
 
   console.log(
-    `[import:wger] terminé — liés: ${summary.linked}, insérés: ${summary.inserted}, déjà présents: ${summary.skippedExisting}, noms en double: ${summary.skippedDuplicateName}, échecs: ${summary.failed}`,
+    `[import:wger] terminé — liés: ${summary.linked}, liaisons ignorées: ${summary.linkSkippedWgerIdTaken}, insérés: ${summary.inserted}, déjà présents: ${summary.skippedExisting}, noms en double: ${summary.skippedDuplicateName}, échecs: ${summary.failed}`,
   )
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error)

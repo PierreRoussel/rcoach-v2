@@ -30,6 +30,7 @@
     "import:ciqual": "node scripts/import-ciqual-xml.mjs",
     "ingest:exercise-demos": "tsx scripts/ingest-exercise-demos.mjs",
     "import:wger-exercises": "tsx scripts/import-wger-exercises.mjs",
+    "backfill:exercise-name-fr": "tsx scripts/backfill-exercise-name-fr.mjs",
     "check:postgres": "node scripts/check-postgres-connection.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

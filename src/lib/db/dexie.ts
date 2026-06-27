@@ -38,6 +38,7 @@ export type ActiveSetDraft = {
 export type ActiveExerciseDraft = {
   exerciseId: string
   exerciseName: string
+  exerciseNameFr?: string | null
   muscleGroup?: string | null
   equipment?: string | null
   supersetId?: number | null

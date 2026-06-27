@@ -7,6 +7,7 @@ export function templateExercisesToActive(
   return exercises.map((exercise) => ({
     exerciseId: exercise.exerciseId,
     exerciseName: exercise.exerciseName,
+    exerciseNameFr: exercise.exerciseNameFr ?? null,
     muscleGroup: exercise.muscleGroup,
     equipment: exercise.equipment,
     supersetId: exercise.supersetId,

@@ -14,7 +14,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Pill } from '@/design-system'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
-import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { filterExercises, useAllExercises } from '@/hooks/useExercises'
 import type { Exercise } from '@/lib/graphql/operations'
 import { MUSCLE_GROUPS } from '@/lib/workout/exercise-meta'
@@ -41,7 +40,6 @@ export function ExercisePicker({
   dialogDescription,
 }: ExercisePickerProps) {
   const { data: exercises = [], isLoading } = useAllExercises()
-  const exerciseLocale = useExerciseLocale()
   const [internalOpen, setInternalOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
@@ -51,10 +49,10 @@ export function ExercisePicker({
 
   const available = useMemo(
     () =>
-      filterExercises(exercises, query, muscleGroup, exerciseLocale).filter(
+      filterExercises(exercises, query, muscleGroup).filter(
         (e) => !excludeIds.includes(e.id),
       ),
-    [exercises, query, muscleGroup, exerciseLocale, excludeIds],
+    [exercises, query, muscleGroup, excludeIds],
   )
 
   function openCreateDialog() {
@@ -156,7 +154,7 @@ export function ExercisePicker({
                 >
                   <span>
                     <span className="block font-medium">
-                      <DisplayExerciseName name={exercise.name} />
+                      <DisplayExerciseName name={exercise.name} nameFr={exercise.name_fr} />
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {exercise.muscle_group ?? '—'} · {exercise.equipment ?? '—'}

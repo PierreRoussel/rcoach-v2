@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { buildTemplateCoachingCues } from './coaching.ts'
+import { resolveExerciseNameFr } from './exercise-translation-build.ts'
 import {
   findPublicCatalogMatch,
   getExerciseById,
@@ -139,6 +140,12 @@ export async function enrichExerciseContent(exerciseId: string): Promise<{
   }
 
   await updateExerciseContent(exerciseId, {
+    name_fr:
+      exercise.name_fr ??
+      resolveExerciseNameFr({
+        name: exercise.name,
+        wgerNameFr: info.name,
+      }),
     description_fr: coaching_cues.summary ?? null,
     description_en: info.description || null,
     coaching_cues,

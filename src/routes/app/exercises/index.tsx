@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
-import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import {
   filterExercises,
   useAllExercises,
@@ -30,7 +29,6 @@ export const Route = createFileRoute('/app/exercises/')({
 function ExercisesPage() {
   const { data: exercises = [], isLoading, error } = useAllExercises()
   const createExercise = useCreateExercise()
-  const exerciseLocale = useExerciseLocale()
   const [query, setQuery] = useState('')
   const [muscleGroup, setMuscleGroup] = useState<string>('all')
   const [name, setName] = useState('')
@@ -40,8 +38,8 @@ function ExercisesPage() {
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
 
   const filtered = useMemo(
-    () => filterExercises(exercises, query, muscleGroup, exerciseLocale),
-    [exercises, query, muscleGroup, exerciseLocale],
+    () => filterExercises(exercises, query, muscleGroup),
+    [exercises, query, muscleGroup],
   )
 
   const publicCount = exercises.filter((exercise) => exercise.is_public).length
@@ -201,7 +199,7 @@ function ExercisesPage() {
               >
                 <div>
                   <p className="font-medium">
-                    <DisplayExerciseName name={exercise.name} />
+                    <DisplayExerciseName name={exercise.name} nameFr={exercise.name_fr} />
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {exercise.muscle_group ?? '—'} · {exercise.equipment ?? '—'}

@@ -84,6 +84,7 @@ export async function graphqlUserRequest<T>(
 export type ExerciseRow = {
   id: string
   name: string
+  name_fr: string | null
   muscle_group: string | null
   equipment: string | null
   tracking_mode: string | null
@@ -105,6 +106,7 @@ export async function getExerciseById(exerciseId: string): Promise<ExerciseRow |
       exercises_by_pk(id: $id) {
         id
         name
+        name_fr
         muscle_group
         equipment
         tracking_mode
@@ -138,6 +140,7 @@ export async function findPublicCatalogMatch(name: string): Promise<ExerciseRow 
       ) {
         id
         name
+        name_fr
         muscle_group
         equipment
         tracking_mode
@@ -162,6 +165,7 @@ export async function findPublicCatalogMatch(name: string): Promise<ExerciseRow 
 export async function updateExerciseContent(
   exerciseId: string,
   patch: {
+    name_fr?: string | null
     description_fr?: string | null
     description_en?: string | null
     coaching_cues?: unknown
@@ -187,6 +191,7 @@ export async function listPublicExercises(): Promise<ExerciseRow[]> {
       exercises(where: { is_public: { _eq: true } }, order_by: { name: asc }) {
         id
         name
+        name_fr
         muscle_group
         equipment
         tracking_mode
@@ -229,6 +234,7 @@ export async function listExerciseCatalog(): Promise<ExerciseCatalogEntry[]> {
 
 export async function insertPublicExercise(input: {
   name: string
+  name_fr?: string | null
   muscle_group: string
   equipment: string
   tracking_mode: string
@@ -248,6 +254,7 @@ export async function insertPublicExercise(input: {
     {
       object: {
         name: input.name,
+        name_fr: input.name_fr ?? null,
         muscle_group: input.muscle_group,
         equipment: input.equipment,
         tracking_mode: input.tracking_mode,
@@ -284,5 +291,41 @@ export async function updateExerciseWgerId(
       }
     }`,
     { id: exerciseId, wgerExerciseId },
+  )
+}
+
+export type ExerciseNameFrRow = {
+  id: string
+  name: string
+  name_fr: string | null
+  wger_exercise_id: number | null
+}
+
+export async function listExercisesForNameFrBackfill(): Promise<ExerciseNameFrRow[]> {
+  const data = await graphqlAdminRequest<{ exercises: ExerciseNameFrRow[] }>(
+    `query ListExercisesForNameFrBackfill {
+      exercises(order_by: { name: asc }) {
+        id
+        name
+        name_fr
+        wger_exercise_id
+      }
+    }`,
+  )
+
+  return data.exercises
+}
+
+export async function updateExerciseNameFr(
+  exerciseId: string,
+  nameFr: string | null,
+): Promise<void> {
+  await graphqlAdminRequest(
+    `mutation UpdateExerciseNameFr($id: uuid!, $nameFr: String) {
+      update_exercises_by_pk(pk_columns: { id: $id }, _set: { name_fr: $nameFr }) {
+        id
+      }
+    }`,
+    { id: exerciseId, nameFr },
   )
 }

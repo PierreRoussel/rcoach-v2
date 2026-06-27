@@ -19,6 +19,7 @@ import {
   normalizeCatalogName,
   type MappedWgerExercise,
 } from './wger-map.ts'
+import { resolveExerciseNameFr } from './exercise-translation-build.ts'
 
 type ManualWgerMap = Record<string, number>
 
@@ -32,11 +33,50 @@ export type ImportWgerOptions = {
 
 export type ImportWgerResult = {
   linked: number
+  linkSkippedWgerIdTaken: number
   inserted: number
   skippedExisting: number
   skippedDuplicateName: number
   skippedNoEnglish: number
   failed: number
+}
+
+export type LinkExistingResult = {
+  linked: number
+  skippedAlreadyLinked: number
+  skippedWgerIdTaken: number
+  skippedMissingExercise: number
+}
+
+export function planManualWgerLinks(
+  manualMap: ManualWgerMap,
+  catalog: ExerciseCatalogEntry[],
+): Array<{ exerciseId: string; name: string; wgerId: number }> {
+  const byName = new Map(catalog.map((entry) => [entry.name, entry]))
+  const takenWgerIds = new Set<number>()
+
+  for (const entry of catalog) {
+    if (entry.wger_exercise_id != null) {
+      takenWgerIds.add(entry.wger_exercise_id)
+    }
+  }
+
+  const planned: Array<{ exerciseId: string; name: string; wgerId: number }> = []
+
+  for (const [name, wgerId] of Object.entries(manualMap)) {
+    const exercise = byName.get(name)
+    if (!exercise || exercise.wger_exercise_id != null) {
+      continue
+    }
+    if (takenWgerIds.has(wgerId)) {
+      continue
+    }
+
+    planned.push({ exerciseId: exercise.id, name, wgerId })
+    takenWgerIds.add(wgerId)
+  }
+
+  return planned
 }
 
 function loadManualWgerMap(): ManualWgerMap {
@@ -89,29 +129,55 @@ function buildCatalogIndexes(catalog: ExerciseCatalogEntry[]) {
 
 export async function linkExistingExercisesFromManualMap(options?: {
   dryRun?: boolean
-}): Promise<number> {
+}): Promise<LinkExistingResult> {
   const manualMap = loadManualWgerMap()
   const catalog = await listExerciseCatalog()
   const byName = new Map(catalog.map((entry) => [entry.name, entry]))
-  let linked = 0
+  const takenWgerIds = new Set<number>()
+
+  for (const entry of catalog) {
+    if (entry.wger_exercise_id != null) {
+      takenWgerIds.add(entry.wger_exercise_id)
+    }
+  }
+
+  const result: LinkExistingResult = {
+    linked: 0,
+    skippedAlreadyLinked: 0,
+    skippedWgerIdTaken: 0,
+    skippedMissingExercise: 0,
+  }
 
   for (const [name, wgerId] of Object.entries(manualMap)) {
     const exercise = byName.get(name)
-    if (!exercise || exercise.wger_exercise_id != null) {
+    if (!exercise) {
+      result.skippedMissingExercise += 1
+      continue
+    }
+
+    if (exercise.wger_exercise_id != null) {
+      result.skippedAlreadyLinked += 1
+      continue
+    }
+
+    if (takenWgerIds.has(wgerId)) {
+      result.skippedWgerIdTaken += 1
       continue
     }
 
     if (options?.dryRun) {
-      linked += 1
+      takenWgerIds.add(wgerId)
+      result.linked += 1
       continue
     }
 
     await updateExerciseWgerId(exercise.id, wgerId)
     exercise.wger_exercise_id = wgerId
-    linked += 1
+    takenWgerIds.add(wgerId)
+    result.linked += 1
   }
 
-  return linked
+  return result
 }
 
 export async function importWgerExercises(
@@ -119,6 +185,7 @@ export async function importWgerExercises(
 ): Promise<ImportWgerResult> {
   const result: ImportWgerResult = {
     linked: 0,
+    linkSkippedWgerIdTaken: 0,
     inserted: 0,
     skippedExisting: 0,
     skippedDuplicateName: 0,
@@ -127,9 +194,17 @@ export async function importWgerExercises(
   }
 
   if (options.linkExisting !== false) {
-    result.linked = await linkExistingExercisesFromManualMap({
+    const linkResult = await linkExistingExercisesFromManualMap({
       dryRun: options.dryRun,
     })
+    result.linked = linkResult.linked
+    result.linkSkippedWgerIdTaken = linkResult.skippedWgerIdTaken
+
+    if (linkResult.skippedWgerIdTaken > 0) {
+      console.log(
+        `[import:wger] ${linkResult.skippedWgerIdTaken} liaison(s) ignorée(s) — wger id déjà attribué à un autre exercice`,
+      )
+    }
   }
 
   let catalog = await listExerciseCatalog()
@@ -173,8 +248,14 @@ export async function importWgerExercises(
     }
 
     try {
+      const name_fr = resolveExerciseNameFr({
+        name: mapped.name,
+        wgerNameFr: source.nameFr,
+      })
+
       const exerciseId = await insertPublicExercise({
         ...mapped,
+        name_fr,
         coaching_cues,
         content_status: 'partial',
         content_source: 'wger',

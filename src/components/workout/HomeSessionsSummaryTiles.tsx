@@ -17,8 +17,8 @@ import {
   formatWorkoutDuration,
   formatWorkoutVolume,
 } from '@/lib/stats/workout-metrics'
-import type { ExerciseLocale } from '@/lib/workout/exercise-translations'
-import { translateExerciseName } from '@/lib/workout/translate-exercise-name'
+import type { ExerciseLocale } from '@/lib/workout/exercise-locale'
+import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
 import { cn } from '@/lib/utils'
 
 const MAX_VISIBLE_EXERCISES = 2
@@ -43,7 +43,7 @@ function buildExercisePreview(workout: WorkoutSummary, locale: ExerciseLocale) {
 
   return {
     lines: visible.map((entry) => {
-      const name = translateExerciseName(entry.exercise.name, locale)
+      const name = resolveExerciseDisplayName(entry.exercise, locale)
       const setCount = entry.sets.length
       return `${setCount} série${setCount > 1 ? 's' : ''} · ${name}`
     }),

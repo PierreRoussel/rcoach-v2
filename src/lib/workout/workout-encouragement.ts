@@ -4,8 +4,8 @@ import {
   type CircuitExercise,
   type CircuitStep,
 } from '@/lib/workout/workout-circuit'
-import type { ExerciseLocale } from '@/lib/workout/exercise-translations'
-import { translateExerciseName } from '@/lib/workout/translate-exercise-name'
+import type { ExerciseLocale } from '@/lib/workout/exercise-locale'
+import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
 
 export function formatActiveWorkoutElapsed(
   startedAt: string,
@@ -54,8 +54,11 @@ export function getWorkoutEncouragementMessage(
   }
 
   const exercise = exercises[nextStep.exerciseIndex]
-  const exerciseName = translateExerciseName(
-    exercise?.exerciseName ?? 'cet exercice',
+  const exerciseName = resolveExerciseDisplayName(
+    {
+      name: exercise?.exerciseName ?? 'cet exercice',
+      name_fr: exercise?.exerciseNameFr,
+    },
     locale,
   )
   const pendingInExercise = exercise ? countPendingSets(exercise) : 0

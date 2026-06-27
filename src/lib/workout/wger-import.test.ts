@@ -1,11 +1,41 @@
 import { describe, expect, it } from 'vitest'
 
+import { planManualWgerLinks } from '../../../functions/_exercise/import-wger.ts'
 import {
   buildCanonicalExerciseName,
   mapWgerEquipment,
   mapWgerExercise,
   mapWgerMuscleGroup,
 } from '../../../functions/_exercise/wger-map.ts'
+
+describe('planManualWgerLinks', () => {
+  it('links only the first catalog exercise per wger id', () => {
+    const planned = planManualWgerLinks(
+      {
+        'Pull Up': 12,
+        'Chin Up': 12,
+      },
+      [
+        { id: 'a', name: 'Pull Up', wger_exercise_id: null },
+        { id: 'b', name: 'Chin Up', wger_exercise_id: null },
+      ],
+    )
+
+    expect(planned).toEqual([{ exerciseId: 'a', name: 'Pull Up', wgerId: 12 }])
+  })
+
+  it('skips wger ids already stored on another exercise', () => {
+    const planned = planManualWgerLinks(
+      { 'Chin Up': 12 },
+      [
+        { id: 'a', name: 'Pull Up', wger_exercise_id: 12 },
+        { id: 'b', name: 'Chin Up', wger_exercise_id: null },
+      ],
+    )
+
+    expect(planned).toEqual([])
+  })
+})
 
 describe('mapWgerMuscleGroup', () => {
   it('maps wger legs category and quads muscle', () => {

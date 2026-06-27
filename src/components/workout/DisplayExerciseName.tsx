@@ -2,11 +2,12 @@ import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 
 type DisplayExerciseNameProps = {
   name: string | null | undefined
+  nameFr?: string | null
   className?: string
 }
 
-export function DisplayExerciseName({ name, className }: DisplayExerciseNameProps) {
-  const displayName = useExerciseDisplayName(name)
+export function DisplayExerciseName({ name, nameFr, className }: DisplayExerciseNameProps) {
+  const displayName = useExerciseDisplayName(name, nameFr)
 
   if (!displayName) {
     return null

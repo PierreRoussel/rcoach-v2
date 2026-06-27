@@ -11,7 +11,7 @@ import {
   type ProfileUpdateInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import { DEFAULT_EXERCISE_LOCALE } from '@/lib/workout/exercise-translations'
+import { DEFAULT_EXERCISE_LOCALE } from '@/lib/workout/exercise-locale'
 
 function isExerciseLocaleSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : ''
