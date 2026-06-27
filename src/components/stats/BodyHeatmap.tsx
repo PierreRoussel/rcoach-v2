@@ -25,25 +25,13 @@ export function HumanBodyHeatmap({
   showSideLabels = true,
   legendVariant = 'stats',
 }: HumanBodyHeatmapProps) {
-  const frontSvgRef = useRef<SVGSVGElement>(null)
-  const backSvgRef = useRef<SVGSVGElement>(null)
   const fullSvgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
-    if (showSideLabels) {
-      if (frontSvgRef.current) {
-        applyHumanBodyIntensities(frontSvgRef.current, intensities)
-      }
-      if (backSvgRef.current) {
-        applyHumanBodyIntensities(backSvgRef.current, intensities)
-      }
-      return
-    }
-
     if (fullSvgRef.current) {
       applyHumanBodyIntensities(fullSvgRef.current, intensities)
     }
-  }, [intensities, showSideLabels])
+  }, [intensities])
 
   const panelClassName = cn(
     'rounded-3xl border border-border/70 bg-gradient-to-b from-muted/25 to-muted/10 shadow-sm',
@@ -64,15 +52,10 @@ export function HumanBodyHeatmap({
       {showSideLabels ? (
         <div className={panelClassName}>
           <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4">
-            <div className="flex min-w-0 flex-col items-center gap-2">
-              <span className={sideLabelClassName}>Face</span>
-              <HumanBodySvg svgRef={frontSvgRef} side="front" className="w-full" />
-            </div>
-            <div className="flex min-w-0 flex-col items-center gap-2">
-              <span className={sideLabelClassName}>Dos</span>
-              <HumanBodySvg svgRef={backSvgRef} side="back" className="w-full" />
-            </div>
+            <span className={sideLabelClassName}>Face</span>
+            <span className={sideLabelClassName}>Dos</span>
           </div>
+          <HumanBodySvg svgRef={fullSvgRef} side="both" className="mt-2 w-full" />
         </div>
       ) : (
         <div className={panelClassName}>

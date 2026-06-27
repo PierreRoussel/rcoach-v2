@@ -34,6 +34,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Main bundle exceeds Workbox default precache limit (2 MiB).
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
