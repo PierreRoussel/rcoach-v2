@@ -66,9 +66,22 @@ export function applyHumanBodyIntensities(
     }
     title.textContent = `${label} · ${percent}% d'intensité relative`
 
+    if (intensity > 0) {
+      group.dataset.intensity = String(intensity)
+      group.style.setProperty('--muscle-fill', fill)
+    } else {
+      delete group.dataset.intensity
+      group.style.removeProperty('--muscle-fill')
+    }
+
     group.querySelectorAll('path').forEach((path) => {
-      path.style.fill = fill
-      path.style.fillOpacity = intensity > 0 ? '0.82' : ''
+      if (intensity > 0) {
+        path.style.fill = fill
+        path.style.fillOpacity = '0.82'
+      } else {
+        path.style.removeProperty('fill')
+        path.style.removeProperty('fill-opacity')
+      }
     })
   })
 }

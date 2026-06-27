@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 
 import { HumanBodySvg } from '@/components/stats/human-body/HumanBodySvg'
 import {
@@ -27,11 +27,21 @@ export function HumanBodyHeatmap({
 }: HumanBodyHeatmapProps) {
   const fullSvgRef = useRef<SVGSVGElement>(null)
 
-  useEffect(() => {
+  const handleSvgRef = useCallback(
+    (node: SVGSVGElement | null) => {
+      fullSvgRef.current = node
+      if (node) {
+        applyHumanBodyIntensities(node, intensities)
+      }
+    },
+    [intensities],
+  )
+
+  useLayoutEffect(() => {
     if (fullSvgRef.current) {
       applyHumanBodyIntensities(fullSvgRef.current, intensities)
     }
-  }, [intensities])
+  }, [intensities, showSideLabels])
 
   const panelClassName = cn(
     'rounded-3xl border border-border/70 bg-gradient-to-b from-muted/25 to-muted/10 shadow-sm',
@@ -51,15 +61,30 @@ export function HumanBodyHeatmap({
     >
       {showSideLabels ? (
         <div className={panelClassName}>
-          <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4">
-            <span className={sideLabelClassName}>Face</span>
-            <span className={sideLabelClassName}>Dos</span>
+          <div
+            className={cn(
+              'human-body-labeled-frame',
+              compact && 'human-body-labeled-frame--compact',
+            )}
+          >
+            <div className="human-body-labeled-frame__content">
+              <div className="human-body-labeled-frame__labels">
+                <span className={sideLabelClassName}>Face</span>
+                <span className={sideLabelClassName}>Dos</span>
+              </div>
+              <div className="human-body-labeled-frame__figure">
+                <HumanBodySvg
+                  svgRef={handleSvgRef}
+                  side="both"
+                  className="human-body-svg--labeled"
+                />
+              </div>
+            </div>
           </div>
-          <HumanBodySvg svgRef={fullSvgRef} side="both" className="mt-2 w-full" />
         </div>
       ) : (
         <div className={panelClassName}>
-          <HumanBodySvg svgRef={fullSvgRef} />
+          <HumanBodySvg svgRef={handleSvgRef} />
         </div>
       )}
 

@@ -10,6 +10,48 @@
   height: auto;
 }
 
+.human-body-labeled-frame {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.human-body-labeled-frame__content {
+  width: 100%;
+}
+
+.human-body-labeled-frame__labels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0.375rem;
+}
+
+.human-body-labeled-frame__figure {
+  width: 100%;
+  aspect-ratio: 500 / 600;
+  overflow: hidden;
+}
+
+.human-body-labeled-frame--compact {
+  --human-body-labeled-compact-height: 7.5rem;
+}
+
+.human-body-labeled-frame--compact .human-body-labeled-frame__content {
+  width: min(100%, calc(var(--human-body-labeled-compact-height) * 500 / 600));
+  margin-inline: auto;
+}
+
+.human-body-labeled-frame--compact .human-body-labeled-frame__figure {
+  aspect-ratio: 500 / 600;
+  height: auto;
+}
+
+.human-body-labeled-frame .human-body-svg--labeled {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .human-body-heatmap .human-body-svg #body-back > path,
 .human-body-heatmap .human-body-svg #body-front > path {
   fill: var(--human-body-silhouette);
@@ -30,9 +72,15 @@
 }
 
 .human-body-heatmap .muscle path {
+  fill: transparent;
   transition:
     fill 0.2s ease,
     fill-opacity 0.2s ease;
+}
+
+.human-body-heatmap .muscle[data-intensity] path {
+  fill: var(--muscle-fill);
+  fill-opacity: 0.82;
 }
 
 .human-body-heatmap .muscle:hover path {
@@ -40,7 +88,7 @@
   stroke-width: 0.6;
 }
 
-.human-body-heatmap--compact .human-body-svg {
+.human-body-heatmap--compact .human-body-svg:not(.human-body-svg--labeled) {
   max-height: 9.5rem;
 }
 

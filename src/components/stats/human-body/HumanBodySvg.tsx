@@ -14,12 +14,14 @@ export type HumanBodySvgProps = {
   svgRef?: Ref<SVGSVGElement>
   className?: string
   side?: HumanBodySide
+  fit?: 'meet' | 'slice'
 }
 
 export function HumanBodySvg({
   svgRef,
   className,
   side = 'both',
+  fit = 'meet',
 }: HumanBodySvgProps) {
   const ariaLabel =
     side === 'front'
@@ -33,7 +35,7 @@ export function HumanBodySvg({
       ref={svgRef}
       xmlns="http://www.w3.org/2000/svg"
       viewBox={VIEWBOX_BY_SIDE[side]}
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio={`xMidYMid ${fit}`}
       fill="none"
       className={cn('human-body-svg', className)}
       role="img"
