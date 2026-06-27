@@ -34,6 +34,23 @@ export type OverloadSuggestion = {
   suggestedDistanceKm: number | null
 }
 
+function normalizeExerciseName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .trim()
+    .toLowerCase()
+}
+
+export function isWarmUpExerciseName(name: string): boolean {
+  const normalized = normalizeExerciseName(name)
+  return (
+    normalized === 'echauffement' ||
+    normalized === 'warm up' ||
+    normalized === 'warmup'
+  )
+}
+
 export function classifyExercise(exercise: Pick<Exercise, 'name' | 'equipment'>): ExerciseKind {
   const name = exercise.name.toLowerCase()
   const equipment = exercise.equipment?.toLowerCase() ?? ''
@@ -176,10 +193,97 @@ export function summarizePerformance(
   }
 }
 
+function bodyweightRepStats(sets: SetSnapshot[]): {
+  best: number
+  min: number
+  workingCount: number
+} | null {
+  const reps = workingSets(sets)
+    .map((set) => set.reps)
+    .filter((rep): rep is number => rep != null && rep > 0)
+
+  if (reps.length === 0) {
+    return null
+  }
+
+  return {
+    best: Math.max(...reps),
+    min: Math.min(...reps),
+    workingCount: reps.length,
+  }
+}
+
+export function formatBodyweightSessionReference(sets: SetSnapshot[]): string {
+  const working = workingSets(sets)
+  const reps = working
+    .map((set) => set.reps)
+    .filter((rep): rep is number => rep != null && rep > 0)
+
+  if (reps.length === 0) {
+    return ''
+  }
+
+  if (reps.length === 1) {
+    return `${reps[0]} reps${formatRpeSuffix(working[0]?.rpe)}`
+  }
+
+  const best = Math.max(...reps)
+  if (reps.every((rep) => rep === best)) {
+    return `${reps.length} x ${best} reps`
+  }
+
+  return reps.join(', ') + ' reps'
+}
+
+function suggestBodyweightOverload(
+  last: PerformanceSummary,
+  bodyWeightKg?: number | null,
+): OverloadSuggestion | null {
+  const stats = bodyweightRepStats(last.allSets)
+  if (!stats) {
+    return null
+  }
+
+  const { best, min } = stats
+  const lastSession = formatBodyweightSessionReference(last.allSets)
+  const kind = 'bodyweight' as const
+
+  if (min < best) {
+    return {
+      kind,
+      message: `Dernière séance : ${lastSession}. Viser ${best} reps sur chaque série.`,
+      suggestedWeightKg: last.bestSet?.weight_kg ?? null,
+      suggestedReps: best,
+      suggestedDurationSeconds: null,
+      suggestedDistanceKm: null,
+    }
+  }
+
+  const targetReps = best + 1
+  const conservative =
+    bodyWeightKg != null && bodyWeightKg > 0 && best <= 8
+
+  return {
+    kind,
+    message: conservative
+      ? `Dernière séance : ${lastSession}. Viser ${targetReps} rep${targetReps > 1 ? 's' : ''} si toutes les séries restent propres.`
+      : `Dernière séance : ${lastSession}. Viser ${targetReps} rep${targetReps > 1 ? 's' : ''}.`,
+    suggestedWeightKg: last.bestSet?.weight_kg ?? null,
+    suggestedReps: targetReps,
+    suggestedDurationSeconds: null,
+    suggestedDistanceKm: null,
+  }
+}
+
 export function suggestProgressiveOverload(
   exercise: Pick<Exercise, 'name' | 'equipment' | 'tracking_mode'>,
   last: PerformanceSummary | null,
+  options?: { bodyWeightKg?: number | null },
 ): OverloadSuggestion | null {
+  if (isWarmUpExerciseName(exercise.name)) {
+    return null
+  }
+
   if (!last?.bestSet) {
     return null
   }
@@ -218,21 +322,8 @@ export function suggestProgressiveOverload(
       }
     }
 
-    case 'bodyweight': {
-      const reps = best.reps ?? 0
-      if (reps <= 0) {
-        return null
-      }
-
-      return {
-        kind,
-        message: `Dernière séance : ${lastSession}. Viser ${reps + 1} à ${reps + 2} reps.`,
-        suggestedWeightKg: best.weight_kg,
-        suggestedReps: reps + 1,
-        suggestedDurationSeconds: null,
-        suggestedDistanceKm: null,
-      }
-    }
+    case 'bodyweight':
+      return suggestBodyweightOverload(last, options?.bodyWeightKg)
 
     case 'band': {
       const reps = best.reps ?? 0

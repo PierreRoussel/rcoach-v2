@@ -51,8 +51,7 @@ function LoginPage() {
 
   return (
     <AuthMobileShell
-      title="Bon retour"
-      description="Connectez-vous à votre compte RCoach."
+      variant="login"
       footer={
         <p className="text-center text-sm text-muted-foreground">
           Pas de compte ?{' '}

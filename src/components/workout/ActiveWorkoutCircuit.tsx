@@ -75,6 +75,7 @@ type ActiveWorkoutCircuitProps = {
     exerciseIndex: number,
     suggestion: OverloadSuggestion,
   ) => void
+  bodyWeightKg?: number | null
 }
 
 export function ActiveWorkoutCircuit({
@@ -99,6 +100,7 @@ export function ActiveWorkoutCircuit({
   onDeleteSet,
   onReorderSets,
   onApplyOverloadSuggestion,
+  bodyWeightKg,
 }: ActiveWorkoutCircuitProps) {
   const steps = buildCircuitSteps(exercises)
   const nextPendingStepIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
@@ -351,6 +353,7 @@ export function ActiveWorkoutCircuit({
             <div className="w-full space-y-2 px-4">
               <ExerciseOverloadHint
                 compact
+                bodyWeightKg={bodyWeightKg}
                 exercise={{
                   id: exercise.exerciseId,
                   name: exercise.exerciseName,

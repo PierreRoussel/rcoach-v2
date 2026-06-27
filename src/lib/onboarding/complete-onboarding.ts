@@ -3,11 +3,11 @@ import type { NhostClient } from '@nhost/nhost-js'
 import {
   INSERT_WEIGHT_ENTRY,
   UPSERT_NUTRITION_SETTINGS,
-  UPDATE_MY_PROFILE,
   type NutritionSettingsInput,
   type ProfileUpdateInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { updateMyProfile } from '@/lib/graphql/profile-request'
 
 import {
   buildNutritionUpsertFromOnboarding,
@@ -42,8 +42,9 @@ export async function completeAppOnboarding(
     onboarding_completed_at: new Date().toISOString(),
   }
 
-  await graphqlRequest(nhost, UPDATE_MY_PROFILE, {
-    id: profileId,
-    changes: profileChanges,
-  })
+  const updated = await updateMyProfile(nhost, profileId, profileChanges)
+
+  if (!updated) {
+    throw new Error('Impossible de finaliser l’onboarding.')
+  }
 }

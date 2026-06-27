@@ -399,6 +399,7 @@ function ActiveWorkoutPage() {
               lastCompletedStep={lastCompletedStep}
               workoutStartedAt={startedAt}
               rpeEnabled={rpeEnabled}
+              bodyWeightKg={nutritionSettings?.weight_kg}
               templateSetHistory={showLastSetColumn ? setHistory : undefined}
               showLastSetColumn={showLastSetColumn}
               onSelectExercise={(index) => {

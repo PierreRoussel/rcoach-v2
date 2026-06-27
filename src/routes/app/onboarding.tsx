@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { FeatureSlidesCarousel } from '@/components/onboarding/FeatureSlidesCarousel'
@@ -12,6 +13,7 @@ import {
   createEmptyProfileOnboardingForm,
   type ProfileOnboardingFormData,
 } from '@/lib/onboarding/profile-form'
+import { resolveOnboardingProfileId } from '@/lib/onboarding/resolve-profile-id'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useMyProfile } from '@/hooks/useProfile'
 
@@ -26,17 +28,20 @@ export const Route = createFileRoute('/app/onboarding')({
 type OnboardingPhase = 'slides' | 'profile'
 
 function OnboardingPage() {
-  const { nhost } = useAuth()
+  const { nhost, user, isLoading: authLoading } = useAuth()
   const { data: profile } = useMyProfile()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [phase, setPhase] = useState<OnboardingPhase>('slides')
 
   async function persistAndExit(data: ProfileOnboardingFormData) {
-    if (!profile?.id) {
-      throw new Error('Profil introuvable.')
-    }
+    const profileId = await resolveOnboardingProfileId(nhost, user?.id, profile?.id)
 
-    await completeAppOnboarding(nhost, profile.id, data)
+    await completeAppOnboarding(nhost, profileId, data)
+
+    await queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
+    await queryClient.invalidateQueries({ queryKey: ['nutrition-settings'] })
+
     await navigate({ to: '/app' })
   }
 
@@ -50,6 +55,14 @@ function OnboardingPage() {
         onComplete={() => setPhase('profile')}
         onSkip={() => setPhase('profile')}
       />
+    )
+  }
+
+  if (authLoading || !user?.id) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-gradient-hero px-6 text-center">
+        <p className="text-sm text-muted-foreground">Préparation de votre profil...</p>
+      </div>
     )
   }
 

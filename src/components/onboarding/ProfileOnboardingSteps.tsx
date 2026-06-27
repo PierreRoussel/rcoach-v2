@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,12 +22,38 @@ export function ProfileOnboardingSteps({ onComplete, onSkipAll }: ProfileOnboard
   const [form, setForm] = useState(createEmptyProfileOnboardingForm)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const sexAdvanceTimeoutRef = useRef<number | null>(null)
 
   const step = STEPS[stepIndex]
   const isLastStep = stepIndex === STEPS.length - 1
 
+  useEffect(() => {
+    return () => {
+      if (sexAdvanceTimeoutRef.current != null) {
+        window.clearTimeout(sexAdvanceTimeoutRef.current)
+      }
+    }
+  }, [])
+
   function patchForm(patch: Partial<ProfileOnboardingFormData>) {
     setForm((current) => ({ ...current, ...patch }))
+  }
+
+  function handleSexSelect(value: NutritionSex) {
+    patchForm({ sex: value })
+
+    if (step !== 'sex' || isSubmitting) {
+      return
+    }
+
+    if (sexAdvanceTimeoutRef.current != null) {
+      window.clearTimeout(sexAdvanceTimeoutRef.current)
+    }
+
+    sexAdvanceTimeoutRef.current = window.setTimeout(() => {
+      sexAdvanceTimeoutRef.current = null
+      setStepIndex(1)
+    }, 220)
   }
 
   async function finish(data: ProfileOnboardingFormData) {
@@ -83,7 +109,7 @@ export function ProfileOnboardingSteps({ onComplete, onSkipAll }: ProfileOnboard
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-gradient-hero">
+    <div className="onboarding-profile-bg flex min-h-svh flex-col">
       <div className="flex items-center justify-between px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
         <p className="text-xs font-medium text-muted-foreground">
           Profil · {stepIndex + 1}/{STEPS.length}
@@ -123,7 +149,7 @@ export function ProfileOnboardingSteps({ onComplete, onSkipAll }: ProfileOnboard
                       ? 'border-primary bg-soft-primary text-primary'
                       : 'border-border bg-card text-foreground',
                   )}
-                  onClick={() => patchForm({ sex: value satisfies NutritionSex })}
+                  onClick={() => handleSexSelect(value)}
                 >
                   {label}
                 </button>
@@ -201,24 +227,38 @@ export function ProfileOnboardingSteps({ onComplete, onSkipAll }: ProfileOnboard
 
       <div className="space-y-2 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {error ? <p className="text-center text-sm text-destructive">{error}</p> : null}
-        <Button
-          type="button"
-          variant="pill"
-          className="h-12 w-full rounded-full"
-          disabled={isSubmitting}
-          onClick={() => void handleContinue()}
-        >
-          {isSubmitting ? 'Enregistrement...' : isLastStep ? 'Terminer' : 'Continuer'}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-11 w-full rounded-full"
-          disabled={isSubmitting}
-          onClick={() => void handleSkipStep()}
-        >
-          Passer cette étape
-        </Button>
+        {step !== 'sex' ? (
+          <>
+            <Button
+              type="button"
+              variant="pill"
+              className="h-12 w-full rounded-full"
+              disabled={isSubmitting}
+              onClick={() => void handleContinue()}
+            >
+              {isSubmitting ? 'Enregistrement...' : isLastStep ? 'Terminer' : 'Continuer'}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 w-full rounded-full"
+              disabled={isSubmitting}
+              onClick={() => void handleSkipStep()}
+            >
+              Passer cette étape
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-11 w-full rounded-full"
+            disabled={isSubmitting}
+            onClick={() => void handleSkipStep()}
+          >
+            Passer cette étape
+          </Button>
+        )}
       </div>
     </div>
   )

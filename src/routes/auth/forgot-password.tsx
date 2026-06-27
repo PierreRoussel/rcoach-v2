@@ -46,6 +46,7 @@ function ForgotPasswordPage() {
 
   return (
     <AuthMobileShell
+      variant="recovery"
       title="Mot de passe oublié"
       description="Recevez un lien pour définir un nouveau mot de passe."
       footer={

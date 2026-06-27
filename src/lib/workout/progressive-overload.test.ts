@@ -47,6 +47,62 @@ describe('suggestProgressiveOverload', () => {
     )
 
     expect(suggestion?.message).toContain('Dernière séance : 5 reps @ 7.5')
+    expect(suggestion?.suggestedReps).toBe(6)
+  })
+
+  it('consolidates bodyweight reps when the last sets drop off', () => {
+    const last = summarizePerformance('Pull day', '2026-01-01T10:00:00Z', [
+      { set_index: 0, set_type: 'normal', weight_kg: null, reps: 5 },
+      { set_index: 1, set_type: 'normal', weight_kg: null, reps: 5 },
+      { set_index: 2, set_type: 'normal', weight_kg: null, reps: 5 },
+      { set_index: 3, set_type: 'normal', weight_kg: null, reps: 4 },
+    ])
+
+    const suggestion = suggestProgressiveOverload(
+      { name: 'Traction', equipment: 'bodyweight' },
+      last,
+      { bodyWeightKg: 78 },
+    )
+
+    expect(suggestion).toMatchObject({
+      suggestedReps: 5,
+    })
+    expect(suggestion?.message).toContain('5, 5, 5, 4 reps')
+    expect(suggestion?.message).toContain('Viser 5 reps sur chaque série')
+  })
+
+  it('suggests only one extra rep when bodyweight sets are even', () => {
+    const last = summarizePerformance('Pull day', '2026-01-01T10:00:00Z', [
+      { set_index: 0, set_type: 'normal', weight_kg: null, reps: 5 },
+      { set_index: 1, set_type: 'normal', weight_kg: null, reps: 5 },
+      { set_index: 2, set_type: 'normal', weight_kg: null, reps: 5 },
+      { set_index: 3, set_type: 'normal', weight_kg: null, reps: 5 },
+    ])
+
+    const suggestion = suggestProgressiveOverload(
+      { name: 'Traction', equipment: 'bodyweight' },
+      last,
+      { bodyWeightKg: 78 },
+    )
+
+    expect(suggestion).toMatchObject({
+      suggestedReps: 6,
+    })
+    expect(suggestion?.message).not.toContain('à 7')
+    expect(suggestion?.message).toContain('si toutes les séries restent propres')
+  })
+
+  it('does not suggest progression for the warm-up exercise', () => {
+    const last = summarizePerformance('Session', '2026-01-01T10:00:00Z', [
+      { set_index: 0, set_type: 'normal', weight_kg: null, reps: 10 },
+    ])
+
+    expect(
+      suggestProgressiveOverload({ name: 'Échauffement', equipment: 'bodyweight' }, last),
+    ).toBeNull()
+    expect(
+      suggestProgressiveOverload({ name: 'Warm Up', equipment: 'bodyweight' }, last),
+    ).toBeNull()
   })
 
   it('suggests +10s for timed exercises', () => {

@@ -19,6 +19,7 @@ import { useLastExercisePerformance } from '@/hooks/useExercises'
 import type { Exercise } from '@/lib/graphql/operations'
 import {
   formatLastSessionReference,
+  isWarmUpExerciseName,
   suggestProgressiveOverload,
   type OverloadSuggestion,
 } from '@/lib/workout/progressive-overload'
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils'
 
 type ExerciseOverloadHintProps = {
   exercise: Pick<Exercise, 'id' | 'name' | 'equipment'>
+  bodyWeightKg?: number | null
   onApply?: (suggestion: OverloadSuggestion) => void
   compact?: boolean
   className?: string
@@ -170,6 +172,7 @@ function OverloadHintActions({
 
 export function ExerciseOverloadHint({
   exercise,
+  bodyWeightKg,
   onApply,
   compact = false,
   className,
@@ -179,12 +182,16 @@ export function ExerciseOverloadHint({
   const [adjustOpen, setAdjustOpen] = useState(false)
 
   const suggestion = lastPerformance
-    ? suggestProgressiveOverload(exercise, lastPerformance)
+    ? suggestProgressiveOverload(exercise, lastPerformance, { bodyWeightKg })
     : null
 
   useEffect(() => {
     setDismissed(false)
   }, [exercise.id])
+
+  if (isWarmUpExerciseName(exercise.name)) {
+    return null
+  }
 
   function handleApplySuggestion(nextSuggestion: OverloadSuggestion) {
     onApply?.(nextSuggestion)

@@ -63,6 +63,7 @@ function ResetPasswordPage() {
   if (isLoading) {
     return (
       <AuthMobileShell
+        variant="recovery"
         title="Chargement..."
         description="Préparation de la réinitialisation."
       />
@@ -72,6 +73,7 @@ function ResetPasswordPage() {
   if (!isAuthenticated) {
     return (
       <AuthMobileShell
+        variant="recovery"
         title="Lien expiré"
         description="Demandez un nouveau lien de réinitialisation."
         footer={
@@ -90,6 +92,7 @@ function ResetPasswordPage() {
 
   return (
     <AuthMobileShell
+      variant="recovery"
       title="Nouveau mot de passe"
       description="Choisissez un mot de passe sécurisé pour votre compte."
     >

@@ -78,8 +78,7 @@ function RegisterPage() {
 
   return (
     <AuthMobileShell
-      title="Rejoindre RCoach"
-      description="Créez votre compte athlète en quelques secondes."
+      variant="register"
       footer={
         <p className="text-center text-sm text-muted-foreground">
           Déjà un compte ?{' '}

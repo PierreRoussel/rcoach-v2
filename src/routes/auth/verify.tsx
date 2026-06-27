@@ -55,6 +55,7 @@ function VerifyPage() {
 
   return (
     <AuthMobileShell
+      variant="recovery"
       title={status === 'verifying' ? 'Vérification...' : 'Échec de vérification'}
       description={
         status === 'verifying'
