@@ -41,7 +41,7 @@ function LoginPage() {
         return
       }
 
-      await navigate({ to: '/app' })
+      await navigate({ to: '/app/onboarding' })
     } catch {
       setError('Connexion impossible. Vérifiez vos identifiants.')
     } finally {

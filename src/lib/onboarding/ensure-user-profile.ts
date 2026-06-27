@@ -1,39 +1,28 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
-import { ENSURE_USER_PROFILE } from '@/lib/graphql/operations'
 import { fetchMyProfile } from '@/lib/graphql/profile-request'
-import { graphqlRequest } from '@/lib/graphql/request'
 
-function isEnsureProfileUnavailable(error: unknown) {
-  const message = error instanceof Error ? error.message.toLowerCase() : ''
-  return (
-    message.includes('ensure_user_profile') &&
-    (message.includes('not found') ||
-      message.includes('query_root') ||
-      message.includes('field') ||
-      message.includes('unknown'))
-  )
-}
+const PROFILE_RETRY_DELAYS_MS = [0, 400, 900, 1500] as const
 
 export async function ensureUserProfile(
   nhost: NhostClient,
   userId: string,
 ): Promise<string> {
-  try {
-    const data = await graphqlRequest<{ ensure_user_profile: string }>(
-      nhost,
-      ENSURE_USER_PROFILE,
-    )
-    return data.ensure_user_profile
-  } catch (error) {
-    if (!isEnsureProfileUnavailable(error)) {
-      throw error
+  for (const delayMs of PROFILE_RETRY_DELAYS_MS) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, delayMs)
+      })
     }
-  }
 
-  const profile = await fetchMyProfile(nhost, userId)
-  if (profile?.id) {
-    return profile.id
+    try {
+      const profile = await fetchMyProfile(nhost, userId)
+      if (profile?.id) {
+        return profile.id
+      }
+    } catch {
+      // Retry while signup trigger or API catches up.
+    }
   }
 
   throw new Error(

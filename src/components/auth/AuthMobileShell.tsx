@@ -30,26 +30,38 @@ export function AuthMobileShell({
   const isMarketingCompact = variant === 'login' || variant === 'register'
 
   return (
-    <div className="relative flex min-h-svh flex-col overflow-x-hidden overflow-y-auto bg-gradient-hero">
+    <div
+      className={cn(
+        'relative grid bg-gradient-hero',
+        isMarketingCompact
+          ? 'h-svh max-h-svh grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden'
+          : 'min-h-svh grid-rows-[1fr_auto] overflow-x-hidden overflow-y-auto',
+      )}
+    >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_70%)]" />
 
       <div
         className={cn(
-          'relative z-0 shrink-0 px-4 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))]',
-          isMarketingCompact ? 'pb-1' : 'flex flex-1 flex-col pb-2',
+          'relative z-0 row-start-1 px-4 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))]',
+          isMarketingCompact ? 'pb-1' : 'flex flex-col pb-2',
+          !isMarketingCompact && 'flex min-h-0 items-center justify-center',
         )}
       >
         <AuthMarketingHero
           variant={variant}
           compact={isMarketingCompact}
-          className={isMarketingCompact ? 'py-1' : 'flex-1 justify-center py-2'}
+          className={isMarketingCompact ? 'py-1' : 'py-2'}
         />
       </div>
 
+      {isMarketingCompact ? <div aria-hidden className="row-start-2 min-h-0" /> : null}
+
       <div
         className={cn(
-          'relative z-20 shrink-0 rounded-t-[1.75rem] border border-border/60 bg-background/95 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_40px_rgba(0,0,0,0.08)] backdrop-blur-md',
-          isMarketingCompact && '-mt-6',
+          'relative z-20 rounded-t-[1.75rem] border border-border/60 bg-background/95 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_40px_rgba(0,0,0,0.08)] backdrop-blur-md',
+          isMarketingCompact
+            ? 'row-start-3 -mt-6 min-h-0 overflow-y-auto'
+            : 'row-start-2',
           className,
         )}
       >

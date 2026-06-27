@@ -43,3 +43,14 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.ensure_user_profile() TO "user";
+
+-- Backfill profiles for auth users missing a row (legacy / failed signup trigger).
+INSERT INTO public.profiles (id, display_name, friend_code, email)
+SELECT
+  u.id,
+  COALESCE(NULLIF(u.display_name, ''), split_part(u.email, '@', 1), 'User'),
+  public.generate_friend_code(),
+  u.email
+FROM auth.users AS u
+LEFT JOIN public.profiles AS p ON p.id = u.id
+WHERE p.id IS NULL;
