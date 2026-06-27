@@ -7,6 +7,7 @@ import {
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { buildPendingMealLogEntry, buildPendingQuickMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
+import { isLocalFoodId } from '@/lib/nutrition/offline-food'
 import { scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import { nutritionDayQueryKey } from '@/lib/nutrition/nutrition-day-cache-id'
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
@@ -17,6 +18,8 @@ import {
   syncMealEntryInsert,
   syncMealEntryUpdate,
 } from '@/lib/graphql/nutrition-sync-queue'
+import { flushSyncQueue } from '@/lib/graphql/sync-queue'
+import { shouldQueueNutritionMutation } from '@/lib/graphql/nutrition-mutation-policy'
 
 export type AddMealEntryInput = {
   loggedDate: string
@@ -102,6 +105,15 @@ export function useMealLogMutations() {
     }
   }
 
+  const flushPendingSync = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
+
+    await flushSyncQueue(nhost)
+    await queryClient.invalidateQueries({ queryKey: ['nutrition-sync-pending'] })
+  }
+
   const addEntry = useMutation({
     mutationFn: async (input: AddMealEntryInput): Promise<MealMutationResult> => {
       const object = buildMealEntryObject(input)
@@ -111,11 +123,21 @@ export function useMealLogMutations() {
           insert_meal_log_entries_one: MealLogEntry
         }>(nhost, INSERT_MEAL_LOG_ENTRY, { object })
 
+        await flushPendingSync()
+
         return {
           entry: data.insert_meal_log_entries_one,
           offline: false,
         }
-      } catch {
+      } catch (error) {
+        if (
+          !shouldQueueNutritionMutation(error, {
+            hasLocalFoodReference: isLocalFoodId(input.food.id),
+          })
+        ) {
+          throw error instanceof Error ? error : new Error("Impossible d'ajouter l'aliment.")
+        }
+
         const entryId = await syncMealEntryInsert(nhost, {
           userId: user?.id ?? 'offline',
           object,
@@ -149,11 +171,17 @@ export function useMealLogMutations() {
           insert_meal_log_entries_one: MealLogEntry
         }>(nhost, INSERT_MEAL_LOG_ENTRY, { object })
 
+        await flushPendingSync()
+
         return {
           entry: data.insert_meal_log_entries_one,
           offline: false,
         }
-      } catch {
+      } catch (error) {
+        if (!shouldQueueNutritionMutation(error)) {
+          throw error instanceof Error ? error : new Error("Impossible d'ajouter l'aliment.")
+        }
+
         const entryId = await syncMealEntryInsert(nhost, {
           userId: user?.id ?? 'offline',
           object,
@@ -203,11 +231,21 @@ export function useMealLogMutations() {
           update_meal_log_entries_by_pk: MealLogEntry
         }>(nhost, UPDATE_MEAL_LOG_ENTRY, { id: input.id, changes })
 
+        await flushPendingSync()
+
         return {
           entry: data.update_meal_log_entries_by_pk,
           offline: false,
         }
-      } catch {
+      } catch (error) {
+        if (
+          !shouldQueueNutritionMutation(error, {
+            hasLocalFoodReference: isLocalFoodId(input.food.id),
+          })
+        ) {
+          throw error instanceof Error ? error : new Error("Impossible de modifier l'aliment.")
+        }
+
         await syncMealEntryUpdate(nhost, input.id, changes)
 
         return {
@@ -240,7 +278,13 @@ export function useMealLogMutations() {
         if (!data.delete_meal_log_entries_by_pk) {
           return
         }
-      } catch {
+
+        await flushPendingSync()
+      } catch (error) {
+        if (!shouldQueueNutritionMutation(error)) {
+          throw error instanceof Error ? error : new Error("Impossible de supprimer l'aliment.")
+        }
+
         await enqueueNutritionMutation('delete_meal_entry', { id: input.id })
       }
     },
@@ -258,11 +302,23 @@ export function useMealLogMutations() {
           insert_meal_log_entries_one: MealLogEntry
         }>(nhost, INSERT_MEAL_LOG_ENTRY, { object })
 
+        await flushPendingSync()
+
         return {
           entry: data.insert_meal_log_entries_one,
           offline: false,
         }
-      } catch {
+      } catch (error) {
+        if (
+          !shouldQueueNutritionMutation(error, {
+            hasLocalFoodReference: Boolean(
+              input.entry.food_id && isLocalFoodId(input.entry.food_id),
+            ),
+          })
+        ) {
+          throw error instanceof Error ? error : new Error("Impossible de restaurer l'aliment.")
+        }
+
         const entryId = await syncMealEntryInsert(nhost, {
           userId: user?.id ?? 'offline',
           object,

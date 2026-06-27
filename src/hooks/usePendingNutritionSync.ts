@@ -21,5 +21,6 @@ export function usePendingNutritionSyncCount() {
       return pending.filter((item) => NUTRITION_QUEUE_TYPES.has(item.type)).length
     },
     refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   })
 }

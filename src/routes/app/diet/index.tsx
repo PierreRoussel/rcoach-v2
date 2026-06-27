@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn } from '@/design-system'
 import { useDietEntranceAnimation } from '@/hooks/useDietEntranceAnimation'
+import { runNutritionSync } from '@/hooks/useNutritionSync'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -18,6 +20,7 @@ import { usePendingNutritionSyncCount } from '@/hooks/usePendingNutritionSync'
 import { useWeightGoal } from '@/hooks/useWeightGoal'
 import { hasNutritionSetup, isNutritionConfigured } from '@/lib/nutrition/onboarding'
 import { toDateKey } from '@/lib/nutrition/dates'
+import { useAuth } from '@/lib/nhost/AuthProvider'
 
 const dietSearchSchema = z.object({
   date: z.string().optional(),
@@ -31,10 +34,13 @@ export const Route = createFileRoute('/app/diet/')({
 const NUTRITION_ONBOARDING_DISMISSED_KEY = 'nutrition-onboarding-dismissed'
 
 function DietPage() {
+  const { nhost } = useAuth()
+  const queryClient = useQueryClient()
   const navigate = useNavigate({ from: '/app/diet/' })
   const search = Route.useSearch()
   const urlDate = search.date ?? toDateKey(new Date())
   const [activeDate, setActiveDate] = useState(urlDate)
+  const [isRetryingSync, setIsRetryingSync] = useState(false)
   const { data: settings, isLoading: settingsLoading, isFetched: settingsFetched } =
     useNutritionSettings()
   const { data: weightGoal, isFetched: weightGoalFetched } = useWeightGoal()
@@ -68,6 +74,20 @@ function DietPage() {
     })
   }
 
+  async function retryPendingSync() {
+    if (!isOnline || isRetryingSync) {
+      return
+    }
+
+    setIsRetryingSync(true)
+
+    try {
+      await runNutritionSync(nhost, queryClient)
+    } finally {
+      setIsRetryingSync(false)
+    }
+  }
+
   const statusBanners =
     !isOnline || pendingSyncCount > 0 ? (
       <div className="space-y-2">
@@ -77,10 +97,24 @@ function DietPage() {
           </p>
         ) : null}
         {pendingSyncCount > 0 ? (
-          <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
-            {pendingSyncCount} modification{pendingSyncCount > 1 ? 's' : ''} en attente de
-            synchronisation.
-          </p>
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
+            <p>
+              {pendingSyncCount} modification{pendingSyncCount > 1 ? 's' : ''} en attente de
+              synchronisation.
+            </p>
+            {isOnline ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 shrink-0 rounded-full px-3 text-xs"
+                disabled={isRetryingSync}
+                onClick={() => void retryPendingSync()}
+              >
+                {isRetryingSync ? 'Sync…' : 'Réessayer'}
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     ) : null

@@ -8,6 +8,7 @@ import {
   LIST_FOOD_FAVORITES,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { shouldQueueNutritionMutation } from '@/lib/graphql/nutrition-mutation-policy'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
 import type { Food } from '@/lib/nutrition/types'
@@ -94,9 +95,13 @@ export function useFoodMutations() {
         })
         await cacheFood(data.insert_foods_one)
         return data.insert_foods_one
-      } catch {
+      } catch (error) {
         if (!user?.id) {
           throw new Error('Utilisateur non connecté.')
+        }
+
+        if (!shouldQueueNutritionMutation(error)) {
+          throw error instanceof Error ? error : new Error("Impossible d'enregistrer l'aliment.")
         }
 
         return syncFoodUpsert(nhost, payload, user.id)
@@ -124,9 +129,13 @@ export function useFoodMutations() {
 
       await cacheFood(data.insert_foods_one)
       return data.insert_foods_one
-    } catch {
+    } catch (error) {
       if (!user?.id) {
         throw new Error('Utilisateur non connecté.')
+      }
+
+      if (!shouldQueueNutritionMutation(error)) {
+        throw error instanceof Error ? error : new Error("Impossible d'enregistrer l'aliment.")
       }
 
       return syncFoodUpsert(nhost, mapOffDraftToFoodInsert(draft), user.id, draft.offProductId)

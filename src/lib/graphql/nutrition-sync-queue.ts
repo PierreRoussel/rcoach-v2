@@ -6,6 +6,7 @@ import {
   UPDATE_MEAL_LOG_ENTRY,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { isUnrecoverableNutritionSyncError } from '@/lib/graphql/nutrition-mutation-policy'
 import { nutritionDayCacheId } from '@/lib/nutrition/nutrition-day-cache-id'
 import {
   buildLocalFood,
@@ -122,9 +123,13 @@ export async function flushNutritionSyncQueue(nhost: NhostClient): Promise<Nutri
       }
 
       syncedCount += 1
-    } catch {
+    } catch (error) {
       if (item.id != null) {
-        await db.syncQueue.update(item.id, { attempts: item.attempts + 1 })
+        if (isUnrecoverableNutritionSyncError(error)) {
+          await db.syncQueue.delete(item.id)
+        } else {
+          await db.syncQueue.update(item.id, { attempts: item.attempts + 1 })
+        }
       }
     }
   }
@@ -177,9 +182,13 @@ export async function flushNutritionSyncQueue(nhost: NhostClient): Promise<Nutri
       }
 
       syncedCount += 1
-    } catch {
+    } catch (error) {
       if (item.id != null) {
-        await db.syncQueue.update(item.id, { attempts: item.attempts + 1 })
+        if (isUnrecoverableNutritionSyncError(error)) {
+          await db.syncQueue.delete(item.id)
+        } else {
+          await db.syncQueue.update(item.id, { attempts: item.attempts + 1 })
+        }
       }
     }
   }
