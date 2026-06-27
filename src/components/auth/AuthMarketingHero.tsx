@@ -39,14 +39,17 @@ export function AuthMarketingHero({ variant, className }: AuthMarketingHeroProps
 
       {showMockups ? (
         <>
-          <div className="relative z-10 mt-5 h-[11.5rem] w-full max-w-[19rem]">
+          <div className="relative z-10 mt-5 h-[11.5rem] w-full max-w-[19rem] [contain:layout_style]">
             {AUTH_HERO_MOCKUPS.map((mockup) => (
-              <div key={mockup.imageSrc} className={cn(mockup.className, 'auth-mockup-float')}>
-                <img
-                  src={mockup.imageSrc}
-                  alt={mockup.alt}
-                  className="w-full rounded-2xl border border-white/60 object-cover shadow-xl ring-1 ring-black/5"
-                />
+              <div key={mockup.imageSrc} className={cn(mockup.className, 'auth-mockup-shell')}>
+                <div className="auth-mockup-float">
+                  <img
+                    src={mockup.imageSrc}
+                    alt={mockup.alt}
+                    decoding="async"
+                    className="w-full rounded-2xl border border-white/60 object-cover shadow-lg ring-1 ring-black/5"
+                  />
+                </div>
               </div>
             ))}
           </div>

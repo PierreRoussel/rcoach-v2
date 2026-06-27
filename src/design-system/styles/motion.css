@@ -92,28 +92,33 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
 @keyframes auth-mockup-float {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 
   50% {
-    transform: translateY(-6px);
+    transform: translate3d(0, -8px, 0);
   }
 }
 
-.auth-mockup-float {
-  animation: auth-mockup-float 5s ease-in-out infinite;
+.auth-mockup-shell {
+  backface-visibility: hidden;
 }
 
-.auth-mockup-float:nth-child(1) {
+.auth-mockup-float {
+  animation: auth-mockup-float 4.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  backface-visibility: hidden;
+}
+
+.auth-mockup-shell:nth-child(1) .auth-mockup-float {
   animation-delay: 0s;
 }
 
-.auth-mockup-float:nth-child(2) {
-  animation-delay: 0.4s;
+.auth-mockup-shell:nth-child(2) .auth-mockup-float {
+  animation-delay: 0.35s;
 }
 
-.auth-mockup-float:nth-child(3) {
-  animation-delay: 0.8s;
+.auth-mockup-shell:nth-child(3) .auth-mockup-float {
+  animation-delay: 0.7s;
 }
 
 @keyframes onboarding-image-enter {
