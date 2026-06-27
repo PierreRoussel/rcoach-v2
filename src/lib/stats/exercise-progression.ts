@@ -35,6 +35,7 @@ export type PeriodRange = {
 export type ExerciseCatalogEntry = {
   exerciseId: string
   name: string
+  nameFr?: string | null
   muscleGroup: string | null
   equipment: string | null
   sessionCount: number
@@ -233,6 +234,7 @@ export function buildExerciseCatalog(
     {
       exerciseId: string
       name: string
+      nameFr: string | null
       muscleGroup: string | null
       equipment: string | null
       sessionCount: number
@@ -250,6 +252,7 @@ export function buildExerciseCatalog(
         byExercise.set(id, {
           exerciseId: id,
           name: exercise.exercise.name,
+          nameFr: exercise.exercise.name_fr ?? null,
           muscleGroup: exercise.exercise.muscle_group,
           equipment: exercise.exercise.equipment,
           sessionCount: 1,
@@ -278,6 +281,7 @@ export function buildExerciseCatalog(
       return {
         exerciseId: entry.exerciseId,
         name: entry.name,
+        nameFr: entry.nameFr,
         muscleGroup: entry.muscleGroup,
         equipment: entry.equipment,
         sessionCount: entry.sessionCount,

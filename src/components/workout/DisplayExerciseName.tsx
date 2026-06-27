@@ -1,4 +1,5 @@
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
+import type { ExerciseNameSource } from '@/lib/workout/translate-exercise-name'
 
 type DisplayExerciseNameProps = {
   name: string | null | undefined
@@ -24,4 +25,20 @@ export function DisplayExerciseName({
   }
 
   return <>{displayName}</>
+}
+
+type DisplayExerciseProps = {
+  exercise: ExerciseNameSource & { id?: string | null }
+  className?: string
+}
+
+export function DisplayExercise({ exercise, className }: DisplayExerciseProps) {
+  return (
+    <DisplayExerciseName
+      name={exercise.name}
+      nameFr={exercise.name_fr}
+      exerciseId={exercise.id}
+      className={className}
+    />
+  )
 }

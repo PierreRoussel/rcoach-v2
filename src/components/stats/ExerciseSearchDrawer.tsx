@@ -165,7 +165,7 @@ export function ExerciseSearchDrawer({
                   >
                     <div className="min-w-0">
                       <p className="truncate font-display font-bold">
-                        <DisplayExerciseName name={row.name} nameFr={row.nameFr} />
+                        <DisplayExerciseName name={row.name} nameFr={row.nameFr} exerciseId={row.exerciseId} />
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {MUSCLE_GROUP_LABELS[normalizeMuscleGroup(row.muscleGroup)]}

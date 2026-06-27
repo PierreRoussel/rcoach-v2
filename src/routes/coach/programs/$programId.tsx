@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PageHeader, Pill } from '@/design-system'
-import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
+import { DisplayExercise } from '@/components/workout/DisplayExerciseName'
 import {
   useAddProgramDay,
   useAddProgramExercise,
@@ -160,7 +160,7 @@ function ProgramDetailPage() {
               >
                 <div>
                   <p className="font-display font-bold">
-                    <DisplayExerciseName name={entry.exercise.name} />
+                    <DisplayExercise exercise={entry.exercise} className="font-display font-black" />
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {entry.target_sets ?? '—'} x {entry.target_reps ?? '—'}

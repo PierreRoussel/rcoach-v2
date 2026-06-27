@@ -9,6 +9,7 @@ import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { RestTimerBar } from '@/components/workout/RestTimerBar'
 import { HoldTimerBar } from '@/components/workout/HoldTimerBar'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
+import { UpdateTemplateFromWorkoutDialog } from '@/components/workout/UpdateTemplateFromWorkoutDialog'
 import {
   WorkoutRecapDialog,
   type WorkoutRecapData,
@@ -41,6 +42,12 @@ import { useMyProfile } from '@/hooks/useProfile'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
 import { useMyWorkouts } from '@/hooks/useWorkouts'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
+import {
+  DEFAULT_GLOBAL_REST_SECONDS,
+  templateToDraft,
+  useSaveWorkoutTemplate,
+  useWorkoutTemplate,
+} from '@/hooks/useWorkoutTemplates'
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { pushWorkoutSession } from '@/lib/health/push-workout-session'
@@ -67,6 +74,13 @@ import {
   isWorkingSet,
 } from '@/lib/workout/progressive-overload'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import { activeExercisesToTemplateDrafts } from '@/lib/workout/active-to-template'
+import {
+  snapshotExerciseLineup,
+  snapshotFromTemplateDrafts,
+  templateLineupChanged,
+  type TemplateExerciseLineSnapshot,
+} from '@/lib/workout/template-lineup'
 
 export const Route = createFileRoute('/app/workout/active')({
   validateSearch: (search: Record<string, unknown>) => {
@@ -93,6 +107,7 @@ function ActiveWorkoutPage() {
     title,
     startedAt,
     sourceTemplateId,
+    sourceTemplateExerciseLineup,
     exercises: activeExercises,
     activeStepIndex,
     lastCompletedStep,
@@ -152,10 +167,17 @@ function ActiveWorkoutPage() {
   const [isRecapFlow, setIsRecapFlow] = useState(false)
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
+  const [templateUpdateOpen, setTemplateUpdateOpen] = useState(false)
+  const [templateComparison, setTemplateComparison] = useState<{
+    before: TemplateExerciseLineSnapshot[]
+    after: TemplateExerciseLineSnapshot[]
+  } | null>(null)
 
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
   const effectiveTemplateId = sourceTemplateId ?? initialTemplateId
+  const { data: sourceTemplate } = useWorkoutTemplate(effectiveTemplateId ?? '')
+  const saveWorkoutTemplate = useSaveWorkoutTemplate()
   const { history: templateSetHistory } = useLastTemplateSetHistory(
     effectiveTemplateId,
     { includeRpe: rpeEnabled },
@@ -222,18 +244,18 @@ function ActiveWorkoutPage() {
     ? `${holdDisplayName} — série ${(holdingStep?.setIndex ?? 0) + 1}`
     : null
 
-  async function handleFinish() {
-    setFinishConfirmOpen(false)
-
-    if (completedCount === 0) {
-      setError('Validez au moins une série avant de terminer.')
-      return
-    }
-
+  async function saveFinishedWorkout(updateTemplate: boolean) {
+    setTemplateUpdateOpen(false)
+    setTemplateComparison(null)
     setIsSaving(true)
     setIsRecapFlow(true)
     setError(null)
     setMessage(null)
+
+    const storeSnapshot = useActiveWorkoutStore.getState()
+    const exercisesSnapshot = storeSnapshot.exercises
+    const defaultRestSnapshot = storeSnapshot.defaultRestSeconds
+    const templateIdSnapshot = storeSnapshot.sourceTemplateId
 
     try {
       const draft = await finishWorkout()
@@ -270,6 +292,24 @@ function ActiveWorkoutPage() {
       }
 
       void pushWorkoutSession(draft, endedAt).catch(() => undefined)
+
+      if (updateTemplate && templateIdSnapshot) {
+        if (!sourceTemplate) {
+          throw new Error('Impossible de mettre à jour le modèle pour le moment.')
+        }
+
+        await saveWorkoutTemplate.mutateAsync({
+          templateId: templateIdSnapshot,
+          name: sourceTemplate.name,
+          folderName: sourceTemplate.folder_name ?? null,
+          defaultRestSeconds:
+            sourceTemplate.default_rest_seconds ?? DEFAULT_GLOBAL_REST_SECONDS,
+          exercises: activeExercisesToTemplateDrafts(
+            exercisesSnapshot,
+            defaultRestSnapshot,
+          ),
+        })
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['workouts'] })
 
@@ -313,6 +353,42 @@ function ActiveWorkoutPage() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  async function handleFinish() {
+    setFinishConfirmOpen(false)
+
+    if (completedCount === 0) {
+      setError('Validez au moins une série avant de terminer.')
+      return
+    }
+
+    const templateId = sourceTemplateId
+    if (!templateId) {
+      await saveFinishedWorkout(false)
+      return
+    }
+
+    const before =
+      sourceTemplateExerciseLineup && sourceTemplateExerciseLineup.length > 0
+        ? sourceTemplateExerciseLineup
+        : sourceTemplate
+          ? snapshotFromTemplateDrafts(templateToDraft(sourceTemplate).exercises)
+          : null
+
+    if (!before) {
+      await saveFinishedWorkout(false)
+      return
+    }
+
+    const after = snapshotExerciseLineup(activeExercises)
+    if (!templateLineupChanged(before, after)) {
+      await saveFinishedWorkout(false)
+      return
+    }
+
+    setTemplateComparison({ before, after })
+    setTemplateUpdateOpen(true)
   }
 
   if (!startedAt && !isRecapFlow) {
@@ -566,6 +642,24 @@ function ActiveWorkoutPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {templateComparison ? (
+        <UpdateTemplateFromWorkoutDialog
+          open={templateUpdateOpen}
+          onOpenChange={(open) => {
+            setTemplateUpdateOpen(open)
+            if (!open && !isSaving) {
+              setTemplateComparison(null)
+            }
+          }}
+          templateName={sourceTemplate?.name ?? title}
+          before={templateComparison.before}
+          after={templateComparison.after}
+          isSaving={isSaving}
+          onKeepTemplate={() => void saveFinishedWorkout(false)}
+          onUpdateTemplate={() => void saveFinishedWorkout(true)}
+        />
+      ) : null}
 
       {message ? (
         <p className="text-sm text-secondary-foreground">{message}</p>

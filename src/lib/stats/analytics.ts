@@ -31,6 +31,7 @@ export type TopExerciseByZone = {
   label: string
   exerciseId: string | null
   exerciseName: string
+  exerciseNameFr?: string | null
   sets: number
   volume: number
   bestWeightKg: number
@@ -41,6 +42,7 @@ export type TopExerciseByZone = {
 type ExerciseAccumulator = {
   exerciseId: string
   name: string
+  nameFr: string | null
   sets: number
   volume: number
   bestWeightKg: number
@@ -128,6 +130,7 @@ export function computeTopExerciseByZone(
       const current = exerciseMap.get(entry.exercise.id) ?? {
         exerciseId: entry.exercise.id,
         name: entry.exercise.name,
+        nameFr: entry.exercise.name_fr ?? null,
         sets: 0,
         volume: 0,
         bestWeightKg: 0,
@@ -183,6 +186,7 @@ export function computeTopExerciseByZone(
       label: MUSCLE_GROUP_LABELS[muscle],
       exerciseId: top.exerciseId,
       exerciseName: top.name,
+      exerciseNameFr: top.nameFr,
       sets: top.sets,
       volume: top.volume,
       bestWeightKg: top.bestWeightKg,

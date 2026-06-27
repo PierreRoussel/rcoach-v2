@@ -313,6 +313,7 @@ export function TemplateEditorForm({
               setStatsExercise({
                 exerciseId: exercise.exerciseId,
                 exerciseName: exercise.exerciseName,
+                exerciseNameFr: exercise.exerciseNameFr,
                 muscleGroup: exercise.muscleGroup,
                 equipment: exercise.equipment,
               })

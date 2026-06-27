@@ -14,6 +14,7 @@ export type PersonalRecordKind = 'volume' | 'oneRm'
 export type PersonalRecordHit = {
   exerciseId: string
   exerciseName: string
+  exerciseNameFr?: string | null
   weightKg: number
   reps: number
   kinds: PersonalRecordKind[]
@@ -70,6 +71,8 @@ export function draftToWorkoutSummary(
       exercise: {
         id: exercise.exerciseId,
         name: exercise.exerciseName,
+        name_fr:
+          'exerciseNameFr' in exercise ? exercise.exerciseNameFr ?? null : null,
         muscle_group: null,
         equipment: null,
       },
@@ -346,6 +349,7 @@ export function detectWorkoutPersonalRecords(
         hits.push({
           exerciseId: entry.exercise.id,
           exerciseName: entry.exercise.name,
+          exerciseNameFr: entry.exercise.name_fr ?? null,
           weightKg: set.weight_kg,
           reps: set.reps,
           kinds,

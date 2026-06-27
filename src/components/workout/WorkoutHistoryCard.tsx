@@ -10,9 +10,7 @@ import {
   formatWorkoutDuration,
 } from '@/lib/stats/workout-metrics'
 import { countWorkoutSets } from '@/hooks/useWorkouts'
-import { useExerciseLocale } from '@/hooks/useExerciseLocale'
-import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
-import type { ExerciseLocale } from '@/lib/workout/exercise-locale'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import { cn } from '@/lib/utils'
 
 const VISIBLE_EXERCISES = 3
@@ -28,14 +26,12 @@ type WorkoutHistoryCardProps = {
 
 function formatExerciseSummary(
   entry: WorkoutSummary['workout_exercises'][number],
-  locale: ExerciseLocale,
 ) {
   const setCount = entry.sets.length
   const equipment = entry.exercise.equipment
   const suffix = equipment ? ` (${equipment})` : ''
-  const exerciseName = resolveExerciseDisplayName(entry.exercise, locale)
 
-  return `${setCount} série${setCount > 1 ? 's' : ''} de ${exerciseName}${suffix}`
+  return { setCount, suffix, exercise: entry.exercise }
 }
 
 export function WorkoutHistoryCard({
@@ -45,7 +41,6 @@ export function WorkoutHistoryCard({
   variant = 'standalone',
   className,
 }: WorkoutHistoryCardProps) {
-  const exerciseLocale = useExerciseLocale()
   const displayName = profile?.display_name ?? 'Athlète'
   const volumeKg = computeWorkoutVolume(workout)
   const recordsCount = countWorkoutPersonalRecords(workout, allWorkouts)
@@ -85,7 +80,10 @@ export function WorkoutHistoryCard({
 
         {workout.workout_exercises.length > 0 ? (
           <ul className="mt-3 space-y-1.5">
-            {visibleExercises.map((entry) => (
+            {visibleExercises.map((entry) => {
+              const summary = formatExerciseSummary(entry)
+
+              return (
               <li
                 key={entry.id}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -93,9 +91,18 @@ export function WorkoutHistoryCard({
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-soft-secondary">
                   <Dumbbell className="size-3.5 text-secondary" />
                 </span>
-                <span className="truncate">{formatExerciseSummary(entry, exerciseLocale)}</span>
+                <span className="truncate">
+                  {summary.setCount} série{summary.setCount > 1 ? 's' : ''} de{' '}
+                  <DisplayExerciseName
+                    name={summary.exercise.name}
+                    nameFr={summary.exercise.name_fr}
+                    exerciseId={summary.exercise.id}
+                  />
+                  {summary.suffix}
+                </span>
               </li>
-            ))}
+              )
+            })}
             {hiddenCount > 0 ? (
               <li className="pl-9 text-xs text-muted-foreground">
                 Afficher {hiddenCount} exercice{hiddenCount > 1 ? 's' : ''} de plus

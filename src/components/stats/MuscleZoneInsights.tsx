@@ -35,7 +35,11 @@ function ZoneInsightCard({ zone }: { zone: TopExerciseByZone }) {
             {zone.label}
           </p>
           <p className="font-display font-black text-foreground">
-            <DisplayExerciseName name={zone.exerciseName} />
+            <DisplayExerciseName
+              name={zone.exerciseName}
+              nameFr={zone.exerciseNameFr}
+              exerciseId={zone.exerciseId}
+            />
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {zone.sets} sets · {Math.round(zone.volume).toLocaleString('fr-FR')} kg·reps

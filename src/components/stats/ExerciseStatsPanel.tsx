@@ -85,6 +85,7 @@ export function ExerciseStatsPanel({
     return {
       exerciseId: fromCatalog.id,
       name: fromCatalog.name,
+      nameFr: fromCatalog.name_fr ?? null,
       muscleGroup: fromCatalog.muscle_group,
       equipment: fromCatalog.equipment,
       sessionCount: 0,

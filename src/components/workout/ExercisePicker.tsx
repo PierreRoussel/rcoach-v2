@@ -154,7 +154,11 @@ export function ExercisePicker({
                 >
                   <span>
                     <span className="block font-medium">
-                      <DisplayExerciseName name={exercise.name} nameFr={exercise.name_fr} />
+                      <DisplayExerciseName
+                        name={exercise.name}
+                        nameFr={exercise.name_fr}
+                        exerciseId={exercise.id}
+                      />
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {exercise.muscle_group ?? '—'} · {exercise.equipment ?? '—'}

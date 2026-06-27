@@ -199,7 +199,7 @@ function ExercisesPage() {
               >
                 <div>
                   <p className="font-medium">
-                    <DisplayExerciseName name={exercise.name} nameFr={exercise.name_fr} />
+                    <DisplayExerciseName name={exercise.name} nameFr={exercise.name_fr} exerciseId={exercise.id} />
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {exercise.muscle_group ?? '—'} · {exercise.equipment ?? '—'}

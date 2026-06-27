@@ -35,7 +35,11 @@ export function WorkoutPersonalRecordsList({ records }: WorkoutPersonalRecordsLi
           >
             <div className="min-w-0">
               <p className="truncate font-display text-sm font-black text-foreground">
-                <DisplayExerciseName name={record.exerciseName} />
+                <DisplayExerciseName
+                  name={record.exerciseName}
+                  nameFr={record.exerciseNameFr}
+                  exerciseId={record.exerciseId}
+                />
               </p>
               <p className="font-data text-xs text-muted-foreground">{performance}</p>
             </div>

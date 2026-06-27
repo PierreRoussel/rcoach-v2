@@ -48,7 +48,11 @@ export function ExerciseCatalogList({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display font-bold">
-                  <DisplayExerciseName name={entry.name} />
+                  <DisplayExerciseName
+                    name={entry.name}
+                    nameFr={entry.nameFr}
+                    exerciseId={entry.exerciseId}
+                  />
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {muscleLabel} · {entry.sessionCount} séance

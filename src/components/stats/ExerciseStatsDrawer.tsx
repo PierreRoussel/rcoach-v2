@@ -65,7 +65,7 @@ export function ExerciseStatsDrawer({
           {exercise ? (
             <ExerciseStatsPanel
               exerciseId={exercise.exerciseId}
-              fallbackName={exercise.exerciseName}
+              fallbackName={displayExerciseName || exercise.exerciseName}
               fallbackMuscleGroup={exercise.muscleGroup}
               fallbackEquipment={exercise.equipment}
               period={period}

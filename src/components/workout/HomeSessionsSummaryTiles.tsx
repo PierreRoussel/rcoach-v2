@@ -2,7 +2,6 @@ import { useMemo, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { CalendarDays, ChevronRight, Clock, Dumbbell, History } from 'lucide-react'
 
-import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useMyLastCompletedWorkout } from '@/hooks/useWorkouts'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
@@ -17,8 +16,7 @@ import {
   formatWorkoutDuration,
   formatWorkoutVolume,
 } from '@/lib/stats/workout-metrics'
-import type { ExerciseLocale } from '@/lib/workout/exercise-locale'
-import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
+import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import { cn } from '@/lib/utils'
 
 const MAX_VISIBLE_EXERCISES = 2
@@ -37,16 +35,15 @@ function formatOccurrenceSchedule(date: string, timeLocal: string | null) {
   return `${relative} · ${hours}h${minutes}`
 }
 
-function buildExercisePreview(workout: WorkoutSummary, locale: ExerciseLocale) {
+function buildExercisePreview(workout: WorkoutSummary) {
   const visible = workout.workout_exercises.slice(0, MAX_VISIBLE_EXERCISES)
   const hiddenCount = workout.workout_exercises.length - visible.length
 
   return {
-    lines: visible.map((entry) => {
-      const name = resolveExerciseDisplayName(entry.exercise, locale)
-      const setCount = entry.sets.length
-      return `${setCount} série${setCount > 1 ? 's' : ''} · ${name}`
-    }),
+    entries: visible.map((entry) => ({
+      exercise: entry.exercise,
+      setCount: entry.sets.length,
+    })),
     hiddenCount,
   }
 }
@@ -131,10 +128,8 @@ function SessionTileSkeleton() {
 
 function LastSessionTile({
   workout,
-  locale,
 }: {
   workout: WorkoutSummary | null
-  locale: ExerciseLocale
 }) {
   if (!workout) {
     return (
@@ -155,7 +150,7 @@ function LastSessionTile({
 
   const duration = formatWorkoutDuration(workout.started_at, workout.ended_at)
   const volume = formatWorkoutVolume(computeWorkoutVolume(workout))
-  const preview = buildExercisePreview(workout, locale)
+  const preview = buildExercisePreview(workout)
 
   return (
     <SessionSummaryTile
@@ -175,15 +170,22 @@ function LastSessionTile({
       <p className="mt-2 text-xs tabular-nums text-muted-foreground">
         {duration ?? '—'} · {volume}
       </p>
-      {preview.lines.length > 0 ? (
+      {preview.entries.length > 0 ? (
         <ul className="mt-2 space-y-0.5">
-          {preview.lines.map((line) => (
+          {preview.entries.map((entry) => (
             <li
-              key={line}
+              key={entry.exercise.id}
               className="flex items-center gap-1 truncate text-[11px] text-muted-foreground"
             >
               <Dumbbell className="size-3 shrink-0 text-primary/70" />
-              <span className="truncate">{line}</span>
+              <span className="truncate">
+                {entry.setCount} série{entry.setCount > 1 ? 's' : ''} ·{' '}
+                <DisplayExerciseName
+                  name={entry.exercise.name}
+                  nameFr={entry.exercise.name_fr}
+                  exerciseId={entry.exercise.id}
+                />
+              </span>
             </li>
           ))}
           {preview.hiddenCount > 0 ? (
@@ -279,7 +281,6 @@ export function HomeSessionsSummaryTiles() {
   } = useScheduledSessions()
   const sessions = sessionsResult?.sessions ?? []
   const scheduleAvailable = sessionsResult?.deployed ?? true
-  const exerciseLocale = useExerciseLocale()
 
   const isLoading = lastWorkoutLoading || sessionsLoading
   const nextOccurrence = useMemo(
@@ -311,7 +312,7 @@ export function HomeSessionsSummaryTiles() {
           </>
         ) : (
           <>
-            <LastSessionTile workout={lastWorkout} locale={exerciseLocale} />
+            <LastSessionTile workout={lastWorkout} />
             <NextSessionTile
               scheduleAvailable={scheduleAvailable}
               nextOccurrence={nextOccurrence}

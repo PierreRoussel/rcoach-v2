@@ -390,6 +390,8 @@ export function TemplateExerciseSetsEditor({
           }
         }}
         exerciseName={exercise.exerciseName}
+        exerciseNameFr={exercise.exerciseNameFr}
+        exerciseId={exercise.exerciseId}
         sets={exercise.sets}
         selectedSetIndex={selectedSetIndex}
         onDeleteSet={handleRemoveSet}

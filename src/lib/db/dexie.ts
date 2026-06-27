@@ -52,6 +52,11 @@ export type ActiveWorkoutDraft = {
   startedAt: string
   defaultRestSeconds?: number
   sourceTemplateId?: string | null
+  sourceTemplateExerciseLineup?: Array<{
+    exerciseId: string
+    exerciseName: string
+    exerciseNameFr?: string | null
+  }> | null
   activeStepIndex?: number
   lastCompletedStep?: {
     exerciseIndex: number

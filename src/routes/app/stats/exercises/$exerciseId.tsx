@@ -63,6 +63,7 @@ function ExerciseStatsDetailPage() {
     return {
       exerciseId: fromCatalog.id,
       name: fromCatalog.name,
+      nameFr: fromCatalog.name_fr ?? null,
       muscleGroup: fromCatalog.muscle_group,
       equipment: fromCatalog.equipment,
       sessionCount: 0,
@@ -71,7 +72,11 @@ function ExerciseStatsDetailPage() {
     }
   }, [allExercises, catalogEntry, exerciseId])
 
-  const displayExerciseName = useExerciseDisplayName(exerciseMeta?.name)
+  const displayExerciseName = useExerciseDisplayName(
+    exerciseMeta?.name,
+    exerciseMeta?.nameFr,
+    exerciseMeta?.exerciseId ?? exerciseId,
+  )
 
   useEffect(() => {
     if (from === 'featured') {

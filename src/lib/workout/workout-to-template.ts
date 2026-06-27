@@ -60,6 +60,7 @@ export function workoutToTemplateExercises(
       return {
         exerciseId: entry.exercise.id,
         exerciseName: entry.exercise.name,
+        exerciseNameFr: entry.exercise.name_fr ?? null,
         muscleGroup: entry.exercise.muscle_group,
         equipment: entry.exercise.equipment,
         supersetId: null,
