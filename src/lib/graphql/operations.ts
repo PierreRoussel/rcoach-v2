@@ -441,6 +441,12 @@ export const GET_MY_PROFILE = `
   }
 `
 
+export const ENSURE_USER_PROFILE = `
+  query EnsureUserProfile {
+    ensure_user_profile
+  }
+`
+
 /** Fallback when onboarding_completed_at migration is not deployed yet. */
 export const GET_MY_PROFILE_ONBOARDING_LEGACY = `
   query GetMyProfileOnboardingLegacy($userId: uuid!) {

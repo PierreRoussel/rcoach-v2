@@ -1,0 +1,5 @@
+function:
+  name: ensure_user_profile
+  schema: public
+permissions:
+  - role: user
