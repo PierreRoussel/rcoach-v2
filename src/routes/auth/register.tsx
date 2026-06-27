@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { PasswordRequirementsList } from '@/components/auth/PasswordRequirementsList'
 import { Button } from '@/components/ui/button'
@@ -91,6 +92,7 @@ function RegisterPage() {
         </p>
       }
     >
+      <GoogleSignInButton />
       <form className="space-y-4" onSubmit={handleSubmit}>
         <FormField>
           <Label htmlFor="displayName">Nom affiché</Label>
