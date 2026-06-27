@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { Check } from 'lucide-react'
 
+import { PasswordField } from '@/components/auth/PasswordField'
 import { Button } from '@/components/ui/button'
 import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -10,6 +11,7 @@ import {
   changeAuthenticatedUserPassword,
   mapPasswordChangeError,
 } from '@/lib/auth/change-password'
+import { requestPasswordResetEmail } from '@/lib/auth/pkce-flow'
 import {
   PASSWORD_REQUIREMENTS,
   passwordIssueLabel,
@@ -20,48 +22,6 @@ import { cn } from '@/lib/utils'
 
 type ChangePasswordFormProps = {
   email: string
-}
-
-function PasswordField({
-  id,
-  label,
-  value,
-  onChange,
-  autoComplete,
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (value: string) => void
-  autoComplete: string
-}) {
-  const [visible, setVisible] = useState(false)
-
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
-        <Input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          required
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute right-1 top-1/2 size-8 -translate-y-1/2 rounded-full"
-          onClick={() => setVisible((current) => !current)}
-          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-        >
-          {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        </Button>
-      </div>
-    </div>
-  )
 }
 
 export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
@@ -128,12 +88,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
     setIsSendingReset(true)
 
     try {
-      const response = await nhost.auth.sendPasswordResetEmail({
-        email,
-        options: {
-          redirectTo: `${window.location.origin}/auth/login`,
-        },
-      })
+      const response = await requestPasswordResetEmail(nhost, email)
 
       if (response.status !== 200) {
         setError("Impossible d'envoyer l'email de réinitialisation.")

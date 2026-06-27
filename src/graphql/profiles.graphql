@@ -7,6 +7,7 @@ mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
     unit_system
     rpe_enabled
     exercise_locale
+    onboarding_completed_at
     created_at
   }
 }

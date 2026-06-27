@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { AppWelcomeHeader } from '@/components/app/AppWelcomeHeader'
@@ -6,7 +6,7 @@ import { ActiveWorkoutProgressBar } from '@/components/workout/ActiveWorkoutProg
 import { ActiveWorkoutResumeFab } from '@/components/workout/ActiveWorkoutResumeFab'
 import { Button } from '@/components/ui/button'
 import { AppBottomNav } from '@/design-system'
-import { requireAuth } from '@/lib/auth/guards'
+import { requireAppOnboardingComplete, requireAuth } from '@/lib/auth/guards'
 import { flushSyncQueue } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
@@ -36,7 +36,15 @@ function resolveDisplayName(
 }
 
 export const Route = createFileRoute('/app')({
-  beforeLoad: requireAuth,
+  beforeLoad: async ({ location }) => {
+    requireAuth()
+
+    if (location.pathname === '/app/onboarding') {
+      return
+    }
+
+    await requireAppOnboardingComplete()
+  },
   component: AppLayout,
 })
 
@@ -44,6 +52,9 @@ function AppLayout() {
   const { nhost, user } = useAuth()
   const { data: profile } = useMyProfile()
   const hydrate = useActiveWorkoutStore((state) => state.hydrate)
+  const isOnboarding = useRouterState({
+    select: (state) => state.location.pathname === '/app/onboarding',
+  })
 
   useNutritionSync()
   useProfileNavBadgeCount()
@@ -55,6 +66,10 @@ function AppLayout() {
 
   const showCoachLink =
     profile?.role === 'coach' || profile?.role === 'both'
+
+  if (isOnboarding) {
+    return <Outlet />
+  }
 
   return (
     <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">

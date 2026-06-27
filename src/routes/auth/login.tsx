@@ -2,18 +2,12 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { z } from 'zod'
 
+import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
+import { PasswordField } from '@/components/auth/PasswordField'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { AuthShell } from '@/design-system'
 import { redirectIfAuthenticated } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -56,56 +50,72 @@ function LoginPage() {
   }
 
   return (
-    <AuthShell>
-      <Card className="w-full rounded-2xl border-border shadow-sm">
-        <CardHeader>
-          <CardTitle className="font-display text-2xl font-black">
-            Bon retour
-          </CardTitle>
-          <CardDescription>Connectez-vous à votre compte RCoach.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <FormField>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </FormField>
-            <FormField>
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </FormField>
-            {error ? <FormMessage>{error}</FormMessage> : null}
-            {search.passwordUpdated ? (
-              <p className="text-sm text-foreground">
-                Mot de passe mis à jour. Reconnectez-vous avec votre nouveau mot de passe.
-              </p>
-            ) : null}
-            <Button className="w-full rounded-full" variant="pill" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Connexion...' : 'Se connecter'}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Pas de compte ?{' '}
-            <Link className="font-semibold text-primary underline-offset-4 hover:underline" to="/auth/register">
-              Créer un compte
+    <AuthMobileShell
+      title="Bon retour"
+      description="Connectez-vous à votre compte RCoach."
+      footer={
+        <p className="text-center text-sm text-muted-foreground">
+          Pas de compte ?{' '}
+          <Link
+            className="font-semibold text-primary underline-offset-4 hover:underline"
+            to="/auth/register"
+          >
+            Créer un compte
+          </Link>
+        </p>
+      }
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <FormField>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            className="h-12"
+          />
+        </FormField>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="password">Mot de passe</Label>
+            <Link
+              to="/auth/forgot-password"
+              className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Mot de passe oublié ?
             </Link>
+          </div>
+          <PasswordField
+            id="password"
+            label=""
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+            required
+            className="[&>label]:sr-only"
+          />
+        </div>
+
+        {error ? <FormMessage>{error}</FormMessage> : null}
+        {search.passwordUpdated ? (
+          <p className="text-sm text-foreground">
+            Mot de passe mis à jour. Reconnectez-vous avec votre nouveau mot de passe.
           </p>
-        </CardContent>
-      </Card>
-    </AuthShell>
+        ) : null}
+
+        <Button
+          className="h-12 w-full rounded-full"
+          variant="pill"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Connexion...' : 'Se connecter'}
+        </Button>
+      </form>
+    </AuthMobileShell>
   )
 }

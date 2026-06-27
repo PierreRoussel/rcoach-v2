@@ -14,9 +14,13 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoachIndexRouteImport } from './routes/coach/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AppStatsRouteImport } from './routes/app/stats'
+import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 import { Route as AppImportRouteImport } from './routes/app/import'
 import { Route as AppProfileRouteRouteImport } from './routes/app/profile/route'
 import { Route as CoachValidateProductRenamesIndexRouteImport } from './routes/coach/validate-product-renames/index'
@@ -69,6 +73,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/auth/verify',
+  path: '/auth/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
   path: '/auth/register',
@@ -79,9 +93,19 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppStatsRoute = AppStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppImportRoute = AppImportRouteImport.update({
@@ -223,9 +247,13 @@ export interface FileRoutesByFullPath {
   '/coach': typeof CoachRouteRouteWithChildren
   '/app/profile': typeof AppProfileRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
@@ -256,9 +284,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/import': typeof AppImportRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/app': typeof AppIndexRoute
   '/coach': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
@@ -293,9 +325,13 @@ export interface FileRoutesById {
   '/coach': typeof CoachRouteRouteWithChildren
   '/app/profile': typeof AppProfileRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
@@ -331,9 +367,13 @@ export interface FileRouteTypes {
     | '/coach'
     | '/app/profile'
     | '/app/import'
+    | '/app/onboarding'
     | '/app/stats'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
+    | '/auth/reset-password'
+    | '/auth/verify'
     | '/app/'
     | '/coach/'
     | '/app/diet/add'
@@ -364,9 +404,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app/import'
+    | '/app/onboarding'
     | '/app/stats'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
+    | '/auth/reset-password'
+    | '/auth/verify'
     | '/app'
     | '/coach'
     | '/app/diet/add'
@@ -400,9 +444,13 @@ export interface FileRouteTypes {
     | '/coach'
     | '/app/profile'
     | '/app/import'
+    | '/app/onboarding'
     | '/app/stats'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
+    | '/auth/reset-password'
+    | '/auth/verify'
     | '/app/'
     | '/coach/'
     | '/app/diet/add'
@@ -435,8 +483,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   CoachRouteRoute: typeof CoachRouteRouteWithChildren
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  AuthVerifyRoute: typeof AuthVerifyRoute
   ShareWorkoutShareTokenRoute: typeof ShareWorkoutShareTokenRoute
 }
 
@@ -477,6 +528,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/auth/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/register': {
       id: '/auth/register'
       path: '/auth/register'
@@ -491,11 +556,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/stats': {
       id: '/app/stats'
       path: '/stats'
       fullPath: '/app/stats'
       preLoaderRoute: typeof AppStatsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/import': {
@@ -712,6 +791,7 @@ const AppStatsRouteWithChildren = AppStatsRoute._addFileChildren(
 interface AppRouteRouteChildren {
   AppProfileRouteRoute: typeof AppProfileRouteRouteWithChildren
   AppImportRoute: typeof AppImportRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
   AppStatsRoute: typeof AppStatsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppDietAddRoute: typeof AppDietAddRoute
@@ -734,6 +814,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProfileRouteRoute: AppProfileRouteRouteWithChildren,
   AppImportRoute: AppImportRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
   AppStatsRoute: AppStatsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppDietAddRoute: AppDietAddRoute,
@@ -783,8 +864,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   CoachRouteRoute: CoachRouteRouteWithChildren,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
   ShareWorkoutShareTokenRoute: ShareWorkoutShareTokenRoute,
 }
 export const routeTree = rootRouteImport

@@ -7,6 +7,7 @@ export type Profile = {
   unit_system: 'kg' | 'lb'
   rpe_enabled: boolean
   exercise_locale?: 'fr' | 'en'
+  onboarding_completed_at?: string | null
   created_at: string
 }
 
@@ -113,6 +114,7 @@ export type ProfileUpdateInput = {
   role?: 'athlete' | 'coach' | 'both'
   rpe_enabled?: boolean
   exercise_locale?: 'fr' | 'en'
+  onboarding_completed_at?: string | null
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined'
@@ -163,6 +165,23 @@ export type FriendMotivation = {
 
 export const UPDATE_MY_PROFILE = `
   mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
+    update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      rpe_enabled
+      exercise_locale
+      onboarding_completed_at
+      created_at
+    }
+  }
+`
+
+/** Fallback when onboarding_completed_at migration is not deployed yet. */
+export const UPDATE_MY_PROFILE_ONBOARDING_LEGACY = `
+  mutation UpdateMyProfileOnboardingLegacy($id: uuid!, $changes: profiles_set_input!) {
     update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
       id
       display_name
@@ -407,6 +426,24 @@ export const LIST_MY_WORKOUTS_STATS_ALL_PAGE = `
 
 export const GET_MY_PROFILE = `
   query GetMyProfile($userId: uuid!) {
+    profiles(where: { id: { _eq: $userId } }, limit: 1) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      rpe_enabled
+      exercise_locale
+      friend_code
+      onboarding_completed_at
+      created_at
+    }
+  }
+`
+
+/** Fallback when onboarding_completed_at migration is not deployed yet. */
+export const GET_MY_PROFILE_ONBOARDING_LEGACY = `
+  query GetMyProfileOnboardingLegacy($userId: uuid!) {
     profiles(where: { id: { _eq: $userId } }, limit: 1) {
       id
       display_name
