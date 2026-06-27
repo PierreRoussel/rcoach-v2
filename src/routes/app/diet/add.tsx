@@ -71,12 +71,23 @@ function AddFoodPage() {
   const [message, setMessage] = useState<string | null>(null)
 
   const trimmedQuery = query.trim()
+  const isBrowsingCatalog = trimmedQuery.length < 2
+  const shouldLoadMealLogFoods = isBrowsingCatalog
+  const shouldLoadFavorites =
+    isBrowsingCatalog && (activeTab === 'favorites' || activeTab === 'recent')
+
   const { results, isLoading, canTriggerOffSearch, hasSearchedLocalCatalog } = useFoodSearch(query, true, {
     searchOffExternally,
   })
-  const { data: favorites = [] } = useFoodFavorites()
-  const { data: frequentFoods = [] } = useFrequentFoods(20)
-  const { data: recentFoods = [] } = useRecentFoods(20)
+  const { data: favorites = [] } = useFoodFavorites({
+    enabled: shouldLoadFavorites || !isBrowsingCatalog,
+  })
+  const { data: frequentFoods = [] } = useFrequentFoods(20, {
+    enabled: shouldLoadMealLogFoods,
+  })
+  const { data: recentFoods = [] } = useRecentFoods(20, {
+    enabled: shouldLoadMealLogFoods,
+  })
   const { toggleFavorite } = useFoodFavoriteMutations()
   const { ensureOffFood, lookupBarcode } = useFoodMutations()
   const { addEntry, addQuickEntry } = useMealLogMutations()

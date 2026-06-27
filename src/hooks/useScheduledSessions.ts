@@ -36,6 +36,7 @@ export function useScheduledSessions(options?: { includeInactive?: boolean }) {
   return useQuery({
     queryKey: ['scheduled-sessions', includeInactive ? 'all' : 'active'],
     enabled: isAuthenticated,
+    staleTime: 2 * 60_000,
     queryFn: async (): Promise<ScheduledSessionsResult> => {
       try {
         const query = includeInactive

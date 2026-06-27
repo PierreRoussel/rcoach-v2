@@ -4,6 +4,7 @@ type PillProps = {
   children: React.ReactNode
   className?: string
   tone?: 'default' | 'primary' | 'secondary' | 'accent' | 'purple' | 'solid-primary' | 'solid-accent' | 'solid-purple'
+  onClick?: () => void
 }
 
 const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
@@ -21,15 +22,25 @@ export function Pill({
   children,
   className,
   tone = 'default',
+  onClick,
 }: PillProps) {
+  const classes = cn(
+    'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
+    toneClasses[tone],
+    onClick && 'cursor-pointer transition-opacity hover:opacity-90 active:opacity-80',
+    className,
+  )
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={classes}>
+        {children}
+      </button>
+    )
+  }
+
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
-        toneClasses[tone],
-        className,
-      )}
-    >
+    <span className={classes}>
       {children}
     </span>
   )

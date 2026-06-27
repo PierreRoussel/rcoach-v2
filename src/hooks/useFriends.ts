@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { format, subDays } from 'date-fns'
+import { format, startOfDay, subDays, subWeeks } from 'date-fns'
 
 import {
   COUNT_UNREAD_MOTIVATIONS,
@@ -24,6 +24,10 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import { summarizeFriendActivity } from '@/lib/social/friend-activity'
 import { buildFriendRecapList, getFriendProfile } from '@/lib/social/friend-utils'
+import {
+  NUTRITION_STREAK_LOOKBACK_DAYS,
+  WORKOUT_STREAK_LOOKBACK_WEEKS,
+} from '@/lib/stats/streak-lookback'
 import {
   isValidMotivationMessage,
   normalizeMotivationMessage,
@@ -59,17 +63,19 @@ export function useFriendships() {
 export function useFriendsActivity() {
   const { nhost, isAuthenticated, user } = useAuth()
   const userId = user?.id
-  const mealSince = format(subDays(new Date(), 400), 'yyyy-MM-dd')
+  const now = new Date()
+  const mealSince = format(subDays(now, NUTRITION_STREAK_LOOKBACK_DAYS), 'yyyy-MM-dd')
+  const workoutSince = subWeeks(startOfDay(now), WORKOUT_STREAK_LOOKBACK_WEEKS).toISOString()
 
   return useQuery({
-    queryKey: [...FRIENDS_QUERY_KEY, 'activity', userId, mealSince],
+    queryKey: [...FRIENDS_QUERY_KEY, 'activity', userId, mealSince, workoutSince],
     enabled: isAuthenticated && Boolean(userId),
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{ friendships: Friendship[] }>(
         nhost,
         LIST_ACCEPTED_FRIENDS_ACTIVITY,
-        { mealSince },
+        { mealSince, workoutSince },
       )
 
       const accepted = data.friendships.filter(
@@ -186,13 +192,13 @@ export function useUnreadMotivationsCount() {
   })
 }
 
-export function useUnreadMotivations() {
+export function useUnreadMotivations(options?: { enabled?: boolean }) {
   const { nhost, isAuthenticated, user } = useAuth()
   const userId = user?.id
 
   return useQuery({
     queryKey: [...UNREAD_MOTIVATIONS_KEY, userId],
-    enabled: isAuthenticated && Boolean(userId),
+    enabled: isAuthenticated && Boolean(userId) && (options?.enabled ?? true),
     staleTime: 30_000,
     queryFn: async () => {
       const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(

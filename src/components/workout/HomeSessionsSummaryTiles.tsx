@@ -4,7 +4,7 @@ import { CalendarDays, ChevronRight, Clock, Dumbbell, History } from 'lucide-rea
 
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
-import { useMyWorkouts } from '@/hooks/useWorkouts'
+import { useMyLastCompletedWorkout } from '@/hooks/useWorkouts'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
 import {
   getNextScheduledOccurrence,
@@ -22,10 +22,6 @@ import { translateExerciseName } from '@/lib/workout/translate-exercise-name'
 import { cn } from '@/lib/utils'
 
 const MAX_VISIBLE_EXERCISES = 2
-
-function findLastCompletedWorkout(workouts: WorkoutSummary[]) {
-  return workouts.find((workout) => workout.ended_at != null) ?? null
-}
 
 function formatOccurrenceSchedule(date: string, timeLocal: string | null) {
   const relative = formatRelativeScheduleDate(date)
@@ -275,7 +271,8 @@ function NextSessionTile({
 }
 
 export function HomeSessionsSummaryTiles() {
-  const { data: workouts, isLoading: workoutsLoading } = useMyWorkouts()
+  const { data: lastWorkout = null, isLoading: lastWorkoutLoading } =
+    useMyLastCompletedWorkout()
   const {
     data: sessionsResult,
     isLoading: sessionsLoading,
@@ -284,14 +281,13 @@ export function HomeSessionsSummaryTiles() {
   const scheduleAvailable = sessionsResult?.deployed ?? true
   const exerciseLocale = useExerciseLocale()
 
-  const isLoading = workoutsLoading || sessionsLoading
-  const lastWorkout = findLastCompletedWorkout(workouts ?? [])
+  const isLoading = lastWorkoutLoading || sessionsLoading
   const nextOccurrence = useMemo(
     () =>
       getNextScheduledOccurrence(sessions, {
-        completedWorkouts: workouts ?? [],
+        completedWorkouts: lastWorkout ? [lastWorkout] : [],
       }),
-    [sessions, workouts],
+    [sessions, lastWorkout],
   )
 
   return (

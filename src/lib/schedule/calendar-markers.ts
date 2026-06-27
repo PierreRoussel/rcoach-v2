@@ -117,3 +117,29 @@ export function defaultCalendarRange(now = new Date()): { start: Date; end: Date
 export function isDateInFuture(date: Date, now = new Date()): boolean {
   return isAfter(startOfDay(date), startOfDay(now))
 }
+
+export function isPastCalendarDay(date: Date, now = new Date()): boolean {
+  return isBefore(startOfDay(date), startOfDay(now))
+}
+
+export function canStartPlannedOccurrence(
+  date: Date,
+  marker: Pick<DayMarker, 'workouts'> | undefined,
+  now = new Date(),
+): boolean {
+  if (isPastCalendarDay(date, now)) {
+    return false
+  }
+
+  if (marker?.workouts.length) {
+    return false
+  }
+
+  return true
+}
+
+export function calendarDayTimestamp(date: Date, hour = 12): Date {
+  const day = startOfDay(date)
+  day.setHours(hour, 0, 0, 0)
+  return day
+}

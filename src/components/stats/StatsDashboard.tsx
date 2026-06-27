@@ -8,6 +8,7 @@ import { BodyHeatmap } from '@/components/stats/BodyHeatmap'
 import { ExerciseSearchDrawer } from '@/components/stats/ExerciseSearchDrawer'
 import { MuscleRadarChart } from '@/components/stats/MuscleRadarChart'
 import { MuscleZoneInsights } from '@/components/stats/MuscleZoneInsights'
+import { StatsPeriodSelector } from '@/components/stats/StatsPeriodSelector'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -17,9 +18,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { StatsSummaryCard } from '@/components/stats/StatsSummaryCard'
-import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
 import { useExerciseCatalogStats } from '@/hooks/useExerciseCatalogStats'
+import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
+import type { StatsWorkoutPeriod } from '@/lib/stats/stats-workout-period'
 import {
   consumeStatsScrollToFeatured,
   scrollElementIntoViewWhenReady,
@@ -32,14 +34,13 @@ type StatsDashboardProps = {
 
 export function StatsDashboard({ className }: StatsDashboardProps) {
   const featuredSectionRef = useRef<HTMLElement>(null)
+  const [period, setPeriod] = useState<StatsWorkoutPeriod>('3m')
   const {
     workouts,
     isLoading,
+    isLoadingAll,
     error,
-    isFetchingMore,
-    isCapped,
-    fetchNextPage,
-  } = useAllMyWorkouts()
+  } = useStatsWorkouts(period)
   const exerciseCatalog = useExerciseCatalogStats(workouts)
   const [searchOpen, setSearchOpen] = useState(false)
   const {
@@ -64,8 +65,14 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
 
   return (
     <div className={cn('space-y-4', className)}>
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement...</p>
+      <StatsPeriodSelector value={period} onChange={setPeriod} />
+
+      {isLoading || isLoadingAll ? (
+        <p className="text-sm text-muted-foreground">
+          {isLoading
+            ? 'Chargement...'
+            : `Chargement de l'historique (${workouts.length} séance${workouts.length > 1 ? 's' : ''})...`}
+        </p>
       ) : null}
       {error ? (
         <p className="text-sm text-destructive">
@@ -73,7 +80,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
         </p>
       ) : null}
 
-      {!isLoading && !error ? (
+      {!isLoading && !isLoadingAll && !error ? (
         <>
           <div className="grid grid-cols-2 gap-3">
             <StatsSummaryCard
@@ -227,22 +234,6 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <MuscleZoneInsights zones={topByZone} />
-                  {isFetchingMore ? (
-                    <p className="text-xs text-muted-foreground">
-                      Chargement de l&apos;historique...
-                    </p>
-                  ) : null}
-                  {isCapped ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => void fetchNextPage()}
-                    >
-                      Charger plus d&apos;historique
-                    </Button>
-                  ) : null}
                 </CardContent>
               </Card>
             </>

@@ -24,6 +24,7 @@ export function useAllExercises() {
   return useQuery({
     queryKey: ['exercises', 'all'],
     enabled: isAuthenticated,
+    staleTime: 30 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{ exercises: Exercise[] }>(
         nhost,

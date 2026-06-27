@@ -26,6 +26,7 @@ export function useNutritionSettings() {
   return useQuery({
     queryKey: ['nutrition-settings', user?.id],
     enabled: isAuthenticated && Boolean(user?.id),
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         nutrition_settings_by_pk: NutritionSettings | null

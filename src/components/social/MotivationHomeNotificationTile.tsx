@@ -4,21 +4,28 @@ import { ChevronRight } from 'lucide-react'
 import { MotivationRevealOverlay } from '@/components/social/MotivationRevealOverlay'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AnimateIn } from '@/design-system'
-import { useUnreadMotivations } from '@/hooks/useFriends'
+import { useUnreadMotivations, useUnreadMotivationsCount } from '@/hooks/useFriends'
 import { toReceivedMotivationNotification } from '@/lib/social/motivation-notifications'
 import type { MotivationNotification } from '@/lib/social/motivation-notifications'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 import { cn } from '@/lib/utils'
 
 export function MotivationHomeNotificationTile() {
-  const { data: unreadMotivations = [], isLoading } = useUnreadMotivations()
+  const { data: unreadCount = 0, isLoading: countLoading } = useUnreadMotivationsCount()
+  const { data: unreadMotivations = [], isLoading: listLoading } = useUnreadMotivations({
+    enabled: unreadCount > 0,
+  })
   const [activeNotification, setActiveNotification] = useState<MotivationNotification | null>(
     null,
   )
 
   const latest = unreadMotivations[0] ?? null
 
-  if (isLoading || !latest) {
+  if (countLoading || unreadCount === 0 || (listLoading && !latest)) {
+    return null
+  }
+
+  if (!latest) {
     return null
   }
 

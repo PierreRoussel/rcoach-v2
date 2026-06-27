@@ -17,6 +17,7 @@ export function useWeightGoal() {
   return useQuery({
     queryKey: ['weight-goal', user?.id],
     enabled: isAuthenticated && Boolean(user?.id),
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         weight_goals_by_pk: WeightGoal | null

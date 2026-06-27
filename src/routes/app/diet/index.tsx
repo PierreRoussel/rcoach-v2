@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { DietDayCarousel } from '@/components/nutrition/DietDayCarousel'
 import { DietDayPanel } from '@/components/nutrition/DietDayPanel'
+import { NutritionHintFab } from '@/components/nutrition/NutritionHintFab'
 import { NutritionOnboardingWizard } from '@/components/nutrition/NutritionOnboardingWizard'
 import { GoalsHomeSummaryTile } from '@/components/goals/GoalsHomeSummaryTile'
 import { Button } from '@/components/ui/button'
@@ -172,6 +173,10 @@ function DietPage() {
             </CardContent>
           </Card>
         )
+      ) : null}
+
+      {settings && isNutritionConfigured(settings) && !showWizard ? (
+        <NutritionHintFab anchorDate={activeDate} settings={settings} />
       ) : null}
 
       <NutritionOnboardingWizard

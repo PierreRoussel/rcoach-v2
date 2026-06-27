@@ -92,14 +92,20 @@ export function WorkoutCalendar({
       return
     }
 
-    const nextMonth = startOfMonth(currentSelected)
-    if (controlledMonth) {
-      onMonthChange?.(nextMonth)
+    const selectedMonth = startOfMonth(currentSelected)
+    const activeMonth = startOfMonth(controlledMonth ?? internalMonth)
+
+    if (selectedMonth.getTime() === activeMonth.getTime()) {
       return
     }
 
-    setInternalMonth(nextMonth)
-  }, [controlledMonth, currentSelected, onMonthChange])
+    if (controlledMonth !== undefined) {
+      onMonthChange?.(selectedMonth)
+      return
+    }
+
+    setInternalMonth(selectedMonth)
+  }, [controlledMonth, currentSelected, internalMonth, onMonthChange])
 
   const modifiers = useMemo(
     () => ({

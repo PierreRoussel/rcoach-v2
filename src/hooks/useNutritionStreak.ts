@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { LIST_MEAL_LOG_ENTRIES_FOR_RANGE } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { addDays, toDateKey } from '@/lib/nutrition/dates'
+import { NUTRITION_STREAK_LOOKBACK_DAYS } from '@/lib/stats/streak-lookback'
 import {
   aggregateNutritionDays,
   computeNutritionLoggingStreak,
@@ -17,7 +18,7 @@ type MealLogRangeEntry = {
   calories: number
 }
 
-function buildStreakRange(today = toDateKey(new Date()), lookbackDays = 400) {
+function buildStreakRange(today = toDateKey(new Date()), lookbackDays = NUTRITION_STREAK_LOOKBACK_DAYS) {
   return {
     from: addDays(today, -lookbackDays),
     to: today,
@@ -30,6 +31,7 @@ export function useNutritionLogHistory(from: string, to: string, dailyTarget: nu
   const query = useQuery({
     queryKey: ['nutrition-log-history', from, to],
     enabled: isAuthenticated && Boolean(from) && Boolean(to),
+    staleTime: 10 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         meal_log_entries: MealLogRangeEntry[]

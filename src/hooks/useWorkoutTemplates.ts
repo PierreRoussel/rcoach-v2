@@ -55,6 +55,7 @@ export function useWorkoutTemplates() {
   return useQuery({
     queryKey: ['workout-templates'],
     enabled: isAuthenticated,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         workout_templates: WorkoutTemplate[]

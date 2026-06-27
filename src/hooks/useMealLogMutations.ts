@@ -91,6 +91,7 @@ export function useMealLogMutations() {
 
   const invalidate = async (date?: string) => {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-day'] })
+    await queryClient.invalidateQueries({ queryKey: ['meal-log-foods'] })
     await queryClient.invalidateQueries({ queryKey: ['frequent-foods'] })
     await queryClient.invalidateQueries({ queryKey: ['nutrition-log-history'] })
     await queryClient.invalidateQueries({ queryKey: ['nutrition-sync-pending'] })

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { parseISO } from 'date-fns'
 import { ArrowLeft, CalendarPlus, Flame, ListChecks } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { ScheduleDeployNotice } from '@/components/schedule/ScheduleDeployNotice'
@@ -90,6 +90,11 @@ function PlanningPage() {
   const [editing, setEditing] = useState<ScheduledSessionRecord | null>(null)
   const [showForm, setShowForm] = useState(Boolean(initialDate || openScheduleForm))
   const [formDate, setFormDate] = useState<Date | undefined>(initialDate)
+  const rulesSectionRef = useRef<HTMLElement>(null)
+
+  function scrollToPlanningRules() {
+    rulesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   function openPlanForm(date: Date) {
     setEditing(null)
@@ -172,7 +177,7 @@ function PlanningPage() {
             <Flame className="size-3 fill-current" />
             {weeklyStreak} sem. de suite
           </Pill>
-          <Pill tone="secondary">
+          <Pill tone="secondary" onClick={scrollToPlanningRules}>
             <ListChecks className="size-3" />
             {activeCount} règle{activeCount > 1 ? 's' : ''} active{activeCount > 1 ? 's' : ''}
           </Pill>
@@ -259,7 +264,7 @@ function PlanningPage() {
         </DialogContent>
       </Dialog>
 
-      <section className="space-y-3">
+      <section ref={rulesSectionRef} className="scroll-mt-20 space-y-3">
         <div className="px-1">
           <h2 className="font-display text-lg font-black">Règles de planification</h2>
           <p className="text-xs text-muted-foreground">

@@ -18,6 +18,10 @@ import {
   useWorkoutTemplates,
 } from '@/hooks/useWorkoutTemplates'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import {
+  getDefaultFreeWorkoutTitle,
+  isLegacyFreeWorkoutTitle,
+} from '@/lib/workout/default-free-workout-title'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
 type StartWorkoutFormProps = {
@@ -31,7 +35,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
     (state) => state.startWorkoutFromTemplate,
   )
 
-  const [workoutTitle, setWorkoutTitle] = useState('Séance libre')
+  const [workoutTitle, setWorkoutTitle] = useState(() => getDefaultFreeWorkoutTitle())
   const [templateId, setTemplateId] = useState<string | null>(
     initialTemplateId ?? null,
   )
@@ -59,6 +63,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
     setTemplateId(nextTemplateId)
 
     if (!nextTemplateId) {
+      setWorkoutTitle(getDefaultFreeWorkoutTitle())
       return
     }
 
@@ -73,7 +78,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
     setIsStarting(true)
 
     try {
-      const trimmedTitle = workoutTitle.trim() || 'Séance libre'
+      const trimmedTitle = workoutTitle.trim()
 
       if (templateId && templates) {
         const template = templates.find((item) => item.id === templateId)
@@ -81,7 +86,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
         if (template) {
           const draft = templateToDraft(template)
           await startWorkoutFromTemplate(
-            trimmedTitle,
+            trimmedTitle || template.name,
             templateExercisesToActive(draft.exercises),
             DEFAULT_GLOBAL_REST_SECONDS,
             template.id,
@@ -90,7 +95,12 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
         }
       }
 
-      await startWorkout(trimmedTitle)
+      const freeTitle =
+        !trimmedTitle || isLegacyFreeWorkoutTitle(trimmedTitle)
+          ? getDefaultFreeWorkoutTitle()
+          : trimmedTitle
+
+      await startWorkout(freeTitle)
     } catch (startError) {
       setFormError(
         startError instanceof Error
@@ -120,7 +130,7 @@ export function StartWorkoutForm({ initialTemplateId }: StartWorkoutFormProps) {
             placeholder={
               selectedTemplate
                 ? `Par défaut : ${selectedTemplate.name}`
-                : 'Séance libre, Push, Legs...'
+                : getDefaultFreeWorkoutTitle()
             }
           />
         </div>

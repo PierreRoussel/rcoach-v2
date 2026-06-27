@@ -236,6 +236,22 @@ export const GET_MY_LAST_COMPLETED_WORKOUT = `
       title
       started_at
       ended_at
+      workout_exercises {
+        id
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        sets {
+          set_index
+          weight_kg
+          reps
+          set_type
+          rpe
+        }
+      }
     }
   }
 `
@@ -284,6 +300,83 @@ export const LIST_MY_WORKOUTS_PAGE = `
   query ListMyWorkoutsPage($userId: uuid!, $limit: Int!, $offset: Int!) {
     workouts(
       where: { user_id: { _eq: $userId } }
+      order_by: { started_at: desc }
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      title
+      started_at
+      ended_at
+      workout_exercises {
+        id
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        sets {
+          set_index
+          weight_kg
+          reps
+          set_type
+          rpe
+        }
+      }
+    }
+  }
+`
+
+export const LIST_MY_WORKOUTS_STATS_PAGE = `
+  query ListMyWorkoutsStatsPage(
+    $userId: uuid!
+    $limit: Int!
+    $offset: Int!
+    $start: timestamptz!
+    $end: timestamptz!
+  ) {
+    workouts(
+      where: {
+        user_id: { _eq: $userId }
+        ended_at: { _is_null: false }
+        started_at: { _gte: $start, _lte: $end }
+      }
+      order_by: { started_at: desc }
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      title
+      started_at
+      ended_at
+      workout_exercises {
+        id
+        exercise {
+          id
+          name
+          muscle_group
+          equipment
+        }
+        sets {
+          set_index
+          weight_kg
+          reps
+          set_type
+          rpe
+        }
+      }
+    }
+  }
+`
+
+export const LIST_MY_WORKOUTS_STATS_ALL_PAGE = `
+  query ListMyWorkoutsStatsAllPage($userId: uuid!, $limit: Int!, $offset: Int!) {
+    workouts(
+      where: {
+        user_id: { _eq: $userId }
+        ended_at: { _is_null: false }
+      }
       order_by: { started_at: desc }
       limit: $limit
       offset: $offset
@@ -1379,6 +1472,33 @@ export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
   }
 `
 
+export const LIST_MEAL_LOG_ENTRIES_FOR_HINTS = `
+  query ListMealLogEntriesForHints($from: date!, $to: date!) {
+    meal_log_entries(
+      where: { logged_date: { _gte: $from, _lte: $to } }
+      order_by: [{ logged_date: asc }, { created_at: asc }]
+    ) {
+      id
+      logged_date
+      meal_type
+      food_id
+      custom_name
+      quantity_g
+      servings
+      calories
+      carbs_g
+      protein_g
+      fat_g
+      food {
+        serving_size_g
+        salt_g
+        sugar_g
+        saturated_fat_g
+      }
+    }
+  }
+`
+
 export const LIST_MEAL_LOG_ENTRIES_FOR_DATE = `
   query ListMealLogEntriesForDate($date: date!) {
     meal_log_entries(
@@ -1929,7 +2049,7 @@ export const LIST_MY_FRIENDSHIPS = `
 `
 
 export const LIST_ACCEPTED_FRIENDS_ACTIVITY = `
-  query ListAcceptedFriendsActivity($mealSince: date!) {
+  query ListAcceptedFriendsActivity($mealSince: date!, $workoutSince: timestamptz!) {
     friendships(
       where: { status: { _eq: accepted } }
       order_by: { created_at: asc }
@@ -1942,7 +2062,13 @@ export const LIST_ACCEPTED_FRIENDS_ACTIVITY = `
         id
         display_name
         avatar_url
-        workouts(limit: 100, order_by: { started_at: desc }) {
+        workouts(
+          where: {
+            ended_at: { _is_null: false }
+            started_at: { _gte: $workoutSince }
+          }
+          order_by: { started_at: desc }
+        ) {
           started_at
         }
         meal_log_entries(
@@ -1957,7 +2083,13 @@ export const LIST_ACCEPTED_FRIENDS_ACTIVITY = `
         id
         display_name
         avatar_url
-        workouts(limit: 100, order_by: { started_at: desc }) {
+        workouts(
+          where: {
+            ended_at: { _is_null: false }
+            started_at: { _gte: $workoutSince }
+          }
+          order_by: { started_at: desc }
+        ) {
           started_at
         }
         meal_log_entries(

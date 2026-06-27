@@ -14,11 +14,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Pill } from '@/design-system'
-import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
+import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
 import { useAllExercises } from '@/hooks/useExercises'
 import { useExerciseProgression } from '@/hooks/useExerciseProgression'
 import { useMyProfile } from '@/hooks/useProfile'
 import type { StatsPeriod } from '@/lib/stats/exercise-progression'
+import { exercisePeriodToStatsWorkoutFetchPeriod } from '@/lib/stats/stats-workout-period'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 
 type ExerciseStatsPanelProps = {
@@ -42,7 +43,9 @@ export function ExerciseStatsPanel({
 }: ExerciseStatsPanelProps) {
   const { data: profile } = useMyProfile()
   const rpeEnabled = profile?.rpe_enabled ?? false
-  const { workouts, isLoading, error } = useAllMyWorkouts()
+  const { workouts, isLoading, isLoadingAll, error } = useStatsWorkouts(
+    exercisePeriodToStatsWorkoutFetchPeriod(period),
+  )
   const { data: allExercises = [] } = useAllExercises()
 
   const {
@@ -94,7 +97,7 @@ export function ExerciseStatsPanel({
     fallbackName,
   ])
 
-  if (isLoading) {
+  if (isLoading || isLoadingAll) {
     return <p className="text-sm text-muted-foreground">Chargement...</p>
   }
 

@@ -4,6 +4,7 @@ import { startOfDay, subWeeks } from 'date-fns'
 
 import {
   DELETE_WORKOUT,
+  INSERT_WORKOUT,
   GET_MY_LAST_COMPLETED_WORKOUT,
   GET_WORKOUT_BY_ID,
   GET_WORKOUT_BY_ID_WITHOUT_SHARE,
@@ -21,7 +22,9 @@ import {
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
+import { calendarDayTimestamp } from '@/lib/schedule/calendar-markers'
 import { computeWeeklyStreak } from '@/lib/schedule/weekly-streak'
+import { WORKOUT_STREAK_LOOKBACK_WEEKS } from '@/lib/stats/streak-lookback'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useMyWorkouts() {
@@ -50,8 +53,9 @@ export function useMyLastCompletedWorkout() {
   return useQuery({
     queryKey: ['workouts', 'mine', userId, 'last-completed'],
     enabled: isAuthenticated && Boolean(userId),
-    queryFn: async (): Promise<WorkoutHeaderSummary | null> => {
-      const data = await graphqlRequest<{ workouts: WorkoutHeaderSummary[] }>(
+    staleTime: 60_000,
+    queryFn: async (): Promise<WorkoutSummary | null> => {
+      const data = await graphqlRequest<{ workouts: WorkoutSummary[] }>(
         nhost,
         GET_MY_LAST_COMPLETED_WORKOUT,
         { userId: userId! },
@@ -62,7 +66,7 @@ export function useMyLastCompletedWorkout() {
   })
 }
 
-const STREAK_LOOKBACK_WEEKS = 104
+const STREAK_LOOKBACK_WEEKS = WORKOUT_STREAK_LOOKBACK_WEEKS
 
 function formatRangeKey(date: Date) {
   return date.toISOString()
@@ -104,6 +108,7 @@ export function useWorkoutStreakDates(now = new Date()) {
   return useQuery({
     queryKey: ['workouts', 'mine', userId, 'streak-dates', since],
     enabled: isAuthenticated && Boolean(userId),
+    staleTime: 5 * 60_000,
     queryFn: async (): Promise<Array<{ started_at: string }>> => {
       const data = await graphqlRequest<{
         workouts: Array<{ started_at: string }>
@@ -242,6 +247,33 @@ export function useWorkoutById(workoutId: string) {
         }>(nhost, GET_WORKOUT_BY_ID_WITHOUT_SHARE, { id: workoutId })
         return data.workouts_by_pk
       }
+    },
+  })
+}
+
+export function useCreateSimpleWorkout() {
+  const { nhost } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ title, date }: { title: string; date: Date }) => {
+      const startedAt = calendarDayTimestamp(date)
+      const endedAt = new Date(startedAt.getTime() + 60_000)
+
+      const data = await graphqlRequest<{
+        insert_workouts_one: { id: string }
+      }>(nhost, INSERT_WORKOUT, {
+        object: {
+          title: title.trim(),
+          started_at: startedAt.toISOString(),
+          ended_at: endedAt.toISOString(),
+        },
+      })
+
+      return data.insert_workouts_one
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['workouts'] })
     },
   })
 }

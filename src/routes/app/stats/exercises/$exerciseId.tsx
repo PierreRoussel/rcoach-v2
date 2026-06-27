@@ -5,11 +5,12 @@ import { useEffect, useMemo } from 'react'
 import { ExerciseStatsPanel } from '@/components/stats/ExerciseStatsPanel'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/design-system'
-import { useAllMyWorkouts } from '@/hooks/useAllMyWorkouts'
+import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
 import { useAllExercises } from '@/hooks/useExercises'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { useExerciseProgression } from '@/hooks/useExerciseProgression'
 import type { StatsPeriod } from '@/lib/stats/exercise-progression'
+import { exercisePeriodToStatsWorkoutFetchPeriod } from '@/lib/stats/stats-workout-period'
 import { markStatsScrollToFeatured } from '@/lib/stats/scroll-to-featured'
 import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 
@@ -42,7 +43,9 @@ function ExerciseStatsDetailPage() {
   const { exerciseId } = Route.useParams()
   const { period = '3m', from } = Route.useSearch()
   const navigate = useNavigate()
-  const { workouts, isLoading, error } = useAllMyWorkouts()
+  const { workouts, isLoading, isLoadingAll, error } = useStatsWorkouts(
+    exercisePeriodToStatsWorkoutFetchPeriod(period),
+  )
   const { data: allExercises = [] } = useAllExercises()
 
   const { catalogEntry } = useExerciseProgression(workouts, exerciseId, period)

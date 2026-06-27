@@ -380,81 +380,98 @@ function ActiveWorkoutPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="px-0 pb-0 sm:px-0">
-          <ActiveWorkoutCircuit
-            exercises={activeExercises}
-            lastCompletedStep={lastCompletedStep}
-            workoutStartedAt={startedAt}
-            rpeEnabled={rpeEnabled}
-            templateSetHistory={showLastSetColumn ? setHistory : undefined}
-            showLastSetColumn={showLastSetColumn}
-            onSelectExercise={(index) => {
-              const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
-              if (stepIndex >= 0) {
-                goToStep(stepIndex)
+          {activeExercises.length === 0 ? (
+            <div className="flex flex-col items-center px-4 py-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                Ajoutez votre premier exercice pour commencer le circuit.
+              </p>
+              <div className="mt-4">
+                <ExercisePicker
+                  excludeIds={[]}
+                  onSelect={(exercise) => void addExercise(exercise)}
+                  triggerLabel="Ajouter exercice"
+                />
+              </div>
+            </div>
+          ) : (
+            <ActiveWorkoutCircuit
+              exercises={activeExercises}
+              lastCompletedStep={lastCompletedStep}
+              workoutStartedAt={startedAt}
+              rpeEnabled={rpeEnabled}
+              templateSetHistory={showLastSetColumn ? setHistory : undefined}
+              showLastSetColumn={showLastSetColumn}
+              onSelectExercise={(index) => {
+                const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
+                if (stepIndex >= 0) {
+                  goToStep(stepIndex)
+                }
+              }}
+              onReorderExercises={(from, to) => void reorderExercises(from, to)}
+              onRemoveExercise={(index) => void removeExercise(index)}
+              onReplaceExercise={(exerciseIndex, exercise) =>
+                void replaceExercise(exerciseIndex, exercise)
               }
-            }}
-            onReorderExercises={(from, to) => void reorderExercises(from, to)}
-            onRemoveExercise={(index) => void removeExercise(index)}
-            onReplaceExercise={(exerciseIndex, exercise) =>
-              void replaceExercise(exerciseIndex, exercise)
-            }
-            onAddToSuperset={(from, partner) => void addToSuperset(from, partner)}
-            onRemoveFromSuperset={(index) => void removeFromSuperset(index)}
-            onUpdateExerciseRest={(index, restSeconds) =>
-              void updateExerciseDefaultRest(index, restSeconds)
-            }
-            onUpdateSet={(exerciseIndex, setIndex, patch) =>
-              void updatePlannedSet(exerciseIndex, setIndex, patch)
-            }
-            onCompleteStep={(exerciseIndex, setIndex) =>
-              void completeStep(exerciseIndex, setIndex)
-            }
-            onStartHold={(exerciseIndex, setIndex) =>
-              startHold(exerciseIndex, setIndex)
-            }
-            onUncompleteStep={(exerciseIndex, setIndex) =>
-              void uncompleteStep(exerciseIndex, setIndex)
-            }
-            onAddPlannedSet={(exerciseIndex) => void addPlannedSet(exerciseIndex)}
-            onDeleteSet={(exerciseIndex, setIndex) =>
-              void removePlannedSet(exerciseIndex, setIndex)
-            }
-            onReorderSets={(exerciseIndex, fromIndex, toIndex) =>
-              void reorderPlannedSets(exerciseIndex, fromIndex, toIndex)
-            }
-            onApplyOverloadSuggestion={(exerciseIndex, suggestion) => {
-              const exercise = activeExercises[exerciseIndex]
-              if (!exercise) {
-                return
+              onAddToSuperset={(from, partner) => void addToSuperset(from, partner)}
+              onRemoveFromSuperset={(index) => void removeFromSuperset(index)}
+              onUpdateExerciseRest={(index, restSeconds) =>
+                void updateExerciseDefaultRest(index, restSeconds)
               }
-
-              const updatedSets = applyOverloadToWorkingSets(exercise.sets, suggestion)
-              updatedSets.forEach((set, setIndex) => {
-                if (!isWorkingSet(set)) {
+              onUpdateSet={(exerciseIndex, setIndex, patch) =>
+                void updatePlannedSet(exerciseIndex, setIndex, patch)
+              }
+              onCompleteStep={(exerciseIndex, setIndex) =>
+                void completeStep(exerciseIndex, setIndex)
+              }
+              onStartHold={(exerciseIndex, setIndex) =>
+                startHold(exerciseIndex, setIndex)
+              }
+              onUncompleteStep={(exerciseIndex, setIndex) =>
+                void uncompleteStep(exerciseIndex, setIndex)
+              }
+              onAddPlannedSet={(exerciseIndex) => void addPlannedSet(exerciseIndex)}
+              onDeleteSet={(exerciseIndex, setIndex) =>
+                void removePlannedSet(exerciseIndex, setIndex)
+              }
+              onReorderSets={(exerciseIndex, fromIndex, toIndex) =>
+                void reorderPlannedSets(exerciseIndex, fromIndex, toIndex)
+              }
+              onApplyOverloadSuggestion={(exerciseIndex, suggestion) => {
+                const exercise = activeExercises[exerciseIndex]
+                if (!exercise) {
                   return
                 }
 
-                void updatePlannedSet(exerciseIndex, setIndex, {
-                  weightKg: set.weightKg,
-                  reps: set.reps,
-                  ...(set.durationSeconds != null
-                    ? { durationSeconds: set.durationSeconds }
-                    : {}),
-                  ...(set.distanceKm != null ? { distanceKm: set.distanceKm } : {}),
+                const updatedSets = applyOverloadToWorkingSets(exercise.sets, suggestion)
+                updatedSets.forEach((set, setIndex) => {
+                  if (!isWorkingSet(set)) {
+                    return
+                  }
+
+                  void updatePlannedSet(exerciseIndex, setIndex, {
+                    weightKg: set.weightKg,
+                    reps: set.reps,
+                    ...(set.durationSeconds != null
+                      ? { durationSeconds: set.durationSeconds }
+                      : {}),
+                    ...(set.distanceKm != null ? { distanceKm: set.distanceKm } : {}),
+                  })
                 })
-              })
-            }}
-          />
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
-      <div className="flex justify-center">
-        <ExercisePicker
-          excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
-          onSelect={(exercise) => void addExercise(exercise)}
-          triggerLabel="Ajouter exercice"
-        />
-      </div>
+      {activeExercises.length > 0 ? (
+        <div className="flex justify-center">
+          <ExercisePicker
+            excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
+            onSelect={(exercise) => void addExercise(exercise)}
+            triggerLabel="Ajouter exercice"
+          />
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Button

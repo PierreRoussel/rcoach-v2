@@ -1,11 +1,21 @@
 import { Link } from '@tanstack/react-router'
 import { format, parseISO, startOfMonth } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { CalendarClock, CalendarDays, Dumbbell, Play } from 'lucide-react'
-import { useState } from 'react'
+import {
+  CalendarClock,
+  CalendarDays,
+  ChevronRight,
+  Dumbbell,
+  History,
+  Play,
+  Plus,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useCalendarData } from '@/hooks/useCalendarData'
+import { useCreateSimpleWorkout } from '@/hooks/useWorkouts'
 import {
   formatDayMarkerTitle,
   getDayMarker,
@@ -13,7 +23,11 @@ import {
   type WorkoutCalendarProps,
 } from '@/components/schedule/WorkoutCalendar'
 import { Pill } from '@/design-system'
-import type { CalendarMarkers } from '@/lib/schedule/calendar-markers'
+import {
+  canStartPlannedOccurrence,
+  isPastCalendarDay,
+  type CalendarMarkers,
+} from '@/lib/schedule/calendar-markers'
 import type { ScheduleOccurrence } from '@/lib/schedule/expand-occurrences'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +39,65 @@ type CalendarDayDetailProps = {
   isStarting?: boolean
 }
 
+function SimplePastActivityForm({ date }: { date: Date }) {
+  const [name, setName] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const createSimple = useCreateSimpleWorkout()
+
+  useEffect(() => {
+    setName('')
+    setError(null)
+  }, [date])
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+
+    if (!name.trim()) {
+      setError('Le nom est obligatoire.')
+      return
+    }
+
+    setError(null)
+
+    try {
+      await createSimple.mutateAsync({ title: name.trim(), date })
+      setName('')
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Impossible d'ajouter l'activité.",
+      )
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <div className="flex gap-2">
+        <Input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Nom de l'activité"
+          disabled={createSimple.isPending}
+          className="rounded-full"
+          aria-label="Nom de l'activité"
+        />
+        <Button
+          type="submit"
+          variant="pill"
+          size="sm"
+          className="shrink-0 rounded-full"
+          disabled={createSimple.isPending}
+        >
+          <Plus className="size-3.5" />
+          Ajouter
+        </Button>
+      </div>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </form>
+  )
+}
+
 export function CalendarDayDetail({
   markers,
   date,
@@ -33,6 +106,9 @@ export function CalendarDayDetail({
   isStarting = false,
 }: CalendarDayDetailProps) {
   const marker = getDayMarker(markers, date)
+  const isPastDay = isPastCalendarDay(date)
+  const canStartPlanned = canStartPlannedOccurrence(date, marker)
+  const recordedWorkout = marker?.workouts[0]
   const hasContent = Boolean(marker?.workouts.length || marker?.planned.length)
 
   return (
@@ -50,7 +126,9 @@ export function CalendarDayDetail({
           <p className="text-xs text-muted-foreground">
             {hasContent
               ? 'Détail de la journée sélectionnée'
-              : 'Aucune séance pour ce jour'}
+              : isPastDay
+                ? 'Aucune séance enregistrée pour ce jour'
+                : 'Aucune séance pour ce jour'}
           </p>
         </div>
         <Pill tone="purple" className="shrink-0 py-1">
@@ -66,21 +144,20 @@ export function CalendarDayDetail({
           </p>
           <ul className="space-y-2">
             {marker.workouts.map((workout) => (
-              <li
-                key={workout.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-soft-primary/25 px-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-display font-bold">{workout.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(workout.started_at), 'HH:mm', { locale: fr })}
-                  </p>
-                </div>
-                <Button variant="pill" size="sm" className="shrink-0 rounded-full" asChild>
-                  <Link to="/app/workouts/$workoutId" params={{ workoutId: workout.id }}>
-                    Voir
-                  </Link>
-                </Button>
+              <li key={workout.id}>
+                <Link
+                  to="/app/workouts/$workoutId"
+                  params={{ workoutId: workout.id }}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-soft-primary/25 px-3 py-2.5 transition-colors active:bg-soft-primary/40"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-display font-bold">{workout.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(parseISO(workout.started_at), 'HH:mm', { locale: fr })}
+                    </p>
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </Link>
               </li>
             ))}
           </ul>
@@ -90,39 +167,71 @@ export function CalendarDayDetail({
       {marker?.planned.length ? (
         <section className="space-y-2">
           <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-            Planifié
+            {isPastDay ? 'Manqué' : 'Planifié'}
           </p>
           <ul className="space-y-2">
-            {marker.planned.map((occurrence) => (
-              <li
-                key={`${occurrence.sessionId}-${occurrence.date}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-secondary/35 bg-soft-secondary/35 px-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-display font-bold">{occurrence.title}</p>
-                  {occurrence.workoutTemplateName ? (
-                    <p className="text-xs text-muted-foreground">
-                      {occurrence.workoutTemplateName}
-                    </p>
-                  ) : null}
-                </div>
-                {onStartPlanned ? (
-                  <Button
-                    type="button"
-                    variant="pill"
-                    size="sm"
-                    className="shrink-0 rounded-full"
-                    disabled={isStarting}
-                    onClick={() => onStartPlanned(occurrence)}
-                  >
-                    <Play className="size-3" />
-                    Go
-                  </Button>
-                ) : (
-                  <CalendarClock className="size-4 shrink-0 text-secondary" />
-                )}
-              </li>
-            ))}
+            {marker.planned.map((occurrence) => {
+              const occurrenceContent = (
+                <>
+                  <div className="min-w-0">
+                    <p className="truncate font-display font-bold">{occurrence.title}</p>
+                    {occurrence.workoutTemplateName ? (
+                      <p className="text-xs text-muted-foreground">
+                        {occurrence.workoutTemplateName}
+                      </p>
+                    ) : null}
+                  </div>
+                  {canStartPlanned && onStartPlanned ? (
+                    <Button
+                      type="button"
+                      variant="pill"
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      disabled={isStarting}
+                      onClick={() => onStartPlanned(occurrence)}
+                    >
+                      <Play className="size-3" />
+                      Go
+                    </Button>
+                  ) : recordedWorkout ? (
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <CalendarClock
+                      className={cn(
+                        'size-4 shrink-0',
+                        isPastDay ? 'text-muted-foreground/50' : 'text-secondary',
+                      )}
+                    />
+                  )}
+                </>
+              )
+
+              const rowClassName = cn(
+                'flex items-center justify-between gap-3 rounded-xl px-3 py-2.5',
+                isPastDay
+                  ? 'border border-dashed border-muted-foreground/25 bg-muted/20'
+                  : 'border border-dashed border-secondary/35 bg-soft-secondary/35',
+                !canStartPlanned &&
+                  recordedWorkout &&
+                  'transition-colors active:bg-muted/30',
+              )
+
+              return (
+                <li key={`${occurrence.sessionId}-${occurrence.date}`}>
+                  {!canStartPlanned && recordedWorkout ? (
+                    <Link
+                      to="/app/workouts/$workoutId"
+                      params={{ workoutId: recordedWorkout.id }}
+                      className={rowClassName}
+                    >
+                      {occurrenceContent}
+                    </Link>
+                  ) : (
+                    <div className={rowClassName}>{occurrenceContent}</div>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </section>
       ) : null}
@@ -130,11 +239,21 @@ export function CalendarDayDetail({
       {!hasContent ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center">
           <Dumbbell className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Rien de prévu pour ce jour.</p>
+          <p className="text-sm text-muted-foreground">
+            {isPastDay ? 'Aucune séance enregistrée.' : 'Rien de prévu pour ce jour.'}
+          </p>
         </div>
       ) : null}
 
-      {onPlanDate ? (
+      {isPastDay ? (
+        <div className="space-y-2 rounded-xl border border-border/60 bg-muted/10 p-3">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <History className="size-3.5" />
+            Ajouter une activité passée
+          </p>
+          <SimplePastActivityForm date={date} />
+        </div>
+      ) : onPlanDate ? (
         <Button
           type="button"
           variant="soft"

@@ -19,12 +19,13 @@ import {
   type OffFoodDraft,
 } from '@/lib/nutrition/open-food-facts'
 
-export function useFoodFavorites() {
+export function useFoodFavorites(options?: { enabled?: boolean }) {
   const { nhost, isAuthenticated } = useAuth()
 
   return useQuery({
     queryKey: ['food-favorites'],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && (options?.enabled ?? true),
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         food_favorites: Array<{

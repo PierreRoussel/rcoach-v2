@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { LIST_MEAL_LOG_ENTRIES_FOR_DATE } from '@/lib/graphql/operations'
-import { graphqlRequest } from '@/lib/graphql/request'
-import { db, type NutritionDayCache } from '@/lib/db/dexie'
+import { fetchNutritionDayEntries, nutritionDayQueryKey } from '@/lib/nutrition/fetch-nutrition-day-entries'
 import { getMealCalorieTarget } from '@/lib/nutrition/meal-targets'
 import { sumNutrients } from '@/lib/nutrition/nutrient-math'
 import type { MealLogEntry, MealType, NutritionSettings } from '@/lib/nutrition/types'
@@ -93,42 +91,11 @@ export function useNutritionDay(date: string, settings: NutritionSettings | null
   const { nhost, isAuthenticated } = useAuth()
 
   return useQuery({
-    queryKey: ['nutrition-day', date],
+    queryKey: nutritionDayQueryKey(date),
     enabled: isAuthenticated && Boolean(settings),
     staleTime: 60_000,
     queryFn: async () => {
-      let entries: MealLogEntry[] = []
-
-      try {
-        const data = await graphqlRequest<{
-          meal_log_entries: MealLogEntry[]
-        }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_DATE, { date })
-        entries = data.meal_log_entries
-      } catch {
-        const cached = await db.nutritionDayCache.get(date)
-        if (cached) {
-          entries = cached.entries as unknown as MealLogEntry[]
-        }
-      }
-
-      const cached = await db.nutritionDayCache.get(date)
-      if (cached?.entries.length) {
-        const knownIds = new Set(entries.map((entry) => entry.id))
-        for (const pendingEntry of cached.entries) {
-          if (!pendingEntry.pending || knownIds.has(pendingEntry.id)) {
-            continue
-          }
-
-          entries = [...entries, pendingEntry as unknown as MealLogEntry]
-        }
-      }
-
-      await db.nutritionDayCache.put({
-        date,
-        entries: entries as unknown as NutritionDayCache['entries'],
-        updatedAt: new Date().toISOString(),
-      })
-
+      const entries = await fetchNutritionDayEntries(nhost, date)
       return buildDaySummary(date, entries, settings!)
     },
   })
