@@ -1277,6 +1277,12 @@ export const DELETE_SCHEDULED_SESSION = `
   }
 `
 
+export const ENSURE_USER_PROFILE = `
+  mutation EnsureUserProfile {
+    ensure_user_profile
+  }
+`
+
 export type NutritionSettingsInput = {
   daily_calorie_target?: number
   carbs_pct?: number

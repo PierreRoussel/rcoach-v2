@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { FeatureSlidesCarousel } from '@/components/onboarding/FeatureSlidesCarousel'
+import { OnboardingSetupScreen } from '@/components/onboarding/OnboardingSetupScreen'
 import { ProfileOnboardingSteps } from '@/components/onboarding/ProfileOnboardingSteps'
 import {
   redirectIfAppOnboardingComplete,
@@ -14,6 +15,7 @@ import {
   type ProfileOnboardingFormData,
 } from '@/lib/onboarding/profile-form'
 import { resolveOnboardingProfileId } from '@/lib/onboarding/resolve-profile-id'
+import { resolveDisplayName } from '@/lib/profile/resolve-display-name'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useMyProfile } from '@/hooks/useProfile'
 
@@ -25,7 +27,7 @@ export const Route = createFileRoute('/app/onboarding')({
   component: OnboardingPage,
 })
 
-type OnboardingPhase = 'slides' | 'profile'
+type OnboardingPhase = 'slides' | 'profile' | 'setup'
 
 function OnboardingPage() {
   const { nhost, user, isLoading: authLoading } = useAuth()
@@ -33,20 +35,30 @@ function OnboardingPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [phase, setPhase] = useState<OnboardingPhase>('slides')
+  const [pendingForm, setPendingForm] = useState<ProfileOnboardingFormData | null>(null)
 
-  async function persistAndExit(data: ProfileOnboardingFormData) {
+  const displayName = resolveDisplayName(profile?.display_name, user)
+
+  const persistPendingForm = useCallback(async () => {
+    if (!pendingForm) {
+      throw new Error('Aucune donnée de profil à enregistrer.')
+    }
+
     const profileId = await resolveOnboardingProfileId(nhost, user?.id, profile?.id)
 
-    await completeAppOnboarding(nhost, profileId, data)
+    await completeAppOnboarding(nhost, profileId, pendingForm)
 
     await queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
     await queryClient.invalidateQueries({ queryKey: ['nutrition-settings'] })
+  }, [nhost, pendingForm, profile?.id, queryClient, user?.id])
 
-    await navigate({ to: '/app' })
+  function beginSetup(data: ProfileOnboardingFormData) {
+    setPendingForm(data)
+    setPhase('setup')
   }
 
-  async function skipAll() {
-    await persistAndExit(createEmptyProfileOnboardingForm())
+  async function goToApp() {
+    await navigate({ to: '/app' })
   }
 
   if (phase === 'slides') {
@@ -54,6 +66,16 @@ function OnboardingPage() {
       <FeatureSlidesCarousel
         onComplete={() => setPhase('profile')}
         onSkip={() => setPhase('profile')}
+      />
+    )
+  }
+
+  if (phase === 'setup' && pendingForm) {
+    return (
+      <OnboardingSetupScreen
+        displayName={displayName}
+        onPersist={persistPendingForm}
+        onContinue={() => void goToApp()}
       />
     )
   }
@@ -68,8 +90,8 @@ function OnboardingPage() {
 
   return (
     <ProfileOnboardingSteps
-      onComplete={persistAndExit}
-      onSkipAll={skipAll}
+      onComplete={beginSetup}
+      onSkipAll={() => beginSetup(createEmptyProfileOnboardingForm())}
     />
   )
 }

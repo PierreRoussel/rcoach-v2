@@ -190,6 +190,223 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
   );
 }
 
+/* Onboarding setup loader — full-screen moving gradient */
+
+@keyframes onboarding-setup-gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes onboarding-setup-orb-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(12vw, -6vh, 0) scale(1.08);
+  }
+}
+
+@keyframes onboarding-setup-orb-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-10vw, 8vh, 0) scale(1.12);
+  }
+}
+
+@keyframes onboarding-setup-orb-drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+
+  50% {
+    transform: translate3d(6vw, 10vh, 0) scale(1.05);
+  }
+}
+
+@keyframes onboarding-setup-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes onboarding-setup-step-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes onboarding-setup-spark-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08) rotate(8deg);
+  }
+}
+
+@keyframes onboarding-setup-name-shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes onboarding-welcome-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 32px, 0) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes onboarding-welcome-title-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes onboarding-welcome-cta-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.onboarding-setup-bg {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 72%, var(--chart-4)) 0%,
+    color-mix(in srgb, var(--chart-4) 65%, var(--secondary)) 28%,
+    color-mix(in srgb, var(--secondary) 58%, var(--primary)) 55%,
+    color-mix(in srgb, var(--accent) 55%, var(--primary)) 78%,
+    color-mix(in srgb, var(--primary) 70%, var(--soft-peach)) 100%
+  );
+  background-size: 320% 320%;
+  animation: onboarding-setup-gradient 9s ease-in-out infinite;
+  transition: filter 0.8s ease;
+}
+
+.onboarding-setup-bg-welcome {
+  filter: saturate(1.08) brightness(1.04);
+}
+
+.onboarding-setup-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.onboarding-setup-orb-a {
+  top: 8%;
+  left: -8%;
+  width: min(52vw, 240px);
+  height: min(52vw, 240px);
+  background: color-mix(in srgb, var(--primary) 55%, white);
+  animation: onboarding-setup-orb-drift-a 11s ease-in-out infinite;
+}
+
+.onboarding-setup-orb-b {
+  right: -10%;
+  bottom: 18%;
+  width: min(58vw, 280px);
+  height: min(58vw, 280px);
+  background: color-mix(in srgb, var(--secondary) 50%, white);
+  animation: onboarding-setup-orb-drift-b 13s ease-in-out infinite;
+}
+
+.onboarding-setup-orb-c {
+  top: 42%;
+  left: 38%;
+  width: min(40vw, 180px);
+  height: min(40vw, 180px);
+  background: color-mix(in srgb, var(--accent) 45%, white);
+  animation: onboarding-setup-orb-drift-c 10s ease-in-out infinite;
+}
+
+.onboarding-setup-panel {
+  animation: onboarding-setup-panel-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-setup-step {
+  animation: onboarding-setup-step-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-setup-spark {
+  animation: onboarding-setup-spark-pulse 2.2s ease-in-out infinite;
+}
+
+.onboarding-setup-name {
+  animation: onboarding-setup-name-shimmer 2.8s ease-in-out infinite;
+}
+
+.onboarding-welcome-panel {
+  animation: onboarding-welcome-panel-enter 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-welcome-title,
+.onboarding-welcome-name {
+  animation: onboarding-welcome-title-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.onboarding-welcome-kicker,
+.onboarding-welcome-badge {
+  animation: onboarding-welcome-title-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-welcome-cta {
+  animation: onboarding-welcome-cta-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
 @keyframes motivation-bounce {
   0%,
   100% {

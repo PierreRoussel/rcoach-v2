@@ -9,6 +9,7 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import { updateMyProfile } from '@/lib/graphql/profile-request'
 
+import { ensureUserProfile } from './ensure-user-profile'
 import {
   buildNutritionUpsertFromOnboarding,
   hasOnboardingBodyData,
@@ -20,6 +21,8 @@ export async function completeAppOnboarding(
   profileId: string,
   data: ProfileOnboardingFormData,
 ) {
+  const ensuredProfileId = await ensureUserProfile(nhost, profileId)
+
   if (hasOnboardingBodyData(data)) {
     const nutritionPatch = buildNutritionUpsertFromOnboarding(data)
 
@@ -42,7 +45,7 @@ export async function completeAppOnboarding(
     onboarding_completed_at: new Date().toISOString(),
   }
 
-  const updated = await updateMyProfile(nhost, profileId, profileChanges)
+  const updated = await updateMyProfile(nhost, ensuredProfileId, profileChanges)
 
   if (!updated) {
     throw new Error('Impossible de finaliser l’onboarding.')
