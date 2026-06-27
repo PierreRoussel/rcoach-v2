@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -18,12 +19,16 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/login')({
   beforeLoad: redirectIfAuthenticated,
+  validateSearch: z.object({
+    passwordUpdated: z.string().optional(),
+  }),
   component: LoginPage,
 })
 
 function LoginPage() {
   const { nhost } = useAuth()
   const navigate = useNavigate()
+  const search = Route.useSearch()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -84,6 +89,11 @@ function LoginPage() {
               />
             </FormField>
             {error ? <FormMessage>{error}</FormMessage> : null}
+            {search.passwordUpdated ? (
+              <p className="text-sm text-foreground">
+                Mot de passe mis à jour. Reconnectez-vous avec votre nouveau mot de passe.
+              </p>
+            ) : null}
             <Button className="w-full rounded-full" variant="pill" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Connexion...' : 'Se connecter'}
             </Button>

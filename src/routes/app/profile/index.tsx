@@ -21,128 +21,22 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { FormMessage } from '@/components/ui/form'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
-import { AvatarEditor } from '@/components/social/AvatarEditor'
 import { FriendsSection } from '@/components/social/FriendsSection'
 import { GoalsSection } from '@/components/goals/GoalsSection'
-import { PageHeader, ThemeSetting } from '@/design-system'
+import { ThemeSetting } from '@/design-system'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { Capacitor } from '@capacitor/core'
 
-export const Route = createFileRoute('/app/profile')({
+export const Route = createFileRoute('/app/profile/')({
   component: ProfilePage,
 })
-
-function ProfileEditor({
-  profile,
-}: {
-  profile: NonNullable<ReturnType<typeof useMyProfile>['data']>
-}) {
-  const updateProfile = useUpdateProfile()
-  const [displayName, setDisplayName] = useState(profile.display_name)
-  const [unitSystem, setUnitSystem] = useState(profile.unit_system)
-  const [exerciseLocale, setExerciseLocale] = useState(profile.exercise_locale ?? 'fr')
-  const [role, setRole] = useState(profile.role)
-  const [message, setMessage] = useState<string | null>(null)
-
-  async function handleSave() {
-    setMessage(null)
-
-    try {
-      await updateProfile.mutateAsync({
-        profileId: profile.id,
-        changes: {
-          display_name: displayName,
-          unit_system: unitSystem,
-          exercise_locale: exerciseLocale,
-          role,
-        },
-      })
-      setMessage('Profil mis à jour.')
-    } catch (saveError) {
-      setMessage(
-        saveError instanceof Error
-          ? saveError.message
-          : 'Impossible de mettre à jour le profil.',
-      )
-    }
-  }
-
-  return (
-    <>
-      <div className="space-y-2">
-        <Label htmlFor="displayName">Nom affiché</Label>
-        <Input
-          id="displayName"
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="unitSystem">Unité de poids</Label>
-        <select
-          id="unitSystem"
-          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-          value={unitSystem}
-          onChange={(event) =>
-            setUnitSystem(event.target.value as 'kg' | 'lb')
-          }
-        >
-          <option value="kg">Kilogrammes (kg)</option>
-          <option value="lb">Livres (lb)</option>
-        </select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="exerciseLocale">Langue des exercices</Label>
-        <select
-          id="exerciseLocale"
-          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-          value={exerciseLocale}
-          onChange={(event) =>
-            setExerciseLocale(event.target.value as 'fr' | 'en')
-          }
-        >
-          <option value="fr">Francais (noms traduits)</option>
-          <option value="en">Anglais (noms d&apos;origine)</option>
-        </select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="role">Role</Label>
-        <select
-          id="role"
-          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-          value={role}
-          onChange={(event) =>
-            setRole(event.target.value as 'athlete' | 'coach' | 'both')
-          }
-        >
-          <option value="athlete">Athlète</option>
-          <option value="coach">Coach</option>
-          <option value="both">Athlète + Coach</option>
-        </select>
-      </div>
-      <p className="font-data text-xs text-muted-foreground">
-        Cree le {new Date(profile.created_at).toLocaleDateString('fr-FR')}
-      </p>
-      <Button
-        type="button"
-        variant="pill"
-        onClick={() => void handleSave()}
-        disabled={updateProfile.isPending}
-      >
-        {updateProfile.isPending ? 'Enregistrement...' : 'Enregistrer'}
-      </Button>
-      {message ? <FormMessage>{message}</FormMessage> : null}
-    </>
-  )
-}
 
 function RpePreferenceToggle({
   profile,
@@ -236,7 +130,7 @@ function LogoutSection() {
 
 function ProfilePage() {
   const queryClient = useQueryClient()
-  const { data: profile, isLoading, error } = useMyProfile()
+  const { data: profile } = useMyProfile()
   const { markers, weeklyStreak, isLoading: calendarLoading } = useCalendarData()
 
   useEffect(() => {
@@ -294,30 +188,15 @@ function ProfilePage() {
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
-          <CardTitle className="font-display font-black">Identite</CardTitle>
+          <CardTitle className="font-display font-black">Configurer le compte</CardTitle>
           <CardDescription>
-            Mettez à jour votre nom et vos unités de mesure.
+            Identité, préférences de profil et sécurité du compte.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Chargement...</p>
-          ) : null}
-          {error ? (
-            <p className="text-sm text-destructive">
-              {error instanceof Error ? error.message : 'Erreur de chargement'}
-            </p>
-          ) : null}
-          {profile ? (
-            <>
-              <AvatarEditor
-                profileId={profile.id}
-                displayName={profile.display_name}
-                avatarUrl={profile.avatar_url}
-              />
-              <ProfileEditor key={profile.id} profile={profile} />
-            </>
-          ) : null}
+        <CardContent>
+          <Button variant="soft" asChild>
+            <Link to="/app/profile/settings">Ouvrir la configuration</Link>
+          </Button>
         </CardContent>
       </Card>
 
@@ -342,41 +221,28 @@ function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-2">
           <Label>Theme</Label>
-          
-      <Card>
-        <CardHeader>
-          <CardTitle>Montre Wear OS</CardTitle>
-          <CardDescription>
-            Disponible via l'application Android Capacitor pendant une séance active.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            Plateforme actuelle : {Capacitor.isNativePlatform() ? Capacitor.getPlatform() : 'web/PWA'}
-          </p>
-          <p>
-            Installez l'APK Android, ouvrez une séance active et vérifiez le bandeau
-            « Montre Wear OS connectée » sur l'écran séance.
-          </p>
-          <p>Voir docs/wear-os-testing.md pour le pairing emulateur.</p>
-        </CardContent>
-      </Card>
 
-      <ThemeSetting />
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Montre Wear OS</CardTitle>
+              <CardDescription>
+                Disponible via l'application Android Capacitor pendant une séance active.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>
+                Plateforme actuelle :{' '}
+                {Capacitor.isNativePlatform() ? Capacitor.getPlatform() : 'web/PWA'}
+              </p>
+              <p>
+                Installez l'APK Android, ouvrez une séance active et vérifiez le bandeau
+                « Montre Wear OS connectée » sur l'écran séance.
+              </p>
+              <p>Voir docs/wear-os-testing.md pour le pairing emulateur.</p>
+            </CardContent>
+          </Card>
 
-      <Card className="rounded-2xl border-border">
-        <CardHeader>
-          <CardTitle className="font-display font-black">Import</CardTitle>
-          <CardDescription>
-            Importer un export CSV depuis Hevy.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="soft" asChild>
-            <Link to="/app/import">Aller a l&apos;import Hevy</Link>
-          </Button>
+          <ThemeSetting />
         </CardContent>
       </Card>
 

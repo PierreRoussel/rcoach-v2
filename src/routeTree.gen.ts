@@ -17,14 +17,15 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppStatsRouteImport } from './routes/app/stats'
-import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppImportRouteImport } from './routes/app/import'
+import { Route as AppProfileRouteRouteImport } from './routes/app/profile/route'
 import { Route as CoachValidateProductRenamesIndexRouteImport } from './routes/coach/validate-product-renames/index'
 import { Route as CoachProgramsIndexRouteImport } from './routes/coach/programs/index'
 import { Route as CoachClientsIndexRouteImport } from './routes/coach/clients/index'
 import { Route as CoachAnalyticsIndexRouteImport } from './routes/coach/analytics/index'
 import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/index'
 import { Route as AppSessionsIndexRouteImport } from './routes/app/sessions/index'
+import { Route as AppProfileIndexRouteImport } from './routes/app/profile/index'
 import { Route as AppPlanningIndexRouteImport } from './routes/app/planning/index'
 import { Route as AppGoalsIndexRouteImport } from './routes/app/goals/index'
 import { Route as AppFriendsIndexRouteImport } from './routes/app/friends/index'
@@ -36,6 +37,7 @@ import { Route as AppWorkoutsWorkoutIdRouteImport } from './routes/app/workouts/
 import { Route as AppWorkoutActiveRouteImport } from './routes/app/workout/active'
 import { Route as AppSessionsNewRouteImport } from './routes/app/sessions/new'
 import { Route as AppSessionsTemplateIdRouteImport } from './routes/app/sessions/$templateId'
+import { Route as AppProfileSettingsRouteImport } from './routes/app/profile/settings'
 import { Route as AppDietSettingsRouteImport } from './routes/app/diet/settings'
 import { Route as AppDietAddRouteImport } from './routes/app/diet/add'
 import { Route as AppStatsExercisesExerciseIdRouteImport } from './routes/app/stats/exercises/$exerciseId'
@@ -82,14 +84,14 @@ const AppStatsRoute = AppStatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppImportRoute = AppImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const CoachValidateProductRenamesIndexRoute =
@@ -122,6 +124,11 @@ const AppSessionsIndexRoute = AppSessionsIndexRouteImport.update({
   id: '/sessions/',
   path: '/sessions/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfileIndexRoute = AppProfileIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppProfileRouteRoute,
 } as any)
 const AppPlanningIndexRoute = AppPlanningIndexRouteImport.update({
   id: '/planning/',
@@ -178,6 +185,11 @@ const AppSessionsTemplateIdRoute = AppSessionsTemplateIdRouteImport.update({
   path: '/sessions/$templateId',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppProfileSettingsRoute = AppProfileSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppProfileRouteRoute,
+} as any)
 const AppDietSettingsRoute = AppDietSettingsRouteImport.update({
   id: '/diet/settings',
   path: '/diet/settings',
@@ -209,8 +221,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
+  '/app/profile': typeof AppProfileRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
-  '/app/profile': typeof AppProfileRoute
   '/app/stats': typeof AppStatsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -218,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
+  '/app/profile/settings': typeof AppProfileSettingsRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
@@ -229,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/app/friends/': typeof AppFriendsIndexRoute
   '/app/goals/': typeof AppGoalsIndexRoute
   '/app/planning/': typeof AppPlanningIndexRoute
+  '/app/profile/': typeof AppProfileIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
@@ -242,7 +256,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/import': typeof AppImportRoute
-  '/app/profile': typeof AppProfileRoute
   '/app/stats': typeof AppStatsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -250,6 +263,7 @@ export interface FileRoutesByTo {
   '/coach': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
+  '/app/profile/settings': typeof AppProfileSettingsRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
@@ -261,6 +275,7 @@ export interface FileRoutesByTo {
   '/app/friends': typeof AppFriendsIndexRoute
   '/app/goals': typeof AppGoalsIndexRoute
   '/app/planning': typeof AppPlanningIndexRoute
+  '/app/profile': typeof AppProfileIndexRoute
   '/app/sessions': typeof AppSessionsIndexRoute
   '/app/workouts': typeof AppWorkoutsIndexRoute
   '/coach/analytics': typeof CoachAnalyticsIndexRoute
@@ -276,8 +291,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
+  '/app/profile': typeof AppProfileRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
-  '/app/profile': typeof AppProfileRoute
   '/app/stats': typeof AppStatsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -285,6 +300,7 @@ export interface FileRoutesById {
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
+  '/app/profile/settings': typeof AppProfileSettingsRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
@@ -296,6 +312,7 @@ export interface FileRoutesById {
   '/app/friends/': typeof AppFriendsIndexRoute
   '/app/goals/': typeof AppGoalsIndexRoute
   '/app/planning/': typeof AppPlanningIndexRoute
+  '/app/profile/': typeof AppProfileIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
@@ -312,8 +329,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/coach'
-    | '/app/import'
     | '/app/profile'
+    | '/app/import'
     | '/app/stats'
     | '/auth/login'
     | '/auth/register'
@@ -321,6 +338,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/app/diet/add'
     | '/app/diet/settings'
+    | '/app/profile/settings'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
@@ -332,6 +350,7 @@ export interface FileRouteTypes {
     | '/app/friends/'
     | '/app/goals/'
     | '/app/planning/'
+    | '/app/profile/'
     | '/app/sessions/'
     | '/app/workouts/'
     | '/coach/analytics/'
@@ -345,7 +364,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app/import'
-    | '/app/profile'
     | '/app/stats'
     | '/auth/login'
     | '/auth/register'
@@ -353,6 +371,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/app/diet/add'
     | '/app/diet/settings'
+    | '/app/profile/settings'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
@@ -364,6 +383,7 @@ export interface FileRouteTypes {
     | '/app/friends'
     | '/app/goals'
     | '/app/planning'
+    | '/app/profile'
     | '/app/sessions'
     | '/app/workouts'
     | '/coach/analytics'
@@ -378,8 +398,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/coach'
-    | '/app/import'
     | '/app/profile'
+    | '/app/import'
     | '/app/stats'
     | '/auth/login'
     | '/auth/register'
@@ -387,6 +407,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/app/diet/add'
     | '/app/diet/settings'
+    | '/app/profile/settings'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
@@ -398,6 +419,7 @@ export interface FileRouteTypes {
     | '/app/friends/'
     | '/app/goals/'
     | '/app/planning/'
+    | '/app/profile/'
     | '/app/sessions/'
     | '/app/workouts/'
     | '/coach/analytics/'
@@ -476,18 +498,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStatsRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/profile': {
-      id: '/app/profile'
-      path: '/profile'
-      fullPath: '/app/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/app/import': {
       id: '/app/import'
       path: '/import'
       fullPath: '/app/import'
       preLoaderRoute: typeof AppImportRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/coach/validate-product-renames/': {
@@ -531,6 +553,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/sessions/'
       preLoaderRoute: typeof AppSessionsIndexRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/app/profile/': {
+      id: '/app/profile/'
+      path: '/'
+      fullPath: '/app/profile/'
+      preLoaderRoute: typeof AppProfileIndexRouteImport
+      parentRoute: typeof AppProfileRouteRoute
     }
     '/app/planning/': {
       id: '/app/planning/'
@@ -609,6 +638,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSessionsTemplateIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/profile/settings': {
+      id: '/app/profile/settings'
+      path: '/settings'
+      fullPath: '/app/profile/settings'
+      preLoaderRoute: typeof AppProfileSettingsRouteImport
+      parentRoute: typeof AppProfileRouteRoute
+    }
     '/app/diet/settings': {
       id: '/app/diet/settings'
       path: '/diet/settings'
@@ -647,6 +683,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppProfileRouteRouteChildren {
+  AppProfileSettingsRoute: typeof AppProfileSettingsRoute
+  AppProfileIndexRoute: typeof AppProfileIndexRoute
+}
+
+const AppProfileRouteRouteChildren: AppProfileRouteRouteChildren = {
+  AppProfileSettingsRoute: AppProfileSettingsRoute,
+  AppProfileIndexRoute: AppProfileIndexRoute,
+}
+
+const AppProfileRouteRouteWithChildren = AppProfileRouteRoute._addFileChildren(
+  AppProfileRouteRouteChildren,
+)
+
 interface AppStatsRouteChildren {
   AppStatsExercisesExerciseIdRoute: typeof AppStatsExercisesExerciseIdRoute
 }
@@ -660,8 +710,8 @@ const AppStatsRouteWithChildren = AppStatsRoute._addFileChildren(
 )
 
 interface AppRouteRouteChildren {
+  AppProfileRouteRoute: typeof AppProfileRouteRouteWithChildren
   AppImportRoute: typeof AppImportRoute
-  AppProfileRoute: typeof AppProfileRoute
   AppStatsRoute: typeof AppStatsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppDietAddRoute: typeof AppDietAddRoute
@@ -682,8 +732,8 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppProfileRouteRoute: AppProfileRouteRouteWithChildren,
   AppImportRoute: AppImportRoute,
-  AppProfileRoute: AppProfileRoute,
   AppStatsRoute: AppStatsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppDietAddRoute: AppDietAddRoute,

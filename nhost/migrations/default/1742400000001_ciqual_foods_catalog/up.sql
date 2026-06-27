@@ -1,5 +1,3 @@
-ALTER TYPE public.food_source ADD VALUE IF NOT EXISTS 'ciqual';
-
 ALTER TABLE public.foods
   ADD COLUMN IF NOT EXISTS ciqual_code text;
 

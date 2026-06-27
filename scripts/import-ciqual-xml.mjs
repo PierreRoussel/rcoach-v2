@@ -105,7 +105,7 @@ async function assertImportReady(client) {
 
   if (result.rowCount === 0) {
     throw new Error(
-      'Index foods_ciqual_code_unique_idx introuvable. Déployez la migration nhost (1742400000000_ciqual_foods_catalog) avant l\'import.',
+      'Index foods_ciqual_code_unique_idx introuvable. Déployez les migrations nhost CIQUAL (1742400000000_food_source_ciqual, 1742400000001_ciqual_foods_catalog) avant l\'import.',
     )
   }
 }
