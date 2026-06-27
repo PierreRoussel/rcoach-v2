@@ -105,7 +105,7 @@ export function ActiveWorkoutCircuit({
     nextPendingStepIndex != null ? steps[nextPendingStepIndex] ?? null : null
   const activeExerciseIndex = targetStep?.exerciseIndex ?? 0
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const hasAutoScrolledRef = useRef(false)
+  const lastAutoScrolledStepKeyRef = useRef<string | null>(null)
   const [reorderOpen, setReorderOpen] = useState(false)
   const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(
     null,
@@ -119,15 +119,18 @@ export function ActiveWorkoutCircuit({
     setOptions != null ? exercises[setOptions.exerciseIndex] ?? null : null
 
   useEffect(() => {
-    hasAutoScrolledRef.current = false
+    lastAutoScrolledStepKeyRef.current = null
   }, [workoutStartedAt])
 
   useEffect(() => {
-    if (!targetStep || hasAutoScrolledRef.current || exercises.length === 0) {
+    if (!targetStep || exercises.length === 0) {
       return
     }
 
     const key = stepKey(targetStep)
+    if (lastAutoScrolledStepKeyRef.current === key) {
+      return
+    }
 
     return scrollElementIntoViewWhenReady(
       () => stepRefs.current.get(key) ?? null,
@@ -135,11 +138,11 @@ export function ActiveWorkoutCircuit({
         behavior: 'smooth',
         block: 'center',
         onScroll: () => {
-          hasAutoScrolledRef.current = true
+          lastAutoScrolledStepKeyRef.current = key
         },
       },
     )
-  }, [exercises.length, nextPendingStepIndex, targetStep])
+  }, [exercises.length, lastCompletedStep, nextPendingStepIndex, targetStep])
 
   function renderSetRow(exerciseIndex: number, setIndex: number) {
     const exercise = exercises[exerciseIndex]
@@ -219,6 +222,7 @@ export function ActiveWorkoutCircuit({
 
           <SetPerformanceInputs
             kind={trackingKind}
+            variant="inline"
             values={{
               weightKg: set.weightKg,
               reps: set.reps,
@@ -230,6 +234,7 @@ export function ActiveWorkoutCircuit({
 
           {rpeEnabled ? (
             <RpeSelect
+              variant="inline"
               value={set.rpe}
               onChange={(rpe) =>
                 onUpdateSet(exerciseIndex, setIndex, { rpe })

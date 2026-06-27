@@ -163,7 +163,7 @@ async function applyExerciseSetsChange(
   )
 
   set({ exercises, activeStepIndex, lastCompletedStep })
-  await persistDraft({
+  await persistDraft(get, {
     title: get().title,
     startedAt: get().startedAt,
     defaultRestSeconds: get().defaultRestSeconds,
@@ -174,6 +174,7 @@ async function applyExerciseSetsChange(
 }
 
 async function persistDraft(
+  get: () => ActiveWorkoutState,
   state: Omit<PersistableState, 'sourceTemplateId'> & {
     sourceTemplateId?: string | null
   },
@@ -240,7 +241,7 @@ function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<
     restTargetSeconds: 0,
   })
 
-  void persistDraft({
+  void persistDraft(get, {
     title: get().title,
     startedAt: get().startedAt,
     defaultRestSeconds: get().defaultRestSeconds,
@@ -336,7 +337,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       holdTargetSeconds: 0,
       holdingStep: null,
     })
-    await persistDraft({
+    await persistDraft(get, {
       title,
       startedAt,
       defaultRestSeconds: 90,
@@ -372,7 +373,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       holdTargetSeconds: 0,
       holdingStep: null,
     })
-    await persistDraft({
+    await persistDraft(get, {
       title,
       startedAt,
       defaultRestSeconds,
@@ -410,7 +411,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       syncAfterExerciseStructureChange(nextExercises)
 
     set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -428,7 +429,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       syncAfterExerciseStructureChange(nextExercises)
 
     set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -459,7 +460,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       syncAfterExerciseStructureChange(nextExercises)
 
     set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -482,7 +483,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       syncAfterExerciseStructureChange(compacted)
 
     set({ exercises: compacted, activeStepIndex, lastCompletedStep })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -510,7 +511,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
 
     set({ exercises })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -525,7 +526,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
     set({ exercises, activeStepIndex, lastCompletedStep })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -540,7 +541,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
     set({ exercises, activeStepIndex, lastCompletedStep })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -565,7 +566,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
 
     set({ exercises })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -602,7 +603,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
 
     set({ exercises })
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -645,7 +646,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
 
     set({ activeStepIndex: stepIndex, isResting: false, restSecondsLeft: 0, restTargetSeconds: 0 })
-    void persistDraft({
+    void persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -754,7 +755,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       })
     }
 
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,
@@ -812,7 +813,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       holdingStep: null,
     })
 
-    await persistDraft({
+    await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
       defaultRestSeconds: get().defaultRestSeconds,

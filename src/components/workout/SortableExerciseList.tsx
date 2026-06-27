@@ -411,7 +411,7 @@ function SortableExerciseItem({
                 size="sm"
                 className={cn(
                   embedded
-                    ? 'h-9 w-full rounded-none border-0 border-t border-dashed border-border/70 bg-transparent text-xs font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                    ? 'h-auto min-h-11 w-full rounded-none border-0 border-t border-dashed border-border/70 bg-transparent px-4 py-3.5 text-xs font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground'
                     : null,
                 )}
                 onClick={() => onAddSet(index)}
