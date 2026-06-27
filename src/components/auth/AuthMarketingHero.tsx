@@ -56,7 +56,7 @@ export function AuthMarketingHero({
         <>
           <div
             className={cn(
-              'relative z-10 w-full [contain:layout_style]',
+              'relative z-10 w-full auth-mockup-stage',
               compact
                 ? 'mt-3 h-[7.75rem] max-w-[15rem]'
                 : 'mt-5 h-[11.5rem] max-w-[19rem]',

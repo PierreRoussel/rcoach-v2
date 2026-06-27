@@ -92,24 +92,62 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
 @keyframes auth-mockup-float {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 1px);
   }
 
   50% {
-    transform: translate3d(0, -8px, 0);
+    transform: translate3d(0, -5px, 1px);
   }
+}
+
+@keyframes auth-mockup-float-left {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 1px) rotate(-6deg);
+  }
+
+  50% {
+    transform: translate3d(0, -5px, 1px) rotate(-6deg);
+  }
+}
+
+@keyframes auth-mockup-float-right {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 1px) rotate(6deg);
+  }
+
+  50% {
+    transform: translate3d(0, -5px, 1px) rotate(6deg);
+  }
+}
+
+.auth-mockup-stage {
+  perspective: 900px;
+  transform: translate3d(0, 0, 0);
 }
 
 .auth-mockup-shell {
   backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .auth-mockup-float {
-  animation: auth-mockup-float 4.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: auth-mockup-float 5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   backface-visibility: hidden;
+  transform: translate3d(0, 0, 1px);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.auth-mockup-float img {
+  backface-visibility: hidden;
+  display: block;
+  transform: translateZ(0);
 }
 
 .auth-mockup-shell:nth-child(1) .auth-mockup-float {
+  animation-name: auth-mockup-float-left;
   animation-delay: 0s;
 }
 
@@ -118,6 +156,7 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
 }
 
 .auth-mockup-shell:nth-child(3) .auth-mockup-float {
+  animation-name: auth-mockup-float-right;
   animation-delay: 0.7s;
 }
 

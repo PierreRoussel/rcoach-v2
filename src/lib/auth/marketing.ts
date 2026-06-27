@@ -38,7 +38,7 @@ export const AUTH_HERO_MOCKUPS = [
   {
     imageSrc: '/onboarding/diet.png',
     alt: 'Suivi nutrition',
-    className: 'absolute left-0 top-6 z-10 w-[38%] -rotate-6 opacity-90',
+    className: 'absolute left-0 top-6 z-10 w-[38%] opacity-90',
   },
   {
     imageSrc: '/onboarding/sessions.png',
@@ -48,6 +48,6 @@ export const AUTH_HERO_MOCKUPS = [
   {
     imageSrc: '/onboarding/goals.png',
     alt: 'Objectif de poids',
-    className: 'absolute right-0 top-6 z-10 w-[38%] rotate-6 opacity-90',
+    className: 'absolute right-0 top-6 z-10 w-[38%] opacity-90',
   },
 ] as const
