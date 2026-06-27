@@ -1,4 +1,4 @@
-import { Dumbbell, Play } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Skeleton } from '@/components/ui/skeleton'
@@ -79,6 +79,14 @@ export function ExerciseDemoPlayer({
     })
   }, [showVideo, demoUrl])
 
+  if (!demoFileId) {
+    return null
+  }
+
+  if (contentStatus === 'partial' || contentStatus === 'failed') {
+    return null
+  }
+
   if (contentStatus === 'pending') {
     return (
       <div className={cn(FRAME_CLASS, className)}>
@@ -111,6 +119,10 @@ export function ExerciseDemoPlayer({
     )
   }
 
+  if (!demoUrl) {
+    return null
+  }
+
   const staticPoster = posterUrl ?? fallbackPoster
 
   return (
@@ -122,17 +134,9 @@ export function ExerciseDemoPlayer({
       />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/20 px-4 text-center">
         <div className="flex size-12 items-center justify-center rounded-full bg-background/85 shadow-sm">
-          {contentStatus === 'partial' || !demoUrl ? (
-            <Dumbbell className="size-5 text-muted-foreground" aria-hidden />
-          ) : (
-            <Play className="size-5 text-muted-foreground" aria-hidden />
-          )}
+          <Play className="size-5 text-muted-foreground" aria-hidden />
         </div>
-        <p className="text-sm font-medium text-white drop-shadow">
-          {contentStatus === 'partial' || !demoUrl
-            ? 'Démo vidéo non disponible'
-            : 'Aperçu statique'}
-        </p>
+        <p className="text-sm font-medium text-white drop-shadow">Aperçu statique</p>
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />
     </div>

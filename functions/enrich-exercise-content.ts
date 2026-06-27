@@ -1,5 +1,5 @@
-import { enrichExerciseContent } from './_exercise/enrich'
-import { graphqlUserRequest } from './_exercise/hasura'
+import { enrichExerciseContent } from './_exercise/enrich.ts'
+import { graphqlUserRequest } from './_exercise/hasura.ts'
 
 type FunctionRequest = {
   method: string
@@ -85,7 +85,7 @@ export default async (req: FunctionRequest, res: FunctionResponse) => {
     res.status(200).json({ ok: true, exerciseId, ...result })
   } catch (error) {
     try {
-      const { updateExerciseContent } = await import('./_exercise/hasura')
+      const { updateExerciseContent } = await import('./_exercise/hasura.ts')
       await updateExerciseContent(exerciseId, { content_status: 'failed' })
     } catch {
       // Best effort status update.

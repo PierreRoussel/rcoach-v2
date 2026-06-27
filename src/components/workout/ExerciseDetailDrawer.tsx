@@ -58,14 +58,15 @@ export function ExerciseDetailDrawer({
 }: ExerciseDetailDrawerProps) {
   const displayExerciseName = useExerciseDisplayName(exercise?.exerciseName)
   const { data: content, isLoading } = useExerciseContent(exercise?.exerciseId, open)
+  const muscleGroup = content?.muscle_group ?? exercise?.muscleGroup
 
   const muscleLabel = useMemo(() => {
-    if (!exercise?.muscleGroup) {
+    if (!muscleGroup) {
       return MUSCLE_GROUP_LABELS.full_body
     }
 
-    return MUSCLE_GROUP_LABELS[normalizeMuscleGroup(exercise.muscleGroup)]
-  }, [exercise?.muscleGroup])
+    return MUSCLE_GROUP_LABELS[normalizeMuscleGroup(muscleGroup)]
+  }, [muscleGroup])
 
   const equipmentLabel = formatEquipmentLabel(exercise?.equipment)
 
@@ -98,23 +99,25 @@ export function ExerciseDetailDrawer({
             {displayExerciseName || "Détails de l'exercice"}
           </DrawerTitle>
           <DrawerDescription>
-            Démonstration, consignes d&apos;exécution, zone musculaire et équipement.
+            Consignes d&apos;exécution, zone musculaire et équipement.
           </DrawerDescription>
         </DrawerHeader>
 
         {exercise ? (
           <div className="mt-2 space-y-5">
-            <ExerciseDemoPlayer
-              demoFileId={content?.demo_file_id}
-              posterFileId={content?.demo_poster_file_id}
-              muscleGroup={content?.muscle_group ?? exercise.muscleGroup}
-              contentStatus={contentStatus}
-              exerciseName={displayExerciseName || exercise.exerciseName}
-            />
+            {content?.demo_file_id ? (
+              <ExerciseDemoPlayer
+                demoFileId={content.demo_file_id}
+                posterFileId={content.demo_poster_file_id}
+                muscleGroup={muscleGroup}
+                contentStatus={contentStatus}
+                exerciseName={displayExerciseName || exercise.exerciseName}
+              />
+            ) : null}
 
             <ExerciseCoachingText coaching={coaching} />
 
-            <ExerciseBodyMap muscleGroup={exercise.muscleGroup} />
+            <ExerciseBodyMap muscleGroup={muscleGroup} />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <DetailRow label="Zone musculaire">

@@ -42,15 +42,25 @@ import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 type TemplateEditorFormProps = {
   templateId?: string
   initialName?: string
+  initialFolderName?: string | null
   initialExercises?: TemplateExerciseDraft[]
   isSaving?: boolean
-  onSave: (name: string, exercises: TemplateExerciseDraft[]) => Promise<void>
-  onStart?: (name: string, exercises: TemplateExerciseDraft[]) => Promise<void>
+  onSave: (
+    name: string,
+    exercises: TemplateExerciseDraft[],
+    folderName: string | null,
+  ) => Promise<void>
+  onStart?: (
+    name: string,
+    exercises: TemplateExerciseDraft[],
+    folderName: string | null,
+  ) => Promise<void>
 }
 
 export function TemplateEditorForm({
   templateId,
   initialName = '',
+  initialFolderName = null,
   initialExercises = [],
   isSaving = false,
   onSave,
@@ -59,6 +69,7 @@ export function TemplateEditorForm({
   const { data: profile } = useMyProfile()
   const rpeEnabled = profile?.rpe_enabled ?? false
   const [name, setName] = useState(initialName)
+  const [folderName, setFolderName] = useState(initialFolderName ?? '')
   const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
   const [activeIndex, setActiveIndex] = useState(0)
   const [reorderOpen, setReorderOpen] = useState(false)
@@ -71,8 +82,9 @@ export function TemplateEditorForm({
 
   useEffect(() => {
     setName(initialName)
+    setFolderName(initialFolderName ?? '')
     setExercises(initialExercises)
-  }, [initialName, initialExercises])
+  }, [initialName, initialFolderName, initialExercises])
 
   const activeEntries: ActiveExerciseEntry[] = templateExercisesToActive(exercises)
 
@@ -173,7 +185,7 @@ export function TemplateEditorForm({
     }
 
     try {
-      await onSave(trimmedName, exercises)
+      await onSave(trimmedName, exercises, folderName.trim() || null)
       setMessage('Séance sauvegardée.')
     } catch (saveError) {
       setError(
@@ -203,7 +215,7 @@ export function TemplateEditorForm({
     }
 
     try {
-      await onStart(trimmedName, exercises)
+      await onStart(trimmedName, exercises, folderName.trim() || null)
     } catch (startError) {
       setError(
         startError instanceof Error
@@ -227,6 +239,12 @@ export function TemplateEditorForm({
             <TemplateEditorMenu templateId={templateId} title={name} />
           ) : null}
         </div>
+        <Input
+          value={folderName}
+          onChange={(event) => setFolderName(event.target.value)}
+          placeholder="Dossier (optionnel)"
+          className="h-9 border-border/70 bg-muted/20 text-sm"
+        />
         <div className="flex flex-wrap gap-2">
           <Button
             variant="pill"

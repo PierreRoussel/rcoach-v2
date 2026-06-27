@@ -9,8 +9,14 @@ export function resolveNhostEndpoints() {
   const adminSecret =
     process.env.NHOST_ADMIN_SECRET ?? process.env.CODEGEN_HASURA_ADMIN_SECRET
 
-  if (!subdomain || !adminSecret) {
-    throw new Error('Missing Nhost subdomain or admin secret.')
+  if (!subdomain?.trim() || !adminSecret?.trim()) {
+    const missing = [
+      !subdomain?.trim() && 'VITE_NHOST_SUBDOMAIN',
+      !adminSecret?.trim() && 'CODEGEN_HASURA_ADMIN_SECRET',
+    ].filter(Boolean)
+    throw new Error(
+      `Missing Nhost config (${missing.join(', ')}). Check .env.local at project root.`,
+    )
   }
 
   return {

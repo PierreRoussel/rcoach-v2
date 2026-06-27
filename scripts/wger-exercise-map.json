@@ -1,7 +1,8 @@
 {
-  "Squat (Barbell)": 111,
+  "_comment": "wger exerciseinfo IDs (not translation IDs). Optional overrides when search is ambiguous.",
+  "Squat (Barbell)": 615,
   "Bench Press (Barbell)": 192,
-  "Deadlift (Barbell)": 119,
+  "Deadlift (Barbell)": 184,
   "Pull Up": 12,
   "Overhead Press (Barbell)": 145,
   "Romanian Deadlift (Barbell)": 119,
@@ -22,11 +23,8 @@
   "Plank": 458,
   "Hanging Leg Raise": 176,
   "Kettlebell Swing": 957,
-  "Box Jump": 788,
   "Arnold Press (Dumbbell)": 257,
   "Close Grip Bench Press (Barbell)": 163,
-  "Good Morning (Barbell)": 912,
-  "Hack Squat (Machine)": 113,
   "Decline Bench Press (Barbell)": 195,
   "Back Extension": 912,
   "Goblet Squat (Dumbbell)": 957,
@@ -59,10 +57,5 @@
   "Russian Twist (Weighted)": 458,
   "Kettlebell Goblet Squat": 957,
   "Thruster (Kettlebell)": 957,
-  "Warm Up": 91,
-  "Running": 788,
-  "Cycling": 788,
-  "Rowing (Machine)": 109,
-  "Treadmill": 788,
-  "Jump Rope": 788
+  "Warm Up": 91
 }

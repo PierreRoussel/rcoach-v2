@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { CalendarDays, Dumbbell, Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, Play, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card'
 import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
+import { TemplateCatalogList } from '@/components/workout/TemplateCatalogList'
 import { WorkoutSessionConflictDialog } from '@/components/workout/WorkoutSessionConflictDialog'
 import { Pill } from '@/design-system'
 import {
@@ -33,7 +34,6 @@ import {
   useMyWorkoutsInfinite,
 } from '@/hooks/useWorkouts'
 import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
-import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
@@ -272,62 +272,14 @@ function CatalogTab() {
             </div>
           ) : null}
           {templates && templates.length > 0 ? (
-            <ul className="divide-y divide-border border-t border-border">
-              {templates.map((template) => {
-                const nextOccurrenceDate = nextOccurrenceByTemplateId.get(template.id)
-
-                return (
-                  <li key={template.id}>
-                    <div className="relative w-full bg-card px-4 py-3 transition-colors hover:bg-muted/20">
-                      <div className="flex w-full min-w-0 items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-display font-black">{template.name}</p>
-                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                            <Dumbbell className="size-3 shrink-0" />
-                            {template.workout_template_exercises.length} exercices
-                          </p>
-                        </div>
-                        {nextOccurrenceDate ? (
-                          <Pill tone="secondary" className="shrink-0">
-                            <CalendarDays className="size-3" />
-                            {formatRelativeScheduleDate(nextOccurrenceDate)}
-                          </Pill>
-                        ) : null}
-                      </div>
-                      <div className="mt-3 flex w-full min-w-0 gap-2">
-                        <Button
-                          variant="pill"
-                          size="sm"
-                          className="min-w-0 flex-1"
-                          onClick={() => requestStart(template)}
-                        >
-                          <Play className="size-4" />
-                          Démarrer
-                        </Button>
-                        <Button variant="soft" size="sm" className="min-w-0 flex-1" asChild>
-                          <Link
-                            to="/app/sessions/$templateId"
-                            params={{ templateId: template.id }}
-                          >
-                            <Pencil className="size-4" />
-                            Modifier
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0"
-                          onClick={() => void deleteTemplate.mutateAsync(template.id)}
-                          disabled={deleteTemplate.isPending}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
+            <TemplateCatalogList
+              templates={templates}
+              scheduledSessions={scheduledResult?.sessions ?? []}
+              nextOccurrenceByTemplateId={nextOccurrenceByTemplateId}
+              onStart={requestStart}
+              onDelete={(templateId) => void deleteTemplate.mutateAsync(templateId)}
+              isDeleting={deleteTemplate.isPending}
+            />
           ) : null}
         </CardContent>
       </Card>

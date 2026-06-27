@@ -176,17 +176,22 @@ export function useSaveWorkoutTemplate() {
     mutationFn: async ({
       templateId,
       name,
+      folderName,
       defaultRestSeconds,
       exercises,
     }: {
       templateId: string
       name: string
+      folderName?: string | null
       defaultRestSeconds: number
       exercises: TemplateExerciseDraft[]
     }) => {
+      const normalizedFolderName = folderName?.trim() || null
+
       await graphqlRequest(nhost, UPDATE_WORKOUT_TEMPLATE, {
         id: templateId,
         name,
+        folderName: normalizedFolderName,
         defaultRestSeconds,
       })
       await graphqlRequest(nhost, DELETE_WORKOUT_TEMPLATE_EXERCISES, {

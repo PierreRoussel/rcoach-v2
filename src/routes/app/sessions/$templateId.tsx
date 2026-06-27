@@ -35,10 +35,12 @@ function EditSessionTemplatePage() {
   async function handleSave(
     name: string,
     exercises: TemplateExerciseDraft[],
+    folderName: string | null,
   ) {
     await saveTemplate.mutateAsync({
       templateId,
       name,
+      folderName,
       defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
       exercises,
     })
@@ -47,10 +49,12 @@ function EditSessionTemplatePage() {
   async function handleStart(
     name: string,
     exercises: TemplateExerciseDraft[],
+    folderName: string | null,
   ) {
     await saveTemplate.mutateAsync({
       templateId,
       name,
+      folderName,
       defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
       exercises,
     })
@@ -87,6 +91,7 @@ function EditSessionTemplatePage() {
         key={`${template.id}-${template.updated_at}`}
         templateId={templateId}
         initialName={template.name}
+        initialFolderName={template.folder_name ?? null}
         initialExercises={initial.exercises}
         isSaving={saveTemplate.isPending}
         onSave={handleSave}

@@ -1,4 +1,4 @@
-import { resolveNhostEndpoints } from './hasura'
+import { resolveNhostEndpoints } from './hasura.ts'
 
 const EXERCISE_DEMO_BUCKET = 'exercise-demos'
 

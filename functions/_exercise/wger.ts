@@ -24,15 +24,23 @@ export type WgerExerciseInfo = {
   images: Array<{ image: string }>
 }
 
-export type WgerSearchHit = {
-  value: string
-  data: {
-    id: number
-    name: string
-    category: string
-    image: string | null
-    base_id?: number
-  }
+type WgerTranslation = {
+  id: number
+  name: string
+  description?: string | null
+  description_source?: string | null
+  language: number
+}
+
+type WgerExerciseInfoRaw = {
+  id: number
+  uuid: string
+  category: { id: number; name: string }
+  muscles: Array<{ id: number; name: string }>
+  equipment: Array<{ id: number; name: string }>
+  videos?: WgerVideo[]
+  images?: Array<{ image: string }>
+  translations?: WgerTranslation[]
 }
 
 export function normalizeExerciseSearchName(name: string): string {
@@ -42,6 +50,63 @@ export function normalizeExerciseSearchName(name: string): string {
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function pickTranslation(
+  translations: WgerTranslation[] | undefined,
+  preferFrench = true,
+): WgerTranslation | null {
+  if (!translations?.length) {
+    return null
+  }
+
+  if (preferFrench) {
+    const french = translations.find((entry) => entry.language === WGER_LANGUAGE_FR)
+    if (french) {
+      return french
+    }
+  }
+
+  const english = translations.find((entry) => entry.language === WGER_LANGUAGE_EN)
+  return english ?? translations[0] ?? null
+}
+
+function translationDescription(translation: WgerTranslation | null): string {
+  if (!translation) {
+    return ''
+  }
+
+  const raw =
+    translation.description_source ??
+    translation.description ??
+    ''
+
+  return stripHtml(raw)
+}
+
+function normalizeExerciseInfo(raw: WgerExerciseInfoRaw): WgerExerciseInfo {
+  const french = pickTranslation(raw.translations, true)
+  const english = pickTranslation(raw.translations, false)
+
+  return {
+    id: raw.id,
+    uuid: raw.uuid,
+    name: french?.name ?? english?.name ?? 'Exercise',
+    description: translationDescription(french) || translationDescription(english),
+    category: raw.category,
+    muscles: raw.muscles ?? [],
+    equipment: raw.equipment ?? [],
+    videos: raw.videos ?? [],
+    images: raw.images ?? [],
+  }
 }
 
 function tokenOverlapScore(a: string, b: string): number {
@@ -61,6 +126,28 @@ function tokenOverlapScore(a: string, b: string): number {
   return overlap / Math.max(tokensA.size, tokensB.size)
 }
 
+function buildSearchTerms(exerciseName: string): string[] {
+  const normalized = normalizeExerciseSearchName(exerciseName)
+  const tokens = normalized.split(' ').filter(Boolean)
+  const terms = new Set<string>()
+
+  if (exerciseName.trim()) {
+    terms.add(exerciseName.trim())
+  }
+  if (normalized) {
+    terms.add(normalized)
+  }
+  if (tokens.length >= 2) {
+    terms.add(tokens.join(' '))
+    terms.add(`${tokens[1]} ${tokens[0]}`)
+  }
+  if (tokens.length >= 1) {
+    terms.add(tokens[0])
+  }
+
+  return [...terms]
+}
+
 async function wgerFetch<T>(path: string): Promise<T> {
   const response = await fetch(`${WGER_BASE}${path}`, {
     headers: { Accept: 'application/json' },
@@ -73,61 +160,70 @@ async function wgerFetch<T>(path: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function searchWgerExercises(term: string): Promise<WgerSearchHit[]> {
-  const encoded = encodeURIComponent(term.trim())
-  const payload = await wgerFetch<{ suggestions: WgerSearchHit[] }>(
-    `/exercise/search/?term=${encoded}&language=${WGER_LANGUAGE_EN}`,
-  )
-
-  return payload.suggestions ?? []
+async function wgerFetchOptional<T>(path: string): Promise<T | null> {
+  try {
+    return await wgerFetch<T>(path)
+  } catch {
+    return null
+  }
 }
 
-export async function getWgerExerciseInfo(
-  exerciseBaseId: number,
-  language = WGER_LANGUAGE_FR,
+export async function getWgerExerciseInfoById(
+  exerciseInfoId: number,
 ): Promise<WgerExerciseInfo | null> {
-  const payload = await wgerFetch<{ results: WgerExerciseInfo[] }>(
-    `/exerciseinfo/?exercise=${exerciseBaseId}&language=${language}&limit=1`,
+  const raw = await wgerFetchOptional<WgerExerciseInfoRaw>(`/exerciseinfo/${exerciseInfoId}/`)
+  return raw ? normalizeExerciseInfo(raw) : null
+}
+
+export async function searchWgerExercises(term: string): Promise<WgerExerciseInfo[]> {
+  const encoded = encodeURIComponent(term.trim())
+  const payload = await wgerFetchOptional<{ results: WgerExerciseInfoRaw[] }>(
+    `/exerciseinfo/?name__search=${encoded}&language__code=en&limit=12`,
   )
 
-  return payload.results[0] ?? null
+  return (payload?.results ?? []).map(normalizeExerciseInfo)
+}
+
+async function searchWgerExercisesWithFallbacks(
+  exerciseName: string,
+): Promise<WgerExerciseInfo[]> {
+  const seen = new Set<number>()
+  const results: WgerExerciseInfo[] = []
+
+  for (const term of buildSearchTerms(exerciseName)) {
+    const hits = await searchWgerExercises(term)
+    for (const hit of hits) {
+      if (seen.has(hit.id)) {
+        continue
+      }
+      seen.add(hit.id)
+      results.push(hit)
+    }
+  }
+
+  return results
 }
 
 export async function findBestWgerMatch(
   exerciseName: string,
-  manualWgerId?: number,
+  manualExerciseInfoId?: number,
 ): Promise<{ info: WgerExerciseInfo; score: number } | null> {
-  if (manualWgerId) {
-    const info =
-      (await getWgerExerciseInfo(manualWgerId, WGER_LANGUAGE_FR)) ??
-      (await getWgerExerciseInfo(manualWgerId, WGER_LANGUAGE_EN))
+  if (manualExerciseInfoId) {
+    const info = await getWgerExerciseInfoById(manualExerciseInfoId)
     if (info) {
       return { info, score: 1 }
     }
   }
 
-  const hits = await searchWgerExercises(exerciseName)
+  const hits = await searchWgerExercisesWithFallbacks(exerciseName)
   if (!hits.length) {
     return null
   }
 
   let best: { info: WgerExerciseInfo; score: number } | null = null
 
-  for (const hit of hits.slice(0, 5)) {
-    const baseId = hit.data.base_id ?? hit.data.id
-    const info =
-      (await getWgerExerciseInfo(baseId, WGER_LANGUAGE_FR)) ??
-      (await getWgerExerciseInfo(baseId, WGER_LANGUAGE_EN))
-
-    if (!info) {
-      continue
-    }
-
-    const score = Math.max(
-      tokenOverlapScore(exerciseName, info.name),
-      tokenOverlapScore(exerciseName, hit.value),
-    )
-
+  for (const info of hits.slice(0, 12)) {
+    const score = tokenOverlapScore(exerciseName, info.name)
     if (!best || score > best.score) {
       best = { info, score }
     }
@@ -145,11 +241,15 @@ export function pickWgerVideo(info: WgerExerciseInfo): WgerVideo | null {
     return null
   }
 
-  return [...info.videos].sort((left, right) => (right.size ?? 0) - (left.size ?? 0))[0]
+  return [...info.videos].sort((left, right) => {
+    const leftSize = left.size ?? Number.MAX_SAFE_INTEGER
+    const rightSize = right.size ?? Number.MAX_SAFE_INTEGER
+    return leftSize - rightSize
+  })[0]
 }
 
-export function coachingCuesFromWgerDescription(description: string) {
-  const trimmed = description.trim()
+export function coachingCuesFromWgerDescription(description: string | null | undefined) {
+  const trimmed = stripHtml(description ?? '')
   if (!trimmed) {
     return {}
   }

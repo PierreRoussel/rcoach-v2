@@ -1,20 +1,20 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { buildTemplateCoachingCues } from './coaching'
+import { buildTemplateCoachingCues } from './coaching.ts'
 import {
   findPublicCatalogMatch,
   getExerciseById,
   updateExerciseContent,
   type ExerciseRow,
-} from './hasura'
-import { uploadPosterFromWgerImage, uploadWgerVideo } from './storage'
+} from './hasura.ts'
+import { uploadPosterFromWgerImage, uploadWgerVideo } from './storage.ts'
 import {
   coachingCuesFromWgerDescription,
   downloadWgerVideo,
   findBestWgerMatch,
   pickWgerVideo,
-} from './wger'
+} from './wger.ts'
 
 type ManualWgerMap = Record<string, number>
 
@@ -99,7 +99,7 @@ export async function enrichExerciseContent(exerciseId: string): Promise<{
   }
 
   const { info } = wgerMatch
-  const wgerCues = coachingCuesFromWgerDescription(info.description)
+  const wgerCues = coachingCuesFromWgerDescription(info.description ?? '')
   const template = buildTemplateCoachingCues({
     muscleGroup: exercise.muscle_group,
     equipment: exercise.equipment,

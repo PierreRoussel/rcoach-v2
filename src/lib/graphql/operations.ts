@@ -80,6 +80,7 @@ export type WorkoutTemplateExercise = {
 export type WorkoutTemplate = {
   id: string
   name: string
+  folder_name?: string | null
   created_at: string
   updated_at: string
   default_rest_seconds: number
@@ -1007,6 +1008,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
     workout_templates(order_by: { updated_at: desc }) {
       id
       name
+      folder_name
       created_at
       updated_at
       default_rest_seconds
@@ -1040,6 +1042,7 @@ export const GET_WORKOUT_TEMPLATE = `
     workout_templates_by_pk(id: $id) {
       id
       name
+      folder_name
       created_at
       updated_at
       default_rest_seconds
@@ -1090,17 +1093,20 @@ export const UPDATE_WORKOUT_TEMPLATE = `
     $id: uuid!
     $name: String!
     $defaultRestSeconds: Int!
+    $folderName: String
   ) {
     update_workout_templates_by_pk(
       pk_columns: { id: $id }
       _set: {
         name: $name
+        folder_name: $folderName
         default_rest_seconds: $defaultRestSeconds
         updated_at: "now()"
       }
     ) {
       id
       name
+      folder_name
       default_rest_seconds
       updated_at
     }
