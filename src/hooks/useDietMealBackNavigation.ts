@@ -1,6 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
+import { closeTopOverlayLayer } from '@/lib/navigation/close-top-overlay'
+
 const MEAL_PATH_PREFIX = '/app/diet/meals/'
 export const MEAL_BACK_HISTORY_KEY = '__dietMealBack'
 
@@ -33,13 +35,23 @@ type MealPageBackNavigate = (options: {
   replace: true
 }) => void | Promise<void>
 
+function pushMealBackTrap() {
+  if (isMealBackTrapState(window.history.state)) {
+    return
+  }
+
+  window.history.pushState(
+    { ...(window.history.state ?? {}), [MEAL_BACK_HISTORY_KEY]: true },
+    '',
+  )
+}
+
 /** Aligns hardware/browser back with the meal history trap + popstate handler. */
 export function handleMealPageBack(navigate: MealPageBackNavigate, date: string) {
-  const state = window.history.state
-
-  if (hasOverlayHistoryState(state) || isMealBackTrapState(state)) {
-    window.history.back()
-    return
+  if (hasOverlayHistoryState(window.history.state)) {
+    if (closeTopOverlayLayer()) {
+      return
+    }
   }
 
   void navigate({
@@ -55,10 +67,22 @@ export function useDietMealBackNavigation(date: string) {
   const handlingBackRef = useRef(false)
 
   useEffect(() => {
-    window.history.pushState({ [MEAL_BACK_HISTORY_KEY]: true }, '')
+    pushMealBackTrap()
 
     const onPopState = (event: PopStateEvent) => {
-      if (handlingBackRef.current || !shouldLeaveMealPageOnPopState(event.state)) {
+      if (handlingBackRef.current) {
+        return
+      }
+
+      if (!shouldLeaveMealPageOnPopState(event.state)) {
+        return
+      }
+
+      if (hasOverlayHistoryState(event.state)) {
+        return
+      }
+
+      if (!isDietMealPath(window.location.pathname)) {
         return
       }
 

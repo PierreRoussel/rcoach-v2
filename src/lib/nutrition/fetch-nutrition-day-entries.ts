@@ -7,22 +7,32 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import { db, type NutritionDayCache } from '@/lib/db/dexie'
 import { addDays } from '@/lib/nutrition/dates'
+import { nutritionDayCacheId } from '@/lib/nutrition/nutrition-day-cache-id'
 import type { MealLogEntry } from '@/lib/nutrition/types'
 
-export function nutritionDayQueryKey(date: string) {
-  return ['nutrition-day', date] as const
-}
-
-export function nutritionHintsRangeQueryKey(from: string, to: string) {
-  return ['nutrition-hints-range', from, to] as const
-}
+export {
+  nutritionDayQueryKey,
+  nutritionHintsQueryKey,
+  nutritionHintsRangeQueryKey,
+} from '@/lib/nutrition/nutrition-day-cache-id'
 
 export function getHintWindowDates(anchorDate: string) {
   return [addDays(anchorDate, -2), addDays(anchorDate, -1), anchorDate]
 }
 
-async function mergeDexiePendingEntries(date: string, entries: MealLogEntry[]) {
-  const cached = await db.nutritionDayCache.get(date)
+function ownMealLogEntries<T extends { user_id?: string }>(
+  entries: T[],
+  userId: string,
+): T[] {
+  return entries.filter((entry) => entry.user_id === userId)
+}
+
+async function mergeDexiePendingEntries(
+  userId: string,
+  date: string,
+  entries: MealLogEntry[],
+) {
+  const cached = await db.nutritionDayCache.get(nutritionDayCacheId(userId, date))
   if (!cached?.entries.length) {
     return entries
   }
@@ -41,8 +51,14 @@ async function mergeDexiePendingEntries(date: string, entries: MealLogEntry[]) {
   return merged
 }
 
-async function persistEntriesToDexie(date: string, entries: MealLogEntry[]) {
+async function persistEntriesToDexie(
+  userId: string,
+  date: string,
+  entries: MealLogEntry[],
+) {
   await db.nutritionDayCache.put({
+    id: nutritionDayCacheId(userId, date),
+    userId,
     date,
     entries: entries as unknown as NutritionDayCache['entries'],
     updatedAt: new Date().toISOString(),
@@ -51,6 +67,7 @@ async function persistEntriesToDexie(date: string, entries: MealLogEntry[]) {
 
 export async function fetchNutritionDayEntries(
   nhost: NhostClient,
+  userId: string,
   date: string,
 ): Promise<MealLogEntry[]> {
   let entries: MealLogEntry[] = []
@@ -58,32 +75,33 @@ export async function fetchNutritionDayEntries(
   try {
     const data = await graphqlRequest<{
       meal_log_entries: MealLogEntry[]
-    }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_DATE, { date })
-    entries = data.meal_log_entries
+    }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_DATE, { date, userId })
+    entries = ownMealLogEntries(data.meal_log_entries, userId)
   } catch {
-    const cached = await db.nutritionDayCache.get(date)
+    const cached = await db.nutritionDayCache.get(nutritionDayCacheId(userId, date))
     if (cached) {
       entries = cached.entries as unknown as MealLogEntry[]
     }
   }
 
-  entries = await mergeDexiePendingEntries(date, entries)
-  await persistEntriesToDexie(date, entries)
+  entries = await mergeDexiePendingEntries(userId, date, entries)
+  await persistEntriesToDexie(userId, date, entries)
   return entries
 }
 
 export async function fetchNutritionHintRangeEntries(
   nhost: NhostClient,
+  userId: string,
   from: string,
   to: string,
 ): Promise<MealLogEntry[]> {
   try {
     const data = await graphqlRequest<{
       meal_log_entries: MealLogEntry[]
-    }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_HINTS, { from, to })
+    }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_HINTS, { from, to, userId })
 
     const byDate = new Map<string, MealLogEntry[]>()
-    for (const entry of data.meal_log_entries) {
+    for (const entry of ownMealLogEntries(data.meal_log_entries, userId)) {
       const bucket = byDate.get(entry.logged_date) ?? []
       bucket.push(entry)
       byDate.set(entry.logged_date, bucket)
@@ -91,8 +109,8 @@ export async function fetchNutritionHintRangeEntries(
 
     const allEntries: MealLogEntry[] = []
     for (const [date, dateEntries] of byDate) {
-      const merged = await mergeDexiePendingEntries(date, dateEntries)
-      await persistEntriesToDexie(date, merged)
+      const merged = await mergeDexiePendingEntries(userId, date, dateEntries)
+      await persistEntriesToDexie(userId, date, merged)
       allEntries.push(...merged)
     }
 
@@ -106,7 +124,7 @@ export async function fetchNutritionHintRangeEntries(
         continue
       }
 
-      const cached = await db.nutritionDayCache.get(date)
+      const cached = await db.nutritionDayCache.get(nutritionDayCacheId(userId, date))
       if (cached) {
         offlineEntries.push(...(cached.entries as unknown as MealLogEntry[]))
       }

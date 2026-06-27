@@ -8,6 +8,7 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import { buildPendingMealLogEntry, buildPendingQuickMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
 import { scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
+import { nutritionDayQueryKey } from '@/lib/nutrition/nutrition-day-cache-id'
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import {
@@ -91,12 +92,13 @@ export function useMealLogMutations() {
 
   const invalidate = async (date?: string) => {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-day'] })
+    await queryClient.invalidateQueries({ queryKey: ['nutrition-hints'] })
     await queryClient.invalidateQueries({ queryKey: ['meal-log-foods'] })
     await queryClient.invalidateQueries({ queryKey: ['frequent-foods'] })
     await queryClient.invalidateQueries({ queryKey: ['nutrition-log-history'] })
     await queryClient.invalidateQueries({ queryKey: ['nutrition-sync-pending'] })
-    if (date) {
-      await queryClient.invalidateQueries({ queryKey: ['nutrition-day', date] })
+    if (date && user?.id) {
+      await queryClient.invalidateQueries({ queryKey: nutritionDayQueryKey(user.id, date) })
     }
   }
 
@@ -115,6 +117,7 @@ export function useMealLogMutations() {
         }
       } catch {
         const entryId = await syncMealEntryInsert(nhost, {
+          userId: user?.id ?? 'offline',
           object,
           food: input.food,
         })
@@ -151,7 +154,10 @@ export function useMealLogMutations() {
           offline: false,
         }
       } catch {
-        const entryId = await syncMealEntryInsert(nhost, { object })
+        const entryId = await syncMealEntryInsert(nhost, {
+          userId: user?.id ?? 'offline',
+          object,
+        })
 
         return {
           entry: buildPendingQuickMealLogEntry({
@@ -258,6 +264,7 @@ export function useMealLogMutations() {
         }
       } catch {
         const entryId = await syncMealEntryInsert(nhost, {
+          userId: user?.id ?? 'offline',
           object,
           food: input.entry.food ?? undefined,
         })

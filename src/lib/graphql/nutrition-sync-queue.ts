@@ -6,6 +6,7 @@ import {
   UPDATE_MEAL_LOG_ENTRY,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { nutritionDayCacheId } from '@/lib/nutrition/nutrition-day-cache-id'
 import {
   buildLocalFood,
   cacheFood,
@@ -39,14 +40,19 @@ export async function enqueueNutritionMutation(
 
 export async function syncMealEntryInsert(
   _nhost: NhostClient,
-  payload: { object: Record<string, unknown>; food?: Food; entryId?: string },
+  payload: {
+    userId: string
+    object: Record<string, unknown>
+    food?: Food
+    entryId?: string
+  },
 ) {
   const localId = payload.entryId ?? crypto.randomUUID()
   await enqueueNutritionMutation('insert_meal_entry', {
     localId,
     object: payload.object,
   })
-  await cacheMealEntryLocally(localId, payload.object, payload.food)
+  await cacheMealEntryLocally(payload.userId, localId, payload.object, payload.food)
   return localId
 }
 
@@ -185,12 +191,14 @@ export async function flushNutritionSyncQueue(nhost: NhostClient): Promise<Nutri
 }
 
 async function cacheMealEntryLocally(
+  userId: string,
   localId: string,
   object: Record<string, unknown>,
   food?: Food,
 ) {
   const date = String(object.logged_date)
-  const existing = await db.nutritionDayCache.get(date)
+  const cacheId = nutritionDayCacheId(userId, date)
+  const existing = await db.nutritionDayCache.get(cacheId)
   const entry = {
     id: localId,
     ...object,
@@ -199,6 +207,8 @@ async function cacheMealEntryLocally(
   }
 
   await db.nutritionDayCache.put({
+    id: cacheId,
+    userId,
     date,
     entries: [...(existing?.entries ?? []), entry],
     updatedAt: new Date().toISOString(),

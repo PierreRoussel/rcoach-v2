@@ -19,8 +19,21 @@ const FOOD_SEARCH_STOP_WORDS = new Set([
 export const FOOD_SEARCH_MIN_TOKEN_LENGTH = 2
 export const FOOD_SEARCH_MAX_TOKENS = 6
 
+const ACCENT_FROM = 'àâäáãåçèéêëíìîïñòóôöõùúûüýÿÀÂÄÁÃÅÇÈÉÊËÍÌÎÏÑÒÓÔÖÕÙÚÛÜÝ'
+const ACCENT_TO = 'aaaaaaceeeeiiiinooooouuuuyyAAAAAACEEEEIIIINOOOOOUUUUY'
+
+export function foldFoodSearchText(value: string) {
+  return value
+    .split('')
+    .map((char) => {
+      const index = ACCENT_FROM.indexOf(char)
+      return index >= 0 ? ACCENT_TO[index]! : char
+    })
+    .join('')
+}
+
 export function normalizeFoodSearchQuery(query: string) {
-  return query.trim().toLowerCase().replace(/\s+/g, ' ')
+  return foldFoodSearchText(query.trim().toLowerCase()).replace(/\s+/g, ' ')
 }
 
 export function extractFoodSearchTokens(query: string) {
@@ -46,7 +59,9 @@ export function buildFoodSearchHaystack(
   brand?: string | null,
   barcode?: string | null,
 ) {
-  return [name, brand, barcode].filter(Boolean).join(' ').toLowerCase()
+  return foldFoodSearchText(
+    [name, brand, barcode].filter(Boolean).join(' ').toLowerCase(),
+  )
 }
 
 export function foodSearchTokenMatches(haystack: string, token: string) {
@@ -104,7 +119,7 @@ export function scoreCiqualFoodMatch(name: string, query: string, tokens: string
   let score = scoreFoodSearchMatch(haystack, query, tokens, { sourceBoost: 50 })
 
   const normalizedQuery = normalizeFoodSearchQuery(query)
-  const nameLower = name.toLowerCase()
+  const nameLower = buildFoodSearchHaystack(name)
 
   if (normalizedQuery && nameLower.startsWith(normalizedQuery)) {
     score += 35

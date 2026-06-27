@@ -85,13 +85,7 @@ function mergeFoodSearchLayers(layers: Food[][], limit: number) {
 }
 
 function buildTokenMatchCondition(variable: string) {
-  return `{
-              _or: [
-                { name: { _ilike: ${variable} } }
-                { brand: { _ilike: ${variable} } }
-                { barcode: { _ilike: ${variable} } }
-              ]
-            }`
+  return `{ search_text: { _ilike: ${variable} } }`
 }
 
 function buildTokenAndSearchQuery(tokens: string[], scope: 'user' | 'ciqual' | 'off') {

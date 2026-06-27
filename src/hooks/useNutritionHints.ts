@@ -8,6 +8,7 @@ import {
   getHintWindowDates,
   groupEntriesByDate,
   nutritionDayQueryKey,
+  nutritionHintsQueryKey,
   nutritionHintsRangeQueryKey,
 } from '@/lib/nutrition/fetch-nutrition-day-entries'
 import {
@@ -18,37 +19,41 @@ import { isNutritionHintVisible, pickNutritionHint } from '@/lib/nutrition/nutri
 import type { MealLogEntry, NutritionSettings } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-export function nutritionHintsQueryKey(anchorDate: string) {
-  return ['nutrition-hints', anchorDate] as const
-}
-
 function getCachedEntries(
   queryClient: ReturnType<typeof useQueryClient>,
+  userId: string | undefined,
   date: string,
 ): MealLogEntry[] | undefined {
-  const cached = queryClient.getQueryData<NutritionDaySummary>(nutritionDayQueryKey(date))
+  if (!userId) {
+    return undefined
+  }
+
+  const cached = queryClient.getQueryData<NutritionDaySummary>(nutritionDayQueryKey(userId, date))
   return cached?.entries
 }
 
 async function ensureWindowEntries(
   queryClient: ReturnType<typeof useQueryClient>,
   nhost: ReturnType<typeof useAuth>['nhost'],
+  userId: string,
   anchorDate: string,
   settings: NutritionSettings,
 ) {
   const windowDates = getHintWindowDates(anchorDate)
-  const missingDates = windowDates.filter((date) => getCachedEntries(queryClient, date) == null)
+  const missingDates = windowDates.filter(
+    (date) => getCachedEntries(queryClient, userId, date) == null,
+  )
 
   if (missingDates.length === 0) {
-    return windowDates.flatMap((date) => getCachedEntries(queryClient, date) ?? [])
+    return windowDates.flatMap((date) => getCachedEntries(queryClient, userId, date) ?? [])
   }
 
   if (missingDates.length === 1) {
     const date = missingDates[0]!
     await queryClient.fetchQuery({
-      queryKey: nutritionDayQueryKey(date),
+      queryKey: nutritionDayQueryKey(userId, date),
       queryFn: async () => {
-        const entries = await fetchNutritionDayEntries(nhost, date)
+        const entries = await fetchNutritionDayEntries(nhost, userId, date)
         return buildNutritionDaySummary(date, entries, settings)
       },
       staleTime: 60_000,
@@ -58,15 +63,15 @@ async function ensureWindowEntries(
     const to = windowDates[windowDates.length - 1]!
 
     await queryClient.fetchQuery({
-      queryKey: nutritionHintsRangeQueryKey(from, to),
+      queryKey: nutritionHintsRangeQueryKey(userId, from, to),
       queryFn: async () => {
-        const entries = await fetchNutritionHintRangeEntries(nhost, from, to)
+        const entries = await fetchNutritionHintRangeEntries(nhost, userId, from, to)
         const byDate = groupEntriesByDate(entries)
 
         for (const date of windowDates) {
           const dayEntries = byDate.get(date) ?? []
           queryClient.setQueryData(
-            nutritionDayQueryKey(date),
+            nutritionDayQueryKey(userId, date),
             buildNutritionDaySummary(date, dayEntries, settings),
           )
         }
@@ -77,16 +82,23 @@ async function ensureWindowEntries(
     })
   }
 
-  return windowDates.flatMap((date) => getCachedEntries(queryClient, date) ?? [])
+  return windowDates.flatMap((date) => getCachedEntries(queryClient, userId, date) ?? [])
 }
 
 function getNutritionDayCacheRevision(
   queryClient: ReturnType<typeof useQueryClient>,
+  userId: string | undefined,
   dates: string[],
 ) {
+  if (!userId) {
+    return 'missing-user'
+  }
+
   return dates
     .map((date) => {
-      const summary = queryClient.getQueryData<NutritionDaySummary>(nutritionDayQueryKey(date))
+      const summary = queryClient.getQueryData<NutritionDaySummary>(
+        nutritionDayQueryKey(userId, date),
+      )
       if (!summary) {
         return `${date}:missing`
       }
@@ -96,7 +108,7 @@ function getNutritionDayCacheRevision(
     .join('|')
 }
 
-function useNutritionDayCacheRevision(dates: string[]) {
+function useNutritionDayCacheRevision(userId: string | undefined, dates: string[]) {
   const queryClient = useQueryClient()
 
   return useSyncExternalStore(
@@ -106,8 +118,8 @@ function useNutritionDayCacheRevision(dates: string[]) {
           onStoreChange()
         }
       }),
-    () => getNutritionDayCacheRevision(queryClient, dates),
-    () => getNutritionDayCacheRevision(queryClient, dates),
+    () => getNutritionDayCacheRevision(queryClient, userId, dates),
+    () => getNutritionDayCacheRevision(queryClient, userId, dates),
   )
 }
 
@@ -115,24 +127,26 @@ export function useNutritionHintAvailability(
   anchorDate: string,
   settings: NutritionSettings | null | undefined,
 ) {
+  const { user } = useAuth()
   const queryClient = useQueryClient()
+  const userId = user?.id
   const windowDates = useMemo(() => getHintWindowDates(anchorDate), [anchorDate])
-  const cacheRevision = useNutritionDayCacheRevision(windowDates)
+  const cacheRevision = useNutritionDayCacheRevision(userId, windowDates)
 
   return useMemo(() => {
-    if (!settings) {
+    if (!settings || !userId) {
       return { hasActionableHint: false as const, hintId: null }
     }
 
     const cachedEntryCount = countCachedWindowEntries(windowDates, (date) =>
-      getCachedEntries(queryClient, date),
+      getCachedEntries(queryClient, userId, date),
     )
 
     if (cachedEntryCount === 0) {
       return { hasActionableHint: false as const, hintId: null }
     }
 
-    const entries = windowDates.flatMap((date) => getCachedEntries(queryClient, date) ?? [])
+    const entries = windowDates.flatMap((date) => getCachedEntries(queryClient, userId, date) ?? [])
     const byDate = groupEntriesByDate(entries)
     const metrics = buildNutritionHintMetrics(anchorDate, byDate, settings)
     const hint = pickNutritionHint(metrics)
@@ -141,8 +155,7 @@ export function useNutritionHintAvailability(
       hasActionableHint: isNutritionHintVisible(metrics, hint.id),
       hintId: hint.id,
     }
-    // cacheRevision drives recompute when nutrition-day cache updates
-  }, [anchorDate, cacheRevision, queryClient, settings, windowDates])
+  }, [anchorDate, cacheRevision, queryClient, settings, userId, windowDates])
 }
 
 export function useNutritionHints(
@@ -150,17 +163,24 @@ export function useNutritionHints(
   settings: NutritionSettings | null | undefined,
   open: boolean,
 ) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
   const queryClient = useQueryClient()
+  const userId = user?.id
   const windowDates = useMemo(() => getHintWindowDates(anchorDate), [anchorDate])
-  const cacheRevision = useNutritionDayCacheRevision(windowDates)
+  const cacheRevision = useNutritionDayCacheRevision(userId, windowDates)
 
   return useQuery({
-    queryKey: [...nutritionHintsQueryKey(anchorDate), cacheRevision] as const,
-    enabled: open && isAuthenticated && Boolean(settings),
+    queryKey: [...nutritionHintsQueryKey(userId, anchorDate), cacheRevision] as const,
+    enabled: open && isAuthenticated && Boolean(settings) && Boolean(userId),
     staleTime: 60_000,
     queryFn: async () => {
-      const entries = await ensureWindowEntries(queryClient, nhost, anchorDate, settings!)
+      const entries = await ensureWindowEntries(
+        queryClient,
+        nhost,
+        userId!,
+        anchorDate,
+        settings!,
+      )
       const byDate = groupEntriesByDate(entries)
       const metrics = buildNutritionHintMetrics(anchorDate, byDate, settings!)
       const hint = pickNutritionHint(metrics)

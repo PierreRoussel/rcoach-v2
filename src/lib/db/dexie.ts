@@ -16,6 +16,8 @@ export type SyncQueueItem = {
 }
 
 export type NutritionDayCache = {
+  id: string
+  userId: string
   date: string
   entries: Array<Record<string, unknown> & { id: string; pending?: boolean }>
   updatedAt: string
@@ -60,7 +62,7 @@ export type ActiveWorkoutDraft = {
 class RCoachDB extends Dexie {
   syncQueue!: EntityTable<SyncQueueItem, 'id'>
   activeDraft!: EntityTable<ActiveWorkoutDraft, 'id'>
-  nutritionDayCache!: EntityTable<NutritionDayCache, 'date'>
+  nutritionDayCache!: EntityTable<NutritionDayCache, 'id'>
   foodsCache!: EntityTable<Food, 'id'>
 
   constructor() {
@@ -107,6 +109,31 @@ class RCoachDB extends Dexie {
       nutritionDayCache: 'date',
       foodsCache: 'id, name, barcode, off_product_id',
     })
+
+    this.version(5).stores({
+      syncQueue: '++id, type, createdAt',
+      activeDraft: 'id',
+      nutritionDayCache: null,
+      foodsCache: 'id, name, barcode, off_product_id',
+    })
+
+    this.version(6).stores({
+      syncQueue: '++id, type, createdAt',
+      activeDraft: 'id',
+      nutritionDayCache: 'id, userId, date',
+      foodsCache: 'id, name, barcode, off_product_id',
+    })
+
+    this.version(7)
+      .stores({
+        syncQueue: '++id, type, createdAt',
+        activeDraft: 'id',
+        nutritionDayCache: 'id, userId, date',
+        foodsCache: 'id, name, barcode, off_product_id',
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table('nutritionDayCache').clear()
+      })
   }
 }
 

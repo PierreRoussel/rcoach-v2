@@ -283,6 +283,10 @@ async function invalidateSocialQueries(queryClient: ReturnType<typeof useQueryCl
     queryClient.invalidateQueries({ queryKey: FRIENDS_QUERY_KEY }),
     queryClient.invalidateQueries({ queryKey: UNREAD_MOTIVATIONS_KEY }),
     queryClient.invalidateQueries({ queryKey: SENT_MOTIVATIONS_KEY }),
+    queryClient.invalidateQueries({ queryKey: ['nutrition-day'] }),
+    queryClient.invalidateQueries({ queryKey: ['nutrition-hints'] }),
+    queryClient.invalidateQueries({ queryKey: ['nutrition-log-history'] }),
+    queryClient.invalidateQueries({ queryKey: ['meal-log-foods'] }),
   ])
 }
 

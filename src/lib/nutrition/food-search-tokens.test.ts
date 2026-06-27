@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   extractFoodSearchTokens,
+  buildFoodSearchHaystack,
   foodSearchTokenMatches,
   matchesAllFoodSearchTokens,
   scoreCiqualFoodMatch,
@@ -25,6 +26,13 @@ describe('matchesAllFoodSearchTokens', () => {
   it('matches product name and brand across fields', () => {
     const haystack = 'jus de pomme jafaden'
     expect(matchesAllFoodSearchTokens(haystack, ['jus', 'pomme', 'jaf'])).toBe(true)
+  })
+
+  it('matches when query accents differ from stored name', () => {
+    const haystack = buildFoodSearchHaystack('Le pané vegetal')
+    expect(matchesAllFoodSearchTokens(haystack, extractFoodSearchTokens('pané végétal'))).toBe(
+      true,
+    )
   })
 })
 

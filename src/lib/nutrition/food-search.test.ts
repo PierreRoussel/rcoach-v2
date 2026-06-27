@@ -34,6 +34,13 @@ describe('buildFoodSearchPattern', () => {
       mode: 'contains',
     })
   })
+
+  it('folds accents for contains search', () => {
+    expect(buildFoodSearchPattern('pané végétal')).toEqual({
+      pattern: '%pane vegetal%',
+      mode: 'contains',
+    })
+  })
 })
 
 describe('buildFoodSearchContainsPattern', () => {

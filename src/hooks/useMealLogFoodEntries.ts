@@ -14,17 +14,17 @@ export type MealLogFoodEntry = {
 }
 
 export function useMealLogFoodEntries(options?: { enabled?: boolean }) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
   const since = addDays(toDateKey(new Date()), -30)
 
   return useQuery({
-    queryKey: ['meal-log-foods', since],
-    enabled: isAuthenticated && (options?.enabled ?? true),
+    queryKey: ['meal-log-foods', user?.id, since],
+    enabled: isAuthenticated && Boolean(user?.id) && (options?.enabled ?? true),
     staleTime: 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         meal_log_entries: MealLogFoodEntry[]
-      }>(nhost, LIST_FREQUENT_FOODS, { since })
+      }>(nhost, LIST_FREQUENT_FOODS, { since, userId: user!.id })
 
       return data.meal_log_entries
     },

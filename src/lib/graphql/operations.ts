@@ -1461,9 +1461,12 @@ export const INSERT_WEIGHT_ENTRY = `
 `
 
 export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
-  query ListMealLogEntriesForRange($from: date!, $to: date!) {
+  query ListMealLogEntriesForRange($from: date!, $to: date!, $userId: uuid!) {
     meal_log_entries(
-      where: { logged_date: { _gte: $from, _lte: $to } }
+      where: {
+        logged_date: { _gte: $from, _lte: $to }
+        user_id: { _eq: $userId }
+      }
       order_by: [{ logged_date: asc }, { created_at: asc }]
     ) {
       logged_date
@@ -1473,12 +1476,16 @@ export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
 `
 
 export const LIST_MEAL_LOG_ENTRIES_FOR_HINTS = `
-  query ListMealLogEntriesForHints($from: date!, $to: date!) {
+  query ListMealLogEntriesForHints($from: date!, $to: date!, $userId: uuid!) {
     meal_log_entries(
-      where: { logged_date: { _gte: $from, _lte: $to } }
+      where: {
+        logged_date: { _gte: $from, _lte: $to }
+        user_id: { _eq: $userId }
+      }
       order_by: [{ logged_date: asc }, { created_at: asc }]
     ) {
       id
+      user_id
       logged_date
       meal_type
       food_id
@@ -1500,9 +1507,9 @@ export const LIST_MEAL_LOG_ENTRIES_FOR_HINTS = `
 `
 
 export const LIST_MEAL_LOG_ENTRIES_FOR_DATE = `
-  query ListMealLogEntriesForDate($date: date!) {
+  query ListMealLogEntriesForDate($date: date!, $userId: uuid!) {
     meal_log_entries(
-      where: { logged_date: { _eq: $date } }
+      where: { logged_date: { _eq: $date }, user_id: { _eq: $userId } }
       order_by: [{ meal_type: asc }, { created_at: asc }]
     ) {
       id
@@ -1636,13 +1643,7 @@ export const FOOD_SEARCH_FIELDS = `
       updated_at
 `
 
-const FOOD_TEXT_MATCH = (variable: string) => `{
-            _or: [
-              { name: { _ilike: ${variable} } }
-              { brand: { _ilike: ${variable} } }
-              { barcode: { _ilike: ${variable} } }
-            ]
-          }`
+const FOOD_TEXT_MATCH = (variable: string) => `{ search_text: { _ilike: ${variable} } }`
 
 export const SEARCH_USER_FOODS = `
   query SearchUserFoods($userId: uuid!, $pattern: String!, $limit: Int = 10) {
@@ -1669,10 +1670,8 @@ export const SEARCH_CIQUAL_FOODS = `
           { source: { _eq: ciqual } }
           {
             _or: [
-              { name: { _ilike: $namePrefix } }
-              { name: { _ilike: $containsPattern } }
-              { brand: { _ilike: $containsPattern } }
-              { barcode: { _ilike: $containsPattern } }
+              { search_text: { _ilike: $namePrefix } }
+              { search_text: { _ilike: $containsPattern } }
             ]
           }
         ]
@@ -1885,9 +1884,9 @@ export const DELETE_FOOD_FAVORITE = `
 `
 
 export const LIST_FREQUENT_FOODS = `
-  query ListFrequentFoods($since: date!) {
+  query ListFrequentFoods($since: date!, $userId: uuid!) {
     meal_log_entries(
-      where: { logged_date: { _gte: $since } }
+      where: { logged_date: { _gte: $since }, user_id: { _eq: $userId } }
       order_by: { created_at: desc }
       limit: 200
     ) {

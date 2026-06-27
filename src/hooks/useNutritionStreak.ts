@@ -26,16 +26,16 @@ function buildStreakRange(today = toDateKey(new Date()), lookbackDays = NUTRITIO
 }
 
 export function useNutritionLogHistory(from: string, to: string, dailyTarget: number) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
 
   const query = useQuery({
-    queryKey: ['nutrition-log-history', from, to],
-    enabled: isAuthenticated && Boolean(from) && Boolean(to),
+    queryKey: ['nutrition-log-history', user?.id, from, to],
+    enabled: isAuthenticated && Boolean(user?.id) && Boolean(from) && Boolean(to),
     staleTime: 10 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
         meal_log_entries: MealLogRangeEntry[]
-      }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_RANGE, { from, to })
+      }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_RANGE, { from, to, userId: user!.id })
 
       return data.meal_log_entries
     },

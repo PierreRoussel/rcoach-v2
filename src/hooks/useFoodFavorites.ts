@@ -20,11 +20,11 @@ import {
 } from '@/lib/nutrition/open-food-facts'
 
 export function useFoodFavorites(options?: { enabled?: boolean }) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
 
   return useQuery({
-    queryKey: ['food-favorites'],
-    enabled: isAuthenticated && (options?.enabled ?? true),
+    queryKey: ['food-favorites', user?.id],
+    enabled: isAuthenticated && Boolean(user?.id) && (options?.enabled ?? true),
     staleTime: 2 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{

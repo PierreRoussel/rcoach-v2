@@ -88,14 +88,15 @@ function buildDaySummary(
 }
 
 export function useNutritionDay(date: string, settings: NutritionSettings | null | undefined) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
 
   return useQuery({
-    queryKey: nutritionDayQueryKey(date),
-    enabled: isAuthenticated && Boolean(settings),
+    queryKey: nutritionDayQueryKey(user?.id, date),
+    enabled: isAuthenticated && Boolean(settings) && Boolean(user?.id),
     staleTime: 60_000,
+    placeholderData: undefined,
     queryFn: async () => {
-      const entries = await fetchNutritionDayEntries(nhost, date)
+      const entries = await fetchNutritionDayEntries(nhost, user!.id, date)
       return buildDaySummary(date, entries, settings!)
     },
   })

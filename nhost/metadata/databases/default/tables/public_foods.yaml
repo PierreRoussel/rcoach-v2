@@ -55,6 +55,7 @@ select_permissions:
         - source
         - off_product_id
         - ciqual_code
+        - search_text
         - created_at
         - updated_at
       filter:

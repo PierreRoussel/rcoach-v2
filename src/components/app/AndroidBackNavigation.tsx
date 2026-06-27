@@ -4,6 +4,7 @@ import { useCanGoBack, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
 import { handleMealPageBack, isDietMealPath } from '@/hooks/useDietMealBackNavigation'
+import { closeTopOverlayLayer } from '@/lib/navigation/close-top-overlay'
 import { toDateKey } from '@/lib/nutrition/dates'
 
 function isDietJournalPath(pathname: string) {
@@ -14,28 +15,6 @@ function resolveDietDate(search: unknown) {
   return typeof search === 'object' && search && 'date' in search && typeof search.date === 'string'
     ? search.date
     : toDateKey(new Date())
-}
-
-function closeTopLayer() {
-  const openDrawer = document.querySelector('[data-vaul-drawer][data-state="open"]')
-  if (openDrawer) {
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    return true
-  }
-
-  const openDialog = document.querySelector('[role="dialog"][data-state="open"]')
-  if (openDialog) {
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    return true
-  }
-
-  const openMenu = document.querySelector('[role="menu"][data-state="open"]')
-  if (openMenu) {
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    return true
-  }
-
-  return false
 }
 
 export function AndroidBackNavigation() {
@@ -59,7 +38,7 @@ export function AndroidBackNavigation() {
     }
 
     const listenerPromise = App.addListener('backButton', () => {
-      if (closeTopLayer()) {
+      if (closeTopOverlayLayer()) {
         return
       }
 

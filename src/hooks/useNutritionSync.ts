@@ -18,9 +18,9 @@ export function useNutritionSync() {
     void (async () => {
       await flushSyncQueue(nhost)
       await queryClient.invalidateQueries({ queryKey: ['nutrition-day'] })
+      await queryClient.invalidateQueries({ queryKey: ['nutrition-hints'] })
       await queryClient.invalidateQueries({ queryKey: ['nutrition-log-history'] })
       await queryClient.invalidateQueries({ queryKey: ['nutrition-sync-pending'] })
-      await queryClient.invalidateQueries({ queryKey: ['nutrition-streak'] })
     })()
   }, [isAuthenticated, isOnline, nhost, queryClient])
 }

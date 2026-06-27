@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
+import { clearNutritionOfflineData } from '@/lib/nutrition/clear-nutrition-offline-data'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function AuthQuerySync() {
@@ -16,6 +17,7 @@ export function AuthQuerySync() {
       previousUserIdRef.current !== userId
     ) {
       queryClient.clear()
+      void clearNutritionOfflineData()
     }
 
     previousUserIdRef.current = userId
