@@ -42,8 +42,6 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.ensure_user_profile() TO "user";
-
 -- Backfill profiles for auth users missing a row (legacy / failed signup trigger).
 INSERT INTO public.profiles (id, display_name, friend_code, email)
 SELECT
