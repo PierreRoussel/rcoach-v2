@@ -34,6 +34,8 @@ import {
 import { FormMessage } from '@/components/ui/form'
 import { PageHeader, Pill } from '@/design-system'
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
+import { useExerciseLocale } from '@/hooks/useExerciseLocale'
+import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
@@ -54,6 +56,8 @@ import { computeWorkoutBodyIntensities } from '@/lib/stats/exercise-body-intensi
 import {
   buildCircuitSteps,
   countCompletedSets,
+  findNextStepIndexAfter,
+  getStepLabel,
   getValidatedExercisesForSync,
   isWorkoutComplete,
 } from '@/lib/workout/workout-circuit'
@@ -124,7 +128,21 @@ function ActiveWorkoutPage() {
     cancelWorkout,
   } = useActiveWorkoutStore()
 
-  const nextStepLabel = useActiveWorkoutStore((state) => state.getNextStepLabel())
+  const exerciseLocale = useExerciseLocale()
+
+  const nextStepLabel = useMemo(() => {
+    const steps = buildCircuitSteps(activeExercises)
+    const nextIndex = findNextStepIndexAfter(
+      steps,
+      activeExercises,
+      lastCompletedStep,
+    )
+    return getStepLabel(
+      activeExercises,
+      nextIndex != null ? steps[nextIndex] ?? null : null,
+      exerciseLocale,
+    )
+  }, [activeExercises, lastCompletedStep, exerciseLocale])
 
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -195,8 +213,13 @@ function ActiveWorkoutPage() {
 
   const holdingExercise =
     holdingStep != null ? activeExercises[holdingStep.exerciseIndex] ?? null : null
+  const holdDisplayName = useExerciseDisplayName(
+    holdingExercise?.exerciseName,
+    holdingExercise?.exerciseNameFr,
+    holdingExercise?.exerciseId,
+  )
   const holdExerciseLabel = holdingExercise
-    ? `${holdingExercise.exerciseName} — série ${(holdingStep?.setIndex ?? 0) + 1}`
+    ? `${holdDisplayName} — série ${(holdingStep?.setIndex ?? 0) + 1}`
     : null
 
   async function handleFinish() {

@@ -7,7 +7,6 @@ import { ExerciseDemoPlayer } from '@/components/workout/ExerciseDemoPlayer'
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
@@ -25,7 +24,7 @@ import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
 
 export type ExerciseDetailDrawerTarget = Pick<
   ActiveExerciseEntry,
-  'exerciseId' | 'exerciseName' | 'muscleGroup' | 'equipment'
+  'exerciseId' | 'exerciseName' | 'exerciseNameFr' | 'muscleGroup' | 'equipment'
 >
 
 type ExerciseDetailDrawerProps = {
@@ -56,7 +55,11 @@ export function ExerciseDetailDrawer({
   onOpenChange,
   exercise,
 }: ExerciseDetailDrawerProps) {
-  const displayExerciseName = useExerciseDisplayName(exercise?.exerciseName)
+  const displayExerciseName = useExerciseDisplayName(
+    exercise?.exerciseName,
+    exercise?.exerciseNameFr,
+    exercise?.exerciseId,
+  )
   const { data: content, isLoading } = useExerciseContent(exercise?.exerciseId, open)
   const muscleGroup = content?.muscle_group ?? exercise?.muscleGroup
 
@@ -93,18 +96,15 @@ export function ExerciseDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[88vh] overflow-y-auto rounded-t-2xl px-4 pb-8">
-        <DrawerHeader className="text-left">
+      <DrawerContent className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl px-0">
+        <DrawerHeader className="shrink-0 px-4 pb-2 text-left">
           <DrawerTitle className="font-display font-black">
             {displayExerciseName || "Détails de l'exercice"}
           </DrawerTitle>
-          <DrawerDescription>
-            Consignes d&apos;exécution, zone musculaire et équipement.
-          </DrawerDescription>
         </DrawerHeader>
 
         {exercise ? (
-          <div className="mt-2 space-y-5">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-y-contain px-4 pb-[calc(2rem+env(safe-area-inset-bottom))]">
             {content?.demo_file_id ? (
               <ExerciseDemoPlayer
                 demoFileId={content.demo_file_id}

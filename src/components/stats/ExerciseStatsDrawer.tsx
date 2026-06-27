@@ -15,6 +15,7 @@ import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-gr
 export type ExerciseStatsDrawerTarget = {
   exerciseId: string
   exerciseName: string
+  exerciseNameFr?: string | null
   muscleGroup?: string | null
   equipment?: string | null
 }
@@ -41,7 +42,11 @@ export function ExerciseStatsDrawer({
   const muscleLabel = exercise?.muscleGroup
     ? MUSCLE_GROUP_LABELS[normalizeMuscleGroup(exercise.muscleGroup)]
     : null
-  const displayExerciseName = useExerciseDisplayName(exercise?.exerciseName)
+  const displayExerciseName = useExerciseDisplayName(
+    exercise?.exerciseName,
+    exercise?.exerciseNameFr,
+    exercise?.exerciseId,
+  )
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>

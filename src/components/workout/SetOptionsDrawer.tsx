@@ -39,6 +39,8 @@ type SetOptionsDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   exerciseName: string | null
+  exerciseNameFr?: string | null
+  exerciseId?: string | null
   sets: SetOptionsSet[]
   selectedSetIndex: number | null
   onDeleteSet: (setIndex: number) => void
@@ -120,6 +122,8 @@ export function SetOptionsDrawer({
   open,
   onOpenChange,
   exerciseName,
+  exerciseNameFr,
+  exerciseId,
   sets,
   selectedSetIndex,
   onDeleteSet,
@@ -127,7 +131,11 @@ export function SetOptionsDrawer({
   onUpdateSetType,
 }: SetOptionsDrawerProps) {
   const sensors = useSortableSensors()
-  const displayExerciseName = useExerciseDisplayName(exerciseName)
+  const displayExerciseName = useExerciseDisplayName(
+    exerciseName,
+    exerciseNameFr,
+    exerciseId,
+  )
   const [localSelectedIndex, setLocalSelectedIndex] = useState<number | null>(null)
   const selectedIndex = open ? (localSelectedIndex ?? selectedSetIndex) : null
   const selectedSet = selectedIndex != null ? sets[selectedIndex] : null

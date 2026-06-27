@@ -65,7 +65,11 @@ function ReorderItem({
       </button>
       <div className="min-w-0 flex-1">
         <p className="truncate font-display font-black">
-          <DisplayExerciseName name={exercise.exerciseName} />
+          <DisplayExerciseName
+            name={exercise.exerciseName}
+            nameFr={exercise.exerciseNameFr}
+            exerciseId={exercise.exerciseId}
+          />
         </p>
         <p className="text-xs text-muted-foreground">
           {exercise.sets.length} série{exercise.sets.length !== 1 ? 's' : ''}

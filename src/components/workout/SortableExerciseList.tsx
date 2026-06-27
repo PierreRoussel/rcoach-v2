@@ -75,12 +75,18 @@ type SupersetPartnerOption =
       type: 'superset'
       partnerIndex: number
       supersetId: number
-      memberNames: string[]
+      members: Array<{
+        exerciseId: string
+        exerciseName: string
+        exerciseNameFr?: string | null
+      }>
     }
   | {
       type: 'exercise'
       partnerIndex: number
+      exerciseId: string
       exerciseName: string
+      exerciseNameFr?: string | null
     }
 
 function buildSupersetPartnerOptions(
@@ -114,7 +120,11 @@ function buildSupersetPartnerOptions(
         type: 'superset',
         partnerIndex: members[0]?.exerciseIndex ?? itemIndex,
         supersetId: item.supersetId,
-        memberNames: members.map(({ exercise }) => exercise.exerciseName),
+        members: members.map(({ exercise }) => ({
+          exerciseId: exercise.exerciseId,
+          exerciseName: exercise.exerciseName,
+          exerciseNameFr: exercise.exerciseNameFr,
+        })),
       })
       continue
     }
@@ -122,7 +132,9 @@ function buildSupersetPartnerOptions(
     options.push({
       type: 'exercise',
       partnerIndex: itemIndex,
+      exerciseId: item.exerciseId,
       exerciseName: item.exerciseName,
+      exerciseNameFr: item.exerciseNameFr,
     })
   }
 
@@ -223,10 +235,14 @@ function ExerciseActionsMenu({
                     >
                       <span className="truncate">
                         Superset {option.supersetId} (
-                        {option.memberNames.map((name, nameIndex) => (
-                          <span key={`${option.supersetId}-${name}`}>
+                        {option.members.map((member, nameIndex) => (
+                          <span key={`${option.supersetId}-${member.exerciseId}`}>
                             {nameIndex > 0 ? ' · ' : null}
-                            <DisplayExerciseName name={name} />
+                            <DisplayExerciseName
+                              name={member.exerciseName}
+                              nameFr={member.exerciseNameFr}
+                              exerciseId={member.exerciseId}
+                            />
                           </span>
                         ))}
                         )
@@ -240,7 +256,11 @@ function ExerciseActionsMenu({
                     key={`exercise-${option.partnerIndex}`}
                     onClick={() => onAddToSuperset(index, option.partnerIndex)}
                   >
-                    <DisplayExerciseName name={option.exerciseName} />
+                    <DisplayExerciseName
+                      name={option.exerciseName}
+                      nameFr={option.exerciseNameFr}
+                      exerciseId={option.exerciseId}
+                    />
                   </DropdownMenuItem>
                 )
               })}
@@ -361,7 +381,11 @@ function SortableExerciseItem({
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect}>
           <div className="flex items-center gap-2">
             <p className="truncate font-display font-black">
-              <DisplayExerciseName name={exercise.exerciseName} />
+              <DisplayExerciseName
+                name={exercise.exerciseName}
+                nameFr={exercise.exerciseNameFr}
+                exerciseId={exercise.exerciseId}
+              />
             </p>
             {supersetBadge != null ? (
               <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
@@ -503,6 +527,8 @@ export function SortableExerciseList({
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
   const replaceExerciseName = useExerciseDisplayName(
     replaceIndex != null ? exercises[replaceIndex]?.exerciseName : null,
+    replaceIndex != null ? exercises[replaceIndex]?.exerciseNameFr : null,
+    replaceIndex != null ? exercises[replaceIndex]?.exerciseId : null,
   )
 
   function handleReplaceRequest(index: number) {

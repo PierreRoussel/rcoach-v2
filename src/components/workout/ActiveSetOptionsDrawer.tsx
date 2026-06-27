@@ -32,6 +32,8 @@ export function ActiveSetOptionsDrawer({
       open={open}
       onOpenChange={onOpenChange}
       exerciseName={exercise?.exerciseName ?? null}
+      exerciseNameFr={exercise?.exerciseNameFr}
+      exerciseId={exercise?.exerciseId}
       sets={exercise?.sets ?? []}
       selectedSetIndex={selectedSetIndex}
       onDeleteSet={(setIndex) => {

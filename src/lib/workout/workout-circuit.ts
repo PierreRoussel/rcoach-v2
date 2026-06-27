@@ -1,4 +1,6 @@
+import { DEFAULT_EXERCISE_LOCALE, type ExerciseLocale } from '@/lib/workout/exercise-locale'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
+import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
 
 export type CircuitSet = {
   setIndex: number
@@ -258,6 +260,7 @@ export function computeWorkoutProgressPercent(exercises: CircuitExercise[]): num
 export function getStepLabel(
   exercises: CircuitExercise[],
   step: CircuitStep | null,
+  locale: ExerciseLocale = DEFAULT_EXERCISE_LOCALE,
 ): string | null {
   if (!step) {
     return null
@@ -268,7 +271,12 @@ export function getStepLabel(
     return null
   }
 
-  return `${exercise.exerciseName} — série ${step.setIndex + 1}`
+  const displayName = resolveExerciseDisplayName(
+    { name: exercise.exerciseName, name_fr: exercise.exerciseNameFr },
+    locale,
+  )
+
+  return `${displayName} — série ${step.setIndex + 1}`
 }
 
 export function getValidatedExercisesForSync(exercises: CircuitExercise[]) {
