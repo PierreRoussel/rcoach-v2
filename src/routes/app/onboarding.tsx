@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { FeatureSlidesCarousel } from '@/components/onboarding/FeatureSlidesCarousel'
 import { OnboardingSetupScreen } from '@/components/onboarding/OnboardingSetupScreen'
 import { ProfileOnboardingSteps } from '@/components/onboarding/ProfileOnboardingSteps'
+import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import {
   redirectIfAppOnboardingComplete,
   requireAuth,
@@ -12,6 +13,8 @@ import {
 import { completeAppOnboarding } from '@/lib/onboarding/complete-onboarding'
 import {
   createEmptyProfileOnboardingForm,
+  hasStoredOnboardingBodyData,
+  profileOnboardingFormFromStoredBodyData,
   type ProfileOnboardingFormData,
 } from '@/lib/onboarding/profile-form'
 import { resolveOnboardingProfileId } from '@/lib/onboarding/resolve-profile-id'
@@ -27,17 +30,49 @@ export const Route = createFileRoute('/app/onboarding')({
   component: OnboardingPage,
 })
 
-type OnboardingPhase = 'slides' | 'profile' | 'setup'
+type OnboardingPhase = 'slides' | 'profile-check' | 'profile' | 'setup'
 
 function OnboardingPage() {
   const { nhost, user, isLoading: authLoading } = useAuth()
   const { data: profile } = useMyProfile()
+  const { data: nutritionSettings, isLoading: nutritionSettingsLoading } = useNutritionSettings()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [phase, setPhase] = useState<OnboardingPhase>('slides')
   const [pendingForm, setPendingForm] = useState<ProfileOnboardingFormData | null>(null)
 
   const displayName = resolveDisplayName(profile?.display_name, user)
+
+  const beginSetup = useCallback((data: ProfileOnboardingFormData) => {
+    setPendingForm(data)
+    setPhase('setup')
+  }, [])
+
+  const continueAfterSlides = useCallback(() => {
+    if (hasStoredOnboardingBodyData(nutritionSettings)) {
+      beginSetup(createEmptyProfileOnboardingForm())
+      return
+    }
+
+    setPhase('profile')
+  }, [beginSetup, nutritionSettings])
+
+  const advanceFromSlides = useCallback(() => {
+    if (nutritionSettingsLoading) {
+      setPhase('profile-check')
+      return
+    }
+
+    continueAfterSlides()
+  }, [continueAfterSlides, nutritionSettingsLoading])
+
+  useEffect(() => {
+    if (phase !== 'profile-check' || nutritionSettingsLoading) {
+      return
+    }
+
+    continueAfterSlides()
+  }, [continueAfterSlides, nutritionSettingsLoading, phase])
 
   const persistPendingForm = useCallback(async () => {
     if (!pendingForm) {
@@ -52,11 +87,6 @@ function OnboardingPage() {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-settings'] })
   }, [nhost, pendingForm, profile?.id, queryClient, user?.id])
 
-  function beginSetup(data: ProfileOnboardingFormData) {
-    setPendingForm(data)
-    setPhase('setup')
-  }
-
   async function goToApp() {
     await navigate({ to: '/app' })
   }
@@ -64,9 +94,17 @@ function OnboardingPage() {
   if (phase === 'slides') {
     return (
       <FeatureSlidesCarousel
-        onComplete={() => setPhase('profile')}
-        onSkip={() => setPhase('profile')}
+        onComplete={advanceFromSlides}
+        onSkip={advanceFromSlides}
       />
+    )
+  }
+
+  if (phase === 'profile-check') {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-gradient-hero px-6 text-center">
+        <p className="text-sm text-muted-foreground">Préparation de votre profil...</p>
+      </div>
     )
   }
 
@@ -90,6 +128,7 @@ function OnboardingPage() {
 
   return (
     <ProfileOnboardingSteps
+      initialForm={profileOnboardingFormFromStoredBodyData(nutritionSettings)}
       onComplete={beginSetup}
       onSkipAll={() => beginSetup(createEmptyProfileOnboardingForm())}
     />

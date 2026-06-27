@@ -7,6 +7,13 @@ export type ProfileOnboardingFormData = {
   weightKg: string
 }
 
+export type StoredOnboardingBodyData = {
+  sex?: NutritionSex | null
+  age?: number | null
+  height_cm?: number | null
+  weight_kg?: number | null
+}
+
 export function createEmptyProfileOnboardingForm(): ProfileOnboardingFormData {
   return {
     sex: null,
@@ -14,6 +21,40 @@ export function createEmptyProfileOnboardingForm(): ProfileOnboardingFormData {
     heightCm: '',
     weightKg: '',
   }
+}
+
+function formatStoredMetric(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value) || value <= 0) {
+    return ''
+  }
+
+  return String(value)
+}
+
+export function profileOnboardingFormFromStoredBodyData(
+  stored: StoredOnboardingBodyData | null | undefined,
+): ProfileOnboardingFormData {
+  return {
+    sex: stored?.sex ?? null,
+    age: formatStoredMetric(stored?.age),
+    heightCm: formatStoredMetric(stored?.height_cm),
+    weightKg: formatStoredMetric(stored?.weight_kg),
+  }
+}
+
+export function hasCompleteOnboardingBodyData(data: ProfileOnboardingFormData) {
+  return (
+    data.sex != null &&
+    data.age.trim() !== '' &&
+    data.heightCm.trim() !== '' &&
+    data.weightKg.trim() !== ''
+  )
+}
+
+export function hasStoredOnboardingBodyData(
+  stored: StoredOnboardingBodyData | null | undefined,
+) {
+  return hasCompleteOnboardingBodyData(profileOnboardingFormFromStoredBodyData(stored))
 }
 
 export function buildNutritionUpsertFromOnboarding(data: ProfileOnboardingFormData) {

@@ -13,13 +13,20 @@ import { cn } from '@/lib/utils'
 const STEPS = ['sex', 'age', 'height', 'weight'] as const
 
 type ProfileOnboardingStepsProps = {
+  initialForm?: ProfileOnboardingFormData
   onComplete: (data: ProfileOnboardingFormData) => Promise<void>
   onSkipAll: () => Promise<void>
 }
 
-export function ProfileOnboardingSteps({ onComplete, onSkipAll }: ProfileOnboardingStepsProps) {
+export function ProfileOnboardingSteps({
+  initialForm,
+  onComplete,
+  onSkipAll,
+}: ProfileOnboardingStepsProps) {
   const [stepIndex, setStepIndex] = useState(0)
-  const [form, setForm] = useState(createEmptyProfileOnboardingForm)
+  const [form, setForm] = useState(
+    () => initialForm ?? createEmptyProfileOnboardingForm(),
+  )
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const sexAdvanceTimeoutRef = useRef<number | null>(null)
