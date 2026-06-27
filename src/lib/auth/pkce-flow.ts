@@ -1,5 +1,6 @@
 import { generatePKCEPair } from '@nhost/nhost-js/auth'
 import type { NhostClient } from '@nhost/nhost-js'
+import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 
 export const PKCE_VERIFIER_KEY = 'nhost_pkce_verifier'
@@ -32,7 +33,6 @@ export async function redirectToGoogleSignIn(nhost: NhostClient) {
   const url = await startGoogleSignIn(nhost)
 
   if (Capacitor.isNativePlatform()) {
-    const { Browser } = await import('@capacitor/browser')
     await Browser.open({ url, windowName: '_system' })
     return
   }

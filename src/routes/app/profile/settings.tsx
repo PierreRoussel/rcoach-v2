@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageHeader } from '@/design-system'
+import { isGoogleOnlyAccount, useMyAuthProviders } from '@/hooks/useAuthProviders'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -22,7 +23,9 @@ export const Route = createFileRoute('/app/profile/settings')({
 function AccountSettingsPage() {
   const { user } = useAuth()
   const { data: profile, isLoading, error } = useMyProfile()
+  const { data: providerIds } = useMyAuthProviders()
   const email = user?.email ?? ''
+  const googleOnly = isGoogleOnlyAccount(providerIds)
 
   return (
     <div className="space-y-4 pb-8">
@@ -59,11 +62,17 @@ function AccountSettingsPage() {
         <CardHeader>
           <CardTitle className="font-display font-black">Compte</CardTitle>
           <CardDescription>
-            Modifiez votre mot de passe en confirmant votre mot de passe actuel.
+            {googleOnly
+              ? 'Vous vous connectez via Google.'
+              : 'Modifiez votre mot de passe en confirmant votre mot de passe actuel.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {email ? (
+          {googleOnly ? (
+            <p className="text-sm text-muted-foreground">
+              La gestion du mot de passe se fait depuis votre compte Google.
+            </p>
+          ) : email ? (
             <ChangePasswordForm email={email} />
           ) : (
             <p className="text-sm text-muted-foreground">

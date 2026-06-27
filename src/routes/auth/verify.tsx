@@ -42,6 +42,10 @@ function VerifyPage() {
     }
 
     async function verify() {
+      if (!code) {
+        return
+      }
+
       try {
         const session = await exchangeAuthCode(nhost, code)
         const userId = session.user?.id
@@ -81,6 +85,8 @@ function VerifyPage() {
           ? 'Nous validons votre lien, un instant.'
           : (error ?? 'Le lien est peut-être expiré.')
       }
-    />
+    >
+      <div />
+    </AuthMobileShell>
   )
 }
