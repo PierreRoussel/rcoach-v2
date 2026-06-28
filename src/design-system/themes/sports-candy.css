@@ -26,6 +26,8 @@
   --accent-foreground: #2c2545;
   --destructive: #d95f6e;
   --destructive-foreground: #ffffff;
+  --success: #2e6b52;
+  --success-foreground: #ffffff;
   --border: rgba(100, 88, 160, 0.12);
   --input: transparent;
   --input-background: #ede9f7;
@@ -81,6 +83,8 @@
   --accent-foreground: #18143a;
   --destructive: #c95568;
   --destructive-foreground: #ffffff;
+  --success: #85c9ae;
+  --success-foreground: #18143a;
   --border: rgba(150, 135, 220, 0.14);
   --input: rgba(150, 135, 220, 0.08);
   --input-background: rgba(150, 135, 220, 0.08);

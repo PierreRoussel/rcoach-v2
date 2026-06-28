@@ -1,20 +1,13 @@
-import type { NutritionSettings } from '@/lib/nutrition/types'
-
 import type { StoredUserMeasurements, UserMeasurements } from './types'
-
-export type NutritionMeasurementsFallback = Pick<
-  NutritionSettings,
-  'sex' | 'age' | 'height_cm'
->
 
 export function resolveUserMeasurements(
   measurements: UserMeasurements | StoredUserMeasurements | null | undefined,
-  nutritionSettings: NutritionMeasurementsFallback | null | undefined,
 ): StoredUserMeasurements | null {
-  const sex = measurements?.sex ?? nutritionSettings?.sex ?? null
-  const age = measurements?.age ?? nutritionSettings?.age ?? null
-  const height_cm = measurements?.height_cm ?? nutritionSettings?.height_cm ?? null
-  const waist_cm = measurements?.waist_cm ?? null
+  if (!measurements) {
+    return null
+  }
+
+  const { sex, age, height_cm, waist_cm } = measurements
 
   if (
     sex == null &&
@@ -30,9 +23,8 @@ export function resolveUserMeasurements(
 
 export function hasResolvedBodyMeasurements(
   measurements: UserMeasurements | StoredUserMeasurements | null | undefined,
-  nutritionSettings: NutritionMeasurementsFallback | null | undefined,
 ) {
-  const resolved = resolveUserMeasurements(measurements, nutritionSettings)
+  const resolved = resolveUserMeasurements(measurements)
 
   return (
     resolved?.sex != null &&
@@ -43,9 +35,8 @@ export function hasResolvedBodyMeasurements(
 
 export function hasAnyResolvedMeasurements(
   measurements: UserMeasurements | StoredUserMeasurements | null | undefined,
-  nutritionSettings: NutritionMeasurementsFallback | null | undefined,
 ) {
-  const resolved = resolveUserMeasurements(measurements, nutritionSettings)
+  const resolved = resolveUserMeasurements(measurements)
 
   if (!resolved) {
     return false

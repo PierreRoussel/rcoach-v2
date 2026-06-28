@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 import { Target } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { WaistAdjustTile } from '@/components/goals/WaistAdjustTile'
 import { WaistProgressChart } from '@/components/goals/WaistProgressChart'
 import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
 import { WeightGoalReachedCelebrationOverlay } from '@/components/goals/WeightGoalReachedCelebrationOverlay'
@@ -330,25 +331,29 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
         </div>
       )}
 
-      {showWaistChart ? (
-        <Card className="overflow-hidden rounded-2xl border-border">
-          <CardHeader className="px-5">
-            <CardTitle className="font-display text-base font-black">
-              Tour de taille
-            </CardTitle>
-            <CardDescription>
-              Moyenne hebdomadaire de vos mensurations. Faites défiler pour
-              parcourir la timeline.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-3 pb-2 pt-0">
-            {waistEntriesLoading ? (
-              <p className="px-5 text-sm text-muted-foreground">Chargement...</p>
-            ) : (
-              <WaistProgressChart entries={waistEntries} />
-            )}
-          </CardContent>
-        </Card>
+      {showWaistChart && userMeasurements?.waist_cm != null ? (
+        <div className="space-y-4">
+          <WaistAdjustTile waistCm={userMeasurements.waist_cm} />
+
+          <Card className="overflow-hidden rounded-2xl border-border">
+            <CardHeader className="px-5">
+              <CardTitle className="font-display text-base font-black">
+                Tour de taille
+              </CardTitle>
+              <CardDescription>
+                Moyenne hebdomadaire de vos mensurations. Faites défiler pour
+                parcourir la timeline.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 pb-2 pt-0">
+              {waistEntriesLoading ? (
+                <p className="px-5 text-sm text-muted-foreground">Chargement...</p>
+              ) : (
+                <WaistProgressChart entries={waistEntries} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
 
       {adjustError && <FormMessage>{adjustError}</FormMessage>}

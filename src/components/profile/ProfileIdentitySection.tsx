@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useUpdateProfile } from '@/hooks/useProfile'
@@ -25,10 +25,12 @@ function ProfileEditor({ profile }: { profile: Profile }) {
   const [unitSystem, setUnitSystem] = useState(profile.unit_system)
   const [exerciseLocale, setExerciseLocale] = useState(profile.exercise_locale ?? 'fr')
   const [role, setRole] = useState(profile.role)
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSave() {
-    setMessage(null)
+    setSuccessMessage(null)
+    setError(null)
 
     try {
       await updateProfile.mutateAsync({
@@ -40,9 +42,9 @@ function ProfileEditor({ profile }: { profile: Profile }) {
           role,
         },
       })
-      setMessage('Profil mis à jour.')
+      setSuccessMessage('Profil mis à jour.')
     } catch (saveError) {
-      setMessage(
+      setError(
         saveError instanceof Error
           ? saveError.message
           : 'Impossible de mettre à jour le profil.',
@@ -108,7 +110,10 @@ function ProfileEditor({ profile }: { profile: Profile }) {
       >
         {updateProfile.isPending ? 'Enregistrement...' : 'Enregistrer'}
       </Button>
-      {message ? <FormMessage>{message}</FormMessage> : null}
+      {successMessage ? (
+        <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
+      ) : null}
+      {error ? <FeedbackMessage variant="error">{error}</FeedbackMessage> : null}
     </>
   )
 }

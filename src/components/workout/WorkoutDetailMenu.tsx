@@ -233,7 +233,7 @@ export function WorkoutDetailMenu({
         </p>
       ) : null}
       {!compact && message ? (
-        <p className="max-w-56 text-right text-xs text-secondary-foreground">
+        <p className="max-w-56 text-right text-xs text-success">
           {message}
         </p>
       ) : null}

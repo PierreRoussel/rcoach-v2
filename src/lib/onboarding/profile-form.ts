@@ -1,11 +1,10 @@
 import type { NutritionSex } from '@/lib/nutrition/types'
 
-import type { NutritionMeasurementsFallback } from '@/lib/measurements/resolve-user-measurements'
+import type { StoredUserMeasurements } from '@/lib/measurements/types'
 import {
   hasResolvedBodyMeasurements,
   resolveUserMeasurements,
 } from '@/lib/measurements/resolve-user-measurements'
-import type { StoredUserMeasurements } from '@/lib/measurements/types'
 
 export type ProfileOnboardingFormData = {
   sex: NutritionSex | null
@@ -36,9 +35,8 @@ function formatStoredMetric(value: number | null | undefined) {
 export function profileOnboardingFormFromStoredBodyData(
   measurements: StoredUserMeasurements | null | undefined,
   weightKg: number | null | undefined,
-  nutritionFallback?: NutritionMeasurementsFallback | null,
 ): ProfileOnboardingFormData {
-  const resolved = resolveUserMeasurements(measurements, nutritionFallback)
+  const resolved = resolveUserMeasurements(measurements)
 
   return {
     sex: resolved?.sex ?? null,
@@ -59,9 +57,8 @@ export function hasCompleteOnboardingBodyData(data: ProfileOnboardingFormData) {
 
 export function hasStoredOnboardingBodyData(
   measurements: StoredUserMeasurements | null | undefined,
-  nutritionFallback?: NutritionMeasurementsFallback | null,
 ) {
-  return hasResolvedBodyMeasurements(measurements, nutritionFallback)
+  return hasResolvedBodyMeasurements(measurements)
 }
 
 export function buildUserMeasurementsUpsertFromOnboarding(

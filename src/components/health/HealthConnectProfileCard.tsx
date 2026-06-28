@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Pill } from '@/design-system'
@@ -118,6 +118,15 @@ export function HealthConnectProfileCard() {
   const [isLoading, setIsLoading] = useState(isAndroid)
   const [isConnecting, setIsConnecting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [messageVariant, setMessageVariant] = useState<'success' | 'error' | 'info'>('info')
+
+  function showMessage(
+    text: string,
+    variant: 'success' | 'error' | 'info' = 'info',
+  ) {
+    setMessage(text)
+    setMessageVariant(variant)
+  }
 
   const refreshStatus = useCallback(async () => {
     if (!isAndroid) {
@@ -158,18 +167,21 @@ export function HealthConnectProfileCard() {
 
       if (availability === 'NotInstalled') {
         window.open(HEALTH_CONNECT_PLAY_STORE_URL, '_blank')
-        setMessage('Installez Health Connect, puis revenez ici pour connecter.')
+        showMessage('Installez Health Connect, puis revenez ici pour connecter.', 'info')
         return
       }
 
       if (availability !== 'Available') {
-        setMessage("Health Connect n'est pas disponible sur cet appareil.")
+        showMessage("Health Connect n'est pas disponible sur cet appareil.", 'error')
         return
       }
 
       const permissionResult = await requestHealthConnectPermissions()
       if (!permissionResult.granted) {
-        setMessage('Autorisations refusées. Vous pouvez les modifier dans Health Connect.')
+        showMessage(
+          'Autorisations refusées. Vous pouvez les modifier dans Health Connect.',
+          'error',
+        )
         setHealthConnectSyncEnabled(false)
         setSyncEnabled(false)
         await refreshStatus()
@@ -178,13 +190,14 @@ export function HealthConnectProfileCard() {
 
       setHealthConnectSyncEnabled(true)
       setSyncEnabled(true)
-      setMessage('Compte Health Connect lié avec succès.')
+      showMessage('Compte Health Connect lié avec succès.', 'success')
       await refreshStatus()
     } catch (connectError) {
-      setMessage(
+      showMessage(
         connectError instanceof Error
           ? connectError.message
           : 'Impossible de connecter Health Connect.',
+        'error',
       )
     } finally {
       setIsConnecting(false)
@@ -195,7 +208,7 @@ export function HealthConnectProfileCard() {
     setMessage(null)
     setHealthConnectSyncEnabled(false)
     setSyncEnabled(false)
-    setMessage('Synchronisation Health Connect désactivée.')
+    showMessage('Synchronisation Health Connect désactivée.', 'success')
     await refreshStatus()
   }
 
@@ -237,7 +250,9 @@ export function HealthConnectProfileCard() {
           </p>
         )}
 
-        {message ? <FormMessage>{message}</FormMessage> : null}
+        {message ? (
+          <FeedbackMessage variant={messageVariant}>{message}</FeedbackMessage>
+        ) : null}
 
         {connectionState === 'connected' ? (
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5">

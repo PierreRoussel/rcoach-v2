@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
@@ -29,21 +29,23 @@ function CoachClientsPage() {
   const inviteClient = useInviteCoachClient()
   const updateStatus = useUpdateCoachClientStatus()
   const [email, setEmail] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   async function handleInvite() {
-    setMessage(null)
+    setSuccessMessage(null)
+    setFormError(null)
     if (!email.trim()) {
-      setMessage('Indiquez une adresse email.')
+      setFormError('Indiquez une adresse email.')
       return
     }
 
     try {
       await inviteClient.mutateAsync(email)
       setEmail('')
-      setMessage('Invitation envoyée (statut pending).')
+      setSuccessMessage('Invitation envoyée (statut pending).')
     } catch (inviteError) {
-      setMessage(
+      setFormError(
         inviteError instanceof Error
           ? inviteError.message
           : "Impossible d'inviter ce client.",
@@ -86,7 +88,10 @@ function CoachClientsPage() {
           >
             {inviteClient.isPending ? 'Envoi...' : 'Inviter'}
           </Button>
-          {message ? <FormMessage>{message}</FormMessage> : null}
+          {successMessage ? (
+            <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
+          ) : null}
+          {formError ? <FeedbackMessage variant="error">{formError}</FeedbackMessage> : null}
         </CardContent>
       </Card>
 

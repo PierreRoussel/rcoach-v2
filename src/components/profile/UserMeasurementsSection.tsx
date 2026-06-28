@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import {
   useUpsertUserMeasurements,
   useResolvedUserMeasurements,
@@ -184,7 +184,7 @@ export function UserMeasurementsSection() {
             </p>
           )}
 
-          {message ? <FormMessage>{message}</FormMessage> : null}
+          {message ? <FeedbackMessage variant="success">{message}</FeedbackMessage> : null}
 
           <Button
             type="button"

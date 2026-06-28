@@ -11,8 +11,6 @@ import { resolveUserMeasurements } from '@/lib/measurements/resolve-user-measure
 import type { StoredUserMeasurements, UserMeasurements } from '@/lib/measurements/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-import { useNutritionSettings } from './useNutritionSettings'
-
 export function useUserMeasurements() {
   const { nhost, isAuthenticated, user } = useAuth()
 
@@ -59,16 +57,15 @@ export function useResolvedUserMeasurements(): {
   isLoading: boolean
 } {
   const measurementsQuery = useUserMeasurements()
-  const nutritionQuery = useNutritionSettings()
 
   const data = useMemo(
-    () => resolveUserMeasurements(measurementsQuery.data, nutritionQuery.data),
-    [measurementsQuery.data, nutritionQuery.data],
+    () => resolveUserMeasurements(measurementsQuery.data),
+    [measurementsQuery.data],
   )
 
   return {
     data,
     raw: measurementsQuery.data,
-    isLoading: measurementsQuery.isLoading || nutritionQuery.isLoading,
+    isLoading: measurementsQuery.isLoading,
   }
 }

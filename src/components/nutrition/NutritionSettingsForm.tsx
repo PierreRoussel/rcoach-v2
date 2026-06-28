@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -49,7 +50,8 @@ export function NutritionSettingsForm() {
   const { data: measurements, isLoading: measurementsLoading } = useResolvedUserMeasurements()
   const upsert = useUpsertNutritionSettings()
   const upsertMeasurements = useUpsertUserMeasurements()
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const [sex, setSex] = useState<NutritionSex>('male')
   const [age, setAge] = useState('30')
@@ -109,7 +111,8 @@ export function NutritionSettingsForm() {
   }, [sex, age, heightCm, weightKg, activityLevel, goal, settings])
 
   async function handleSave() {
-    setMessage(null)
+    setSuccessMessage(null)
+    setError(null)
 
     const tdee = calculateTdee({
       sex,
@@ -143,9 +146,9 @@ export function NutritionSettingsForm() {
         dinner_pct: mealDistribution.dinner,
         onboarded_at: settings?.onboarded_at ?? new Date().toISOString(),
       })
-      setMessage('Objectifs nutrition mis à jour.')
+      setSuccessMessage('Objectifs nutrition mis à jour.')
     } catch (saveError) {
-      setMessage(saveError instanceof Error ? saveError.message : 'Sauvegarde impossible.')
+      setError(saveError instanceof Error ? saveError.message : 'Sauvegarde impossible.')
     }
   }
 
@@ -248,7 +251,10 @@ export function NutritionSettingsForm() {
         </CardContent>
       </Card>
 
-      {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+      {successMessage ? (
+        <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
+      ) : null}
+      {error ? <FeedbackMessage variant="error">{error}</FeedbackMessage> : null}
 
       <Button type="button" className="w-full" onClick={() => void handleSave()} disabled={upsert.isPending || upsertMeasurements.isPending}>
         Enregistrer

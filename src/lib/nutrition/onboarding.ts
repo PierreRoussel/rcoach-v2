@@ -12,7 +12,6 @@ export function isNutritionConfigured(
   return (
     settings != null &&
     settings.daily_calorie_target > 0 &&
-    settings.weight_kg != null &&
     settings.activity_level != null
   )
 }

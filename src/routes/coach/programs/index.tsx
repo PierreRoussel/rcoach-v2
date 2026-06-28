@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
@@ -25,12 +25,14 @@ function CoachProgramsPage() {
   const createProgram = useCreateProgram()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   async function handleCreate() {
-    setMessage(null)
+    setSuccessMessage(null)
+    setFormError(null)
     if (!name.trim()) {
-      setMessage('Nom du programme requis.')
+      setFormError('Nom du programme requis.')
       return
     }
 
@@ -42,9 +44,9 @@ function CoachProgramsPage() {
       })
       setName('')
       setDescription('')
-      setMessage('Programme créé.')
+      setSuccessMessage('Programme créé.')
     } catch (createError) {
-      setMessage(
+      setFormError(
         createError instanceof Error
           ? createError.message
           : 'Impossible de créer le programme.',
@@ -96,7 +98,10 @@ function CoachProgramsPage() {
             <Plus className="size-4" />
             {createProgram.isPending ? 'Création...' : 'Créer'}
           </Button>
-          {message ? <FormMessage>{message}</FormMessage> : null}
+          {successMessage ? (
+            <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
+          ) : null}
+          {formError ? <FeedbackMessage variant="error">{formError}</FeedbackMessage> : null}
         </CardContent>
       </Card>
 

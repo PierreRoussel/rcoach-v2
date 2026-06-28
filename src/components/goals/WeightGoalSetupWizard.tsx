@@ -33,8 +33,9 @@ import {
 import {
   useUpdateWeightGoal,
   useUpsertWeightGoal,
-  useWeightGoal,
+  useResolvedWeightGoal,
 } from '@/hooks/useWeightGoal'
+import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import {
   clampWeightKg,
   formatWeightKg,
@@ -63,13 +64,21 @@ const STEP_LABELS = [
   'Objectif poids',
 ]
 
+const EDIT_STEP_LABELS = [
+  'Paramètres nutrition',
+  'Macros',
+  'Repas',
+  'Objectif poids',
+]
+
 export function WeightGoalSetupWizard({
   open,
   onOpenChange,
   mode,
   onCompleted,
 }: WeightGoalSetupWizardProps) {
-  const { data: existingGoal } = useWeightGoal()
+  const { data: existingGoal } = useResolvedWeightGoal()
+  const currentWeightKg = useCurrentWeightKg()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: userMeasurements } = useUserMeasurements()
   const upsertNutrition = useUpsertNutritionSettings()
@@ -127,38 +136,31 @@ export function WeightGoalSetupWizard({
 
     if (nutritionSettings || userMeasurements) {
       setFormState({
-        sex: userMeasurements?.sex ?? nutritionSettings?.sex ?? 'male',
+        sex: userMeasurements?.sex ?? 'male',
         age:
-          userMeasurements?.age != null
-            ? String(userMeasurements.age)
-            : nutritionSettings?.age != null
-              ? String(nutritionSettings.age)
-              : '30',
+          userMeasurements?.age != null ? String(userMeasurements.age) : '30',
         heightCm:
           userMeasurements?.height_cm != null
             ? String(userMeasurements.height_cm)
-            : nutritionSettings?.height_cm != null
-              ? String(nutritionSettings.height_cm)
-              : '175',
+            : '175',
         weightKg:
           existingGoal != null
             ? String(existingGoal.current_weight_kg)
-            : nutritionSettings?.weight_kg != null
-              ? String(nutritionSettings.weight_kg)
+            : currentWeightKg != null
+              ? String(currentWeightKg)
               : '75',
-        activityLevel: nutritionSettings.activity_level ?? 'moderate',
-        goal: nutritionSettings.goal ?? 'maintain',
-        dailyCalories: String(nutritionSettings.daily_calorie_target ?? 2200),
+        activityLevel: nutritionSettings?.activity_level ?? 'moderate',
+        dailyCalories: String(nutritionSettings?.daily_calorie_target ?? 2200),
         macroDistribution: {
-          carbs: nutritionSettings.carbs_pct ?? 40,
-          protein: nutritionSettings.protein_pct ?? 30,
-          fat: nutritionSettings.fat_pct ?? 30,
+          carbs: nutritionSettings?.carbs_pct ?? 40,
+          protein: nutritionSettings?.protein_pct ?? 30,
+          fat: nutritionSettings?.fat_pct ?? 30,
         },
         mealDistribution: {
-          breakfast: nutritionSettings.breakfast_pct ?? 20,
-          lunch: nutritionSettings.lunch_pct ?? 35,
-          snack: nutritionSettings.snack_pct ?? 10,
-          dinner: nutritionSettings.dinner_pct ?? 35,
+          breakfast: nutritionSettings?.breakfast_pct ?? 20,
+          lunch: nutritionSettings?.lunch_pct ?? 35,
+          snack: nutritionSettings?.snack_pct ?? 10,
+          dinner: nutritionSettings?.dinner_pct ?? 35,
         },
       })
     } else {
@@ -166,20 +168,50 @@ export function WeightGoalSetupWizard({
     }
 
     setTargetWeight(existingGoal ? String(existingGoal.target_weight_kg) : '')
-  }, [open, mode, existingGoal, nutritionSettings, userMeasurements])
+  }, [open, mode, existingGoal, nutritionSettings, userMeasurements, currentWeightKg])
+
+  const bodyMetrics = {
+    sex: userMeasurements?.sex ?? formState.sex,
+    age: userMeasurements?.age ?? (Number(formState.age) || 30),
+    heightCm:
+      userMeasurements?.height_cm ?? (Number(formState.heightCm) || 175),
+    weightKg:
+      mode === 'edit' && existingGoal
+        ? existingGoal.current_weight_kg
+        : Number(formState.weightKg) || 75,
+  }
+
+  const currentWeight = bodyMetrics.weightKg
+  const parsedTarget = Number(targetWeight.replace(',', '.'))
+  const inferredGoalType =
+    Number.isFinite(currentWeight) && Number.isFinite(parsedTarget)
+      ? inferWeightGoalType(currentWeight, parsedTarget)
+      : null
+
+  const tdeeGoalType =
+    inferredGoalType ?? existingGoal?.goal_type ?? 'maintain'
 
   useEffect(() => {
     if (!open) {
       return
     }
 
+    const sex = userMeasurements?.sex ?? formState.sex
+    const age = userMeasurements?.age ?? (Number(formState.age) || 30)
+    const heightCm =
+      userMeasurements?.height_cm ?? (Number(formState.heightCm) || 175)
+    const weightKg =
+      mode === 'edit' && existingGoal
+        ? existingGoal.current_weight_kg
+        : Number(formState.weightKg) || 75
+
     const tdee = calculateTdee({
-      sex: formState.sex,
-      age: Number(formState.age) || 30,
-      heightCm: Number(formState.heightCm) || 175,
-      weightKg: Number(formState.weightKg) || 75,
+      sex,
+      age,
+      heightCm,
+      weightKg,
       activityLevel: formState.activityLevel,
-      goal: formState.goal,
+      goal: tdeeGoalType,
     })
 
     setFormState((current) => ({
@@ -188,52 +220,55 @@ export function WeightGoalSetupWizard({
     }))
   }, [
     open,
+    mode,
+    existingGoal,
+    tdeeGoalType,
+    userMeasurements?.sex,
+    userMeasurements?.age,
+    userMeasurements?.height_cm,
     formState.sex,
     formState.age,
     formState.heightCm,
     formState.weightKg,
     formState.activityLevel,
-    formState.goal,
   ])
 
-  const currentWeight = Number(formState.weightKg.replace(',', '.'))
-  const parsedTarget = Number(targetWeight.replace(',', '.'))
-  const inferredGoalType =
-    Number.isFinite(currentWeight) && Number.isFinite(parsedTarget)
-      ? inferWeightGoalType(currentWeight, parsedTarget)
-      : null
-
   const tdeePreview = calculateTdee({
-    sex: formState.sex,
-    age: Number(formState.age) || 30,
-    heightCm: Number(formState.heightCm) || 175,
-    weightKg: Number(formState.weightKg) || 75,
+    ...bodyMetrics,
     activityLevel: formState.activityLevel,
-    goal: formState.goal,
+    goal: tdeeGoalType,
   })
 
   async function saveWizardData(): Promise<NutritionSettings> {
-    await upsertUserMeasurements.mutateAsync(
-      buildWizardMeasurementsUpsert({
-        sex: formState.sex,
-        age: formState.age,
-        heightCm: formState.heightCm,
-      }),
-    )
+    if (mode !== 'edit') {
+      await upsertUserMeasurements.mutateAsync(
+        buildWizardMeasurementsUpsert({
+          sex: formState.sex,
+          age: formState.age,
+          heightCm: formState.heightCm,
+        }),
+      )
+    }
+
+    const sex = userMeasurements?.sex ?? formState.sex
+    const age = userMeasurements?.age ?? Number(formState.age)
+    const heightCm = userMeasurements?.height_cm ?? Number(formState.heightCm)
+    const weightKg =
+      mode === 'edit' && existingGoal
+        ? existingGoal.current_weight_kg
+        : Number(formState.weightKg)
 
     const tdee = calculateTdee({
-      sex: formState.sex,
-      age: Number(formState.age),
-      heightCm: Number(formState.heightCm),
-      weightKg: Number(formState.weightKg),
+      sex,
+      age,
+      heightCm,
+      weightKg,
       activityLevel: formState.activityLevel,
-      goal: formState.goal,
+      goal: tdeeGoalType,
     })
 
     const payload: Partial<NutritionSettings> = {
-      weight_kg: Number(formState.weightKg),
       activity_level: formState.activityLevel,
-      goal: formState.goal,
       calorie_adjustment: 0,
       tdee_calculated: tdee.tdee,
       daily_calorie_target: Number(formState.dailyCalories),
@@ -333,18 +368,15 @@ export function WeightGoalSetupWizard({
         weightGoalType,
         currentWeight,
         {
-          sex: formState.sex,
-          age: Number(formState.age),
-          height_cm: Number(formState.heightCm),
+          sex: bodyMetrics.sex,
+          age: bodyMetrics.age,
+          height_cm: bodyMetrics.heightCm,
           waist_cm: userMeasurements?.waist_cm ?? null,
         },
       )
 
       const fallbackTdee = calculateTdee({
-        sex: formState.sex,
-        age: Number(formState.age),
-        heightCm: Number(formState.heightCm),
-        weightKg: currentWeight,
+        ...bodyMetrics,
         activityLevel: formState.activityLevel,
         goal: weightGoalType,
       })
@@ -433,13 +465,15 @@ export function WeightGoalSetupWizard({
               {mode === 'edit' ? 'Modifier l’objectif' : 'Configurer mon objectif'}
             </DialogTitle>
             <DialogDescription>
-              Étape {step + 1} sur 4 — {STEP_LABELS[step]}
+              Étape {step + 1} sur 4 —{' '}
+              {(mode === 'edit' ? EDIT_STEP_LABELS : STEP_LABELS)[step]}
             </DialogDescription>
           </DialogHeader>
 
           {step === 0 ? (
             <NutritionBodyStep
               state={formState}
+              showBodyMetrics={mode !== 'edit'}
               onChange={(patch) =>
                 setFormState((current) => ({ ...current, ...patch }))
               }

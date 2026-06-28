@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FriendMotivationSendButton } from '@/components/social/FriendMotivationSendButton'
@@ -48,7 +49,8 @@ function FriendsPage() {
   const [inviteMode, setInviteMode] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
   const [friendCode, setFriendCode] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [inviteError, setInviteError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [motivationTarget, setMotivationTarget] = useState<{
     id: string
@@ -100,7 +102,8 @@ function FriendsPage() {
   }
 
   async function handleInvite() {
-    setMessage(null)
+    setSuccessMessage(null)
+    setInviteError(null)
 
     try {
       if (inviteMode === 'code') {
@@ -114,11 +117,11 @@ function FriendsPage() {
         await inviteFriend.mutateAsync({ email })
         setEmail('')
       }
-      setMessage('Invitation envoyée.')
-    } catch (inviteError) {
-      setMessage(
-        inviteError instanceof Error
-          ? inviteError.message
+      setSuccessMessage('Invitation envoyée.')
+    } catch (error) {
+      setInviteError(
+        error instanceof Error
+          ? error.message
           : 'Impossible d’envoyer l’invitation.',
       )
     }
@@ -221,7 +224,12 @@ function FriendsPage() {
             Envoyer l’invitation
           </Button>
 
-          {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+          {successMessage ? (
+            <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
+          ) : null}
+          {inviteError ? (
+            <FeedbackMessage variant="error">{inviteError}</FeedbackMessage>
+          ) : null}
         </CardContent>
       </Card>
 

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Camera, Loader2, Trash2 } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Button } from '@/components/ui/button'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import {
@@ -21,7 +22,8 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
   const { nhost } = useAuth()
   const updateProfile = useUpdateProfile()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -31,7 +33,8 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
       return
     }
 
-    setMessage(null)
+    setSuccessMessage(null)
+    setError(null)
     setIsUploading(true)
 
     try {
@@ -46,10 +49,10 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
           changes: { avatar_url: nextUrl },
         })
       })
-      setMessage('Photo de profil mise à jour.')
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : 'Impossible de mettre à jour la photo.',
+      setSuccessMessage('Photo de profil mise à jour.')
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error ? uploadError.message : 'Impossible de mettre à jour la photo.',
       )
     } finally {
       setIsUploading(false)
@@ -57,7 +60,8 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
   }
 
   async function handleRemove() {
-    setMessage(null)
+    setSuccessMessage(null)
+    setError(null)
     setIsUploading(true)
 
     try {
@@ -67,10 +71,10 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
           changes: { avatar_url: null },
         })
       })
-      setMessage('Photo de profil retirée.')
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : 'Impossible de retirer la photo.',
+      setSuccessMessage('Photo de profil retirée.')
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error ? removeError.message : 'Impossible de retirer la photo.',
       )
     } finally {
       setIsUploading(false)
@@ -117,7 +121,16 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
             </Button>
           ) : null}
         </div>
-        {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
+        {successMessage ? (
+          <FeedbackMessage variant="success" className="text-xs">
+            {successMessage}
+          </FeedbackMessage>
+        ) : null}
+        {error ? (
+          <FeedbackMessage variant="error" className="text-xs">
+            {error}
+          </FeedbackMessage>
+        ) : null}
       </div>
 
       <input

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
 import { Button } from '@/components/ui/button'
 import { FormField, FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { requestPasswordResetEmail } from '@/lib/auth/pkce-flow'
@@ -74,7 +75,7 @@ function ForgotPasswordPage() {
           />
         </FormField>
         {error ? <FormMessage>{error}</FormMessage> : null}
-        {info ? <p className="text-sm text-foreground">{info}</p> : null}
+        {info ? <FeedbackMessage variant="success">{info}</FeedbackMessage> : null}
         <Button
           className="h-12 w-full rounded-full"
           variant="pill"

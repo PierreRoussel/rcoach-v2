@@ -7,6 +7,7 @@ import { PasswordField } from '@/components/auth/PasswordField'
 import { PasswordRequirementsList } from '@/components/auth/PasswordRequirementsList'
 import { Button } from '@/components/ui/button'
 import { FormField, FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -131,7 +132,7 @@ function RegisterPage() {
           <PasswordRequirementsList validation={validation} password={password} compact />
         ) : null}
         {error ? <FormMessage>{error}</FormMessage> : null}
-        {success ? <p className="text-sm text-foreground">{success}</p> : null}
+        {success ? <FeedbackMessage variant="success">{success}</FeedbackMessage> : null}
         <Button
           className="h-11 w-full rounded-full"
           variant="pill"

@@ -1358,12 +1358,7 @@ export type NutritionSettingsInput = {
   lunch_pct?: number
   snack_pct?: number
   dinner_pct?: number
-  sex?: 'male' | 'female' | null
-  age?: number | null
-  height_cm?: number | null
-  weight_kg?: number | null
   activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active' | null
-  goal?: 'lose' | 'maintain' | 'gain' | null
   calorie_adjustment?: number
   tdee_calculated?: number | null
   onboarded_at?: string | null
@@ -1381,12 +1376,7 @@ export const GET_NUTRITION_SETTINGS = `
       lunch_pct
       snack_pct
       dinner_pct
-      sex
-      age
-      height_cm
-      weight_kg
       activity_level
-      goal
       calorie_adjustment
       tdee_calculated
       onboarded_at
@@ -1411,12 +1401,7 @@ export const UPSERT_NUTRITION_SETTINGS = `
           lunch_pct
           snack_pct
           dinner_pct
-          sex
-          age
-          height_cm
-          weight_kg
           activity_level
-          goal
           calorie_adjustment
           tdee_calculated
           onboarded_at
@@ -1433,12 +1418,7 @@ export const UPSERT_NUTRITION_SETTINGS = `
       lunch_pct
       snack_pct
       dinner_pct
-      sex
-      age
-      height_cm
-      weight_kg
       activity_level
-      goal
       calorie_adjustment
       tdee_calculated
       onboarded_at
@@ -1492,7 +1472,6 @@ export const UPSERT_USER_MEASUREMENTS = `
 export type WeightGoalInput = {
   target_weight_kg: number
   start_weight_kg: number
-  current_weight_kg: number
   goal_type: 'lose' | 'maintain' | 'gain'
   last_milestone_step?: number
 }
@@ -1503,7 +1482,6 @@ export const GET_WEIGHT_GOAL = `
       user_id
       target_weight_kg
       start_weight_kg
-      current_weight_kg
       goal_type
       last_milestone_step
       created_at
@@ -1521,7 +1499,6 @@ export const UPSERT_WEIGHT_GOAL = `
         update_columns: [
           target_weight_kg
           start_weight_kg
-          current_weight_kg
           goal_type
           last_milestone_step
           updated_at
@@ -1531,7 +1508,6 @@ export const UPSERT_WEIGHT_GOAL = `
       user_id
       target_weight_kg
       start_weight_kg
-      current_weight_kg
       goal_type
       last_milestone_step
       created_at
@@ -1552,7 +1528,6 @@ export const UPDATE_WEIGHT_GOAL = `
       user_id
       target_weight_kg
       start_weight_kg
-      current_weight_kg
       goal_type
       last_milestone_step
       created_at

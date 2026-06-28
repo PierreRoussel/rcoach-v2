@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
 import { UserMeasurementsSection } from '@/components/profile/UserMeasurementsSection'
 import { FriendsSection } from '@/components/social/FriendsSection'
@@ -46,19 +46,21 @@ function RpePreferenceToggle({
   profile: NonNullable<ReturnType<typeof useMyProfile>['data']>
 }) {
   const updateProfile = useUpdateProfile()
-  const [message, setMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleToggle(checked: boolean) {
-    setMessage(null)
+    setSuccessMessage(null)
+    setError(null)
 
     try {
       await updateProfile.mutateAsync({
         profileId: profile.id,
         changes: { rpe_enabled: checked },
       })
-      setMessage(checked ? 'Suivi RPE active.' : 'Suivi RPE desactive.')
+      setSuccessMessage(checked ? 'Suivi RPE active.' : 'Suivi RPE desactive.')
     } catch (saveError) {
-      setMessage(
+      setError(
         saveError instanceof Error
           ? saveError.message
           : 'Impossible de mettre à jour la préférence.',
@@ -74,7 +76,10 @@ function RpePreferenceToggle({
           Evaluez l&apos;effort percu de 1 a 10 (par pas de 0.5) a chaque set
           pendant vos séances.
         </p>
-        {message ? <FormMessage>{message}</FormMessage> : null}
+        {successMessage ? (
+          <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
+        ) : null}
+        {error ? <FeedbackMessage variant="error">{error}</FeedbackMessage> : null}
       </div>
       <Switch
         id="rpeEnabled"

@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { FoodPortionTypeDialog } from '@/components/nutrition/FoodPortionTypeDialog'
 import { FoodRenameProposalDialog } from '@/components/nutrition/FoodRenameProposalDialog'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -70,7 +71,11 @@ export function FoodItemDrawerMenu({ food }: FoodItemDrawerMenuProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {message ? <p className="max-w-40 text-right text-xs text-secondary-foreground">{message}</p> : null}
+      {message ? (
+        <FeedbackMessage variant="success" className="max-w-40 text-right text-xs">
+          {message}
+        </FeedbackMessage>
+      ) : null}
       {error ? <p className="max-w-40 text-right text-xs text-destructive">{error}</p> : null}
 
       <FoodRenameProposalDialog

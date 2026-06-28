@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { PageHeader, Pill } from '@/design-system'
 import {
   usePendingFoodRenameProposals,
@@ -79,9 +80,12 @@ function ValidateProductRenamesPage() {
       />
 
       {message ? (
-        <p className="rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm text-secondary-foreground">
+        <FeedbackMessage
+          variant="success"
+          className="rounded-xl border border-success/30 bg-success/10 px-4 py-3"
+        >
           {message}
-        </p>
+        </FeedbackMessage>
       ) : null}
       {actionError ? (
         <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">

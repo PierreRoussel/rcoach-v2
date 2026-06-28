@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -8,8 +9,14 @@ import {
   type WeightGoalInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import type { WeightGoal } from '@/lib/goals/weight-goal'
+import type { WeightGoal, WeightGoalRecord } from '@/lib/goals/weight-goal'
+import {
+  getLatestWeightKg,
+  resolveWeightGoal,
+} from '@/lib/measurements/current-weight'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+
+import { useWeightEntries } from './useWeightEntries'
 
 export function useWeightGoal() {
   const { nhost, isAuthenticated, user } = useAuth()
@@ -20,11 +27,36 @@ export function useWeightGoal() {
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{
-        weight_goals_by_pk: WeightGoal | null
+        weight_goals_by_pk: WeightGoalRecord | null
       }>(nhost, GET_WEIGHT_GOAL, { userId: user!.id })
       return data.weight_goals_by_pk
     },
   })
+}
+
+export function useResolvedWeightGoal() {
+  const goalQuery = useWeightGoal()
+  const entriesQuery = useWeightEntries()
+
+  const data = useMemo(
+    () => resolveWeightGoal(goalQuery.data, entriesQuery.data),
+    [goalQuery.data, entriesQuery.data],
+  )
+
+  return {
+    ...goalQuery,
+    data,
+    isLoading: goalQuery.isLoading || entriesQuery.isLoading,
+  }
+}
+
+export function useCurrentWeightKg() {
+  const entriesQuery = useWeightEntries()
+
+  return useMemo(
+    () => getLatestWeightKg(entriesQuery.data),
+    [entriesQuery.data],
+  )
 }
 
 export function useUpsertWeightGoal() {
@@ -38,7 +70,7 @@ export function useUpsertWeightGoal() {
       }
 
       const data = await graphqlRequest<{
-        insert_weight_goals_one: WeightGoal
+        insert_weight_goals_one: WeightGoalRecord
       }>(nhost, UPSERT_WEIGHT_GOAL, {
         object: input,
       })
@@ -67,7 +99,7 @@ export function useUpdateWeightGoal() {
       }
 
       const data = await graphqlRequest<{
-        update_weight_goals_by_pk: WeightGoal
+        update_weight_goals_by_pk: WeightGoalRecord
       }>(nhost, UPDATE_WEIGHT_GOAL, {
         userId: user.id,
         changes: {
@@ -101,3 +133,5 @@ export function useDeleteWeightGoal() {
     },
   })
 }
+
+export type { WeightGoal, WeightGoalRecord }

@@ -23,12 +23,7 @@ export type NutritionSettings = {
   lunch_pct: number
   snack_pct: number
   dinner_pct: number
-  sex: NutritionSex | null
-  age: number | null
-  height_cm: number | null
-  weight_kg: number | null
   activity_level: ActivityLevel | null
-  goal: NutritionGoal | null
   calorie_adjustment: number
   tdee_calculated: number | null
   onboarded_at: string | null

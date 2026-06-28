@@ -1,10 +1,6 @@
 import { useCallback, useState } from 'react'
 
 import { useInsertWeightEntry } from '@/hooks/useWeightEntries'
-import {
-  useNutritionSettings,
-  useUpsertNutritionSettings,
-} from '@/hooks/useNutritionSettings'
 import { useUpdateWeightGoal } from '@/hooks/useWeightGoal'
 import {
   adjustWeightKg,
@@ -20,9 +16,7 @@ type UseAdjustWeightGoalOptions = {
 }
 
 export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
-  const { data: nutritionSettings } = useNutritionSettings()
   const updateGoal = useUpdateWeightGoal()
-  const upsertNutrition = useUpsertNutritionSettings()
   const insertWeightEntry = useInsertWeightEntry()
   const [error, setError] = useState<string | null>(null)
 
@@ -44,13 +38,8 @@ export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
         isWeightGoalReached(previewGoal)
 
       try {
-        await updateGoal.mutateAsync({
-          current_weight_kg: nextWeight,
-          ...(reachedNewMilestone ? { last_milestone_step: nextStep } : {}),
-        })
-
-        if (nutritionSettings) {
-          await upsertNutrition.mutateAsync({ weight_kg: nextWeight })
+        if (reachedNewMilestone) {
+          await updateGoal.mutateAsync({ last_milestone_step: nextStep })
         }
 
         await insertWeightEntry.mutateAsync({
@@ -71,22 +60,12 @@ export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
         )
       }
     },
-    [
-      insertWeightEntry,
-      nutritionSettings,
-      onGoalReached,
-      onMilestone,
-      updateGoal,
-      upsertNutrition,
-    ],
+    [insertWeightEntry, onGoalReached, onMilestone, updateGoal],
   )
 
   return {
     adjustWeight,
-    isPending:
-      updateGoal.isPending ||
-      upsertNutrition.isPending ||
-      insertWeightEntry.isPending,
+    isPending: updateGoal.isPending || insertWeightEntry.isPending,
     error,
     setError,
   }

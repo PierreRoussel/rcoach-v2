@@ -12,7 +12,6 @@ select_permissions:
         - user_id
         - target_weight_kg
         - start_weight_kg
-        - current_weight_kg
         - goal_type
         - last_milestone_step
         - created_at
@@ -31,7 +30,6 @@ insert_permissions:
       columns:
         - target_weight_kg
         - start_weight_kg
-        - current_weight_kg
         - goal_type
         - last_milestone_step
 update_permissions:
@@ -40,7 +38,6 @@ update_permissions:
       columns:
         - target_weight_kg
         - start_weight_kg
-        - current_weight_kg
         - goal_type
         - last_milestone_step
         - updated_at

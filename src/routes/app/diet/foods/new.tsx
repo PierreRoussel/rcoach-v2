@@ -3,6 +3,7 @@ import { ArrowLeft, Barcode } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,7 +51,10 @@ function NewFoodPage() {
   const [servingSizeG, setServingSizeG] = useState('100')
   const [servingLabel, setServingLabel] = useState('100 g')
   const [createdFood, setCreatedFood] = useState<Food | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<{
+    text: string
+    variant: 'success' | 'error'
+  } | null>(null)
 
   const { createFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
@@ -96,7 +100,7 @@ function NewFoodPage() {
   }
 
   async function handleScan() {
-    setMessage(null)
+    setFeedback(null)
 
     try {
       const code = await requestScan()
@@ -112,15 +116,18 @@ function NewFoodPage() {
 
       await prefillFromBarcode(code)
     } catch (scanError) {
-      setMessage(scanError instanceof Error ? scanError.message : 'Scan impossible.')
+      setFeedback({
+        text: scanError instanceof Error ? scanError.message : 'Scan impossible.',
+        variant: 'error',
+      })
     }
   }
 
   async function handleCreateFood() {
-    setMessage(null)
+    setFeedback(null)
 
     if (!name.trim()) {
-      setMessage('Le nom est obligatoire.')
+      setFeedback({ text: 'Le nom est obligatoire.', variant: 'error' })
       return
     }
 
@@ -165,7 +172,10 @@ function NewFoodPage() {
 
       setCreatedFood(food)
     } catch (createError) {
-      setMessage(createError instanceof Error ? createError.message : 'Création impossible.')
+      setFeedback({
+        text: createError instanceof Error ? createError.message : 'Création impossible.',
+        variant: 'error',
+      })
     }
   }
 
@@ -243,7 +253,9 @@ function NewFoodPage() {
         </div>
       )}
 
-      {message ? <p className="text-sm text-destructive">{message}</p> : null}
+      {feedback ? (
+        <FeedbackMessage variant={feedback.variant}>{feedback.text}</FeedbackMessage>
+      ) : null}
 
       <PortionPickerSheet
         open={Boolean(createdFood)}
@@ -268,7 +280,10 @@ function NewFoodPage() {
             })
             .then((result) => {
               if (result.offline) {
-                setMessage('Enregistré localement. Synchronisation à la reconnexion.')
+                setFeedback({
+                  text: 'Enregistré localement. Synchronisation à la reconnexion.',
+                  variant: 'success',
+                })
               }
               void navigate({
                 to: '/app/diet/meals/$mealType',
@@ -277,7 +292,9 @@ function NewFoodPage() {
                 replace: true,
               })
             })
-            .catch((error: Error) => setMessage(error.message))
+            .catch((error: Error) =>
+              setFeedback({ text: error.message, variant: 'error' }),
+            )
         }}
       />
 

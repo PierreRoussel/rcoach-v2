@@ -8,6 +8,7 @@ import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { QuickAddSheet } from '@/components/nutrition/QuickAddSheet'
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
 import { Input } from '@/components/ui/input'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useFrequentFoods, type FrequentFood } from '@/hooks/useFrequentFoods'
@@ -72,7 +73,10 @@ function AddFoodPage() {
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [quickAddState, setQuickAddState] = useState<FoodQuickAddState>(null)
   const [pinnedFrequentFoods, setPinnedFrequentFoods] = useState<FrequentFood[] | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<{
+    text: string
+    variant: 'success' | 'error'
+  } | null>(null)
 
   const trimmedQuery = query.trim()
   const isBrowsingCatalog = trimmedQuery.length < 2
@@ -240,10 +244,10 @@ function AddFoodPage() {
   }
 
   async function handleSelect(result: FoodSearchResult) {
-    setMessage(null)
+    setFeedback(null)
     const food = await resolveFood(result)
     if (!food) {
-      setMessage('Impossible de charger cet aliment.')
+      setFeedback({ text: 'Impossible de charger cet aliment.', variant: 'error' })
       return
     }
 
@@ -252,14 +256,14 @@ function AddFoodPage() {
   }
 
   async function handleQuickAdd(result: FoodSearchResult) {
-    setMessage(null)
+    setFeedback(null)
     clearQuickAddResetTimer()
     setQuickAddState({ foodId: result.id, status: 'adding' })
 
     try {
       const food = await resolveFood(result)
       if (!food) {
-        setMessage('Impossible de charger cet aliment.')
+        setFeedback({ text: 'Impossible de charger cet aliment.', variant: 'error' })
         setQuickAddState(null)
         return
       }
@@ -272,19 +276,25 @@ function AddFoodPage() {
       })
 
       if (addResult.offline) {
-        setMessage('Enregistré localement. Synchronisation à la reconnexion.')
+        setFeedback({
+          text: 'Enregistré localement. Synchronisation à la reconnexion.',
+          variant: 'success',
+        })
       }
 
       setQuickAddState({ foodId: result.id, status: 'success' })
       scheduleQuickAddReset()
     } catch (error) {
       setQuickAddState(null)
-      setMessage(error instanceof Error ? error.message : "Impossible d'ajouter cet aliment.")
+      setFeedback({
+        text: error instanceof Error ? error.message : "Impossible d'ajouter cet aliment.",
+        variant: 'error',
+      })
     }
   }
 
   async function handleScan() {
-    setMessage(null)
+    setFeedback(null)
 
     try {
       const barcode = await requestScan()
@@ -310,9 +320,11 @@ function AddFoodPage() {
         search: { date, mealType, barcode, mode: 'barcode' },
       })
     } catch (scanError) {
-      setMessage(
-        scanError instanceof Error ? scanError.message : 'Scan code-barres impossible.',
-      )
+      setFeedback({
+        text:
+          scanError instanceof Error ? scanError.message : 'Scan code-barres impossible.',
+        variant: 'error',
+      })
     }
   }
 
@@ -372,7 +384,9 @@ function AddFoodPage() {
         </Button>
       ) : null}
 
-      {message ? <p className="text-sm text-destructive">{message}</p> : null}
+      {feedback ? (
+        <FeedbackMessage variant={feedback.variant}>{feedback.text}</FeedbackMessage>
+      ) : null}
 
       {trimmedQuery.length < 2 ? (
         <SwipeableTabPanels
@@ -428,7 +442,10 @@ function AddFoodPage() {
             .then((result) => {
               setSelectedFood(null)
               if (result.offline) {
-                setMessage('Enregistré localement. Synchronisation à la reconnexion.')
+                setFeedback({
+          text: 'Enregistré localement. Synchronisation à la reconnexion.',
+          variant: 'success',
+        })
               }
               void navigate({
                 to: '/app/diet/meals/$mealType',
@@ -437,7 +454,9 @@ function AddFoodPage() {
                 replace: true,
               })
             })
-            .catch((error: Error) => setMessage(error.message))
+            .catch((error: Error) =>
+              setFeedback({ text: error.message, variant: 'error' }),
+            )
         }}
       />
 
@@ -459,7 +478,10 @@ function AddFoodPage() {
             .then((result) => {
               setQuickAddOpen(false)
               if (result.offline) {
-                setMessage('Enregistré localement. Synchronisation à la reconnexion.')
+                setFeedback({
+          text: 'Enregistré localement. Synchronisation à la reconnexion.',
+          variant: 'success',
+        })
               }
               void navigate({
                 to: '/app/diet/meals/$mealType',
@@ -468,7 +490,9 @@ function AddFoodPage() {
                 replace: true,
               })
             })
-            .catch((error: Error) => setMessage(error.message))
+            .catch((error: Error) =>
+              setFeedback({ text: error.message, variant: 'error' }),
+            )
         }}
       />
 

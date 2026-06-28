@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { FormMessage } from '@/components/ui/form'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import {
   addExerciseToSuperset,
@@ -359,7 +359,7 @@ export function TemplateEditorForm({
         exercise={statsExercise}
       />
 
-      {message ? <FormMessage>{message}</FormMessage> : null}
+      {message ? <FeedbackMessage variant="success">{message}</FeedbackMessage> : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
