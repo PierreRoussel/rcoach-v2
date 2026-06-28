@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale'
 
 import { Progress } from '@/components/ui/progress'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import { useWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
@@ -17,10 +18,11 @@ import { cn } from '@/lib/utils'
 export function GoalsHomeSummaryTile() {
   const { data: goal, isLoading: goalLoading } = useWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
+  const { data: userMeasurements } = useUserMeasurements()
 
   const projection =
     goal && nutritionSettings
-      ? projectWeightGoalCompletion(goal, nutritionSettings)
+      ? projectWeightGoalCompletion(goal, nutritionSettings, new Date(), userMeasurements)
       : null
 
   return (

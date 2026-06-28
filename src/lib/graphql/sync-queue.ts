@@ -55,7 +55,7 @@ export async function syncWorkoutDraft(
       }>
     }>
   },
-) {
+): Promise<string> {
   const endedAt = new Date().toISOString()
   const object = {
     title: draft.title,
@@ -81,7 +81,12 @@ export async function syncWorkoutDraft(
   }
 
   try {
-    await graphqlRequest(nhost, INSERT_WORKOUT, { object })
+    const data = await graphqlRequest<{ insert_workouts_one: { id: string } }>(
+      nhost,
+      INSERT_WORKOUT,
+      { object },
+    )
+    return data.insert_workouts_one.id
   } catch {
     await enqueueWorkoutInsert(object)
     throw new Error('Synchronisation reportée — réessayez quand vous serez en ligne.')

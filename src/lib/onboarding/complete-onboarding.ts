@@ -2,17 +2,18 @@ import type { NhostClient } from '@nhost/nhost-js'
 
 import {
   INSERT_WEIGHT_ENTRY,
-  UPSERT_NUTRITION_SETTINGS,
-  type NutritionSettingsInput,
+  UPSERT_USER_MEASUREMENTS,
   type ProfileUpdateInput,
+  type UserMeasurementsInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { updateMyProfile } from '@/lib/graphql/profile-request'
 
 import { ensureUserProfile } from './ensure-user-profile'
 import {
-  buildNutritionUpsertFromOnboarding,
+  buildUserMeasurementsUpsertFromOnboarding,
   hasOnboardingBodyData,
+  parseOnboardingWeightKg,
   type ProfileOnboardingFormData,
 } from './profile-form'
 
@@ -24,16 +25,19 @@ export async function completeAppOnboarding(
   const ensuredProfileId = await ensureUserProfile(nhost, profileId)
 
   if (hasOnboardingBodyData(data)) {
-    const nutritionPatch = buildNutritionUpsertFromOnboarding(data)
+    const measurementsPatch = buildUserMeasurementsUpsertFromOnboarding(data)
 
-    await graphqlRequest(nhost, UPSERT_NUTRITION_SETTINGS, {
-      object: nutritionPatch satisfies NutritionSettingsInput,
-    })
+    if (Object.keys(measurementsPatch).length > 0) {
+      await graphqlRequest(nhost, UPSERT_USER_MEASUREMENTS, {
+        object: measurementsPatch satisfies UserMeasurementsInput,
+      })
+    }
 
-    if (nutritionPatch.weight_kg != null) {
+    const weightKg = parseOnboardingWeightKg(data)
+    if (weightKg != null) {
       await graphqlRequest(nhost, INSERT_WEIGHT_ENTRY, {
         object: {
-          weight_kg: nutritionPatch.weight_kg,
+          weight_kg: weightKg,
           logged_at: new Date().toISOString(),
           source: 'manual',
         },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { WeightGoalCalorieDialog } from '@/components/goals/WeightGoalCalorieDialog'
 import {
@@ -27,18 +27,27 @@ import {
   useUpsertNutritionSettings,
 } from '@/hooks/useNutritionSettings'
 import {
+  useUpsertUserMeasurements,
+  useUserMeasurements,
+} from '@/hooks/useUserMeasurements'
+import {
   useUpdateWeightGoal,
   useUpsertWeightGoal,
   useWeightGoal,
 } from '@/hooks/useWeightGoal'
 import {
+  clampWeightKg,
   formatWeightKg,
   inferWeightGoalType,
+  institutionWeightSnapshot,
+  isWeightGoalReinstitution,
+  shouldSuggestCalorieUpdate,
   suggestCalorieTarget,
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type { NutritionSettings } from '@/lib/nutrition/types'
+import { buildWizardMeasurementsUpsert } from '@/lib/onboarding/profile-form'
 
 type WeightGoalSetupWizardProps = {
   open: boolean
@@ -62,7 +71,9 @@ export function WeightGoalSetupWizard({
 }: WeightGoalSetupWizardProps) {
   const { data: existingGoal } = useWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
+  const { data: userMeasurements } = useUserMeasurements()
   const upsertNutrition = useUpsertNutritionSettings()
+  const upsertUserMeasurements = useUpsertUserMeasurements()
   const upsertGoal = useUpsertWeightGoal()
   const updateGoal = useUpdateWeightGoal()
   const insertWeightEntry = useInsertWeightEntry()
@@ -81,29 +92,59 @@ export function WeightGoalSetupWizard({
     previousCalories: number
   } | null>(null)
 
+  const prevOpenRef = useRef(false)
+  const hydratedForOpenRef = useRef(false)
+  const calorieActionTakenRef = useRef(false)
+
   useEffect(() => {
     if (!open) {
+      prevOpenRef.current = false
+      hydratedForOpenRef.current = false
       return
     }
 
-    setStep(0)
-    setError(null)
-    setCalorieDialogOpen(false)
-    setPendingCalorieSuggestion(null)
+    const justOpened = !prevOpenRef.current
+    prevOpenRef.current = true
 
-    if (nutritionSettings) {
+    if (justOpened) {
+      setStep(0)
+      setError(null)
+      setCalorieDialogOpen(false)
+      setPendingCalorieSuggestion(null)
+      calorieActionTakenRef.current = false
+      hydratedForOpenRef.current = false
+    }
+
+    if (hydratedForOpenRef.current) {
+      return
+    }
+
+    if (mode === 'edit' && (!existingGoal || !nutritionSettings)) {
+      return
+    }
+
+    hydratedForOpenRef.current = true
+
+    if (nutritionSettings || userMeasurements) {
       setFormState({
-        sex: nutritionSettings.sex ?? 'male',
-        age: nutritionSettings.age != null ? String(nutritionSettings.age) : '30',
+        sex: userMeasurements?.sex ?? nutritionSettings?.sex ?? 'male',
+        age:
+          userMeasurements?.age != null
+            ? String(userMeasurements.age)
+            : nutritionSettings?.age != null
+              ? String(nutritionSettings.age)
+              : '30',
         heightCm:
-          nutritionSettings.height_cm != null
-            ? String(nutritionSettings.height_cm)
-            : '175',
+          userMeasurements?.height_cm != null
+            ? String(userMeasurements.height_cm)
+            : nutritionSettings?.height_cm != null
+              ? String(nutritionSettings.height_cm)
+              : '175',
         weightKg:
-          nutritionSettings.weight_kg != null
-            ? String(nutritionSettings.weight_kg)
-            : existingGoal
-              ? String(existingGoal.current_weight_kg)
+          existingGoal != null
+            ? String(existingGoal.current_weight_kg)
+            : nutritionSettings?.weight_kg != null
+              ? String(nutritionSettings.weight_kg)
               : '75',
         activityLevel: nutritionSettings.activity_level ?? 'moderate',
         goal: nutritionSettings.goal ?? 'maintain',
@@ -124,10 +165,8 @@ export function WeightGoalSetupWizard({
       setFormState(createDefaultNutritionWizardState())
     }
 
-    setTargetWeight(
-      existingGoal ? String(existingGoal.target_weight_kg) : '',
-    )
-  }, [open, nutritionSettings, existingGoal])
+    setTargetWeight(existingGoal ? String(existingGoal.target_weight_kg) : '')
+  }, [open, mode, existingGoal, nutritionSettings, userMeasurements])
 
   useEffect(() => {
     if (!open) {
@@ -173,7 +212,15 @@ export function WeightGoalSetupWizard({
     goal: formState.goal,
   })
 
-  async function saveNutritionSettings(): Promise<NutritionSettings> {
+  async function saveWizardData(): Promise<NutritionSettings> {
+    await upsertUserMeasurements.mutateAsync(
+      buildWizardMeasurementsUpsert({
+        sex: formState.sex,
+        age: formState.age,
+        heightCm: formState.heightCm,
+      }),
+    )
+
     const tdee = calculateTdee({
       sex: formState.sex,
       age: Number(formState.age),
@@ -184,9 +231,6 @@ export function WeightGoalSetupWizard({
     })
 
     const payload: Partial<NutritionSettings> = {
-      sex: formState.sex,
-      age: Number(formState.age),
-      height_cm: Number(formState.heightCm),
       weight_kg: Number(formState.weightKg),
       activity_level: formState.activityLevel,
       goal: formState.goal,
@@ -219,43 +263,67 @@ export function WeightGoalSetupWizard({
       return
     }
 
-    const weightGoalType = inferWeightGoalType(currentWeight, parsedTarget)
+    const normalizedCurrent = clampWeightKg(currentWeight)
+    const normalizedTarget = clampWeightKg(parsedTarget)
+    const weightGoalType = inferWeightGoalType(normalizedCurrent, normalizedTarget)
     const previousCalories =
       nutritionSettings?.daily_calorie_target ?? Number(formState.dailyCalories)
 
     try {
-      const savedSettings = await saveNutritionSettings()
+      const savedSettings = await saveWizardData()
 
       if (mode === 'edit' && existingGoal) {
-        const nextGoalType = inferWeightGoalType(
-          existingGoal.start_weight_kg,
-          parsedTarget,
+        const reinstitute = isWeightGoalReinstitution(
+          existingGoal,
+          normalizedTarget,
         )
-        const weightChanged = currentWeight !== existingGoal.current_weight_kg
+        const weightChanged =
+          normalizedCurrent !== clampWeightKg(existingGoal.current_weight_kg)
 
-        await updateGoal.mutateAsync({
-          target_weight_kg: parsedTarget,
-          goal_type: nextGoalType,
-          ...(weightChanged ? { current_weight_kg: currentWeight } : {}),
-        })
+        if (reinstitute) {
+          const institution = institutionWeightSnapshot(
+            normalizedCurrent,
+            normalizedTarget,
+          )
 
-        if (weightChanged) {
-          await insertWeightEntry.mutateAsync({
-            weight_kg: currentWeight,
-            source: 'adjust',
+          await updateGoal.mutateAsync({
+            ...institution,
+            created_at: new Date().toISOString(),
           })
+
+          await insertWeightEntry.mutateAsync({
+            weight_kg: institution.current_weight_kg,
+            source: 'goal_start',
+          })
+        } else {
+          const nextGoalType = inferWeightGoalType(
+            existingGoal.start_weight_kg,
+            normalizedTarget,
+          )
+
+          await updateGoal.mutateAsync({
+            target_weight_kg: normalizedTarget,
+            goal_type: nextGoalType,
+            ...(weightChanged ? { current_weight_kg: normalizedCurrent } : {}),
+          })
+
+          if (weightChanged) {
+            await insertWeightEntry.mutateAsync({
+              weight_kg: normalizedCurrent,
+              source: 'adjust',
+            })
+          }
         }
       } else {
-        await upsertGoal.mutateAsync({
-          target_weight_kg: parsedTarget,
-          start_weight_kg: currentWeight,
-          current_weight_kg: currentWeight,
-          goal_type: weightGoalType,
-          last_milestone_step: 0,
-        })
+        const institution = institutionWeightSnapshot(
+          normalizedCurrent,
+          normalizedTarget,
+        )
+
+        await upsertGoal.mutateAsync(institution)
 
         await insertWeightEntry.mutateAsync({
-          weight_kg: currentWeight,
+          weight_kg: institution.current_weight_kg,
           source: 'goal_start',
         })
       }
@@ -264,6 +332,12 @@ export function WeightGoalSetupWizard({
         savedSettings,
         weightGoalType,
         currentWeight,
+        {
+          sex: formState.sex,
+          age: Number(formState.age),
+          height_cm: Number(formState.heightCm),
+          waist_cm: userMeasurements?.waist_cm ?? null,
+        },
       )
 
       const fallbackTdee = calculateTdee({
@@ -275,13 +349,27 @@ export function WeightGoalSetupWizard({
         goal: weightGoalType,
       })
 
+      const effectiveSuggestion = suggestion ?? {
+        suggestedCalories: fallbackTdee.dailyTarget,
+        tdee: fallbackTdee.tdee,
+        currentCalories: previousCalories,
+        delta: fallbackTdee.dailyTarget - previousCalories,
+      }
+
+      if (!shouldSuggestCalorieUpdate(effectiveSuggestion)) {
+        onOpenChange(false)
+        onCompleted?.()
+        return
+      }
+
       setPendingCalorieSuggestion({
-        suggestedCalories:
-          suggestion?.suggestedCalories ?? fallbackTdee.dailyTarget,
-        tdee: suggestion?.tdee ?? fallbackTdee.tdee,
+        suggestedCalories: effectiveSuggestion.suggestedCalories,
+        tdee: effectiveSuggestion.tdee,
         goalType: weightGoalType,
         previousCalories,
       })
+      calorieActionTakenRef.current = false
+      onOpenChange(false)
       setCalorieDialogOpen(true)
     } catch (finishError) {
       setError(
@@ -293,9 +381,14 @@ export function WeightGoalSetupWizard({
   }
 
   async function applyCalorieSuggestion(accept: boolean) {
+    if (calorieActionTakenRef.current) {
+      return
+    }
+
+    calorieActionTakenRef.current = true
+
     if (!pendingCalorieSuggestion) {
       setCalorieDialogOpen(false)
-      onOpenChange(false)
       onCompleted?.()
       return
     }
@@ -309,6 +402,7 @@ export function WeightGoalSetupWizard({
           onboarded_at: nutritionSettings?.onboarded_at ?? new Date().toISOString(),
         })
       } catch (saveError) {
+        calorieActionTakenRef.current = false
         setError(
           saveError instanceof Error
             ? saveError.message
@@ -320,19 +414,19 @@ export function WeightGoalSetupWizard({
 
     setCalorieDialogOpen(false)
     setPendingCalorieSuggestion(null)
-    onOpenChange(false)
     onCompleted?.()
   }
 
   const isSaving =
     upsertNutrition.isPending ||
+    upsertUserMeasurements.isPending ||
     upsertGoal.isPending ||
     updateGoal.isPending ||
     insertWeightEntry.isPending
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && !calorieDialogOpen} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display font-black">
@@ -482,7 +576,7 @@ export function WeightGoalSetupWizard({
         <WeightGoalCalorieDialog
           open={calorieDialogOpen}
           onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
+            if (!nextOpen && !calorieActionTakenRef.current) {
               void applyCalorieSuggestion(false)
             }
           }}

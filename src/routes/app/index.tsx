@@ -5,6 +5,7 @@ import { GoalsHomeSummaryTile } from '@/components/goals/GoalsHomeSummaryTile'
 import { HomeSessionsSummaryTiles } from '@/components/workout/HomeSessionsSummaryTiles'
 import { MotivationHomeNotificationTile } from '@/components/social/MotivationHomeNotificationTile'
 import { NutritionHomeSummaryTile } from '@/components/nutrition/NutritionHomeSummaryTile'
+import { MissedPlannedSessionHomeTile } from '@/components/workout/MissedPlannedSessionHomeTile'
 import { Button } from '@/components/ui/button'
 import { AnimateIn, PageHeader, StaggerGroup } from '@/design-system'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
@@ -56,11 +57,15 @@ function AppHomePage() {
       <MotivationHomeNotificationTile />
 
       <AnimateIn delay={320}>
-        <NutritionHomeSummaryTile />
+        <GoalsHomeSummaryTile />
       </AnimateIn>
 
       <AnimateIn delay={380}>
-        <GoalsHomeSummaryTile />
+        <NutritionHomeSummaryTile />
+      </AnimateIn>
+
+      <AnimateIn delay={410}>
+        <MissedPlannedSessionHomeTile />
       </AnimateIn>
 
       <AnimateIn delay={440}>

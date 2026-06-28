@@ -56,7 +56,12 @@ export function useUpdateWeightGoal() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (changes: Partial<WeightGoalInput> & { last_milestone_step?: number }) => {
+    mutationFn: async (
+      changes: Partial<WeightGoalInput> & {
+        last_milestone_step?: number
+        created_at?: string
+      },
+    ) => {
       if (!user?.id) {
         throw new Error('Utilisateur non connecté')
       }

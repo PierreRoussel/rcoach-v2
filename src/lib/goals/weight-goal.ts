@@ -1,4 +1,6 @@
-import { addWeeks } from 'date-fns'
+import { addWeeks, format, parseISO, startOfWeek } from 'date-fns'
+
+import type { StoredUserMeasurements } from '@/lib/measurements/types'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type { NutritionGoal, NutritionSettings } from '@/lib/nutrition/types'
 
@@ -35,6 +37,44 @@ export function inferWeightGoalType(startKg: number, targetKg: number): Nutritio
   }
 
   return diff < 0 ? 'lose' : 'gain'
+}
+
+const WEEK_OPTS = { weekStartsOn: 1 as const }
+
+export function isWeightGoalReinstitution(
+  existing: Pick<WeightGoal, 'target_weight_kg'>,
+  nextTargetKg: number,
+) {
+  return clampWeightKg(nextTargetKg) !== clampWeightKg(existing.target_weight_kg)
+}
+
+export function institutionWeightSnapshot(currentKg: number, targetKg: number) {
+  const current = clampWeightKg(currentKg)
+  const target = clampWeightKg(targetKg)
+
+  return {
+    start_weight_kg: current,
+    current_weight_kg: current,
+    target_weight_kg: target,
+    goal_type: inferWeightGoalType(current, target),
+    last_milestone_step: 0,
+  }
+}
+
+export function seedGoalInstitutionWeek(
+  weightByWeek: Map<string, number>,
+  goal: Pick<WeightGoal, 'start_weight_kg' | 'created_at'>,
+) {
+  const startWeekKey = format(
+    startOfWeek(parseISO(goal.created_at), WEEK_OPTS),
+    'yyyy-MM-dd',
+  )
+
+  if (!weightByWeek.has(startWeekKey)) {
+    weightByWeek.set(startWeekKey, clampWeightKg(goal.start_weight_kg))
+  }
+
+  return weightByWeek
 }
 
 export function progressKgSinceStart(goal: Pick<WeightGoal, 'goal_type' | 'start_weight_kg' | 'current_weight_kg'>) {
@@ -108,6 +148,76 @@ export function isProgressOnTrack(
   return progressKgSinceStart(goal) > 0
 }
 
+export type ResolvedTdeeProfile = {
+  sex: NonNullable<NutritionSettings['sex']>
+  age: number
+  heightCm: number
+  weightKg: number
+  activityLevel: NonNullable<NutritionSettings['activity_level']>
+  dailyCalorieTarget: number
+  goal: NutritionSettings['goal']
+  tdeeCalculated: number | null
+}
+
+export function resolveTdeeProfile(
+  measurements: StoredUserMeasurements | null | undefined,
+  settings: NutritionSettings | null | undefined,
+  weightKgOverride?: number | null,
+): ResolvedTdeeProfile | null {
+  if (!settings) {
+    return null
+  }
+
+  const sex = measurements?.sex ?? settings.sex
+  const age = measurements?.age ?? settings.age
+  const heightCm = measurements?.height_cm ?? settings.height_cm
+  const weightKg = weightKgOverride ?? settings.weight_kg
+  const activityLevel = settings.activity_level
+
+  if (
+    sex == null ||
+    age == null ||
+    heightCm == null ||
+    weightKg == null ||
+    activityLevel == null
+  ) {
+    return null
+  }
+
+  return {
+    sex,
+    age,
+    heightCm: Number(heightCm),
+    weightKg,
+    activityLevel,
+    dailyCalorieTarget: settings.daily_calorie_target,
+    goal: settings.goal,
+    tdeeCalculated: settings.tdee_calculated,
+  }
+}
+
+export function hasTdeeProfileData(
+  measurements: StoredUserMeasurements | null | undefined,
+  settings: Pick<
+    NutritionSettings,
+    | 'sex'
+    | 'age'
+    | 'height_cm'
+    | 'weight_kg'
+    | 'activity_level'
+    | 'daily_calorie_target'
+  > | null | undefined,
+  weightKgOverride?: number | null,
+) {
+  return (
+    resolveTdeeProfile(
+      measurements,
+      settings as NutritionSettings | null | undefined,
+      weightKgOverride,
+    ) != null
+  )
+}
+
 export function hasNutritionBodyData(
   settings: Pick<
     NutritionSettings,
@@ -120,34 +230,26 @@ export function hasNutritionBodyData(
   weight_kg: number
   activity_level: NonNullable<NutritionSettings['activity_level']>
 } {
-  if (!settings) {
-    return false
-  }
-
-  return (
-    settings.sex != null &&
-    settings.age != null &&
-    settings.height_cm != null &&
-    settings.weight_kg != null &&
-    settings.activity_level != null
-  )
+  return hasTdeeProfileData(undefined, settings)
 }
 
 export function suggestCalorieTarget(
   settings: NutritionSettings,
   goalType: NutritionGoal,
   weightKg: number,
+  measurements?: StoredUserMeasurements | null,
 ) {
-  if (!hasNutritionBodyData(settings)) {
+  const profile = resolveTdeeProfile(measurements, settings, weightKg)
+  if (!profile) {
     return null
   }
 
   const result = calculateTdee({
-    sex: settings.sex,
-    age: settings.age,
-    heightCm: Number(settings.height_cm),
+    sex: profile.sex,
+    age: profile.age,
+    heightCm: profile.heightCm,
     weightKg,
-    activityLevel: settings.activity_level,
+    activityLevel: profile.activityLevel,
     goal: goalType,
   })
 
@@ -188,19 +290,18 @@ export type WeightGoalProjection = {
 export function isWeightGoalReached(
   goal: Pick<WeightGoal, 'goal_type' | 'current_weight_kg' | 'target_weight_kg'>,
 ) {
-  const threshold = WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG
+  const current = clampWeightKg(goal.current_weight_kg)
+  const target = clampWeightKg(goal.target_weight_kg)
 
   if (goal.goal_type === 'lose') {
-    return goal.current_weight_kg <= goal.target_weight_kg + threshold
+    return current <= target
   }
 
   if (goal.goal_type === 'gain') {
-    return goal.current_weight_kg >= goal.target_weight_kg - threshold
+    return current >= target
   }
 
-  return (
-    Math.abs(goal.current_weight_kg - goal.target_weight_kg) < threshold
-  )
+  return Math.abs(current - target) < WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG
 }
 
 export function remainingKgToTarget(
@@ -230,26 +331,20 @@ export function goalProgressPercent(
 }
 
 export function resolveTdeeForProjection(
-  settings: NutritionSettings & {
-    sex: NonNullable<NutritionSettings['sex']>
-    age: number
-    height_cm: number
-    weight_kg: number
-    activity_level: NonNullable<NutritionSettings['activity_level']>
-  },
+  profile: ResolvedTdeeProfile,
   weightKg: number,
 ) {
-  if (settings.tdee_calculated != null && settings.weight_kg === weightKg) {
-    return settings.tdee_calculated
+  if (profile.tdeeCalculated != null && profile.weightKg === weightKg) {
+    return profile.tdeeCalculated
   }
 
   return calculateTdee({
-    sex: settings.sex,
-    age: settings.age,
-    heightCm: Number(settings.height_cm),
+    sex: profile.sex,
+    age: profile.age,
+    heightCm: profile.heightCm,
     weightKg,
-    activityLevel: settings.activity_level,
-    goal: settings.goal ?? 'maintain',
+    activityLevel: profile.activityLevel,
+    goal: profile.goal ?? 'maintain',
   }).tdee
 }
 
@@ -257,8 +352,11 @@ export function projectWeightGoalCompletion(
   goal: Pick<WeightGoal, 'goal_type' | 'current_weight_kg' | 'target_weight_kg'>,
   settings: NutritionSettings | null | undefined,
   now: Date = new Date(),
+  measurements?: StoredUserMeasurements | null,
 ): WeightGoalProjection | null {
-  if (!hasNutritionBodyData(settings) || goal.goal_type === 'maintain') {
+  const profile = resolveTdeeProfile(measurements, settings, goal.current_weight_kg)
+
+  if (!profile || goal.goal_type === 'maintain') {
     return null
   }
 
@@ -274,8 +372,8 @@ export function projectWeightGoalCompletion(
     }
   }
 
-  const tdee = resolveTdeeForProjection(settings, goal.current_weight_kg)
-  const dailyDeficitKcal = tdee - settings.daily_calorie_target
+  const tdee = resolveTdeeForProjection(profile, goal.current_weight_kg)
+  const dailyDeficitKcal = tdee - profile.dailyCalorieTarget
 
   if (goal.goal_type === 'lose' && dailyDeficitKcal <= 0) {
     return {

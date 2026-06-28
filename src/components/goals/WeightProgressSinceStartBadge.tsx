@@ -23,7 +23,7 @@ export function WeightProgressSinceStartBadge({
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-700 dark:text-orange-300',
+          'inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300',
           className,
         )}
       >

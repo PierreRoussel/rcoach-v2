@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Flame, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Target, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 
 import { CalorieRingGauge } from '@/components/nutrition/CalorieRingGauge'
 import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
@@ -21,6 +22,8 @@ type CalorieSideStatProps = {
   label: string
   className?: string
   iconFilled?: boolean
+  to?: string
+  linkAriaLabel?: string
 }
 
 function CalorieSideStat({
@@ -30,9 +33,11 @@ function CalorieSideStat({
   label,
   className,
   iconFilled = false,
+  to,
+  linkAriaLabel,
 }: CalorieSideStatProps) {
-  return (
-    <div className={cn('flex w-14 flex-col items-center gap-1 text-center', className)}>
+  const content = (
+    <>
       <div
         className={cn(
           'flex size-7 items-center justify-center rounded-full',
@@ -43,6 +48,27 @@ function CalorieSideStat({
       </div>
       <div className="font-display text-lg font-black leading-none tabular-nums">{value}</div>
       <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
+    </>
+  )
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={cn(
+          'flex w-14 flex-col items-center gap-1 text-center transition-opacity hover:opacity-80 active:opacity-70',
+          className,
+        )}
+        aria-label={linkAriaLabel ?? label}
+      >
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <div className={cn('flex w-14 flex-col items-center gap-1 text-center', className)}>
+      {content}
     </div>
   )
 }
@@ -124,11 +150,12 @@ export function DietDayPanel({
           />
           <CalorieSideStat
             className="absolute bottom-0 right-0"
-            icon={Flame}
-            iconClassName="bg-soft-accent text-accent-foreground"
-            iconFilled
-            value={0}
-            label="Brul."
+            icon={Target}
+            iconClassName="bg-soft-secondary text-secondary-foreground"
+            value={Math.round(daySummary.targets.calories)}
+            label="Objectif"
+            to="/app/goals"
+            linkAriaLabel="Voir mon objectif"
           />
         </div>
 

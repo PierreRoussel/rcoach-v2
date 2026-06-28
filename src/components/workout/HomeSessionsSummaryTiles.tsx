@@ -1,7 +1,18 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { CalendarDays, ChevronRight, Clock, Dumbbell, History } from 'lucide-react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useMyLastCompletedWorkout } from '@/hooks/useWorkouts'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
@@ -54,10 +65,11 @@ type SessionSummaryTileProps = {
   tone: 'primary' | 'secondary'
   highlighted?: boolean
   children: ReactNode
-  to: string
+  ariaLabel: string
+  to?: string
   params?: Record<string, string>
   search?: Record<string, string>
-  ariaLabel: string
+  onClick?: () => void
 }
 
 function SessionSummaryTile({
@@ -69,6 +81,7 @@ function SessionSummaryTile({
   to,
   params,
   search,
+  onClick,
   ariaLabel,
 }: SessionSummaryTileProps) {
   const iconClass = highlighted
@@ -77,19 +90,15 @@ function SessionSummaryTile({
       ? 'bg-soft-primary text-primary'
       : 'bg-soft-secondary text-secondary-foreground'
 
-  return (
-    <Link
-      to={to}
-      params={params}
-      search={search}
-      className={cn(
-        'flex min-h-[9.5rem] flex-col rounded-2xl px-3 py-3 shadow-sm transition-colors',
-        highlighted
-          ? 'border border-primary/35 bg-gradient-to-br from-soft-primary via-card to-soft-accent active:opacity-90'
-          : 'border border-border/70 bg-card active:bg-muted/40',
-      )}
-      aria-label={ariaLabel}
-    >
+  const className = cn(
+    'flex min-h-[9.5rem] w-full flex-col rounded-2xl px-3 py-3 text-left shadow-sm transition-colors',
+    highlighted
+      ? 'border border-primary/35 bg-gradient-to-br from-soft-primary via-card to-soft-accent active:opacity-90'
+      : 'border border-border/70 bg-card active:bg-muted/40',
+  )
+
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-1">
         <div className="flex min-w-0 items-center gap-2">
           <div
@@ -106,6 +115,26 @@ function SessionSummaryTile({
       </div>
 
       <div className="mt-2 min-w-0 flex-1">{children}</div>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button type="button" className={className} aria-label={ariaLabel} onClick={onClick}>
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <Link
+      to={to!}
+      params={params}
+      search={search}
+      className={className}
+      aria-label={ariaLabel}
+    >
+      {content}
     </Link>
   )
 }
@@ -206,6 +235,9 @@ function NextSessionTile({
   scheduleAvailable: boolean
   nextOccurrence: ScheduleOccurrence | null
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const { startPlannedSession, isStarting } = useStartPlannedSession()
+
   if (!scheduleAvailable) {
     return (
       <SessionSummaryTile
@@ -244,31 +276,68 @@ function NextSessionTile({
     nextOccurrence.timeLocal,
   )
   const isToday = isScheduleDateToday(nextOccurrence.date)
+  const sessionLabel =
+    nextOccurrence.workoutTemplateName ?? nextOccurrence.title ?? 'Séance planifiée'
+
+  async function handleConfirmStart() {
+    await startPlannedSession(nextOccurrence!)
+    setConfirmOpen(false)
+  }
 
   return (
-    <SessionSummaryTile
-      title="Prochaine séance"
-      icon={CalendarDays}
-      tone="secondary"
-      highlighted={isToday}
-      to="/app/planning"
-      ariaLabel={`Voir la prochaine séance ${nextOccurrence.title}`}
-    >
-      <p className="truncate font-display text-sm font-black text-foreground">
-        {nextOccurrence.title}
-      </p>
-      <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] text-muted-foreground">
-        <Clock className="size-3 shrink-0" />
-        {scheduleLabel}
-      </p>
-      {nextOccurrence.workoutTemplateName ? (
-        <p className="mt-2 truncate text-xs text-muted-foreground">
-          {nextOccurrence.workoutTemplateName}
+    <>
+      <SessionSummaryTile
+        title="Prochaine séance"
+        icon={CalendarDays}
+        tone="secondary"
+        highlighted={isToday}
+        to={isToday ? undefined : '/app/planning'}
+        onClick={isToday ? () => setConfirmOpen(true) : undefined}
+        ariaLabel={
+          isToday
+            ? `Commencer la séance ${nextOccurrence.title}`
+            : `Voir la prochaine séance ${nextOccurrence.title}`
+        }
+      >
+        <p className="truncate font-display text-sm font-black text-foreground">
+          {nextOccurrence.title}
         </p>
-      ) : (
-        <p className="mt-2 text-xs text-muted-foreground">Séance libre</p>
-      )}
-    </SessionSummaryTile>
+        <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+          <Clock className="size-3 shrink-0" />
+          {scheduleLabel}
+        </p>
+        {nextOccurrence.workoutTemplateName ? (
+          <p className="mt-2 truncate text-xs text-muted-foreground">
+            {nextOccurrence.workoutTemplateName}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-muted-foreground">Séance libre</p>
+        )}
+        {isToday ? (
+          <p className="mt-2 text-xs font-medium text-primary">Commencer la séance</p>
+        ) : null}
+      </SessionSummaryTile>
+
+      {isToday ? (
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Commencer la séance ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Voulez-vous commencer la séance{' '}
+                <span className="font-semibold text-foreground">{sessionLabel}</span> ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isStarting}>Annuler</AlertDialogCancel>
+              <AlertDialogAction disabled={isStarting} onClick={() => void handleConfirmStart()}>
+                {isStarting ? 'Démarrage…' : 'Commencer'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
+    </>
   )
 }
 

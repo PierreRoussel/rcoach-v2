@@ -1448,6 +1448,47 @@ export const UPSERT_NUTRITION_SETTINGS = `
   }
 `
 
+export type UserMeasurementsInput = {
+  sex?: 'male' | 'female' | null
+  age?: number | null
+  height_cm?: number | null
+  waist_cm?: number | null
+}
+
+export const GET_USER_MEASUREMENTS = `
+  query GetUserMeasurements($userId: uuid!) {
+    user_measurements_by_pk(user_id: $userId) {
+      user_id
+      sex
+      age
+      height_cm
+      waist_cm
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const UPSERT_USER_MEASUREMENTS = `
+  mutation UpsertUserMeasurements($object: user_measurements_insert_input!) {
+    insert_user_measurements_one(
+      object: $object
+      on_conflict: {
+        constraint: user_measurements_pkey
+        update_columns: [sex, age, height_cm, waist_cm, updated_at]
+      }
+    ) {
+      user_id
+      sex
+      age
+      height_cm
+      waist_cm
+      created_at
+      updated_at
+    }
+  }
+`
+
 export type WeightGoalInput = {
   target_weight_kg: number
   start_weight_kg: number

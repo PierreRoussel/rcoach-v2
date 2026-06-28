@@ -32,5 +32,6 @@
 - "!include public_friend_motivations.yaml"
 - "!include public_weight_goals.yaml"
 - "!include public_weight_entries.yaml"
+- "!include public_user_measurements.yaml"
 - "!include storage_buckets.yaml"
 - "!include storage_files.yaml"

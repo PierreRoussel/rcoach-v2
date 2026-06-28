@@ -22,6 +22,10 @@ import {
   type MacroDistributionKey,
 } from '@/components/nutrition/MacroDistributionSliders'
 import { useNutritionSettings, useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
+import {
+  useUpsertUserMeasurements,
+  useUserMeasurements,
+} from '@/hooks/useUserMeasurements'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type { ActivityLevel, NutritionGoal, NutritionSex } from '@/lib/nutrition/types'
@@ -42,7 +46,9 @@ const GOAL_LABELS: Record<NutritionGoal, string> = {
 
 export function NutritionSettingsForm() {
   const { data: settings, isLoading } = useNutritionSettings()
+  const { data: measurements, isLoading: measurementsLoading } = useUserMeasurements()
   const upsert = useUpsertNutritionSettings()
+  const upsertMeasurements = useUpsertUserMeasurements()
   const [message, setMessage] = useState<string | null>(null)
 
   const [sex, setSex] = useState<NutritionSex>('male')
@@ -60,9 +66,6 @@ export function NutritionSettingsForm() {
       return
     }
 
-    setSex(settings.sex ?? 'male')
-    setAge(String(settings.age ?? 30))
-    setHeightCm(String(settings.height_cm ?? 175))
     setWeightKg(String(settings.weight_kg ?? 75))
     setActivityLevel(settings.activity_level ?? 'moderate')
     setGoal(settings.goal ?? 'maintain')
@@ -79,6 +82,16 @@ export function NutritionSettingsForm() {
       dinner: Number(settings.dinner_pct),
     })
   }, [settings])
+
+  useEffect(() => {
+    if (!measurements) {
+      return
+    }
+
+    setSex(measurements.sex ?? 'male')
+    setAge(String(measurements.age ?? 30))
+    setHeightCm(String(measurements.height_cm ?? 175))
+  }, [measurements])
 
   useEffect(() => {
     const tdee = calculateTdee({
@@ -108,10 +121,13 @@ export function NutritionSettingsForm() {
     })
 
     try {
-      await upsert.mutateAsync({
+      await upsertMeasurements.mutateAsync({
         sex,
         age: Number(age),
         height_cm: Number(heightCm),
+      })
+
+      await upsert.mutateAsync({
         weight_kg: Number(weightKg),
         activity_level: activityLevel,
         goal,
@@ -133,7 +149,7 @@ export function NutritionSettingsForm() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || measurementsLoading) {
     return <p className="text-sm text-muted-foreground">Chargement des réglages...</p>
   }
 
@@ -234,7 +250,7 @@ export function NutritionSettingsForm() {
 
       {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
 
-      <Button type="button" className="w-full" onClick={() => void handleSave()} disabled={upsert.isPending}>
+      <Button type="button" className="w-full" onClick={() => void handleSave()} disabled={upsert.isPending || upsertMeasurements.isPending}>
         Enregistrer
       </Button>
     </div>

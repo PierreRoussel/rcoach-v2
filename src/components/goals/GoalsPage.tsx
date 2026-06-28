@@ -1,9 +1,10 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Target } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
+import { WeightGoalReachedCelebrationOverlay } from '@/components/goals/WeightGoalReachedCelebrationOverlay'
 import { WeightGoalSetupWizard } from '@/components/goals/WeightGoalSetupWizard'
 import { WeightMilestoneOverlay } from '@/components/goals/WeightMilestoneOverlay'
 import { WeightProgressChart } from '@/components/goals/WeightProgressChart'
@@ -19,16 +20,24 @@ import { FormMessage } from '@/components/ui/form'
 import { Progress } from '@/components/ui/progress'
 import { PageHeader } from '@/design-system'
 import { useAdjustWeightGoal } from '@/hooks/useAdjustWeightGoal'
-import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import {
+  useNutritionSettings,
+  useUpsertNutritionSettings,
+} from '@/hooks/useNutritionSettings'
 import { useWeightEntries } from '@/hooks/useWeightEntries'
-import { useWeightGoal } from '@/hooks/useWeightGoal'
+import { useUpdateWeightGoal, useWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
   goalProgressPercent,
-  hasNutritionBodyData,
+  hasTdeeProfileData,
+  isWeightGoalReached,
   projectWeightGoalCompletion,
+  type WeightGoal,
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
+import { useUserMeasurements } from '@/hooks/useUserMeasurements'
+import { useAuth } from '@/lib/nhost/AuthProvider'
+import { cn } from '@/lib/utils'
 
 function formatWeeklyRate(weeklyRateKg: number) {
   if (weeklyRateKg < 0.1) {
@@ -37,16 +46,31 @@ function formatWeeklyRate(weeklyRateKg: number) {
   return `${weeklyRateKg.toFixed(1).replace('.', ',')} kg/semaine`
 }
 
-export function GoalsPage() {
+type GoalsPageProps = {
+  previewWeightGoalReached?: boolean
+}
+
+export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) {
+  const { user } = useAuth()
   const { data: goal, isLoading: goalLoading } = useWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
+  const { data: userMeasurements } = useUserMeasurements()
   const { data: weightEntries = [], isLoading: entriesLoading } =
     useWeightEntries()
+  const updateGoal = useUpdateWeightGoal()
+  const upsertNutrition = useUpsertNutritionSettings()
 
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardMode, setWizardMode] = useState<'create' | 'edit'>('create')
   const [milestoneOpen, setMilestoneOpen] = useState(false)
   const [milestoneCount, setMilestoneCount] = useState<number | null>(null)
+  const [celebrationOpen, setCelebrationOpen] = useState(false)
+  const [celebrationGoal, setCelebrationGoal] = useState<WeightGoal | null>(null)
+
+  const openCelebration = useCallback((nextGoal: WeightGoal) => {
+    setCelebrationGoal(nextGoal)
+    setCelebrationOpen(true)
+  }, [])
 
   const { adjustWeight, isPending: adjustPending, error: adjustError } =
     useAdjustWeightGoal({
@@ -54,11 +78,55 @@ export function GoalsPage() {
         setMilestoneCount(count)
         setMilestoneOpen(true)
       },
+      onGoalReached: openCelebration,
     })
+
+  const goalReached = goal != null && isWeightGoalReached(goal)
+
+  useEffect(() => {
+    if (!previewWeightGoalReached || !goal) {
+      return
+    }
+
+    openCelebration(goal)
+  }, [previewWeightGoalReached, goal, openCelebration])
+
+  const handleSwitchToMaintain = useCallback(
+    async ({
+      applyCalorieSuggestion,
+      suggestedCalories,
+    }: {
+      applyCalorieSuggestion: boolean
+      suggestedCalories: number | null
+    }) => {
+      if (!celebrationGoal) {
+        return
+      }
+
+      await updateGoal.mutateAsync({
+        goal_type: 'maintain',
+        target_weight_kg: celebrationGoal.current_weight_kg,
+      })
+
+      if (applyCalorieSuggestion && suggestedCalories != null && nutritionSettings) {
+        await upsertNutrition.mutateAsync({
+          goal: 'maintain',
+          daily_calorie_target: suggestedCalories,
+          weight_kg: celebrationGoal.current_weight_kg,
+        })
+      } else if (nutritionSettings) {
+        await upsertNutrition.mutateAsync({
+          goal: 'maintain',
+          weight_kg: celebrationGoal.current_weight_kg,
+        })
+      }
+    },
+    [celebrationGoal, nutritionSettings, updateGoal, upsertNutrition],
+  )
 
   const projection =
     goal && nutritionSettings
-      ? projectWeightGoalCompletion(goal, nutritionSettings)
+      ? projectWeightGoalCompletion(goal, nutritionSettings, new Date(), userMeasurements)
       : null
 
   if (goalLoading) {
@@ -101,18 +169,42 @@ export function GoalsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          <Card className="rounded-2xl border-border">
+          <Card
+            className={cn(
+              'rounded-2xl border-border',
+              goalReached &&
+                'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5 dark:from-emerald-500/15 dark:to-emerald-500/10',
+            )}
+          >
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="font-display font-black">
+                  <CardTitle
+                    className={cn(
+                      'font-display font-black',
+                      goalReached && 'text-emerald-700 dark:text-emerald-300',
+                    )}
+                  >
                     {WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription
+                    className={cn(
+                      goalReached && 'text-emerald-700/80 dark:text-emerald-300/80',
+                    )}
+                  >
                     Cible : {formatWeightKg(goal.target_weight_kg)}
+                    {goalReached ? ' — Objectif atteint !' : ''}
                   </CardDescription>
                 </div>
-                <Target className="size-5 text-primary" aria-hidden />
+                <Target
+                  className={cn(
+                    'size-5',
+                    goalReached
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-primary',
+                  )}
+                  aria-hidden
+                />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -127,7 +219,14 @@ export function GoalsPage() {
                   <span>Progression vers la cible</span>
                   <span>{Math.round(goalProgressPercent(goal))} %</span>
                 </div>
-                <Progress value={goalProgressPercent(goal)} className="h-2" />
+                <Progress
+                  value={goalProgressPercent(goal)}
+                  className={cn(
+                    'h-2',
+                    goalReached &&
+                      'bg-emerald-500/20 [&_[data-slot=progress-indicator]]:bg-emerald-500 dark:[&_[data-slot=progress-indicator]]:bg-emerald-400',
+                  )}
+                />
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -192,11 +291,11 @@ export function GoalsPage() {
                 )}
               </CardContent>
             </Card>
-          ) : !hasNutritionBodyData(nutritionSettings) ? (
+          ) : !hasTdeeProfileData(userMeasurements, nutritionSettings, goal.current_weight_kg) ? (
             <Card className="rounded-2xl border-border">
               <CardContent className="pt-6 text-sm text-muted-foreground">
-                Complétez vos données corporelles via « Modifier l’objectif » pour
-                afficher une projection.
+                Complétez vos mensurations et votre profil nutrition via « Modifier
+                l’objectif » pour afficher une projection.
               </CardContent>
             </Card>
           ) : null}
@@ -245,6 +344,23 @@ export function GoalsPage() {
           setMilestoneCount(null)
         }}
       />
+
+      {celebrationGoal && user?.id ? (
+        <WeightGoalReachedCelebrationOverlay
+          open={celebrationOpen}
+          goal={celebrationGoal}
+          entries={weightEntries}
+          nutritionSettings={nutritionSettings}
+          userMeasurements={userMeasurements}
+          userId={user.id}
+          isPreview={previewWeightGoalReached}
+          onClose={() => {
+            setCelebrationOpen(false)
+            setCelebrationGoal(null)
+          }}
+          onSwitchToMaintain={handleSwitchToMaintain}
+        />
+      ) : null}
     </>
   )
 }

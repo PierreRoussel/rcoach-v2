@@ -1,17 +1,13 @@
 import type { NutritionSex } from '@/lib/nutrition/types'
 
+import type { StoredUserMeasurements } from '@/lib/measurements/types'
+
 export type ProfileOnboardingFormData = {
   sex: NutritionSex | null
   age: string
   heightCm: string
+  waistCm: string
   weightKg: string
-}
-
-export type StoredOnboardingBodyData = {
-  sex?: NutritionSex | null
-  age?: number | null
-  height_cm?: number | null
-  weight_kg?: number | null
 }
 
 export function createEmptyProfileOnboardingForm(): ProfileOnboardingFormData {
@@ -19,6 +15,7 @@ export function createEmptyProfileOnboardingForm(): ProfileOnboardingFormData {
     sex: null,
     age: '',
     heightCm: '',
+    waistCm: '',
     weightKg: '',
   }
 }
@@ -32,13 +29,15 @@ function formatStoredMetric(value: number | null | undefined) {
 }
 
 export function profileOnboardingFormFromStoredBodyData(
-  stored: StoredOnboardingBodyData | null | undefined,
+  measurements: StoredUserMeasurements | null | undefined,
+  weightKg: number | null | undefined,
 ): ProfileOnboardingFormData {
   return {
-    sex: stored?.sex ?? null,
-    age: formatStoredMetric(stored?.age),
-    heightCm: formatStoredMetric(stored?.height_cm),
-    weightKg: formatStoredMetric(stored?.weight_kg),
+    sex: measurements?.sex ?? null,
+    age: formatStoredMetric(measurements?.age),
+    heightCm: formatStoredMetric(measurements?.height_cm),
+    waistCm: formatStoredMetric(measurements?.waist_cm),
+    weightKg: formatStoredMetric(weightKg),
   }
 }
 
@@ -47,22 +46,33 @@ export function hasCompleteOnboardingBodyData(data: ProfileOnboardingFormData) {
     data.sex != null &&
     data.age.trim() !== '' &&
     data.heightCm.trim() !== '' &&
-    data.weightKg.trim() !== ''
+    data.waistCm.trim() !== ''
   )
 }
 
 export function hasStoredOnboardingBodyData(
-  stored: StoredOnboardingBodyData | null | undefined,
+  measurements: StoredUserMeasurements | null | undefined,
 ) {
-  return hasCompleteOnboardingBodyData(profileOnboardingFormFromStoredBodyData(stored))
+  if (!measurements) {
+    return false
+  }
+
+  return (
+    measurements.sex != null &&
+    measurements.age != null &&
+    measurements.height_cm != null &&
+    measurements.waist_cm != null
+  )
 }
 
-export function buildNutritionUpsertFromOnboarding(data: ProfileOnboardingFormData) {
+export function buildUserMeasurementsUpsertFromOnboarding(
+  data: ProfileOnboardingFormData,
+) {
   const payload: {
     sex?: NutritionSex
     age?: number
     height_cm?: number
-    weight_kg?: number
+    waist_cm?: number
   } = {}
 
   if (data.sex) {
@@ -79,14 +89,52 @@ export function buildNutritionUpsertFromOnboarding(data: ProfileOnboardingFormDa
     payload.height_cm = heightCm
   }
 
-  const weightKg = Number.parseFloat(data.weightKg.replace(',', '.'))
-  if (Number.isFinite(weightKg) && weightKg > 0) {
-    payload.weight_kg = weightKg
+  const waistCm = Number.parseFloat(data.waistCm.replace(',', '.'))
+  if (Number.isFinite(waistCm) && waistCm > 0) {
+    payload.waist_cm = waistCm
   }
 
   return payload
 }
 
+export function parseOnboardingWeightKg(data: ProfileOnboardingFormData) {
+  const weightKg = Number.parseFloat(data.weightKg.replace(',', '.'))
+  if (!Number.isFinite(weightKg) || weightKg <= 0) {
+    return null
+  }
+
+  return weightKg
+}
+
 export function hasOnboardingBodyData(data: ProfileOnboardingFormData) {
-  return Object.keys(buildNutritionUpsertFromOnboarding(data)).length > 0
+  return (
+    Object.keys(buildUserMeasurementsUpsertFromOnboarding(data)).length > 0 ||
+    parseOnboardingWeightKg(data) != null
+  )
+}
+
+export function buildWizardMeasurementsUpsert(input: {
+  sex: NutritionSex
+  age: string
+  heightCm: string
+}) {
+  const payload: {
+    sex?: NutritionSex
+    age?: number
+    height_cm?: number
+  } = {
+    sex: input.sex,
+  }
+
+  const age = Number.parseInt(input.age, 10)
+  if (Number.isFinite(age) && age > 0) {
+    payload.age = age
+  }
+
+  const heightCm = Number.parseFloat(input.heightCm.replace(',', '.'))
+  if (Number.isFinite(heightCm) && heightCm > 0) {
+    payload.height_cm = heightCm
+  }
+
+  return payload
 }

@@ -29,6 +29,7 @@ import {
   type MacroDistributionKey,
 } from '@/components/nutrition/MacroDistributionSliders'
 import { useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useUpsertUserMeasurements } from '@/hooks/useUserMeasurements'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type {
@@ -64,6 +65,7 @@ export function NutritionOnboardingWizard({
   onCompleted,
 }: NutritionOnboardingWizardProps) {
   const upsert = useUpsertNutritionSettings()
+  const upsertMeasurements = useUpsertUserMeasurements()
   const [step, setStep] = useState(0)
   const [sex, setSex] = useState<NutritionSex>('male')
   const [age, setAge] = useState('30')
@@ -113,9 +115,6 @@ export function NutritionOnboardingWizard({
     })
 
     const payload: Partial<NutritionSettings> = {
-      sex,
-      age: Number(age),
-      height_cm: Number(heightCm),
       weight_kg: Number(weightKg),
       activity_level: activityLevel,
       goal,
@@ -133,6 +132,11 @@ export function NutritionOnboardingWizard({
     }
 
     try {
+      await upsertMeasurements.mutateAsync({
+        sex,
+        age: Number(age),
+        height_cm: Number(heightCm),
+      })
       await upsert.mutateAsync(payload)
       onCompleted()
     } catch (finishError) {
@@ -267,7 +271,7 @@ export function NutritionOnboardingWizard({
               Continuer
             </Button>
           ) : (
-            <Button type="button" onClick={() => void handleFinish()} disabled={upsert.isPending}>
+            <Button type="button" onClick={() => void handleFinish()} disabled={upsert.isPending || upsertMeasurements.isPending}>
               Terminer
             </Button>
           )}

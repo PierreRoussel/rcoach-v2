@@ -6,6 +6,7 @@ import { FeatureSlidesCarousel } from '@/components/onboarding/FeatureSlidesCaro
 import { OnboardingSetupScreen } from '@/components/onboarding/OnboardingSetupScreen'
 import { ProfileOnboardingSteps } from '@/components/onboarding/ProfileOnboardingSteps'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import {
   redirectIfAppOnboardingComplete,
   requireAuth,
@@ -36,6 +37,7 @@ function OnboardingPage() {
   const { nhost, user, isLoading: authLoading } = useAuth()
   const { data: profile } = useMyProfile()
   const { data: nutritionSettings, isLoading: nutritionSettingsLoading } = useNutritionSettings()
+  const { data: userMeasurements, isLoading: userMeasurementsLoading } = useUserMeasurements()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [phase, setPhase] = useState<OnboardingPhase>('slides')
@@ -49,30 +51,35 @@ function OnboardingPage() {
   }, [])
 
   const continueAfterSlides = useCallback(() => {
-    if (hasStoredOnboardingBodyData(nutritionSettings)) {
+    if (hasStoredOnboardingBodyData(userMeasurements)) {
       beginSetup(createEmptyProfileOnboardingForm())
       return
     }
 
     setPhase('profile')
-  }, [beginSetup, nutritionSettings])
+  }, [beginSetup, userMeasurements])
 
   const advanceFromSlides = useCallback(() => {
-    if (nutritionSettingsLoading) {
+    if (nutritionSettingsLoading || userMeasurementsLoading) {
       setPhase('profile-check')
       return
     }
 
     continueAfterSlides()
-  }, [continueAfterSlides, nutritionSettingsLoading])
+  }, [continueAfterSlides, nutritionSettingsLoading, userMeasurementsLoading])
 
   useEffect(() => {
-    if (phase !== 'profile-check' || nutritionSettingsLoading) {
+    if (phase !== 'profile-check' || nutritionSettingsLoading || userMeasurementsLoading) {
       return
     }
 
     continueAfterSlides()
-  }, [continueAfterSlides, nutritionSettingsLoading, phase])
+  }, [
+    continueAfterSlides,
+    nutritionSettingsLoading,
+    userMeasurementsLoading,
+    phase,
+  ])
 
   const persistPendingForm = useCallback(async () => {
     if (!pendingForm) {
@@ -84,6 +91,7 @@ function OnboardingPage() {
     await completeAppOnboarding(nhost, profileId, pendingForm)
 
     await queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
+    await queryClient.invalidateQueries({ queryKey: ['user-measurements'] })
     await queryClient.invalidateQueries({ queryKey: ['nutrition-settings'] })
   }, [nhost, pendingForm, profile?.id, queryClient, user?.id])
 
@@ -128,7 +136,10 @@ function OnboardingPage() {
 
   return (
     <ProfileOnboardingSteps
-      initialForm={profileOnboardingFormFromStoredBodyData(nutritionSettings)}
+      initialForm={profileOnboardingFormFromStoredBodyData(
+        userMeasurements,
+        nutritionSettings?.weight_kg,
+      )}
       onComplete={beginSetup}
       onSkipAll={() => beginSetup(createEmptyProfileOnboardingForm())}
     />

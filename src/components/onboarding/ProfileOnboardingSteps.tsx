@@ -10,7 +10,7 @@ import {
 import type { NutritionSex } from '@/lib/nutrition/types'
 import { cn } from '@/lib/utils'
 
-const STEPS = ['sex', 'age', 'height', 'weight'] as const
+const STEPS = ['sex', 'age', 'height', 'waist', 'weight'] as const
 
 type ProfileOnboardingStepsProps = {
   initialForm?: ProfileOnboardingFormData
@@ -203,6 +203,30 @@ export function ProfileOnboardingSteps({
                 onChange={(event) => patchForm({ heightCm: event.target.value })}
                 inputMode="decimal"
                 placeholder="175"
+                className="h-14 text-center text-2xl font-semibold"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {step === 'waist' ? (
+          <div className="mx-auto w-full max-w-sm space-y-6">
+            <div className="space-y-2 text-center">
+              <h2 className="font-display text-2xl font-black text-foreground">
+                Tour de taille
+              </h2>
+              <p className="text-sm text-muted-foreground">En centimètres.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="onboarding-waist" className="sr-only">
+                Tour de taille
+              </Label>
+              <Input
+                id="onboarding-waist"
+                value={form.waistCm}
+                onChange={(event) => patchForm({ waistCm: event.target.value })}
+                inputMode="decimal"
+                placeholder="80"
                 className="h-14 text-center text-2xl font-semibold"
               />
             </div>

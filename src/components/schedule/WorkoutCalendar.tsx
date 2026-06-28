@@ -1,7 +1,7 @@
 import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Calendar } from '@/components/ui/calendar'
 import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
@@ -79,21 +79,36 @@ export function WorkoutCalendar({
     () => controlledMonth ?? currentSelected ?? new Date(),
   )
   const displayMonth = controlledMonth ?? internalMonth
+  const previousSelectedRef = useRef<Date | undefined>(currentSelected)
 
-  function setDisplayMonth(month: Date) {
-    if (!controlledMonth) {
-      setInternalMonth(month)
+  function setDisplayMonth(monthOrUpdater: Date | ((month: Date) => Date)) {
+    const nextMonth =
+      typeof monthOrUpdater === 'function'
+        ? monthOrUpdater(displayMonth)
+        : monthOrUpdater
+
+    if (controlledMonth === undefined) {
+      setInternalMonth(nextMonth)
     }
-    onMonthChange?.(month)
+    onMonthChange?.(nextMonth)
   }
 
   useEffect(() => {
     if (!currentSelected) {
+      previousSelectedRef.current = currentSelected
+      return
+    }
+
+    const selectedChanged =
+      previousSelectedRef.current?.getTime() !== currentSelected.getTime()
+    previousSelectedRef.current = currentSelected
+
+    if (!selectedChanged) {
       return
     }
 
     const selectedMonth = startOfMonth(currentSelected)
-    const activeMonth = startOfMonth(controlledMonth ?? internalMonth)
+    const activeMonth = startOfMonth(displayMonth)
 
     if (selectedMonth.getTime() === activeMonth.getTime()) {
       return
@@ -105,7 +120,7 @@ export function WorkoutCalendar({
     }
 
     setInternalMonth(selectedMonth)
-  }, [controlledMonth, currentSelected, internalMonth, onMonthChange])
+  }, [controlledMonth, currentSelected, displayMonth, onMonthChange])
 
   const modifiers = useMemo(
     () => ({

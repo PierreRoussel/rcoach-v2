@@ -26,6 +26,7 @@ import type { WeightEntry } from '@/lib/graphql/operations'
 import {
   formatWeightKg,
   resolveGoalChartProjection,
+  seedGoalInstitutionWeek,
   type GoalChartProjection,
   type WeightGoal,
   type WeightGoalProjection,
@@ -285,7 +286,10 @@ export function WeightProgressChart({
     () => resolveGoalChartProjection(goal, projection),
     [goal, projection],
   )
-  const weightByWeek = useMemo(() => buildWeightByWeek(entries), [entries])
+  const weightByWeek = useMemo(
+    () => seedGoalInstitutionWeek(buildWeightByWeek(entries), goal),
+    [entries, goal],
+  )
   const weeks = useMemo(
     () => buildWeeklyRange(entries, goal, chartProjection),
     [entries, goal, chartProjection],

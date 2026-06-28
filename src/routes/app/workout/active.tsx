@@ -14,6 +14,7 @@ import {
   WorkoutRecapDialog,
   type WorkoutRecapData,
 } from '@/components/workout/WorkoutRecapDialog'
+import { WorkoutCelebrationOverlay } from '@/components/workout/WorkoutCelebrationOverlay'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -40,7 +41,8 @@ import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
-import { useMyWorkouts } from '@/hooks/useWorkouts'
+import { useMyWorkouts, useWorkoutStreakDates } from '@/hooks/useWorkouts'
+import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
 import {
   DEFAULT_GLOBAL_REST_SECONDS,
@@ -74,6 +76,10 @@ import {
   isWorkingSet,
 } from '@/lib/workout/progressive-overload'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import {
+  buildWorkoutCelebrations,
+  type WorkoutCelebrationItem,
+} from '@/lib/workout/workout-celebration'
 import { activeExercisesToTemplateDrafts } from '@/lib/workout/active-to-template'
 import {
   snapshotExerciseLineup,
@@ -84,17 +90,39 @@ import {
 
 export const Route = createFileRoute('/app/workout/active')({
   validateSearch: (search: Record<string, unknown>) => {
+    const result: {
+      templateId?: string
+      previewWorkoutCelebration?: 'planned' | 'weekly_streak'
+      previewWeeklyStreak?: number
+    } = {}
+
     if (typeof search.templateId === 'string' && search.templateId.trim()) {
-      return { templateId: search.templateId.trim() }
+      result.templateId = search.templateId.trim()
     }
 
-    return {}
+    if (search.previewWorkoutCelebration === 'planned') {
+      result.previewWorkoutCelebration = 'planned'
+    } else if (search.previewWorkoutCelebration === 'weekly_streak') {
+      result.previewWorkoutCelebration = 'weekly_streak'
+    }
+
+    if (typeof search.previewWeeklyStreak === 'string') {
+      const streak = Number.parseInt(search.previewWeeklyStreak, 10)
+      if (Number.isFinite(streak) && streak >= 1) {
+        result.previewWeeklyStreak = streak
+      }
+    } else if (typeof search.previewWeeklyStreak === 'number' && search.previewWeeklyStreak >= 1) {
+      result.previewWeeklyStreak = search.previewWeeklyStreak
+    }
+
+    return result
   },
   component: ActiveWorkoutPage,
 })
 
 function ActiveWorkoutPage() {
-  const { templateId: initialTemplateId } = Route.useSearch()
+  const { templateId: initialTemplateId, previewWorkoutCelebration, previewWeeklyStreak } =
+    Route.useSearch()
   const { nhost } = useAuth()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -102,6 +130,9 @@ function ActiveWorkoutPage() {
   const { data: profile } = useMyProfile()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: allWorkouts } = useMyWorkouts()
+  const { data: streakWorkouts = [] } = useWorkoutStreakDates()
+  const { data: scheduledResult } = useScheduledSessions()
+  const scheduledSessions = scheduledResult?.sessions ?? []
   const rpeEnabled = profile?.rpe_enabled ?? false
   const {
     title,
@@ -164,6 +195,8 @@ function ActiveWorkoutPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [recapOpen, setRecapOpen] = useState(false)
   const [recapData, setRecapData] = useState<WorkoutRecapData | null>(null)
+  const [celebrationQueue, setCelebrationQueue] = useState<WorkoutCelebrationItem[]>([])
+  const [finishedWorkoutId, setFinishedWorkoutId] = useState<string | null>(null)
   const [isRecapFlow, setIsRecapFlow] = useState(false)
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
@@ -203,6 +236,41 @@ function ActiveWorkoutPage() {
 
   const steps = buildCircuitSteps(activeExercises)
   const completedCount = countCompletedSets(activeExercises)
+  const currentCelebration = celebrationQueue[0] ?? null
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || !previewWorkoutCelebration) {
+      return
+    }
+
+    setIsRecapFlow(true)
+    setCelebrationQueue([
+      previewWorkoutCelebration === 'planned'
+        ? { kind: 'planned' }
+        : { kind: 'weekly_streak', streak: previewWeeklyStreak ?? 3 },
+    ])
+  }, [previewWeeklyStreak, previewWorkoutCelebration])
+
+  function dismissCelebration() {
+    const nextQueue = celebrationQueue.slice(1)
+    setCelebrationQueue(nextQueue)
+
+    if (nextQueue.length > 0) {
+      return
+    }
+
+    if (finishedWorkoutId) {
+      setIsRecapFlow(false)
+      setCelebrationQueue([])
+      void navigate({
+        to: '/app/workouts/$workoutId',
+        params: { workoutId: finishedWorkoutId },
+      })
+      return
+    }
+
+    setRecapOpen(true)
+  }
   const allSetsComplete = isWorkoutComplete(
     steps,
     activeExercises,
@@ -270,7 +338,7 @@ function ActiveWorkoutPage() {
       const heartRatePromise = readHeartRateSummary(draft.startedAt, endedAt)
 
       try {
-        await syncWorkoutDraft(nhost, {
+        const workoutId = await syncWorkoutDraft(nhost, {
           title: draft.title,
           startedAt: draft.startedAt,
           workoutTemplateId: draft.sourceTemplateId,
@@ -286,6 +354,7 @@ function ActiveWorkoutPage() {
             })),
           })),
         })
+        setFinishedWorkoutId(workoutId)
       } catch (syncError) {
         void pushWorkoutSession(draft, endedAt).catch(() => undefined)
         throw syncError
@@ -342,7 +411,19 @@ function ActiveWorkoutPage() {
         heartRate,
         bodyIntensities: computeWorkoutBodyIntensities(validatedExercises),
       })
-      setRecapOpen(true)
+
+      const celebrations = buildWorkoutCelebrations({
+        sessions: scheduledSessions,
+        existingWorkouts: streakWorkouts,
+        workoutTemplateId: draft.sourceTemplateId,
+        startedAt: draft.startedAt,
+      })
+
+      if (celebrations.length > 0) {
+        setCelebrationQueue(celebrations)
+      } else {
+        setRecapOpen(true)
+      }
     } catch (finishError) {
       setIsRecapFlow(false)
       setError(
@@ -440,13 +521,30 @@ function ActiveWorkoutPage() {
             setRecapOpen(open)
             if (!open) {
               setIsRecapFlow(false)
+              setCelebrationQueue([])
             }
           }}
           recap={recapData}
           onContinue={() => {
             setIsRecapFlow(false)
+            setCelebrationQueue([])
+            if (finishedWorkoutId) {
+              void navigate({
+                to: '/app/workouts/$workoutId',
+                params: { workoutId: finishedWorkoutId },
+              })
+              return
+            }
             void navigate({ to: '/app/sessions', search: { tab: 'history' } })
           }}
+        />
+        <WorkoutCelebrationOverlay
+          open={currentCelebration !== null}
+          variant={currentCelebration?.kind ?? 'planned'}
+          weeklyStreak={
+            currentCelebration?.kind === 'weekly_streak' ? currentCelebration.streak : undefined
+          }
+          onClose={dismissCelebration}
         />
       </>
     )

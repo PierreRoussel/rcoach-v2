@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest'
 import {
   adjustWeightKg,
   inferWeightGoalType,
+  institutionWeightSnapshot,
   isProgressOnTrack,
+  isWeightGoalReached,
+  isWeightGoalReinstitution,
   milestoneStepFromProgress,
   progressKgSinceStart,
   projectWeightGoalCompletion,
@@ -36,6 +39,71 @@ const baseSettings: NutritionSettings = {
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',
 }
+
+describe('isWeightGoalReached', () => {
+  it('does not treat lose goal as reached when still above target', () => {
+    expect(
+      isWeightGoalReached({
+        goal_type: 'lose',
+        current_weight_kg: 74.2,
+        target_weight_kg: 74,
+      }),
+    ).toBe(false)
+  })
+
+  it('treats lose goal as reached at or below target', () => {
+    expect(
+      isWeightGoalReached({
+        goal_type: 'lose',
+        current_weight_kg: 74,
+        target_weight_kg: 74,
+      }),
+    ).toBe(true)
+  })
+
+  it('does not treat gain goal as reached when still below target', () => {
+    expect(
+      isWeightGoalReached({
+        goal_type: 'gain',
+        current_weight_kg: 79.8,
+        target_weight_kg: 80,
+      }),
+    ).toBe(false)
+  })
+
+  it('treats gain goal as reached at or above target', () => {
+    expect(
+      isWeightGoalReached({
+        goal_type: 'gain',
+        current_weight_kg: 80,
+        target_weight_kg: 80,
+      }),
+    ).toBe(true)
+  })
+})
+
+describe('institutionWeightSnapshot', () => {
+  it('uses current weight as start when a goal is set up', () => {
+    const snapshot = institutionWeightSnapshot(74.2, 70)
+
+    expect(snapshot.start_weight_kg).toBe(74.2)
+    expect(snapshot.current_weight_kg).toBe(74.2)
+    expect(snapshot.target_weight_kg).toBe(70)
+    expect(snapshot.goal_type).toBe('lose')
+    expect(snapshot.last_milestone_step).toBe(0)
+  })
+})
+
+describe('isWeightGoalReinstitution', () => {
+  it('detects when the target weight changes', () => {
+    expect(
+      isWeightGoalReinstitution({ target_weight_kg: 74 }, 73),
+    ).toBe(true)
+    expect(
+      isWeightGoalReinstitution({ target_weight_kg: 74 }, 74),
+    ).toBe(false)
+  })
+})
 
 describe('inferWeightGoalType', () => {
   it('detects weight loss', () => {
@@ -129,6 +197,21 @@ describe('calorie suggestion', () => {
     expect(suggestion).not.toBeNull()
     expect(suggestion!.suggestedCalories).toBeLessThan(baseSettings.daily_calorie_target)
     expect(shouldSuggestCalorieUpdate(suggestion)).toBe(true)
+  })
+
+  it('skips prompt when suggested calories match current intake', () => {
+    const baseline = suggestCalorieTarget(baseSettings, 'maintain', 80)!
+    const maintainSettings = {
+      ...baseSettings,
+      goal: 'maintain' as const,
+      daily_calorie_target: baseline.suggestedCalories,
+      tdee_calculated: baseline.tdee,
+    }
+    const suggestion = suggestCalorieTarget(maintainSettings, 'maintain', 80)
+
+    expect(suggestion).not.toBeNull()
+    expect(suggestion!.delta).toBe(0)
+    expect(shouldSuggestCalorieUpdate(suggestion)).toBe(false)
   })
 })
 

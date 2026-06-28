@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { FormMessage } from '@/components/ui/form'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
+import { UserMeasurementsSection } from '@/components/profile/UserMeasurementsSection'
 import { FriendsSection } from '@/components/social/FriendsSection'
 import { GoalsSection } from '@/components/goals/GoalsSection'
 import { ThemePicker, ThemeSetting } from '@/design-system'
@@ -142,6 +143,8 @@ function ProfilePage() {
   return (
     <div className="space-y-4">
       <FriendsSection />
+
+      <UserMeasurementsSection />
 
       <GoalsSection />
 

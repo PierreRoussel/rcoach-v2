@@ -8,6 +8,7 @@ import {
 import { useUpdateWeightGoal } from '@/hooks/useWeightGoal'
 import {
   adjustWeightKg,
+  isWeightGoalReached,
   milestoneStepFromProgress,
   progressKgSinceStart,
   type WeightGoal,
@@ -15,6 +16,7 @@ import {
 
 type UseAdjustWeightGoalOptions = {
   onMilestone?: (milestoneCount: number) => void
+  onGoalReached?: (goal: WeightGoal) => void
 }
 
 export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
@@ -25,6 +27,7 @@ export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
   const [error, setError] = useState<string | null>(null)
 
   const onMilestone = options.onMilestone
+  const onGoalReached = options.onGoalReached
 
   const adjustWeight = useCallback(
     async (goal: WeightGoal, deltaSteps: number) => {
@@ -35,6 +38,10 @@ export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
       const progress = progressKgSinceStart(previewGoal)
       const nextStep = milestoneStepFromProgress(progress, goal.goal_type)
       const reachedNewMilestone = nextStep > goal.last_milestone_step
+      const justReachedGoal =
+        goal.goal_type !== 'maintain' &&
+        !isWeightGoalReached(goal) &&
+        isWeightGoalReached(previewGoal)
 
       try {
         await updateGoal.mutateAsync({
@@ -51,7 +58,9 @@ export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
           source: 'adjust',
         })
 
-        if (reachedNewMilestone && goal.goal_type !== 'maintain') {
+        if (justReachedGoal) {
+          onGoalReached?.({ ...goal, current_weight_kg: nextWeight })
+        } else if (reachedNewMilestone && goal.goal_type !== 'maintain') {
           onMilestone?.(nextStep)
         }
       } catch (saveError) {
@@ -65,6 +74,7 @@ export function useAdjustWeightGoal(options: UseAdjustWeightGoalOptions = {}) {
     [
       insertWeightEntry,
       nutritionSettings,
+      onGoalReached,
       onMilestone,
       updateGoal,
       upsertNutrition,
