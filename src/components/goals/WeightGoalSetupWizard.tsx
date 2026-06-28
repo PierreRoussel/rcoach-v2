@@ -32,6 +32,7 @@ import {
 } from '@/hooks/useUserMeasurements'
 import {
   useCurrentWeightKg,
+  useDeleteWeightGoal,
   useResolvedWeightGoal,
   useUpdateWeightGoal,
   useUpsertWeightGoal,
@@ -85,6 +86,7 @@ export function WeightGoalSetupWizard({
   const upsertUserMeasurements = useUpsertUserMeasurements()
   const upsertGoal = useUpsertWeightGoal()
   const updateGoal = useUpdateWeightGoal()
+  const deleteGoal = useDeleteWeightGoal()
   const insertWeightEntry = useInsertWeightEntry()
 
   const [step, setStep] = useState(0)
@@ -334,10 +336,8 @@ export function WeightGoalSetupWizard({
             normalizedTarget,
           )
 
-          await updateGoal.mutateAsync({
-            ...institution,
-            created_at: new Date().toISOString(),
-          })
+          await deleteGoal.mutateAsync()
+          await upsertGoal.mutateAsync(institution)
 
           await insertWeightEntry.mutateAsync({
             weight_kg: normalizedCurrent,
@@ -465,6 +465,7 @@ export function WeightGoalSetupWizard({
     upsertUserMeasurements.isPending ||
     upsertGoal.isPending ||
     updateGoal.isPending ||
+    deleteGoal.isPending ||
     insertWeightEntry.isPending
 
   return (

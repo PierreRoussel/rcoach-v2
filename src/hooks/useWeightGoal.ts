@@ -91,7 +91,6 @@ export function useUpdateWeightGoal() {
     mutationFn: async (
       changes: Partial<WeightGoalInput> & {
         last_milestone_step?: number
-        created_at?: string
       },
     ) => {
       if (!user?.id) {
