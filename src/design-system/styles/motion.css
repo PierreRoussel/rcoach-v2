@@ -605,6 +605,396 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
   animation: nutrition-flame-fall 3s linear infinite;
 }
 
+@keyframes nutrition-celebration-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nutrition-celebration-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes nutrition-celebration-pop-delay-keyframes {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nutrition-celebration-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(18px, -22px) scale(1.06);
+  }
+  66% {
+    transform: translate(-14px, 16px) scale(0.96);
+  }
+}
+
+@keyframes nutrition-celebration-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+@keyframes nutrition-celebration-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes nutrition-celebration-ring {
+  0% {
+    transform: scale(0.95) rotate(0deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.05) rotate(360deg);
+    opacity: 0.85;
+  }
+}
+
+@keyframes nutrition-celebration-orbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes nutrition-celebration-spark {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85) rotate(-8deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(8deg);
+  }
+}
+
+.animate-nutrition-celebration-enter {
+  animation: nutrition-celebration-enter 320ms ease-out both;
+}
+
+.animate-nutrition-celebration-pop {
+  animation: nutrition-celebration-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-nutrition-celebration-pop-delay {
+  animation: nutrition-celebration-pop-delay-keyframes 520ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+
+.animate-nutrition-celebration-blob {
+  animation: nutrition-celebration-blob ease-in-out infinite;
+}
+
+.animate-nutrition-celebration-float {
+  animation: nutrition-celebration-float 3.6s ease-in-out infinite;
+}
+
+.animate-nutrition-celebration-glow {
+  animation: nutrition-celebration-glow 2.8s ease-in-out infinite;
+}
+
+.animate-nutrition-celebration-ring {
+  animation: nutrition-celebration-ring 3.2s ease-in-out infinite alternate;
+}
+
+.animate-nutrition-celebration-orbit {
+  animation: nutrition-celebration-orbit 18s linear infinite;
+}
+
+.animate-nutrition-celebration-spark {
+  animation: nutrition-celebration-spark 2.2s ease-in-out infinite;
+}
+
+.animate-nutrition-celebration-spark-delay {
+  animation: nutrition-celebration-spark 2.2s ease-in-out 0.8s infinite;
+}
+
+@keyframes nutrition-recovery-bg-melt {
+  0%,
+  32% {
+    background-color: #ebf4ff;
+  }
+  58%,
+  100% {
+    background-color: #fff3ec;
+  }
+}
+
+@keyframes nutrition-recovery-snowflake-out {
+  0%,
+  28% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  48% {
+    opacity: 0;
+    transform: scale(0.55) rotate(-24deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.55) rotate(-24deg);
+  }
+}
+
+@keyframes nutrition-recovery-flame-in {
+  0%,
+  38% {
+    opacity: 0;
+    transform: scale(0.45) translateY(6px);
+  }
+  58%,
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes nutrition-recovery-blob-out {
+  0%,
+  35% {
+    opacity: 0.85;
+    transform: translate(0, 0) scale(1);
+  }
+  55%,
+  100% {
+    opacity: 0;
+    transform: translate(8px, 12px) scale(0.92);
+  }
+}
+
+@keyframes nutrition-recovery-blob-in {
+  0%,
+  40% {
+    opacity: 0;
+    transform: translate(-6px, 10px) scale(0.94);
+  }
+  62%,
+  100% {
+    opacity: 0.75;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes nutrition-recovery-glow {
+  0%,
+  35% {
+    background-color: rgba(91, 164, 217, 0.35);
+    transform: scale(0.92);
+  }
+  60%,
+  100% {
+    background-color: rgba(255, 176, 136, 0.35);
+    transform: scale(1.08);
+  }
+}
+
+@keyframes nutrition-recovery-content-in {
+  0%,
+  42% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  62%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nutrition-recovery-streak-color {
+  0%,
+  40% {
+    color: #2b6cb0;
+  }
+  65%,
+  100% {
+    color: #e85d24;
+  }
+}
+
+@keyframes nutrition-recovery-title-color {
+  0%,
+  40% {
+    color: #1e4d72;
+  }
+  65%,
+  100% {
+    color: #5c4033;
+  }
+}
+
+@keyframes nutrition-recovery-subtitle-color {
+  0%,
+  40% {
+    color: #4a6d8c;
+  }
+  65%,
+  100% {
+    color: #8b6555;
+  }
+}
+
+@keyframes nutrition-recovery-ring-border {
+  0%,
+  35% {
+    border-color: rgba(91, 164, 217, 0.35);
+  }
+  60%,
+  100% {
+    border-color: rgba(255, 159, 106, 0.25);
+  }
+}
+
+@keyframes nutrition-recovery-orbit-border {
+  0%,
+  35% {
+    border-color: rgba(91, 164, 217, 0.35);
+  }
+  60%,
+  100% {
+    border-color: rgba(255, 186, 138, 0.4);
+  }
+}
+
+@keyframes nutrition-recovery-disc-shadow {
+  0%,
+  35% {
+    box-shadow: 0 12px 40px rgba(100, 160, 220, 0.22);
+  }
+  60%,
+  100% {
+    box-shadow: 0 12px 40px rgba(255, 145, 90, 0.18);
+  }
+}
+
+@keyframes nutrition-recovery-spark-keyframes {
+  0%,
+  35% {
+    color: rgba(91, 164, 217, 0.7);
+  }
+  60%,
+  100% {
+    color: rgba(255, 159, 106, 0.8);
+  }
+}
+
+@keyframes nutrition-recovery-button-border {
+  0%,
+  40% {
+    border-color: rgba(91, 164, 217, 0.45);
+    color: #1e4d72;
+  }
+  65%,
+  100% {
+    border-color: rgba(255, 186, 138, 0.6);
+    color: #5c4033;
+  }
+}
+
+.animate-nutrition-recovery-bg-melt {
+  animation: nutrition-recovery-bg-melt 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-snowflake-out {
+  animation: nutrition-recovery-snowflake-out 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-flame-in {
+  animation: nutrition-recovery-flame-in 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-nutrition-recovery-blob-out {
+  animation: nutrition-recovery-blob-out ease-in-out forwards;
+  animation-duration: 2.8s;
+}
+
+.animate-nutrition-recovery-blob-in {
+  animation: nutrition-recovery-blob-in ease-in-out forwards;
+  animation-duration: 2.8s;
+}
+
+.animate-nutrition-recovery-glow {
+  animation: nutrition-recovery-glow 2.8s ease-in-out infinite;
+}
+
+.animate-nutrition-recovery-content-in {
+  animation: nutrition-recovery-content-in 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-nutrition-recovery-streak-color {
+  animation: nutrition-recovery-streak-color 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-title-color {
+  animation: nutrition-recovery-title-color 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-subtitle-color {
+  animation: nutrition-recovery-subtitle-color 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-ring-border {
+  animation: nutrition-recovery-ring-border 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-orbit-border {
+  animation: nutrition-recovery-orbit-border 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-disc-shadow {
+  animation: nutrition-recovery-disc-shadow 2.8s ease-in-out forwards;
+}
+
+.animate-nutrition-recovery-spark {
+  animation:
+    nutrition-recovery-spark-keyframes 2.8s ease-in-out forwards,
+    nutrition-celebration-spark 2.2s ease-in-out 1.2s infinite;
+}
+
+.animate-nutrition-recovery-spark-delay {
+  animation:
+    nutrition-recovery-spark-keyframes 2.8s ease-in-out forwards,
+    nutrition-celebration-spark 2.2s ease-in-out 1.6s infinite;
+}
+
+.animate-nutrition-recovery-button {
+  animation: nutrition-recovery-button-border 2.8s ease-in-out forwards;
+}
+
 @keyframes nutrition-streak-pulse {
   0%,
   100% {

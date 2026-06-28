@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Dumbbell } from 'lucide-react'
+import { ArrowLeft, BarChart2, Dumbbell } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import {
+  ExerciseStatsDrawer,
+  type ExerciseStatsDrawerTarget,
+} from '@/components/stats/ExerciseStatsDrawer'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -34,6 +38,7 @@ function WorkoutDetailPage() {
   const { data: profile } = useMyProfile()
   const { data: allWorkouts } = useMyWorkouts()
   const [recordsDrawerOpen, setRecordsDrawerOpen] = useState(false)
+  const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(null)
 
   const personalRecords = useMemo(
     () => (workout ? detectWorkoutPersonalRecords(workout, allWorkouts ?? []) : []),
@@ -83,6 +88,16 @@ function WorkoutDetailPage() {
         workoutTitle={workout.title}
       />
 
+      <ExerciseStatsDrawer
+        open={statsExercise != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatsExercise(null)
+          }
+        }}
+        exercise={statsExercise}
+      />
+
       {workout.notes ? (
         <Card className="rounded-2xl border-border">
           <CardContent className="pt-6 text-sm text-muted-foreground">
@@ -105,7 +120,7 @@ function WorkoutDetailPage() {
               className="rounded-2xl border border-border bg-card p-4"
             >
               <div className="flex items-start justify-between gap-2">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-display font-black">
                     <DisplayExercise exercise={entry.exercise} className="font-display font-black" />
                   </p>
@@ -113,10 +128,30 @@ function WorkoutDetailPage() {
                     {entry.exercise.muscle_group ?? '—'}
                   </p>
                 </div>
-                <Pill tone="secondary">
-                  <Dumbbell className="size-3" />
-                  {entry.sets.length} sets
-                </Pill>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    aria-label="Statistiques"
+                    onClick={() =>
+                      setStatsExercise({
+                        exerciseId: entry.exercise.id,
+                        exerciseName: entry.exercise.name,
+                        exerciseNameFr: entry.exercise.name_fr,
+                        muscleGroup: entry.exercise.muscle_group,
+                        equipment: entry.exercise.equipment,
+                      })
+                    }
+                  >
+                    <BarChart2 className="size-4" />
+                  </Button>
+                  <Pill tone="secondary">
+                    <Dumbbell className="size-3" />
+                    {entry.sets.length} sets
+                  </Pill>
+                </div>
               </div>
               {entry.sets.length > 0 ? (
                 <ul className="mt-3 space-y-1 text-sm">

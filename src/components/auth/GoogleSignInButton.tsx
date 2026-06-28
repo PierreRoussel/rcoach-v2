@@ -72,12 +72,7 @@ export function GoogleSignInButton({ className, compact = false }: GoogleSignInB
         {isSubmitting ? 'Redirection...' : 'Continuer avec Google'}
       </Button>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      {import.meta.env.DEV ? (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          URL OAuth à autoriser dans Nhost :{' '}
-          <code className="break-all font-mono text-[11px]">{buildOAuthRedirectUrl()}</code>
-        </p>
-      ) : null}
+
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border/80" />
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

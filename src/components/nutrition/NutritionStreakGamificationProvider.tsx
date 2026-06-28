@@ -3,12 +3,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
 
 import { NutritionStreakCelebrationOverlay } from '@/components/nutrition/NutritionStreakCelebrationOverlay'
+import { NutritionStreakRecoveryCelebrationOverlay } from '@/components/nutrition/NutritionStreakRecoveryCelebrationOverlay'
 import { NutritionStreakRecoveryDialog } from '@/components/nutrition/NutritionStreakRecoveryDialog'
 import {
   DELETE_NUTRITION_STREAK_RECOVERY,
@@ -35,6 +37,7 @@ import {
   type StreakEvent,
 } from '@/lib/nutrition/streak-gamification'
 import type { StreakMilestone } from '@/lib/nutrition/streak-milestones'
+import { getMilestoneForStreak } from '@/lib/nutrition/streak-milestones'
 import { NUTRITION_STREAK_LOOKBACK_DAYS } from '@/lib/stats/streak-lookback'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -132,8 +135,53 @@ export function NutritionStreakGamificationProvider({
   const recoveryQuery = useRecoveryQuery(user?.id)
 
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
+  const [recoveryCelebration, setRecoveryCelebration] = useState<number | null>(null)
   const [recoveryDialogOpen, setRecoveryDialogOpen] = useState(false)
   const [recoveryDialogFrozenStreak, setRecoveryDialogFrozenStreak] = useState(0)
+  const [recoveryDialogProgress, setRecoveryDialogProgress] = useState(0)
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const previewStreak = params.get('previewStreakCelebration')
+    const previewRecovery = params.get('previewStreakRecovery')
+    const previewRecoveryProgress = params.get('previewStreakRecoveryProgress')
+    const previewRecoveryCelebration = params.get('previewStreakRecoveryCelebration')
+
+    if (previewRecoveryCelebration) {
+      const streak = Number.parseInt(previewRecoveryCelebration, 10)
+      if (Number.isFinite(streak) && streak >= 1) {
+        setRecoveryCelebration(streak)
+      }
+    }
+
+    if (previewRecovery) {
+      const frozenStreak = Number.parseInt(previewRecovery, 10)
+      if (Number.isFinite(frozenStreak) && frozenStreak >= 1) {
+        const progress = Number.parseInt(previewRecoveryProgress ?? '0', 10)
+        setRecoveryDialogFrozenStreak(frozenStreak)
+        setRecoveryDialogProgress(
+          Number.isFinite(progress) ? Math.min(2, Math.max(0, progress)) : 0,
+        )
+        setRecoveryDialogOpen(true)
+      }
+    }
+
+    if (!previewStreak) {
+      return
+    }
+
+    const streakValue = Number.parseInt(previewStreak, 10)
+    if (!Number.isFinite(streakValue) || streakValue < 1) {
+      return
+    }
+
+    const milestone = getMilestoneForStreak(streakValue)
+    setCelebration({ streak: streakValue, milestone })
+  }, [])
 
   const validatedDates = useMemo(
     () =>
@@ -231,10 +279,7 @@ export function NutritionStreakGamificationProvider({
       }
 
       if (event.kind === 'recovery_complete') {
-        setCelebration({
-          streak: event.streak,
-          milestone: null,
-        })
+        setRecoveryCelebration(event.streak)
       }
     },
     [],
@@ -316,6 +361,7 @@ export function NutritionStreakGamificationProvider({
       const dismissedKey = sessionStorage.getItem(recoveryDismissedStorageKey(today))
       if (dismissedKey !== today) {
         setRecoveryDialogFrozenStreak(activeRecovery.frozenStreak)
+        setRecoveryDialogProgress(activeRecovery.progress)
         setRecoveryDialogOpen(true)
       }
       return
@@ -336,6 +382,7 @@ export function NutritionStreakGamificationProvider({
         shouldShowRecoveryDialog(missedState, null, dismissedKey, today)
       ) {
         setRecoveryDialogFrozenStreak(reconcileResult.recovery.frozenStreak)
+        setRecoveryDialogProgress(0)
         setRecoveryDialogOpen(true)
       }
     }
@@ -393,10 +440,16 @@ export function NutritionStreakGamificationProvider({
         onClose={() => setCelebration(null)}
       />
 
+      <NutritionStreakRecoveryCelebrationOverlay
+        open={recoveryCelebration !== null}
+        streak={recoveryCelebration ?? 0}
+        onClose={() => setRecoveryCelebration(null)}
+      />
+
       <NutritionStreakRecoveryDialog
         open={recoveryDialogOpen}
         frozenStreak={recoveryDialogFrozenStreak}
-        progress={recoveryProgress ?? 0}
+        progress={recoveryDialogProgress}
         onOpenChange={(open) => {
           if (!open) {
             dismissRecoveryDialog()
