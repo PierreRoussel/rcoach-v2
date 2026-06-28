@@ -209,9 +209,10 @@ export function DietDayPanel({
       <NutritionCalendarDrawer
         open={calendarOpen}
         onOpenChange={setCalendarOpen}
-        dailyTarget={settings.daily_calorie_target}
+        dailyTarget={daySummary.targets.calories}
         streak={streak}
         isFrozen={isFrozen}
+        activeDate={date}
       />
     </>
   )

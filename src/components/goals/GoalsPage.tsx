@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 import { Target } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { WaistProgressChart } from '@/components/goals/WaistProgressChart'
 import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
 import { WeightGoalReachedCelebrationOverlay } from '@/components/goals/WeightGoalReachedCelebrationOverlay'
 import { WeightGoalSetupWizard } from '@/components/goals/WeightGoalSetupWizard'
@@ -36,6 +37,7 @@ import {
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
+import { useWaistEntries } from '@/hooks/useWaistEntries'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { cn } from '@/lib/utils'
 
@@ -57,6 +59,7 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
   const { data: userMeasurements } = useUserMeasurements()
   const { data: weightEntries = [], isLoading: entriesLoading } =
     useWeightEntries()
+  const { data: waistEntries = [], isLoading: waistEntriesLoading } = useWaistEntries()
   const updateGoal = useUpdateWeightGoal()
   const upsertNutrition = useUpsertNutritionSettings()
 
@@ -128,6 +131,8 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
     goal && nutritionSettings
       ? projectWeightGoalCompletion(goal, nutritionSettings, new Date(), userMeasurements)
       : null
+
+  const showWaistChart = userMeasurements?.waist_cm != null
 
   if (goalLoading) {
     return (
@@ -324,6 +329,27 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
           </Card>
         </div>
       )}
+
+      {showWaistChart ? (
+        <Card className="overflow-hidden rounded-2xl border-border">
+          <CardHeader className="px-5">
+            <CardTitle className="font-display text-base font-black">
+              Tour de taille
+            </CardTitle>
+            <CardDescription>
+              Moyenne hebdomadaire de vos mensurations. Faites défiler pour
+              parcourir la timeline.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-3 pb-2 pt-0">
+            {waistEntriesLoading ? (
+              <p className="px-5 text-sm text-muted-foreground">Chargement...</p>
+            ) : (
+              <WaistProgressChart entries={waistEntries} />
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {adjustError && <FormMessage>{adjustError}</FormMessage>}
 

@@ -13,6 +13,7 @@ type NutritionCalendarDrawerProps = {
   dailyTarget: number
   streak: number
   isFrozen?: boolean
+  activeDate?: string
 }
 
 export function NutritionCalendarDrawer({
@@ -21,6 +22,7 @@ export function NutritionCalendarDrawer({
   dailyTarget,
   streak,
   isFrozen = false,
+  activeDate,
 }: NutritionCalendarDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -33,7 +35,12 @@ export function NutritionCalendarDrawer({
         </DrawerHeader>
 
         <div className="px-4 pb-6">
-          <NutritionCalendar dailyTarget={dailyTarget} streak={streak} isFrozen={isFrozen} />
+          <NutritionCalendar
+            dailyTarget={dailyTarget}
+            streak={streak}
+            isFrozen={isFrozen}
+            activeDate={activeDate}
+          />
         </div>
       </DrawerContent>
     </Drawer>

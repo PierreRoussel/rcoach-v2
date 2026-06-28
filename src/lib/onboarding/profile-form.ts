@@ -1,5 +1,10 @@
 import type { NutritionSex } from '@/lib/nutrition/types'
 
+import type { NutritionMeasurementsFallback } from '@/lib/measurements/resolve-user-measurements'
+import {
+  hasResolvedBodyMeasurements,
+  resolveUserMeasurements,
+} from '@/lib/measurements/resolve-user-measurements'
 import type { StoredUserMeasurements } from '@/lib/measurements/types'
 
 export type ProfileOnboardingFormData = {
@@ -31,12 +36,15 @@ function formatStoredMetric(value: number | null | undefined) {
 export function profileOnboardingFormFromStoredBodyData(
   measurements: StoredUserMeasurements | null | undefined,
   weightKg: number | null | undefined,
+  nutritionFallback?: NutritionMeasurementsFallback | null,
 ): ProfileOnboardingFormData {
+  const resolved = resolveUserMeasurements(measurements, nutritionFallback)
+
   return {
-    sex: measurements?.sex ?? null,
-    age: formatStoredMetric(measurements?.age),
-    heightCm: formatStoredMetric(measurements?.height_cm),
-    waistCm: formatStoredMetric(measurements?.waist_cm),
+    sex: resolved?.sex ?? null,
+    age: formatStoredMetric(resolved?.age),
+    heightCm: formatStoredMetric(resolved?.height_cm),
+    waistCm: formatStoredMetric(resolved?.waist_cm),
     weightKg: formatStoredMetric(weightKg),
   }
 }
@@ -45,24 +53,15 @@ export function hasCompleteOnboardingBodyData(data: ProfileOnboardingFormData) {
   return (
     data.sex != null &&
     data.age.trim() !== '' &&
-    data.heightCm.trim() !== '' &&
-    data.waistCm.trim() !== ''
+    data.heightCm.trim() !== ''
   )
 }
 
 export function hasStoredOnboardingBodyData(
   measurements: StoredUserMeasurements | null | undefined,
+  nutritionFallback?: NutritionMeasurementsFallback | null,
 ) {
-  if (!measurements) {
-    return false
-  }
-
-  return (
-    measurements.sex != null &&
-    measurements.age != null &&
-    measurements.height_cm != null &&
-    measurements.waist_cm != null
-  )
+  return hasResolvedBodyMeasurements(measurements, nutritionFallback)
 }
 
 export function buildUserMeasurementsUpsertFromOnboarding(

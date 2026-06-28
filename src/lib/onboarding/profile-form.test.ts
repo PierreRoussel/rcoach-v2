@@ -90,13 +90,23 @@ describe('profileOnboardingFormFromStoredBodyData', () => {
 })
 
 describe('hasStoredOnboardingBodyData', () => {
-  it('returns true when all onboarding measurement fields are stored', () => {
+  it('returns true when core onboarding measurement fields are stored', () => {
     expect(
       hasStoredOnboardingBodyData({
         sex: 'female',
         age: 28,
         height_cm: 165,
-        waist_cm: 70,
+        waist_cm: null,
+      }),
+    ).toBe(true)
+  })
+
+  it('falls back to legacy nutrition settings', () => {
+    expect(
+      hasStoredOnboardingBodyData(null, {
+        sex: 'male',
+        age: 30,
+        height_cm: 175,
       }),
     ).toBe(true)
   })
@@ -113,8 +123,26 @@ describe('hasStoredOnboardingBodyData', () => {
   })
 })
 
+describe('profileOnboardingFormFromStoredBodyData', () => {
+  it('prefills onboarding from legacy nutrition settings', () => {
+    expect(
+      profileOnboardingFormFromStoredBodyData(null, 74.5, {
+        sex: 'male',
+        age: 32,
+        height_cm: 178,
+      }),
+    ).toEqual({
+      sex: 'male',
+      age: '32',
+      heightCm: '178',
+      waistCm: '',
+      weightKg: '74.5',
+    })
+  })
+})
+
 describe('hasCompleteOnboardingBodyData', () => {
-  it('requires every measurement field in the form', () => {
+  it('requires sex, age and height in the form', () => {
     expect(
       hasCompleteOnboardingBodyData({
         sex: 'female',
@@ -123,6 +151,6 @@ describe('hasCompleteOnboardingBodyData', () => {
         waistCm: '',
         weightKg: '60',
       }),
-    ).toBe(false)
+    ).toBe(true)
   })
 })

@@ -51,13 +51,13 @@ function OnboardingPage() {
   }, [])
 
   const continueAfterSlides = useCallback(() => {
-    if (hasStoredOnboardingBodyData(userMeasurements)) {
+    if (hasStoredOnboardingBodyData(userMeasurements, nutritionSettings)) {
       beginSetup(createEmptyProfileOnboardingForm())
       return
     }
 
     setPhase('profile')
-  }, [beginSetup, userMeasurements])
+  }, [beginSetup, nutritionSettings, userMeasurements])
 
   const advanceFromSlides = useCallback(() => {
     if (nutritionSettingsLoading || userMeasurementsLoading) {
@@ -139,6 +139,7 @@ function OnboardingPage() {
       initialForm={profileOnboardingFormFromStoredBodyData(
         userMeasurements,
         nutritionSettings?.weight_kg,
+        nutritionSettings,
       )}
       onComplete={beginSetup}
       onSkipAll={() => beginSetup(createEmptyProfileOnboardingForm())}

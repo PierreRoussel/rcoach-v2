@@ -17,6 +17,7 @@ type NutritionCalendarProps = {
   dailyTarget: number
   streak: number
   isFrozen?: boolean
+  activeDate?: string
   className?: string
 }
 
@@ -58,10 +59,25 @@ export function NutritionCalendar({
   dailyTarget,
   streak,
   isFrozen = false,
+  activeDate,
   className,
 }: NutritionCalendarProps) {
-  const [selected, setSelected] = useState<Date | undefined>(new Date())
-  const [displayMonth, setDisplayMonth] = useState(() => new Date())
+  const [selected, setSelected] = useState<Date | undefined>(() =>
+    activeDate ? parseISO(`${activeDate}T12:00:00`) : new Date(),
+  )
+  const [displayMonth, setDisplayMonth] = useState(() =>
+    activeDate ? parseISO(`${activeDate}T12:00:00`) : new Date(),
+  )
+
+  useEffect(() => {
+    if (!activeDate) {
+      return
+    }
+
+    const nextSelected = parseISO(`${activeDate}T12:00:00`)
+    setSelected(nextSelected)
+    setDisplayMonth(nextSelected)
+  }, [activeDate])
 
   const { dayMap } = useNutritionCalendarMonth(
     displayMonth.getFullYear(),

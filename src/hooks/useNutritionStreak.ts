@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { useNutritionStreakGamification } from '@/components/nutrition/NutritionStreakGamificationProvider'
-import { LIST_MEAL_LOG_ENTRIES_FOR_RANGE } from '@/lib/graphql/operations'
-import { graphqlRequest } from '@/lib/graphql/request'
+import { fetchNutritionHintRangeEntries } from '@/lib/nutrition/fetch-nutrition-day-entries'
 import {
   aggregateNutritionDays,
   monthDateRange,
@@ -11,24 +10,25 @@ import {
 } from '@/lib/nutrition/streak'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-type MealLogRangeEntry = {
-  logged_date: string
-  calories: number
-}
-
 export function useNutritionLogHistory(from: string, to: string, dailyTarget: number) {
   const { nhost, isAuthenticated, user } = useAuth()
 
   const query = useQuery({
     queryKey: ['nutrition-log-history', user?.id, from, to],
     enabled: isAuthenticated && Boolean(user?.id) && Boolean(from) && Boolean(to),
-    staleTime: 10 * 60_000,
+    staleTime: 60_000,
     queryFn: async () => {
-      const data = await graphqlRequest<{
-        meal_log_entries: MealLogRangeEntry[]
-      }>(nhost, LIST_MEAL_LOG_ENTRIES_FOR_RANGE, { from, to, userId: user!.id })
+      const entries = await fetchNutritionHintRangeEntries(
+        nhost,
+        user!.id,
+        from,
+        to,
+      )
 
-      return data.meal_log_entries
+      return entries.map((entry) => ({
+        logged_date: entry.logged_date,
+        calories: Number(entry.calories),
+      }))
     },
   })
 

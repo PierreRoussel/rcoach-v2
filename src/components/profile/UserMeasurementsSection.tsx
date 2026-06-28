@@ -29,8 +29,9 @@ import {
 import { FormMessage } from '@/components/ui/form'
 import {
   useUpsertUserMeasurements,
-  useUserMeasurements,
+  useResolvedUserMeasurements,
 } from '@/hooks/useUserMeasurements'
+import { useInsertWaistEntry } from '@/hooks/useWaistEntries'
 import type { NutritionSex } from '@/lib/nutrition/types'
 
 const SEX_LABELS: Record<NutritionSex, string> = {
@@ -47,8 +48,10 @@ function formatMeasurement(value: number | null | undefined, unit: string) {
 }
 
 export function UserMeasurementsSection() {
-  const { data: measurements, isLoading } = useUserMeasurements()
+  const { data: resolved, raw: storedMeasurements, isLoading } =
+    useResolvedUserMeasurements()
   const upsert = useUpsertUserMeasurements()
+  const insertWaistEntry = useInsertWaistEntry()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -59,15 +62,15 @@ export function UserMeasurementsSection() {
   const [waistCm, setWaistCm] = useState('')
 
   useEffect(() => {
-    if (!measurements) {
+    if (!resolved) {
       return
     }
 
-    setSex(measurements.sex ?? 'male')
-    setAge(measurements.age != null ? String(measurements.age) : '')
-    setHeightCm(measurements.height_cm != null ? String(measurements.height_cm) : '')
-    setWaistCm(measurements.waist_cm != null ? String(measurements.waist_cm) : '')
-  }, [measurements])
+    setSex(resolved.sex ?? 'male')
+    setAge(resolved.age != null ? String(resolved.age) : '')
+    setHeightCm(resolved.height_cm != null ? String(resolved.height_cm) : '')
+    setWaistCm(resolved.waist_cm != null ? String(resolved.waist_cm) : '')
+  }, [resolved])
 
   async function handleSave() {
     setError(null)
@@ -92,6 +95,10 @@ export function UserMeasurementsSection() {
       return
     }
 
+    const waistChanged =
+      storedMeasurements?.waist_cm == null ||
+      Math.abs(Number(storedMeasurements.waist_cm) - parsedWaist) >= 0.05
+
     try {
       await upsert.mutateAsync({
         sex,
@@ -99,6 +106,13 @@ export function UserMeasurementsSection() {
         height_cm: parsedHeight,
         waist_cm: parsedWaist,
       })
+
+      if (waistChanged) {
+        await insertWaistEntry.mutateAsync({
+          waist_cm: parsedWaist,
+          source: 'manual',
+        })
+      }
       setMessage('Mensurations enregistrées.')
       setDialogOpen(false)
     } catch (saveError) {
@@ -115,10 +129,10 @@ export function UserMeasurementsSection() {
   }
 
   const hasData =
-    measurements?.sex != null ||
-    measurements?.age != null ||
-    measurements?.height_cm != null ||
-    measurements?.waist_cm != null
+    resolved?.sex != null ||
+    resolved?.age != null ||
+    resolved?.height_cm != null ||
+    resolved?.waist_cm != null
 
   return (
     <>
@@ -141,25 +155,25 @@ export function UserMeasurementsSection() {
               <div>
                 <dt className="text-muted-foreground">Sexe</dt>
                 <dd className="font-medium">
-                  {measurements?.sex ? SEX_LABELS[measurements.sex] : '—'}
+                  {resolved?.sex ? SEX_LABELS[resolved.sex] : '—'}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Âge</dt>
                 <dd className="font-medium">
-                  {measurements?.age != null ? `${measurements.age} ans` : '—'}
+                  {resolved?.age != null ? `${resolved.age} ans` : '—'}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Taille</dt>
                 <dd className="font-medium">
-                  {formatMeasurement(measurements?.height_cm, 'cm')}
+                  {formatMeasurement(resolved?.height_cm, 'cm')}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Tour de taille</dt>
                 <dd className="font-medium">
-                  {formatMeasurement(measurements?.waist_cm, 'cm')}
+                  {formatMeasurement(resolved?.waist_cm, 'cm')}
                 </dd>
               </div>
             </dl>
@@ -253,7 +267,7 @@ export function UserMeasurementsSection() {
             <Button
               type="button"
               onClick={() => void handleSave()}
-              disabled={upsert.isPending}
+              disabled={upsert.isPending || insertWaistEntry.isPending}
             >
               Enregistrer
             </Button>

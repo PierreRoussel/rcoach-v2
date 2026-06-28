@@ -1716,6 +1716,47 @@ export const INSERT_WEIGHT_ENTRY = `
   }
 `
 
+export type WaistEntry = {
+  id: string
+  user_id: string
+  waist_cm: number
+  logged_at: string
+  source: string
+}
+
+export type WaistEntryInput = {
+  waist_cm: number
+  logged_at?: string
+  source?: string
+}
+
+export const LIST_WAIST_ENTRIES = `
+  query ListWaistEntries($userId: uuid!) {
+    waist_entries(
+      where: { user_id: { _eq: $userId } }
+      order_by: { logged_at: asc }
+    ) {
+      id
+      user_id
+      waist_cm
+      logged_at
+      source
+    }
+  }
+`
+
+export const INSERT_WAIST_ENTRY = `
+  mutation InsertWaistEntry($object: waist_entries_insert_input!) {
+    insert_waist_entries_one(object: $object) {
+      id
+      user_id
+      waist_cm
+      logged_at
+      source
+    }
+  }
+`
+
 export const LIST_MEAL_LOG_ENTRIES_FOR_RANGE = `
   query ListMealLogEntriesForRange($from: date!, $to: date!, $userId: uuid!) {
     meal_log_entries(

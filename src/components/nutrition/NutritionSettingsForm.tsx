@@ -23,8 +23,8 @@ import {
 } from '@/components/nutrition/MacroDistributionSliders'
 import { useNutritionSettings, useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
 import {
+  useResolvedUserMeasurements,
   useUpsertUserMeasurements,
-  useUserMeasurements,
 } from '@/hooks/useUserMeasurements'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
@@ -46,7 +46,7 @@ const GOAL_LABELS: Record<NutritionGoal, string> = {
 
 export function NutritionSettingsForm() {
   const { data: settings, isLoading } = useNutritionSettings()
-  const { data: measurements, isLoading: measurementsLoading } = useUserMeasurements()
+  const { data: measurements, isLoading: measurementsLoading } = useResolvedUserMeasurements()
   const upsert = useUpsertNutritionSettings()
   const upsertMeasurements = useUpsertUserMeasurements()
   const [message, setMessage] = useState<string | null>(null)

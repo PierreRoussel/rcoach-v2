@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -6,8 +7,11 @@ import {
   type UserMeasurementsInput as GraphqlUserMeasurementsInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import type { UserMeasurements } from '@/lib/measurements/types'
+import { resolveUserMeasurements } from '@/lib/measurements/resolve-user-measurements'
+import type { StoredUserMeasurements, UserMeasurements } from '@/lib/measurements/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+
+import { useNutritionSettings } from './useNutritionSettings'
 
 export function useUserMeasurements() {
   const { nhost, isAuthenticated, user } = useAuth()
@@ -47,4 +51,24 @@ export function useUpsertUserMeasurements() {
       void queryClient.invalidateQueries({ queryKey: ['user-measurements'] })
     },
   })
+}
+
+export function useResolvedUserMeasurements(): {
+  data: StoredUserMeasurements | null
+  raw: UserMeasurements | null | undefined
+  isLoading: boolean
+} {
+  const measurementsQuery = useUserMeasurements()
+  const nutritionQuery = useNutritionSettings()
+
+  const data = useMemo(
+    () => resolveUserMeasurements(measurementsQuery.data, nutritionQuery.data),
+    [measurementsQuery.data, nutritionQuery.data],
+  )
+
+  return {
+    data,
+    raw: measurementsQuery.data,
+    isLoading: measurementsQuery.isLoading || nutritionQuery.isLoading,
+  }
 }
