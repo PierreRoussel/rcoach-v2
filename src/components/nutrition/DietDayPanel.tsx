@@ -51,6 +51,8 @@ type DietDayPanelProps = {
   date: string
   settings: NutritionSettings
   streak: number
+  isFrozen?: boolean
+  validatedToday?: boolean
   animateEntrance?: boolean
 }
 
@@ -58,6 +60,8 @@ export function DietDayPanel({
   date,
   settings,
   streak,
+  isFrozen = false,
+  validatedToday = false,
   animateEntrance = false,
 }: DietDayPanelProps) {
   const { data: daySummary, isLoading } = useNutritionDay(date, settings)
@@ -102,6 +106,8 @@ export function DietDayPanel({
           streak={streak}
           onClick={() => setCalendarOpen(true)}
           className="absolute right-3 top-3 z-10"
+          isFrozen={isFrozen}
+          validatedToday={validatedToday}
         />
 
         <div className="relative flex min-h-44 items-center justify-center px-12">
@@ -178,6 +184,7 @@ export function DietDayPanel({
         onOpenChange={setCalendarOpen}
         dailyTarget={settings.daily_calorie_target}
         streak={streak}
+        isFrozen={isFrozen}
       />
     </>
   )

@@ -14,6 +14,7 @@ import { AnimateIn } from '@/design-system'
 import { useDietEntranceAnimation } from '@/hooks/useDietEntranceAnimation'
 import { runNutritionSync } from '@/hooks/useNutritionSync'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useNutritionStreakGamificationActions } from '@/components/nutrition/NutritionStreakGamificationProvider'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { usePendingNutritionSyncCount } from '@/hooks/usePendingNutritionSync'
@@ -44,7 +45,8 @@ function DietPage() {
   const { data: settings, isLoading: settingsLoading, isFetched: settingsFetched } =
     useNutritionSettings()
   const { data: weightGoal, isFetched: weightGoalFetched } = useWeightGoal()
-  const { streak } = useNutritionStreak(settings?.daily_calorie_target ?? 0)
+  const { streak, isFrozen, validatedToday } = useNutritionStreak(settings?.daily_calorie_target ?? 0)
+  const { reconcileOnDietPageOpen } = useNutritionStreakGamificationActions()
   const { data: pendingSyncCount = 0 } = usePendingNutritionSyncCount()
   const isOnline = useOnlineStatus()
   const shouldAnimateEntrance = useDietEntranceAnimation()
@@ -65,6 +67,12 @@ function DietPage() {
     !settingsLoading &&
     !isNutritionConfigured(settings) &&
     wizardDismissed
+
+  useEffect(() => {
+    if (settings && hasSetup) {
+      void reconcileOnDietPageOpen()
+    }
+  }, [hasSetup, reconcileOnDietPageOpen, settings])
 
   function handleDateChange(nextDate: string) {
     setActiveDate(nextDate)
@@ -155,6 +163,8 @@ function DietPage() {
               date={day}
               settings={settings}
               streak={streak}
+              isFrozen={isFrozen}
+              validatedToday={validatedToday}
               animateEntrance={shouldAnimateEntrance && day === activeDate}
             />
           )}

@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
+import { useNutritionStreakGamification } from '@/components/nutrition/NutritionStreakGamificationProvider'
 import { LIST_MEAL_LOG_ENTRIES_FOR_RANGE } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import { addDays, toDateKey } from '@/lib/nutrition/dates'
-import { NUTRITION_STREAK_LOOKBACK_DAYS } from '@/lib/stats/streak-lookback'
 import {
   aggregateNutritionDays,
-  computeNutritionLoggingStreak,
   monthDateRange,
   type NutritionDayAggregate,
 } from '@/lib/nutrition/streak'
@@ -16,13 +14,6 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 type MealLogRangeEntry = {
   logged_date: string
   calories: number
-}
-
-function buildStreakRange(today = toDateKey(new Date()), lookbackDays = NUTRITION_STREAK_LOOKBACK_DAYS) {
-  return {
-    from: addDays(today, -lookbackDays),
-    to: today,
-  }
 }
 
 export function useNutritionLogHistory(from: string, to: string, dailyTarget: number) {
@@ -52,23 +43,24 @@ export function useNutritionLogHistory(from: string, to: string, dailyTarget: nu
   }
 }
 
-export function useNutritionStreak(dailyTarget: number) {
-  const range = buildStreakRange()
-  const { dayMap, isLoading, error } = useNutritionLogHistory(
-    range.from,
-    range.to,
-    dailyTarget,
-  )
+export function useNutritionStreak(_dailyTarget?: number) {
+  const {
+    displayStreak,
+    isLoading,
+    error,
+    isFrozen,
+    recoveryProgress,
+    validatedToday,
+  } = useNutritionStreakGamification()
 
-  const streak = useMemo(() => {
-    const loggedDates = Array.from(dayMap.entries())
-      .filter(([, aggregate]) => aggregate.hasLogs)
-      .map(([date]) => date)
-
-    return computeNutritionLoggingStreak(loggedDates)
-  }, [dayMap])
-
-  return { streak, isLoading, error }
+  return {
+    streak: displayStreak,
+    isLoading,
+    error,
+    isFrozen,
+    recoveryProgress,
+    validatedToday,
+  }
 }
 
 export function useNutritionCalendarMonth(

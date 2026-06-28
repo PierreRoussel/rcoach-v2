@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Pill } from '@/design-system'
 import { useNutritionCalendarMonth } from '@/hooks/useNutritionStreak'
 import { toDateKey } from '@/lib/nutrition/dates'
+import { computeMonthOnTargetSummary } from '@/lib/nutrition/streak'
 import { cn } from '@/lib/utils'
 
 const navButtonClass =
@@ -15,6 +16,7 @@ const navButtonClass =
 type NutritionCalendarProps = {
   dailyTarget: number
   streak: number
+  isFrozen?: boolean
   className?: string
 }
 
@@ -55,6 +57,7 @@ function NutritionCalendarLegend() {
 export function NutritionCalendar({
   dailyTarget,
   streak,
+  isFrozen = false,
   className,
 }: NutritionCalendarProps) {
   const [selected, setSelected] = useState<Date | undefined>(new Date())
@@ -80,6 +83,16 @@ export function NutritionCalendar({
     [dayMap],
   )
 
+  const monthSummary = useMemo(
+    () =>
+      computeMonthOnTargetSummary(
+        dayMap,
+        displayMonth.getFullYear(),
+        displayMonth.getMonth(),
+      ),
+    [dayMap, displayMonth],
+  )
+
   const selectedSummary = selected ? dayMap.get(toDateKey(selected)) : undefined
 
   return (
@@ -96,7 +109,7 @@ export function NutritionCalendar({
           aria-hidden
         />
 
-        <div className="relative mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
+        <div className="relative mb-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
           <div aria-hidden />
           <div className="flex items-center gap-1">
             <button
@@ -121,10 +134,37 @@ export function NutritionCalendar({
           </div>
 
           <div className="flex justify-end">
-            <Pill tone="solid-primary" className="shrink-0" title={`${streak} jour${streak > 1 ? 's' : ''} de suite`}>
-              <Flame className="size-3 fill-current" />
+            <Pill
+              tone={isFrozen ? 'default' : 'solid-primary'}
+              className="shrink-0"
+              title={`${streak} jour${streak > 1 ? 's' : ''} de suite${isFrozen ? ' (gelé)' : ''}`}
+            >
+              <Flame className={cn('size-3', isFrozen ? '' : 'fill-current')} />
               {streak}
             </Pill>
+          </div>
+        </div>
+
+        <div className="relative mb-3 px-1 text-center">
+          <p
+            className="text-sm text-muted-foreground"
+            aria-label={`${monthSummary.onTargetDays} jours sur ${monthSummary.daysInMonth} avec objectif calorique respecté ce mois-ci`}
+          >
+            <span className="font-display font-bold tabular-nums text-foreground">
+              {monthSummary.onTargetDays}/{monthSummary.daysInMonth}
+            </span>{' '}
+            objectifs respectés
+          </p>
+          <div
+            className="mx-auto mt-1.5 h-1.5 w-full max-w-[12rem] overflow-hidden rounded-full bg-muted"
+            aria-hidden
+          >
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              style={{
+                width: `${(monthSummary.onTargetDays / monthSummary.daysInMonth) * 100}%`,
+              }}
+            />
           </div>
         </div>
 

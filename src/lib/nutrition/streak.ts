@@ -54,5 +54,25 @@ export function monthDateRange(year: number, monthIndex: number) {
   const from = `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`
   const lastDay = new Date(year, monthIndex + 1, 0).getDate()
   const to = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-  return { from, to }
+  return { from, to, daysInMonth: lastDay }
+}
+
+export function computeMonthOnTargetSummary(
+  dayMap: Map<string, NutritionDayAggregate>,
+  year: number,
+  monthIndex: number,
+): { onTargetDays: number; daysInMonth: number } {
+  const { daysInMonth } = monthDateRange(year, monthIndex)
+  let onTargetDays = 0
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const month = String(monthIndex + 1).padStart(2, '0')
+    const dateKey = `${year}-${month}-${String(day).padStart(2, '0')}`
+
+    if (dayMap.get(dateKey)?.status === 'on_target') {
+      onTargetDays += 1
+    }
+  }
+
+  return { onTargetDays, daysInMonth }
 }

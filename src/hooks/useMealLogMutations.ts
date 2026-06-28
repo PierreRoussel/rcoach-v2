@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { useOptionalNutritionStreakGamificationActions } from '@/components/nutrition/NutritionStreakGamificationProvider'
 import {
   DELETE_MEAL_LOG_ENTRY,
   INSERT_MEAL_LOG_ENTRY,
@@ -10,7 +11,9 @@ import { buildPendingMealLogEntry, buildPendingQuickMealLogEntry } from '@/lib/n
 import { isLocalFoodId } from '@/lib/nutrition/offline-food'
 import { scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import { nutritionDayQueryKey } from '@/lib/nutrition/nutrition-day-cache-id'
+import { toDateKey } from '@/lib/nutrition/dates'
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
+import type { NutritionDaySummary } from '@/hooks/useNutritionDay'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import {
   enqueueNutritionMutation,
@@ -92,6 +95,8 @@ function buildMealEntryRestoreObject(entry: MealLogEntry) {
 export function useMealLogMutations() {
   const { nhost, user } = useAuth()
   const queryClient = useQueryClient()
+  const streakActions = useOptionalNutritionStreakGamificationActions()
+  const today = toDateKey(new Date())
 
   const invalidate = async (date?: string) => {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-day'] })
@@ -114,8 +119,27 @@ export function useMealLogMutations() {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-sync-pending'] })
   }
 
+  function countEntriesBefore(loggedDate: string) {
+    const summary = queryClient.getQueryData<NutritionDaySummary>(
+      nutritionDayQueryKey(user?.id, loggedDate),
+    )
+    return summary?.entries.length ?? 0
+  }
+
+  async function handleStreakAfterAdd(loggedDate: string, hadEntriesBefore: number) {
+    if (!streakActions || loggedDate !== today) {
+      return
+    }
+
+    await streakActions.validateTodayIfNeeded({
+      loggedDate,
+      hadEntriesBefore: hadEntriesBefore > 0,
+    })
+  }
+
   const addEntry = useMutation({
-    mutationFn: async (input: AddMealEntryInput): Promise<MealMutationResult> => {
+    mutationFn: async (input: AddMealEntryInput): Promise<MealMutationResult & { hadEntriesBefore: number }> => {
+      const hadEntriesBefore = countEntriesBefore(input.loggedDate)
       const object = buildMealEntryObject(input)
 
       try {
@@ -128,6 +152,7 @@ export function useMealLogMutations() {
         return {
           entry: data.insert_meal_log_entries_one,
           offline: false,
+          hadEntriesBefore,
         }
       } catch (error) {
         if (
@@ -154,16 +179,19 @@ export function useMealLogMutations() {
             portion: input.portion,
           }),
           offline: true,
+          hadEntriesBefore,
         }
       }
     },
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (data, variables) => {
       await invalidate(variables.loggedDate)
+      await handleStreakAfterAdd(variables.loggedDate, data.hadEntriesBefore)
     },
   })
 
   const addQuickEntry = useMutation({
-    mutationFn: async (input: AddQuickMealEntryInput): Promise<MealMutationResult> => {
+    mutationFn: async (input: AddQuickMealEntryInput): Promise<MealMutationResult & { hadEntriesBefore: number }> => {
+      const hadEntriesBefore = countEntriesBefore(input.loggedDate)
       const object = buildQuickMealEntryObject(input)
 
       try {
@@ -176,6 +204,7 @@ export function useMealLogMutations() {
         return {
           entry: data.insert_meal_log_entries_one,
           offline: false,
+          hadEntriesBefore,
         }
       } catch (error) {
         if (!shouldQueueNutritionMutation(error)) {
@@ -200,11 +229,13 @@ export function useMealLogMutations() {
             fatG: input.fatG,
           }),
           offline: true,
+          hadEntriesBefore,
         }
       }
     },
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (data, variables) => {
       await invalidate(variables.loggedDate)
+      await handleStreakAfterAdd(variables.loggedDate, data.hadEntriesBefore)
     },
   })
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   aggregateNutritionDays,
+  computeMonthOnTargetSummary,
   computeNutritionLoggingStreak,
 } from '@/lib/nutrition/streak'
 
@@ -46,5 +47,22 @@ describe('computeNutritionLoggingStreak', () => {
         '2026-06-25',
       ),
     ).toBe(2)
+  })
+})
+
+describe('computeMonthOnTargetSummary', () => {
+  it('counts only on_target days in the requested month', () => {
+    const map = aggregateNutritionDays(
+      [
+        { logged_date: '2026-06-01', calories: 1500 },
+        { logged_date: '2026-06-02', calories: 2200 },
+      ],
+      2000,
+    )
+
+    expect(computeMonthOnTargetSummary(map, 2026, 5)).toEqual({
+      onTargetDays: 1,
+      daysInMonth: 30,
+    })
   })
 })

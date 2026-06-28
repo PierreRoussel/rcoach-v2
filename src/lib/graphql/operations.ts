@@ -1528,6 +1528,112 @@ export const DELETE_WEIGHT_GOAL = `
   }
 `
 
+export type NutritionStreakValidatedDay = {
+  user_id: string
+  validated_date: string
+  validated_at: string
+}
+
+export type NutritionStreakRecovery = {
+  user_id: string
+  frozen_streak: number
+  progress: number
+  started_on: string
+  updated_at: string
+}
+
+export const LIST_NUTRITION_STREAK_VALIDATED_DAYS = `
+  query ListNutritionStreakValidatedDays($from: date!, $userId: uuid!) {
+    nutrition_streak_validated_days(
+      where: {
+        user_id: { _eq: $userId }
+        validated_date: { _gte: $from }
+      }
+      order_by: { validated_date: desc }
+    ) {
+      user_id
+      validated_date
+      validated_at
+    }
+  }
+`
+
+export const INSERT_NUTRITION_STREAK_VALIDATED_DAY = `
+  mutation InsertNutritionStreakValidatedDay(
+    $object: nutrition_streak_validated_days_insert_input!
+  ) {
+    insert_nutrition_streak_validated_days_one(
+      object: $object
+      on_conflict: {
+        constraint: nutrition_streak_validated_days_pkey
+        update_columns: []
+      }
+    ) {
+      user_id
+      validated_date
+      validated_at
+    }
+  }
+`
+
+export const GET_NUTRITION_STREAK_RECOVERY = `
+  query GetNutritionStreakRecovery($userId: uuid!) {
+    nutrition_streak_recovery_by_pk(user_id: $userId) {
+      user_id
+      frozen_streak
+      progress
+      started_on
+      updated_at
+    }
+  }
+`
+
+export const UPSERT_NUTRITION_STREAK_RECOVERY = `
+  mutation UpsertNutritionStreakRecovery(
+    $object: nutrition_streak_recovery_insert_input!
+  ) {
+    insert_nutrition_streak_recovery_one(
+      object: $object
+      on_conflict: {
+        constraint: nutrition_streak_recovery_pkey
+        update_columns: [frozen_streak, progress, started_on, updated_at]
+      }
+    ) {
+      user_id
+      frozen_streak
+      progress
+      started_on
+      updated_at
+    }
+  }
+`
+
+export const UPDATE_NUTRITION_STREAK_RECOVERY = `
+  mutation UpdateNutritionStreakRecovery(
+    $userId: uuid!
+    $changes: nutrition_streak_recovery_set_input!
+  ) {
+    update_nutrition_streak_recovery_by_pk(
+      pk_columns: { user_id: $userId }
+      _set: $changes
+    ) {
+      user_id
+      frozen_streak
+      progress
+      started_on
+      updated_at
+    }
+  }
+`
+
+export const DELETE_NUTRITION_STREAK_RECOVERY = `
+  mutation DeleteNutritionStreakRecovery($userId: uuid!) {
+    delete_nutrition_streak_recovery_by_pk(user_id: $userId) {
+      user_id
+    }
+  }
+`
+
 export type WeightEntry = {
   id: string
   user_id: string
