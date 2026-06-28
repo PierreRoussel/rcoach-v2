@@ -101,16 +101,6 @@ describe('hasStoredOnboardingBodyData', () => {
     ).toBe(true)
   })
 
-  it('falls back to legacy nutrition settings', () => {
-    expect(
-      hasStoredOnboardingBodyData(null, {
-        sex: 'male',
-        age: 30,
-        height_cm: 175,
-      }),
-    ).toBe(true)
-  })
-
   it('returns false when stored data is incomplete', () => {
     expect(
       hasStoredOnboardingBodyData({
@@ -120,24 +110,6 @@ describe('hasStoredOnboardingBodyData', () => {
         waist_cm: 70,
       }),
     ).toBe(false)
-  })
-})
-
-describe('profileOnboardingFormFromStoredBodyData', () => {
-  it('prefills onboarding from legacy nutrition settings', () => {
-    expect(
-      profileOnboardingFormFromStoredBodyData(null, 74.5, {
-        sex: 'male',
-        age: 32,
-        height_cm: 178,
-      }),
-    ).toEqual({
-      sex: 'male',
-      age: '32',
-      heightCm: '178',
-      waistCm: '',
-      weightKg: '74.5',
-    })
   })
 })
 

@@ -4,6 +4,7 @@ import {
   adjustWeightKg,
   inferWeightGoalType,
   institutionWeightSnapshot,
+  isMaintainGoalInRange,
   isProgressOnTrack,
   isWeightGoalReached,
   isWeightGoalReinstitution,
@@ -12,10 +13,18 @@ import {
   projectWeightGoalCompletion,
   resolveGoalChartProjection,
   remainingKgToTarget,
+  resolveMaintainGoalDisplay,
   shouldSuggestCalorieUpdate,
   suggestCalorieTarget,
 } from '@/lib/goals/weight-goal'
 import type { NutritionSettings } from '@/lib/nutrition/types'
+
+const baseMeasurements = {
+  sex: 'male' as const,
+  age: 30,
+  height_cm: 180,
+  waist_cm: null,
+}
 
 const baseSettings: NutritionSettings = {
   user_id: 'user-1',
@@ -27,12 +36,7 @@ const baseSettings: NutritionSettings = {
   lunch_pct: 35,
   snack_pct: 10,
   dinner_pct: 35,
-  sex: 'male',
-  age: 30,
-  height_cm: 180,
-  weight_kg: 80,
   activity_level: 'moderate',
-  goal: 'maintain',
   calorie_adjustment: 0,
   tdee_calculated: 2500,
   onboarded_at: '2026-01-01T00:00:00.000Z',
@@ -80,6 +84,62 @@ describe('isWeightGoalReached', () => {
       }),
     ).toBe(true)
   })
+
+  it('never treats maintain goal as reached', () => {
+    expect(
+      isWeightGoalReached({
+        goal_type: 'maintain',
+        current_weight_kg: 76,
+        target_weight_kg: 76,
+      }),
+    ).toBe(false)
+  })
+})
+
+describe('maintain goal display', () => {
+  it('detects in-range drift within 1.5 kg', () => {
+    expect(
+      isMaintainGoalInRange({
+        current_weight_kg: 75.2,
+        target_weight_kg: 76,
+      }),
+    ).toBe(true)
+  })
+
+  it('detects out-of-range drift beyond 1.5 kg', () => {
+    expect(
+      isMaintainGoalInRange({
+        current_weight_kg: 74.4,
+        target_weight_kg: 76,
+      }),
+    ).toBe(false)
+  })
+
+  it('computes left gauge fill when below target', () => {
+    expect(
+      resolveMaintainGoalDisplay({
+        current_weight_kg: 75,
+        target_weight_kg: 76,
+      }),
+    ).toEqual({
+      inRange: true,
+      driftKg: -1,
+      direction: 'low',
+      gaugeFillPercent: (1 / 1.5) * 100,
+    })
+  })
+
+  it('computes right gauge fill when above target', () => {
+    const display = resolveMaintainGoalDisplay({
+      current_weight_kg: 78,
+      target_weight_kg: 76,
+    })
+
+    expect(display.inRange).toBe(false)
+    expect(display.driftKg).toBe(2)
+    expect(display.direction).toBe('high')
+    expect(display.gaugeFillPercent).toBe(100)
+  })
 })
 
 describe('institutionWeightSnapshot', () => {
@@ -87,7 +147,6 @@ describe('institutionWeightSnapshot', () => {
     const snapshot = institutionWeightSnapshot(74.2, 70)
 
     expect(snapshot.start_weight_kg).toBe(74.2)
-    expect(snapshot.current_weight_kg).toBe(74.2)
     expect(snapshot.target_weight_kg).toBe(70)
     expect(snapshot.goal_type).toBe('lose')
     expect(snapshot.last_milestone_step).toBe(0)
@@ -188,11 +247,27 @@ describe('isProgressOnTrack', () => {
       }),
     ).toBe(false)
   })
+
+  it('rewards maintain goal when current weight stays within range of target', () => {
+    expect(
+      isProgressOnTrack({
+        goal_type: 'maintain',
+        start_weight_kg: 76,
+        current_weight_kg: 75.2,
+        target_weight_kg: 76,
+      }),
+    ).toBe(true)
+  })
 })
 
 describe('calorie suggestion', () => {
   it('suggests lower calories for a loss goal', () => {
-    const suggestion = suggestCalorieTarget(baseSettings, 'lose', 80)
+    const suggestion = suggestCalorieTarget(
+      baseSettings,
+      'lose',
+      80,
+      baseMeasurements,
+    )
 
     expect(suggestion).not.toBeNull()
     expect(suggestion!.suggestedCalories).toBeLessThan(baseSettings.daily_calorie_target)
@@ -200,14 +275,23 @@ describe('calorie suggestion', () => {
   })
 
   it('skips prompt when suggested calories match current intake', () => {
-    const baseline = suggestCalorieTarget(baseSettings, 'maintain', 80)!
+    const baseline = suggestCalorieTarget(
+      baseSettings,
+      'maintain',
+      80,
+      baseMeasurements,
+    )!
     const maintainSettings = {
       ...baseSettings,
-      goal: 'maintain' as const,
       daily_calorie_target: baseline.suggestedCalories,
       tdee_calculated: baseline.tdee,
     }
-    const suggestion = suggestCalorieTarget(maintainSettings, 'maintain', 80)
+    const suggestion = suggestCalorieTarget(
+      maintainSettings,
+      'maintain',
+      80,
+      baseMeasurements,
+    )
 
     expect(suggestion).not.toBeNull()
     expect(suggestion!.delta).toBe(0)
@@ -227,14 +311,13 @@ describe('projectWeightGoalCompletion', () => {
       ...baseSettings,
       daily_calorie_target: 2000,
       tdee_calculated: 2500,
-      weight_kg: 80,
-      goal: 'lose' as const,
     }
 
     const projection = projectWeightGoalCompletion(
       loseGoal,
       settings,
       new Date('2026-01-01T00:00:00.000Z'),
+      baseMeasurements,
     )
 
     expect(projection).not.toBeNull()
@@ -251,6 +334,8 @@ describe('projectWeightGoalCompletion', () => {
         target_weight_kg: 78,
       },
       baseSettings,
+      undefined,
+      baseMeasurements,
     )
 
     expect(projection?.isReached).toBe(true)
@@ -288,8 +373,6 @@ describe('resolveGoalChartProjection', () => {
       ...baseSettings,
       daily_calorie_target: 2000,
       tdee_calculated: 2500,
-      weight_kg: 80,
-      goal: 'lose' as const,
     }
     const nutritionProjection = projectWeightGoalCompletion(
       {
@@ -299,6 +382,7 @@ describe('resolveGoalChartProjection', () => {
       },
       settings,
       now,
+      baseMeasurements,
     )
 
     const chartProjection = resolveGoalChartProjection(

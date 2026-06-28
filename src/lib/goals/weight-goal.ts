@@ -9,6 +9,8 @@ export const WEIGHT_MILESTONE_STEP_KG = 0.5
 /** @deprecated Use WEIGHT_ADJUST_STEP_KG or WEIGHT_MILESTONE_STEP_KG */
 export const WEIGHT_GOAL_STEP_KG = WEIGHT_MILESTONE_STEP_KG
 export const WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG = 0.25
+/** Acceptable drift around the target for a maintain goal (UI + tracking). */
+export const WEIGHT_GOAL_MAINTAIN_RANGE_KG = 1.5
 export const CALORIE_SUGGESTION_THRESHOLD = 50
 export const KCAL_PER_KG = 7700
 
@@ -105,7 +107,7 @@ export function formatWeightKg(value: number) {
   return `${value.toFixed(1).replace('.', ',')} kg`
 }
 
-export function formatProgressSinceStart(goal: Pick<WeightGoal, 'goal_type' | 'start_weight_kg' | 'current_weight_kg'>) {
+export function formatProgressSinceStart(goal: Pick<WeightGoal, 'goal_type' | 'start_weight_kg' | 'current_weight_kg' | 'target_weight_kg'>) {
   const progress = progressKgSinceStart(goal)
   const formatted = formatWeightKg(Math.abs(progress))
 
@@ -129,22 +131,97 @@ export function formatProgressSinceStart(goal: Pick<WeightGoal, 'goal_type' | 's
     return 'Aucun changement depuis le début'
   }
 
-  const delta = goal.current_weight_kg - goal.start_weight_kg
+  const delta = maintainDriftKg(goal)
   if (Math.abs(delta) < 0.05) {
-    return 'Poids stable depuis le début'
+    return 'Sur la cible'
   }
 
-  return `Écart de ${formatWeightKg(Math.abs(delta))} depuis le début`
+  const driftLabel = formatWeightKg(Math.abs(delta))
+  const direction = delta < 0 ? 'sous la cible' : 'au-dessus de la cible'
+
+  if (isMaintainGoalInRange(goal)) {
+    return `En range · ${driftLabel} ${direction}`
+  }
+
+  return `${driftLabel} ${direction}`
+}
+
+export function maintainDriftKg(
+  goal: Pick<WeightGoal, 'current_weight_kg' | 'target_weight_kg'>,
+) {
+  return (
+    clampWeightKg(goal.current_weight_kg) - clampWeightKg(goal.target_weight_kg)
+  )
+}
+
+export function isMaintainGoalInRange(
+  goal: Pick<WeightGoal, 'current_weight_kg' | 'target_weight_kg'>,
+) {
+  return Math.abs(maintainDriftKg(goal)) <= WEIGHT_GOAL_MAINTAIN_RANGE_KG
+}
+
+export type MaintainGoalDirection = 'center' | 'low' | 'high'
+
+export type MaintainGoalDisplay = {
+  inRange: boolean
+  driftKg: number
+  direction: MaintainGoalDirection
+  /** 0–100 fill of one half of the centered gauge. */
+  gaugeFillPercent: number
+}
+
+export function resolveMaintainGoalDisplay(
+  goal: Pick<WeightGoal, 'current_weight_kg' | 'target_weight_kg'>,
+): MaintainGoalDisplay {
+  const driftKg = maintainDriftKg(goal)
+  const absDrift = Math.abs(driftKg)
+
+  let direction: MaintainGoalDirection = 'center'
+  if (absDrift >= 0.05) {
+    direction = driftKg < 0 ? 'low' : 'high'
+  }
+
+  return {
+    inRange: absDrift <= WEIGHT_GOAL_MAINTAIN_RANGE_KG,
+    driftKg,
+    direction,
+    gaugeFillPercent: Math.min(
+      100,
+      (absDrift / WEIGHT_GOAL_MAINTAIN_RANGE_KG) * 100,
+    ),
+  }
+}
+
+export function formatMaintainGoalStatusLabel(
+  goal: Pick<WeightGoal, 'current_weight_kg' | 'target_weight_kg'>,
+) {
+  const display = resolveMaintainGoalDisplay(goal)
+
+  if (display.inRange) {
+    if (display.direction === 'center') {
+      return 'En range'
+    }
+
+    const driftLabel = formatWeightKg(Math.abs(display.driftKg))
+    return display.direction === 'low'
+      ? `En range · ${driftLabel} en dessous`
+      : `En range · ${driftLabel} au-dessus`
+  }
+
+  const driftLabel = formatWeightKg(Math.abs(display.driftKg))
+  return display.direction === 'low'
+    ? `${driftLabel} en dessous de la cible`
+    : `${driftLabel} au-dessus de la cible`
 }
 
 export function isProgressOnTrack(
-  goal: Pick<WeightGoal, 'goal_type' | 'start_weight_kg' | 'current_weight_kg'>,
+  goal: Pick<
+    WeightGoal,
+    'goal_type' | 'start_weight_kg' | 'current_weight_kg' | 'target_weight_kg'
+  >,
 ) {
   if (goal.goal_type === 'maintain') {
-    return (
-      Math.abs(goal.current_weight_kg - goal.start_weight_kg) <
-      WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG
-    )
+    return isMaintainGoalInRange(goal)
   }
 
   return progressKgSinceStart(goal) > 0
@@ -300,12 +377,17 @@ export function isWeightGoalReached(
     return current >= target
   }
 
-  return Math.abs(current - target) < WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG
+  return false
 }
 
 export function remainingKgToTarget(
   goal: Pick<WeightGoal, 'goal_type' | 'current_weight_kg' | 'target_weight_kg'>,
 ) {
+  if (goal.goal_type === 'maintain') {
+    const drift = Math.abs(maintainDriftKg(goal))
+    return Math.max(0, drift - WEIGHT_GOAL_MAINTAIN_RANGE_KG)
+  }
+
   if (isWeightGoalReached(goal)) {
     return 0
   }

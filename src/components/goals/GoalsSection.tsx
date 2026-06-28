@@ -15,14 +15,14 @@ import {
 } from '@/components/ui/card'
 import { FormMessage } from '@/components/ui/form'
 import { useAdjustWeightGoal } from '@/hooks/useAdjustWeightGoal'
-import { useWeightGoal } from '@/hooks/useWeightGoal'
+import { useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
 
 export function GoalsSection() {
-  const { data: goal, isLoading: goalLoading } = useWeightGoal()
+  const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
 
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardMode, setWizardMode] = useState<'create' | 'edit'>('create')

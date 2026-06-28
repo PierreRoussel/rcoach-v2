@@ -38,7 +38,7 @@ import { PageHeader, Pill } from '@/design-system'
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
-import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
 import { useMyWorkouts, useWorkoutStreakDates } from '@/hooks/useWorkouts'
@@ -128,7 +128,7 @@ function ActiveWorkoutPage() {
   const navigate = useNavigate()
   const router = useRouter()
   const { data: profile } = useMyProfile()
-  const { data: nutritionSettings } = useNutritionSettings()
+  const bodyWeightKg = useCurrentWeightKg()
   const { data: allWorkouts } = useMyWorkouts()
   const { data: streakWorkouts = [] } = useWorkoutStreakDates()
   const { data: scheduledResult } = useScheduledSessions()
@@ -404,7 +404,7 @@ function ActiveWorkoutPage() {
           endedAt,
           volumeKg,
           completedSets: completedCount,
-          bodyWeightKg: nutritionSettings?.weight_kg,
+          bodyWeightKg: bodyWeightKg ?? undefined,
           avgHeartRateBpm: heartRate?.avgBpm,
         }),
         records: detectWorkoutPersonalRecords(workoutSummary, allWorkouts ?? []),
@@ -598,7 +598,7 @@ function ActiveWorkoutPage() {
               lastCompletedStep={lastCompletedStep}
               workoutStartedAt={startedAt}
               rpeEnabled={rpeEnabled}
-              bodyWeightKg={nutritionSettings?.weight_kg}
+              bodyWeightKg={bodyWeightKg ?? undefined}
               templateSetHistory={showLastSetColumn ? setHistory : undefined}
               showLastSetColumn={showLastSetColumn}
               onSelectExercise={(index) => {

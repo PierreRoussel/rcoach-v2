@@ -22,14 +22,19 @@ import {
   MacroDistributionSliders,
   type MacroDistributionKey,
 } from '@/components/nutrition/MacroDistributionSliders'
+import { useInsertWeightEntry } from '@/hooks/useWeightEntries'
 import { useNutritionSettings, useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
+import {
+  useCurrentWeightKg,
+  useResolvedWeightGoal,
+} from '@/hooks/useWeightGoal'
 import {
   useResolvedUserMeasurements,
   useUpsertUserMeasurements,
 } from '@/hooks/useUserMeasurements'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
-import type { ActivityLevel, NutritionGoal, NutritionSex } from '@/lib/nutrition/types'
+import type { ActivityLevel, NutritionSex } from '@/lib/nutrition/types'
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   sedentary: 'Sédentaire',
@@ -39,17 +44,14 @@ const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   very_active: 'Très actif',
 }
 
-const GOAL_LABELS: Record<NutritionGoal, string> = {
-  lose: 'Perte de poids',
-  maintain: 'Maintien',
-  gain: 'Prise de masse',
-}
-
 export function NutritionSettingsForm() {
   const { data: settings, isLoading } = useNutritionSettings()
   const { data: measurements, isLoading: measurementsLoading } = useResolvedUserMeasurements()
+  const { data: weightGoal } = useResolvedWeightGoal()
+  const storedWeightKg = useCurrentWeightKg()
   const upsert = useUpsertNutritionSettings()
   const upsertMeasurements = useUpsertUserMeasurements()
+  const insertWeightEntry = useInsertWeightEntry()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -58,19 +60,18 @@ export function NutritionSettingsForm() {
   const [heightCm, setHeightCm] = useState('175')
   const [weightKg, setWeightKg] = useState('75')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
-  const [goal, setGoal] = useState<NutritionGoal>('maintain')
   const [dailyCalories, setDailyCalories] = useState('2200')
   const [macroDistribution, setMacroDistribution] = useState(DEFAULT_MACRO_DISTRIBUTION)
   const [mealDistribution, setMealDistribution] = useState(DEFAULT_MEAL_DISTRIBUTION)
+
+  const tdeeGoal = weightGoal?.goal_type ?? 'maintain'
 
   useEffect(() => {
     if (!settings) {
       return
     }
 
-    setWeightKg(String(settings.weight_kg ?? 75))
     setActivityLevel(settings.activity_level ?? 'moderate')
-    setGoal(settings.goal ?? 'maintain')
     setDailyCalories(String(settings.daily_calorie_target))
     setMacroDistribution({
       carbs: Number(settings.carbs_pct),
@@ -84,6 +85,12 @@ export function NutritionSettingsForm() {
       dinner: Number(settings.dinner_pct),
     })
   }, [settings])
+
+  useEffect(() => {
+    if (storedWeightKg != null) {
+      setWeightKg(String(storedWeightKg))
+    }
+  }, [storedWeightKg])
 
   useEffect(() => {
     if (!measurements) {
@@ -102,25 +109,26 @@ export function NutritionSettingsForm() {
       heightCm: Number(heightCm) || 175,
       weightKg: Number(weightKg) || 75,
       activityLevel,
-      goal,
+      goal: tdeeGoal,
     })
 
     if (!settings) {
       setDailyCalories(String(tdee.dailyTarget))
     }
-  }, [sex, age, heightCm, weightKg, activityLevel, goal, settings])
+  }, [sex, age, heightCm, weightKg, activityLevel, tdeeGoal, settings])
 
   async function handleSave() {
     setSuccessMessage(null)
     setError(null)
 
+    const parsedWeight = Number(weightKg)
     const tdee = calculateTdee({
       sex,
       age: Number(age),
       heightCm: Number(heightCm),
-      weightKg: Number(weightKg),
+      weightKg: parsedWeight,
       activityLevel,
-      goal,
+      goal: tdeeGoal,
     })
 
     try {
@@ -131,9 +139,7 @@ export function NutritionSettingsForm() {
       })
 
       await upsert.mutateAsync({
-        weight_kg: Number(weightKg),
         activity_level: activityLevel,
-        goal,
         calorie_adjustment: settings?.calorie_adjustment ?? 0,
         tdee_calculated: tdee.tdee,
         daily_calorie_target: Number(dailyCalories),
@@ -146,6 +152,18 @@ export function NutritionSettingsForm() {
         dinner_pct: mealDistribution.dinner,
         onboarded_at: settings?.onboarded_at ?? new Date().toISOString(),
       })
+
+      if (
+        Number.isFinite(parsedWeight) &&
+        parsedWeight > 0 &&
+        parsedWeight !== storedWeightKg
+      ) {
+        await insertWeightEntry.mutateAsync({
+          weight_kg: parsedWeight,
+          source: 'manual',
+        })
+      }
+
       setSuccessMessage('Objectifs nutrition mis à jour.')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Sauvegarde impossible.')
@@ -198,21 +216,19 @@ export function NutritionSettingsForm() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Objectif</Label>
-            <Select value={goal} onValueChange={(value) => setGoal(value as NutritionGoal)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(GOAL_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {weightGoal ? (
+            <p className="text-sm text-muted-foreground">
+              Objectif poids :{' '}
+              <span className="font-medium text-foreground">
+                {weightGoal.goal_type === 'lose'
+                  ? 'Perte de poids'
+                  : weightGoal.goal_type === 'gain'
+                    ? 'Prise de masse'
+                    : 'Maintien'}
+              </span>{' '}
+              (défini dans Objectifs)
+            </p>
+          ) : null}
           <Field label="Objectif calorique journalier" value={dailyCalories} onChange={setDailyCalories} />
         </CardContent>
       </Card>
@@ -256,7 +272,14 @@ export function NutritionSettingsForm() {
       ) : null}
       {error ? <FeedbackMessage variant="error">{error}</FeedbackMessage> : null}
 
-      <Button type="button" className="w-full" onClick={() => void handleSave()} disabled={upsert.isPending || upsertMeasurements.isPending}>
+      <Button
+        type="button"
+        className="w-full"
+        onClick={() => void handleSave()}
+        disabled={
+          upsert.isPending || upsertMeasurements.isPending || insertWeightEntry.isPending
+        }
+      >
         Enregistrer
       </Button>
     </div>

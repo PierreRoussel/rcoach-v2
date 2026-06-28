@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { FeatureSlidesCarousel } from '@/components/onboarding/FeatureSlidesCarousel'
 import { OnboardingSetupScreen } from '@/components/onboarding/OnboardingSetupScreen'
 import { ProfileOnboardingSteps } from '@/components/onboarding/ProfileOnboardingSteps'
-import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import {
   redirectIfAppOnboardingComplete,
@@ -36,8 +36,8 @@ type OnboardingPhase = 'slides' | 'profile-check' | 'profile' | 'setup'
 function OnboardingPage() {
   const { nhost, user, isLoading: authLoading } = useAuth()
   const { data: profile } = useMyProfile()
-  const { data: nutritionSettings, isLoading: nutritionSettingsLoading } = useNutritionSettings()
   const { data: userMeasurements, isLoading: userMeasurementsLoading } = useUserMeasurements()
+  const currentWeightKg = useCurrentWeightKg()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [phase, setPhase] = useState<OnboardingPhase>('slides')
@@ -51,32 +51,31 @@ function OnboardingPage() {
   }, [])
 
   const continueAfterSlides = useCallback(() => {
-    if (hasStoredOnboardingBodyData(userMeasurements, nutritionSettings)) {
+    if (hasStoredOnboardingBodyData(userMeasurements)) {
       beginSetup(createEmptyProfileOnboardingForm())
       return
     }
 
     setPhase('profile')
-  }, [beginSetup, nutritionSettings, userMeasurements])
+  }, [beginSetup, userMeasurements])
 
   const advanceFromSlides = useCallback(() => {
-    if (nutritionSettingsLoading || userMeasurementsLoading) {
+    if (userMeasurementsLoading) {
       setPhase('profile-check')
       return
     }
 
     continueAfterSlides()
-  }, [continueAfterSlides, nutritionSettingsLoading, userMeasurementsLoading])
+  }, [continueAfterSlides, userMeasurementsLoading])
 
   useEffect(() => {
-    if (phase !== 'profile-check' || nutritionSettingsLoading || userMeasurementsLoading) {
+    if (phase !== 'profile-check' || userMeasurementsLoading) {
       return
     }
 
     continueAfterSlides()
   }, [
     continueAfterSlides,
-    nutritionSettingsLoading,
     userMeasurementsLoading,
     phase,
   ])
@@ -138,8 +137,7 @@ function OnboardingPage() {
     <ProfileOnboardingSteps
       initialForm={profileOnboardingFormFromStoredBodyData(
         userMeasurements,
-        nutritionSettings?.weight_kg,
-        nutritionSettings,
+        currentWeightKg,
       )}
       onComplete={beginSetup}
       onSkipAll={() => beginSetup(createEmptyProfileOnboardingForm())}

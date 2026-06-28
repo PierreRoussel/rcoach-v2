@@ -31,11 +31,11 @@ import {
   useUserMeasurements,
 } from '@/hooks/useUserMeasurements'
 import {
+  useCurrentWeightKg,
+  useResolvedWeightGoal,
   useUpdateWeightGoal,
   useUpsertWeightGoal,
-  useResolvedWeightGoal,
 } from '@/hooks/useWeightGoal'
-import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import {
   clampWeightKg,
   formatWeightKg,
@@ -58,17 +58,17 @@ type WeightGoalSetupWizardProps = {
 }
 
 const STEP_LABELS = [
+  'Objectif poids',
   'Données corporelles',
   'Macros',
   'Repas',
-  'Objectif poids',
 ]
 
 const EDIT_STEP_LABELS = [
+  'Objectif poids',
   'Paramètres nutrition',
   'Macros',
   'Repas',
-  'Objectif poids',
 ]
 
 export function WeightGoalSetupWizard({
@@ -239,6 +239,19 @@ export function WeightGoalSetupWizard({
     goal: tdeeGoalType,
   })
 
+  function handleNextStep() {
+    if (step === 0) {
+      const parsed = Number(targetWeight.replace(',', '.'))
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        setError('Indiquez un poids cible valide.')
+        return
+      }
+      setError(null)
+    }
+
+    setStep((value) => value + 1)
+  }
+
   async function saveWizardData(): Promise<NutritionSettings> {
     if (mode !== 'edit') {
       await upsertUserMeasurements.mutateAsync(
@@ -327,7 +340,7 @@ export function WeightGoalSetupWizard({
           })
 
           await insertWeightEntry.mutateAsync({
-            weight_kg: institution.current_weight_kg,
+            weight_kg: normalizedCurrent,
             source: 'goal_start',
           })
         } else {
@@ -339,7 +352,6 @@ export function WeightGoalSetupWizard({
           await updateGoal.mutateAsync({
             target_weight_kg: normalizedTarget,
             goal_type: nextGoalType,
-            ...(weightChanged ? { current_weight_kg: normalizedCurrent } : {}),
           })
 
           if (weightChanged) {
@@ -358,7 +370,7 @@ export function WeightGoalSetupWizard({
         await upsertGoal.mutateAsync(institution)
 
         await insertWeightEntry.mutateAsync({
-          weight_kg: institution.current_weight_kg,
+          weight_kg: normalizedCurrent,
           source: 'goal_start',
         })
       }
@@ -428,7 +440,6 @@ export function WeightGoalSetupWizard({
     if (accept) {
       try {
         await upsertNutrition.mutateAsync({
-          goal: pendingCalorieSuggestion.goalType,
           daily_calorie_target: pendingCalorieSuggestion.suggestedCalories,
           tdee_calculated: pendingCalorieSuggestion.tdee,
           onboarded_at: nutritionSettings?.onboarded_at ?? new Date().toISOString(),
@@ -471,48 +482,6 @@ export function WeightGoalSetupWizard({
           </DialogHeader>
 
           {step === 0 ? (
-            <NutritionBodyStep
-              state={formState}
-              showBodyMetrics={mode !== 'edit'}
-              onChange={(patch) =>
-                setFormState((current) => ({ ...current, ...patch }))
-              }
-            />
-          ) : null}
-
-          {step === 1 ? (
-            <NutritionMacroStep
-              state={formState}
-              onMacroChange={(key, value) => {
-                setFormState((current) => ({
-                  ...current,
-                  macroDistribution: patchMacroDistribution(
-                    current.macroDistribution,
-                    key,
-                    value,
-                  ),
-                }))
-              }}
-            />
-          ) : null}
-
-          {step === 2 ? (
-            <NutritionMealStep
-              state={formState}
-              onMealChange={(key, value) => {
-                setFormState((current) => ({
-                  ...current,
-                  mealDistribution: patchMealDistribution(
-                    current.mealDistribution,
-                    key,
-                    value,
-                  ),
-                }))
-              }}
-            />
-          ) : null}
-
-          {step === 3 ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Poids actuel :{' '}
@@ -540,6 +509,50 @@ export function WeightGoalSetupWizard({
                   </span>
                 </p>
               ) : null}
+            </div>
+          ) : null}
+
+          {step === 1 ? (
+            <NutritionBodyStep
+              state={formState}
+              showBodyMetrics={mode !== 'edit'}
+              onChange={(patch) =>
+                setFormState((current) => ({ ...current, ...patch }))
+              }
+            />
+          ) : null}
+
+          {step === 2 ? (
+            <NutritionMacroStep
+              state={formState}
+              onMacroChange={(key, value) => {
+                setFormState((current) => ({
+                  ...current,
+                  macroDistribution: patchMacroDistribution(
+                    current.macroDistribution,
+                    key,
+                    value,
+                  ),
+                }))
+              }}
+            />
+          ) : null}
+
+          {step === 3 ? (
+            <div className="space-y-4">
+              <NutritionMealStep
+                state={formState}
+                onMealChange={(key, value) => {
+                  setFormState((current) => ({
+                    ...current,
+                    mealDistribution: patchMealDistribution(
+                      current.mealDistribution,
+                      key,
+                      value,
+                    ),
+                  }))
+                }}
+              />
               <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">TDEE estimé</span>
@@ -590,7 +603,7 @@ export function WeightGoalSetupWizard({
               </Button>
             </div>
             {step < 3 ? (
-              <Button type="button" onClick={() => setStep((value) => value + 1)}>
+              <Button type="button" onClick={handleNextStep}>
                 Continuer
               </Button>
             ) : (

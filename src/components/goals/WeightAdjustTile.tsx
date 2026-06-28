@@ -6,7 +6,10 @@ import { formatWeightKg, type WeightGoal } from '@/lib/goals/weight-goal'
 import { cn } from '@/lib/utils'
 
 type WeightAdjustTileProps = {
-  goal: Pick<WeightGoal, 'goal_type' | 'start_weight_kg' | 'current_weight_kg'>
+  goal: Pick<
+    WeightGoal,
+    'goal_type' | 'start_weight_kg' | 'current_weight_kg' | 'target_weight_kg'
+  >
   disabled?: boolean
   onAdjust: (deltaSteps: number) => void
   className?: string

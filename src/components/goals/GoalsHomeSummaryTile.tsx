@@ -4,11 +4,13 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import { Progress } from '@/components/ui/progress'
+import { WeightMaintainDriftGauge } from '@/components/goals/WeightMaintainDriftGauge'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
-import { useWeightGoal } from '@/hooks/useWeightGoal'
+import { useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
+  formatMaintainGoalStatusLabel,
   goalProgressPercent,
   projectWeightGoalCompletion,
   WEIGHT_GOAL_TYPE_LABELS,
@@ -16,7 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 
 export function GoalsHomeSummaryTile() {
-  const { data: goal, isLoading: goalLoading } = useWeightGoal()
+  const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: userMeasurements } = useUserMeasurements()
 
@@ -74,15 +76,27 @@ export function GoalsHomeSummaryTile() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
-                {projection?.projectedDate && !projection.isReached
+                {goal.goal_type === 'maintain'
+                  ? formatMaintainGoalStatusLabel(goal)
+                  : WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
+                {goal.goal_type !== 'maintain' &&
+                projection?.projectedDate &&
+                !projection.isReached
                   ? ` · estimé le ${format(projection.projectedDate, 'd MMM', { locale: fr })}`
                   : ''}
               </p>
-              <Progress
-                value={goalProgressPercent(goal)}
-                className="mt-2 h-1.5 bg-muted"
-              />
+              {goal.goal_type === 'maintain' ? (
+                <WeightMaintainDriftGauge
+                  goal={goal}
+                  compact
+                  className="mt-2"
+                />
+              ) : (
+                <Progress
+                  value={goalProgressPercent(goal)}
+                  className="mt-2 h-1.5 bg-muted"
+                />
+              )}
             </>
           )}
         </div>

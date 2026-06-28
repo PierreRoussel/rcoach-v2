@@ -7,21 +7,14 @@ import {
 } from '@/lib/measurements/resolve-user-measurements'
 
 describe('resolveUserMeasurements', () => {
-  it('prefers stored measurements over nutrition settings', () => {
+  it('returns stored measurements', () => {
     expect(
-      resolveUserMeasurements(
-        {
-          sex: 'female',
-          age: 28,
-          height_cm: 165,
-          waist_cm: 70,
-        },
-        {
-          sex: 'male',
-          age: 40,
-          height_cm: 180,
-        },
-      ),
+      resolveUserMeasurements({
+        sex: 'female',
+        age: 28,
+        height_cm: 165,
+        waist_cm: 70,
+      }),
     ).toEqual({
       sex: 'female',
       age: 28,
@@ -30,64 +23,59 @@ describe('resolveUserMeasurements', () => {
     })
   })
 
-  it('falls back to nutrition settings for legacy users', () => {
-    expect(
-      resolveUserMeasurements(null, {
-        sex: 'male',
-        age: 35,
-        height_cm: 178,
-      }),
-    ).toEqual({
-      sex: 'male',
-      age: 35,
-      height_cm: 178,
-      waist_cm: null,
-    })
+  it('returns null when no measurements are stored', () => {
+    expect(resolveUserMeasurements(null)).toBeNull()
   })
 
-  it('merges partial measurements with nutrition fallback', () => {
+  it('keeps partial measurements', () => {
     expect(
-      resolveUserMeasurements(
-        {
-          sex: 'female',
-          age: null,
-          height_cm: null,
-          waist_cm: null,
-        },
-        {
-          sex: 'male',
-          age: 32,
-          height_cm: 170,
-        },
-      ),
+      resolveUserMeasurements({
+        sex: 'female',
+        age: null,
+        height_cm: null,
+        waist_cm: null,
+      }),
     ).toEqual({
       sex: 'female',
-      age: 32,
-      height_cm: 170,
+      age: null,
+      height_cm: null,
       waist_cm: null,
     })
   })
 })
 
 describe('hasResolvedBodyMeasurements', () => {
-  it('returns true when nutrition settings contain legacy body data', () => {
+  it('returns true when core body fields are stored', () => {
     expect(
-      hasResolvedBodyMeasurements(null, {
+      hasResolvedBodyMeasurements({
         sex: 'male',
         age: 30,
         height_cm: 175,
+        waist_cm: null,
       }),
     ).toBe(true)
+  })
+
+  it('returns false when core body fields are missing', () => {
+    expect(
+      hasResolvedBodyMeasurements({
+        sex: 'male',
+        age: null,
+        height_cm: 175,
+        waist_cm: null,
+      }),
+    ).toBe(false)
   })
 })
 
 describe('hasAnyResolvedMeasurements', () => {
-  it('returns true with only nutrition fallback', () => {
+  it('returns true with any stored field', () => {
     expect(
-      hasAnyResolvedMeasurements(null, {
-        sex: 'male',
-        age: 30,
+      hasAnyResolvedMeasurements({
+        sex: null,
+        age: null,
         height_cm: 175,
+        waist_cm: null,
       }),
     ).toBe(true)
   })

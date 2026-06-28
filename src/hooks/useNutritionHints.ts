@@ -126,6 +126,7 @@ function useNutritionDayCacheRevision(userId: string | undefined, dates: string[
 export function useNutritionHintAvailability(
   anchorDate: string,
   settings: NutritionSettings | null | undefined,
+  weightKg?: number | null,
 ) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -148,20 +149,21 @@ export function useNutritionHintAvailability(
 
     const entries = windowDates.flatMap((date) => getCachedEntries(queryClient, userId, date) ?? [])
     const byDate = groupEntriesByDate(entries)
-    const metrics = buildNutritionHintMetrics(anchorDate, byDate, settings)
+    const metrics = buildNutritionHintMetrics(anchorDate, byDate, settings, weightKg)
     const hint = pickNutritionHint(metrics)
 
     return {
       hasActionableHint: isNutritionHintVisible(metrics, hint.id),
       hintId: hint.id,
     }
-  }, [anchorDate, cacheRevision, queryClient, settings, userId, windowDates])
+  }, [anchorDate, cacheRevision, queryClient, settings, userId, weightKg, windowDates])
 }
 
 export function useNutritionHints(
   anchorDate: string,
   settings: NutritionSettings | null | undefined,
   open: boolean,
+  weightKg?: number | null,
 ) {
   const { nhost, isAuthenticated, user } = useAuth()
   const queryClient = useQueryClient()

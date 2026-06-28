@@ -24,12 +24,7 @@ function baseSettings(overrides: Partial<NutritionSettings> = {}): NutritionSett
     lunch_pct: 35,
     snack_pct: 10,
     dinner_pct: 30,
-    sex: 'male',
-    age: 30,
-    height_cm: 180,
-    weight_kg: 75,
     activity_level: 'moderate',
-    goal: 'maintain',
     calorie_adjustment: 0,
     tdee_calculated: 2200,
     onboarded_at: '2026-01-01',
@@ -92,7 +87,7 @@ function metricsFromEntries(
     byDate.set(item.logged_date, bucket)
   }
 
-  return buildNutritionHintMetrics(anchorDate, byDate, settings)
+  return buildNutritionHintMetrics(anchorDate, byDate, settings, 75)
 }
 
 describe('nutrition hints engine', () => {

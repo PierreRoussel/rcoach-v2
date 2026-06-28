@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { WaistAdjustTile } from '@/components/goals/WaistAdjustTile'
 import { WaistProgressChart } from '@/components/goals/WaistProgressChart'
+import { WeightMaintainDriftGauge } from '@/components/goals/WeightMaintainDriftGauge'
 import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
 import { WeightGoalReachedCelebrationOverlay } from '@/components/goals/WeightGoalReachedCelebrationOverlay'
 import { WeightGoalSetupWizard } from '@/components/goals/WeightGoalSetupWizard'
@@ -27,11 +28,12 @@ import {
   useUpsertNutritionSettings,
 } from '@/hooks/useNutritionSettings'
 import { useWeightEntries } from '@/hooks/useWeightEntries'
-import { useUpdateWeightGoal, useWeightGoal } from '@/hooks/useWeightGoal'
+import { useUpdateWeightGoal, useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
   goalProgressPercent,
   hasTdeeProfileData,
+  isMaintainGoalInRange,
   isWeightGoalReached,
   projectWeightGoalCompletion,
   type WeightGoal,
@@ -55,7 +57,7 @@ type GoalsPageProps = {
 
 export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) {
   const { user } = useAuth()
-  const { data: goal, isLoading: goalLoading } = useWeightGoal()
+  const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: userMeasurements } = useUserMeasurements()
   const { data: weightEntries = [], isLoading: entriesLoading } =
@@ -85,7 +87,11 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
       onGoalReached: openCelebration,
     })
 
-  const goalReached = goal != null && isWeightGoalReached(goal)
+  const isMaintainGoal = goal?.goal_type === 'maintain'
+  const maintainInRange =
+    isMaintainGoal && goal != null && isMaintainGoalInRange(goal)
+  const goalReached =
+    goal != null && !isMaintainGoal && isWeightGoalReached(goal)
 
   useEffect(() => {
     if (!previewWeightGoalReached || !goal) {
@@ -114,14 +120,7 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
 
       if (applyCalorieSuggestion && suggestedCalories != null && nutritionSettings) {
         await upsertNutrition.mutateAsync({
-          goal: 'maintain',
           daily_calorie_target: suggestedCalories,
-          weight_kg: celebrationGoal.current_weight_kg,
-        })
-      } else if (nutritionSettings) {
-        await upsertNutrition.mutateAsync({
-          goal: 'maintain',
-          weight_kg: celebrationGoal.current_weight_kg,
         })
       }
     },
@@ -178,6 +177,8 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
           <Card
             className={cn(
               'rounded-2xl border-border',
+              maintainInRange &&
+                'border-secondary/30 bg-gradient-to-br from-soft-secondary/60 via-card to-soft-secondary/25',
               goalReached &&
                 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5 dark:from-emerald-500/15 dark:to-emerald-500/10',
             )}
@@ -188,26 +189,30 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
                   <CardTitle
                     className={cn(
                       'font-display font-black',
+                      maintainInRange && 'text-secondary-foreground',
                       goalReached && 'text-emerald-700 dark:text-emerald-300',
                     )}
                   >
                     {WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
                   </CardTitle>
-                  <CardDescription
-                    className={cn(
-                      goalReached && 'text-emerald-700/80 dark:text-emerald-300/80',
-                    )}
-                  >
-                    Cible : {formatWeightKg(goal.target_weight_kg)}
-                    {goalReached ? ' — Objectif atteint !' : ''}
-                  </CardDescription>
+                  {!isMaintainGoal ? (
+                    <CardDescription
+                      className={cn(
+                        goalReached && 'text-emerald-700/80 dark:text-emerald-300/80',
+                      )}
+                    >
+                      Cible : {formatWeightKg(goal.target_weight_kg)}
+                      {goalReached ? ' — Objectif atteint !' : ''}
+                    </CardDescription>
+                  ) : null}
                 </div>
                 <Target
                   className={cn(
                     'size-5',
+                    maintainInRange && 'text-secondary',
                     goalReached
                       ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-primary',
+                      : !maintainInRange && 'text-primary',
                   )}
                   aria-hidden
                 />
@@ -220,20 +225,24 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
                 onAdjust={(delta) => void adjustWeight(goal, delta)}
               />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Progression vers la cible</span>
-                  <span>{Math.round(goalProgressPercent(goal))} %</span>
+              {isMaintainGoal ? (
+                <WeightMaintainDriftGauge goal={goal} />
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Progression vers la cible</span>
+                    <span>{Math.round(goalProgressPercent(goal))} %</span>
+                  </div>
+                  <Progress
+                    value={goalProgressPercent(goal)}
+                    className={cn(
+                      'h-2',
+                      goalReached &&
+                        'bg-emerald-500/20 [&_[data-slot=progress-indicator]]:bg-emerald-500 dark:[&_[data-slot=progress-indicator]]:bg-emerald-400',
+                    )}
+                  />
                 </div>
-                <Progress
-                  value={goalProgressPercent(goal)}
-                  className={cn(
-                    'h-2',
-                    goalReached &&
-                      'bg-emerald-500/20 [&_[data-slot=progress-indicator]]:bg-emerald-500 dark:[&_[data-slot=progress-indicator]]:bg-emerald-400',
-                  )}
-                />
-              </div>
+              )}
 
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -297,7 +306,12 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
                 )}
               </CardContent>
             </Card>
-          ) : !hasTdeeProfileData(userMeasurements, nutritionSettings, goal.current_weight_kg) ? (
+          ) : !hasTdeeProfileData(
+              userMeasurements,
+              nutritionSettings,
+              goal.current_weight_kg,
+              goal.goal_type,
+            ) ? (
             <Card className="rounded-2xl border-border">
               <CardContent className="pt-6 text-sm text-muted-foreground">
                 Complétez vos mensurations et votre profil nutrition via « Modifier

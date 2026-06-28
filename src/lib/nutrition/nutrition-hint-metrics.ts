@@ -178,6 +178,7 @@ export function buildNutritionHintMetrics(
   anchorDate: string,
   entriesByDate: Map<string, MealLogEntry[]>,
   settings: NutritionSettings,
+  weightKg?: number | null,
 ): NutritionHintMetrics {
   const windowDates = getHintWindowDates(anchorDate)
   const days = windowDates.map((date) =>
@@ -196,9 +197,10 @@ export function buildNutritionHintMetrics(
     Number(settings.fat_pct),
   )
 
-  const weightKg = settings.weight_kg != null ? Number(settings.weight_kg) : null
-  const proteinGramsPerKgTarget = weightKg
-    ? { min: 1.6 * weightKg, max: 2.2 * weightKg }
+  const resolvedWeightKg =
+    weightKg != null && Number.isFinite(weightKg) ? Number(weightKg) : null
+  const proteinGramsPerKgTarget = resolvedWeightKg
+    ? { min: 1.6 * resolvedWeightKg, max: 2.2 * resolvedWeightKg }
     : null
 
   const avgDaily = averageExtendedTotals(days)

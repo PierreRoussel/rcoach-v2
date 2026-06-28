@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNutritionHintAvailability, useNutritionHints } from '@/hooks/useNutritionHints'
+import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import { useTypewriterWords } from '@/hooks/useTypewriterWords'
 import { cn } from '@/lib/utils'
 import type { NutritionSettings } from '@/lib/nutrition/types'
@@ -17,8 +18,18 @@ type NutritionHintFabProps = {
 export function NutritionHintFab({ anchorDate, settings, hidden = false }: NutritionHintFabProps) {
   const [open, setOpen] = useState(false)
   const bubbleRef = useRef<HTMLDivElement>(null)
-  const { hasActionableHint } = useNutritionHintAvailability(anchorDate, settings)
-  const { data, isLoading, isFetching, isError } = useNutritionHints(anchorDate, settings, open)
+  const currentWeightKg = useCurrentWeightKg()
+  const { hasActionableHint } = useNutritionHintAvailability(
+    anchorDate,
+    settings,
+    currentWeightKg,
+  )
+  const { data, isLoading, isFetching, isError } = useNutritionHints(
+    anchorDate,
+    settings,
+    open,
+    currentWeightKg,
+  )
 
   const message = data?.hint.message ?? ''
   const { visibleText, isComplete } = useTypewriterWords(message)

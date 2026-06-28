@@ -28,13 +28,13 @@ import {
   MacroDistributionSliders,
   type MacroDistributionKey,
 } from '@/components/nutrition/MacroDistributionSliders'
+import { useInsertWeightEntry } from '@/hooks/useWeightEntries'
 import { useUpsertNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useUpsertUserMeasurements } from '@/hooks/useUserMeasurements'
 import { adjustLinkedPercentages } from '@/lib/nutrition/linked-percentages'
 import { calculateTdee } from '@/lib/nutrition/tdee'
 import type {
   ActivityLevel,
-  NutritionGoal,
   NutritionSex,
   NutritionSettings,
 } from '@/lib/nutrition/types'
@@ -53,11 +53,7 @@ const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   very_active: 'Très actif',
 }
 
-const GOAL_LABELS: Record<NutritionGoal, string> = {
-  lose: 'Perte de poids',
-  maintain: 'Maintien',
-  gain: 'Prise de masse',
-}
+const GOAL_FOR_TDEE = 'maintain' as const
 
 export function NutritionOnboardingWizard({
   open,
@@ -66,13 +62,13 @@ export function NutritionOnboardingWizard({
 }: NutritionOnboardingWizardProps) {
   const upsert = useUpsertNutritionSettings()
   const upsertMeasurements = useUpsertUserMeasurements()
+  const insertWeightEntry = useInsertWeightEntry()
   const [step, setStep] = useState(0)
   const [sex, setSex] = useState<NutritionSex>('male')
   const [age, setAge] = useState('30')
   const [heightCm, setHeightCm] = useState('175')
   const [weightKg, setWeightKg] = useState('75')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
-  const [goal, setGoal] = useState<NutritionGoal>('maintain')
   const [dailyCalories, setDailyCalories] = useState('2200')
   const [macroDistribution, setMacroDistribution] = useState(DEFAULT_MACRO_DISTRIBUTION)
   const [mealDistribution, setMealDistribution] = useState(DEFAULT_MEAL_DISTRIBUTION)
@@ -96,11 +92,11 @@ export function NutritionOnboardingWizard({
       heightCm: Number(heightCm) || 175,
       weightKg: Number(weightKg) || 75,
       activityLevel,
-      goal,
+      goal: GOAL_FOR_TDEE,
     })
 
     setDailyCalories(String(tdee.dailyTarget))
-  }, [open, sex, age, heightCm, weightKg, activityLevel, goal])
+  }, [open, sex, age, heightCm, weightKg, activityLevel])
 
   async function handleFinish() {
     setError(null)
@@ -111,13 +107,11 @@ export function NutritionOnboardingWizard({
       heightCm: Number(heightCm),
       weightKg: Number(weightKg),
       activityLevel,
-      goal,
+      goal: GOAL_FOR_TDEE,
     })
 
     const payload: Partial<NutritionSettings> = {
-      weight_kg: Number(weightKg),
       activity_level: activityLevel,
-      goal,
       calorie_adjustment: 0,
       tdee_calculated: tdee.tdee,
       daily_calorie_target: Number(dailyCalories),
@@ -138,6 +132,10 @@ export function NutritionOnboardingWizard({
         height_cm: Number(heightCm),
       })
       await upsert.mutateAsync(payload)
+      await insertWeightEntry.mutateAsync({
+        weight_kg: Number(weightKg),
+        source: 'manual',
+      })
       onCompleted()
     } catch (finishError) {
       setError(
@@ -205,21 +203,6 @@ export function NutritionOnboardingWizard({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Objectif</Label>
-              <Select value={goal} onValueChange={(value) => setGoal(value as NutritionGoal)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(GOAL_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>Objectif calorique journalier</Label>
               <Input value={dailyCalories} onChange={(event) => setDailyCalories(event.target.value)} inputMode="numeric" />
             </div>
@@ -271,7 +254,7 @@ export function NutritionOnboardingWizard({
               Continuer
             </Button>
           ) : (
-            <Button type="button" onClick={() => void handleFinish()} disabled={upsert.isPending || upsertMeasurements.isPending}>
+            <Button type="button" onClick={() => void handleFinish()} disabled={upsert.isPending || upsertMeasurements.isPending || insertWeightEntry.isPending}>
               Terminer
             </Button>
           )}
