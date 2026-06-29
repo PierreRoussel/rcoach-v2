@@ -6,9 +6,15 @@ import {
   type ScheduledSession,
   type ScheduleOccurrence,
 } from '@/lib/schedule/expand-occurrences'
+import { hadCompletedWorkoutOnDay } from '@/lib/schedule/missed-occurrences'
 
 export type TodayReminder = ScheduleOccurrence & {
   timeLabel: string | null
+}
+
+type CompletedWorkoutDayCheck = {
+  started_at: string
+  ended_at: string | null
 }
 
 function formatTimeLabel(timeLocal: string | null): string | null {
@@ -27,7 +33,12 @@ function formatTimeLabel(timeLocal: string | null): string | null {
 export function getTodayReminders(
   sessions: ScheduledSession[],
   now = new Date(),
+  completedWorkouts: CompletedWorkoutDayCheck[] = [],
 ): TodayReminder[] {
+  if (hadCompletedWorkoutOnDay(completedWorkouts, now)) {
+    return []
+  }
+
   return getTodayOccurrences(sessions, now).map((occurrence) => ({
     ...occurrence,
     timeLabel: formatTimeLabel(occurrence.timeLocal),

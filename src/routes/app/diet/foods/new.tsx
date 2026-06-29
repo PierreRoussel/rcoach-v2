@@ -10,6 +10,12 @@ import { Label } from '@/components/ui/label'
 import { useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
+import {
+  formatParsedNutrientForInput,
+  parseNutritionLabelFr,
+} from '@/lib/nutrition/label-scan/parse-nutrition-label-fr'
+import { recognizeLabelTextFromImage } from '@/lib/nutrition/label-scan/run-tesseract-ocr'
+import { parsedLabelHasMacros } from '@/lib/nutrition/label-scan/types'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
@@ -18,6 +24,7 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { MealType } from '@/lib/nutrition/types'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
+import { LabelImagePrefillButton } from '@/components/nutrition/LabelImagePrefillButton'
 import type { Food } from '@/lib/nutrition/types'
 
 const newFoodSearchSchema = z.object({
@@ -55,6 +62,7 @@ function NewFoodPage() {
     text: string
     variant: 'success' | 'error'
   } | null>(null)
+  const [labelScanPending, setLabelScanPending] = useState(false)
 
   const { createFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
@@ -97,6 +105,68 @@ function NewFoodPage() {
     setServingSizeG(String(draft.servingSizeG))
     setServingLabel(draft.servingLabel)
     setStep(1)
+  }
+
+  function applyParsedNutrition(parsed: ReturnType<typeof parseNutritionLabelFr>) {
+    if (parsed.calories != null) {
+      setCalories(formatParsedNutrientForInput(parsed.calories))
+    }
+    if (parsed.carbsG != null) {
+      setCarbsG(formatParsedNutrientForInput(parsed.carbsG))
+    }
+    if (parsed.proteinG != null) {
+      setProteinG(formatParsedNutrientForInput(parsed.proteinG))
+    }
+    if (parsed.fatG != null) {
+      setFatG(formatParsedNutrientForInput(parsed.fatG))
+    }
+    if (parsed.saltG != null) {
+      setSaltG(formatParsedNutrientForInput(parsed.saltG))
+    }
+    if (parsed.sugarG != null) {
+      setSugarG(formatParsedNutrientForInput(parsed.sugarG))
+    }
+    if (parsed.saturatedFatG != null) {
+      setSaturatedFatG(formatParsedNutrientForInput(parsed.saturatedFatG))
+    }
+
+    setServingSizeG('100')
+    setServingLabel('100 g')
+  }
+
+  async function handleLabelImage(file: File) {
+    setLabelScanPending(true)
+    setFeedback(null)
+
+    try {
+      const text = await recognizeLabelTextFromImage(file)
+      const parsed = parseNutritionLabelFr(text)
+
+      if (!parsedLabelHasMacros(parsed)) {
+        setFeedback({
+          text: 'Aucune valeur nutritionnelle détectée. Réessayez avec une photo plus nette du tableau.',
+          variant: 'error',
+        })
+        return
+      }
+
+      applyParsedNutrition(parsed)
+      setStep(1)
+      setFeedback({
+        text: 'Valeurs détectées pour 100 g — vérifiez avant enregistrement.',
+        variant: 'success',
+      })
+    } catch (labelError) {
+      setFeedback({
+        text:
+          labelError instanceof Error
+            ? labelError.message
+            : "Lecture de l'image impossible.",
+        variant: 'error',
+      })
+    } finally {
+      setLabelScanPending(false)
+    }
   }
 
   async function handleScan() {
@@ -204,6 +274,11 @@ function NewFoodPage() {
           <Button type="button" onClick={() => void handleScan()}>
             Scanner un code-barres
           </Button>
+          <LabelImagePrefillButton
+            className="w-full"
+            pending={labelScanPending}
+            onFileSelected={(file) => void handleLabelImage(file)}
+          />
           <Button type="button" variant="outline" onClick={() => setStep(1)}>
             Ajouter manuellement
           </Button>
@@ -215,6 +290,11 @@ function NewFoodPage() {
               <Barcode className="size-4" />
               {barcode ? 'Rescanner' : 'Scanner le code-barres'}
             </Button>
+            <LabelImagePrefillButton
+              className="rounded-full"
+              pending={labelScanPending}
+              onFileSelected={(file) => void handleLabelImage(file)}
+            />
             {barcode ? (
               <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                 {barcode}

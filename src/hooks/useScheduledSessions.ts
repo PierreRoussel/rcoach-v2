@@ -18,6 +18,7 @@ import {
 } from '@/lib/graphql/schema-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { getTodayReminders } from '@/lib/schedule/today-reminders'
+import { useMyLastCompletedWorkout } from '@/hooks/useWorkouts'
 
 export {
   isGraphqlScheduleMissingError,
@@ -150,16 +151,23 @@ export function useDeleteScheduledSession() {
 }
 
 export function useTodayReminders(now = new Date()) {
-  const { data: sessionsResult, isLoading } = useScheduledSessions()
+  const { data: sessionsResult, isLoading: sessionsLoading } = useScheduledSessions()
+  const { data: lastCompletedWorkout, isLoading: workoutLoading } =
+    useMyLastCompletedWorkout()
 
   const todayReminders = useMemo(
-    () => getTodayReminders(sessionsResult?.sessions ?? [], now),
-    [sessionsResult?.sessions, now],
+    () =>
+      getTodayReminders(
+        sessionsResult?.sessions ?? [],
+        now,
+        lastCompletedWorkout ? [lastCompletedWorkout] : [],
+      ),
+    [sessionsResult?.sessions, now, lastCompletedWorkout],
   )
 
   return {
     todayReminders,
-    isLoading,
+    isLoading: sessionsLoading || workoutLoading,
     scheduleAvailable: sessionsResult?.deployed ?? true,
   }
 }
