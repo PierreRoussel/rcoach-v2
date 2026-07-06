@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { FoodMacroStat } from '@/components/nutrition/FoodMacroStat'
 import { FoodNutrientBadges } from '@/components/nutrition/FoodNutrientBadges'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import {
   Drawer,
   DrawerContent,
@@ -13,8 +14,16 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useFoodPortionTypes } from '@/hooks/useFoodRenameAndPortions'
 import { formatNutrient, scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
+import {
+  buildPortionOptions,
+  portionInputFromOption,
+  resolveInitialPortionOption,
+  type PortionOption,
+  type PortionOptionId,
+} from '@/lib/nutrition/portion-options'
 import type { Food } from '@/lib/nutrition/types'
 
 type PortionPickerSheetProps = {
@@ -31,30 +40,36 @@ function formatPortionFieldValue(value: number) {
   return formatNutrient(value)
 }
 
-function applyInitialPortion(
+function formatPortionOptionLabel(option: PortionOption) {
+  if (option.kind === 'grams') {
+    return option.label
+  }
+
+  return `${option.label} (${formatNutrient(option.sizeG ?? 0)} g)`
+}
+
+function applyInitialSelection(
   food: Food,
+  portionOptions: PortionOption[],
   initialPortion: PortionInput | null | undefined,
-  setMode: (mode: 'grams' | 'servings') => void,
-  setGrams: (value: string) => void,
-  setServings: (value: string) => void,
+  portionTypes: ReturnType<typeof useFoodPortionTypes>['data'],
+  setSelectedOptionId: (id: PortionOptionId) => void,
+  setQuantity: (value: string) => void,
 ) {
-  if (initialPortion?.mode === 'grams') {
-    setMode('grams')
-    setGrams(formatPortionFieldValue(initialPortion.quantityG))
-    setServings('1')
+  const fallbackOptionId = portionOptions[0]?.id ?? 'grams'
+  const fallbackQuantity = formatPortionFieldValue(Number(food.serving_size_g) || 100)
+
+  if (!initialPortion) {
+    setSelectedOptionId(fallbackOptionId)
+    setQuantity(fallbackQuantity)
     return
   }
 
-  if (initialPortion?.mode === 'servings') {
-    setMode('servings')
-    setServings(formatPortionFieldValue(initialPortion.servings))
-    setGrams(formatPortionFieldValue(Number(food.serving_size_g) || 100))
-    return
-  }
+  const resolved = resolveInitialPortionOption(initialPortion, food, portionTypes ?? [])
+  const hasOption = portionOptions.some((option) => option.id === resolved.optionId)
 
-  setMode('grams')
-  setGrams(formatPortionFieldValue(Number(food.serving_size_g) || 100))
-  setServings('1')
+  setSelectedOptionId(hasOption ? resolved.optionId : fallbackOptionId)
+  setQuantity(formatPortionFieldValue(resolved.quantity))
 }
 
 export function PortionPickerSheet({
@@ -66,28 +81,38 @@ export function PortionPickerSheet({
   onConfirm,
   isSubmitting = false,
 }: PortionPickerSheetProps) {
-  const [mode, setMode] = useState<'grams' | 'servings'>('grams')
-  const [grams, setGrams] = useState('100')
-  const [servings, setServings] = useState('1')
+  const { data: portionTypes = [] } = useFoodPortionTypes(food?.id ?? null, open)
+  const portionOptions = useMemo(
+    () => (food ? buildPortionOptions(food, portionTypes) : []),
+    [food, portionTypes],
+  )
+  const [selectedOptionId, setSelectedOptionId] = useState<PortionOptionId>('grams')
+  const [quantity, setQuantity] = useState('100')
+
+  const selectedOption =
+    portionOptions.find((option) => option.id === selectedOptionId) ?? portionOptions[0]
 
   useEffect(() => {
     if (!food || !open) {
       return
     }
 
-    applyInitialPortion(food, initialPortion, setMode, setGrams, setServings)
-  }, [food, initialPortion, open])
+    applyInitialSelection(
+      food,
+      portionOptions,
+      initialPortion,
+      portionTypes,
+      setSelectedOptionId,
+      setQuantity,
+    )
+  }, [food, initialPortion, open, portionOptions, portionTypes])
 
-  if (!food) {
+  if (!food || !selectedOption) {
     return null
   }
 
-  const preview = scaleNutrientsPer100g(
-    food,
-    mode === 'grams'
-      ? { mode: 'grams', quantityG: Number(grams) || 0 }
-      : { mode: 'servings', servings: Number(servings) || 0 },
-  )
+  const portion = portionInputFromOption(selectedOption, Number(quantity) || 0, food)
+  const preview = scaleNutrientsPer100g(food, portion)
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -101,32 +126,51 @@ export function PortionPickerSheet({
         </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-4">
-          <Tabs value={mode} onValueChange={(value) => setMode(value as 'grams' | 'servings')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="grams">Grammes</TabsTrigger>
-              <TabsTrigger value="servings">Portions</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <ScrollArea className="w-full whitespace-nowrap">
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={selectedOptionId}
+              onValueChange={(value) => {
+                if (value) {
+                  setSelectedOptionId(value as PortionOptionId)
+                }
+              }}
+              className="inline-flex w-max min-w-full rounded-xl"
+            >
+              {portionOptions.map((option) => (
+                <ToggleGroupItem
+                  key={option.id}
+                  value={option.id}
+                  className="shrink-0 px-3"
+                  aria-label={formatPortionOptionLabel(option)}
+                >
+                  {formatPortionOptionLabel(option)}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
-          {mode === 'grams' ? (
+          {selectedOption.kind === 'grams' ? (
             <div className="space-y-2">
-              <Label htmlFor="grams">Quantité (g)</Label>
+              <Label htmlFor="portion-quantity">Quantité (g)</Label>
               <Input
-                id="grams"
-                value={grams}
-                onChange={(event) => setGrams(event.target.value)}
+                id="portion-quantity"
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
                 inputMode="decimal"
               />
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="servings">
-                Nombre de portions ({food.serving_label || `${food.serving_size_g} g`})
+              <Label htmlFor="portion-quantity">
+                Nombre de {selectedOption.label} ({formatNutrient(selectedOption.sizeG ?? 0)} g)
               </Label>
               <Input
-                id="servings"
-                value={servings}
-                onChange={(event) => setServings(event.target.value)}
+                id="portion-quantity"
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
                 inputMode="decimal"
               />
             </div>
@@ -157,13 +201,7 @@ export function PortionPickerSheet({
             type="button"
             className="w-full"
             disabled={isSubmitting}
-            onClick={() =>
-              onConfirm(
-                mode === 'grams'
-                  ? { mode: 'grams', quantityG: Number(grams) || 0 }
-                  : { mode: 'servings', servings: Number(servings) || 0 },
-              )
-            }
+            onClick={() => onConfirm(portionInputFromOption(selectedOption, Number(quantity) || 0, food))}
           >
             {confirmLabel}
           </Button>

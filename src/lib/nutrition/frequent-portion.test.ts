@@ -59,4 +59,10 @@ describe('formatFoodPortionPreview', () => {
   it('formats grams and calories for the chosen portion', () => {
     expect(formatFoodPortionPreview(skyr, { mode: 'grams', quantityG: 150 })).toBe('150 g · 90 kcal')
   })
+
+  it('formats custom serving sizes', () => {
+    expect(
+      formatFoodPortionPreview(skyr, { mode: 'servings', servings: 2, servingSizeG: 30 }),
+    ).toBe('60 g · 36 kcal')
+  })
 })

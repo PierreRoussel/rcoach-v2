@@ -10,6 +10,7 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { buildPendingMealLogEntry, buildPendingQuickMealLogEntry } from '@/lib/nutrition/offline-meal-entry'
 import { isLocalFoodId } from '@/lib/nutrition/offline-food'
 import { scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
+import { portionToStoredFields } from '@/lib/nutrition/portion-options'
 import { nutritionDayQueryKey } from '@/lib/nutrition/nutrition-day-cache-id'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
@@ -63,13 +64,14 @@ function buildQuickMealEntryObject(input: AddQuickMealEntryInput) {
 
 function buildMealEntryObject(input: AddMealEntryInput) {
   const nutrients = scaleNutrientsPer100g(input.food, input.portion)
+  const stored = portionToStoredFields(input.food, input.portion)
 
   return {
     logged_date: input.loggedDate,
     meal_type: input.mealType,
     food_id: input.food.id,
-    quantity_g: input.portion.mode === 'grams' ? input.portion.quantityG : null,
-    servings: input.portion.mode === 'servings' ? input.portion.servings : null,
+    quantity_g: stored.quantity_g,
+    servings: stored.servings,
     calories: nutrients.calories,
     carbs_g: nutrients.carbsG,
     protein_g: nutrients.proteinG,
@@ -248,9 +250,10 @@ export function useMealLogMutations() {
       portion: PortionInput
     }): Promise<MealMutationResult> => {
       const nutrients = scaleNutrientsPer100g(input.food, input.portion)
+      const stored = portionToStoredFields(input.food, input.portion)
       const changes = {
-        quantity_g: input.portion.mode === 'grams' ? input.portion.quantityG : null,
-        servings: input.portion.mode === 'servings' ? input.portion.servings : null,
+        quantity_g: stored.quantity_g,
+        servings: stored.servings,
         calories: nutrients.calories,
         carbs_g: nutrients.carbsG,
         protein_g: nutrients.proteinG,

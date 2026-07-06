@@ -14,8 +14,10 @@ import {
   formatParsedNutrientForInput,
   parseNutritionLabelFr,
 } from '@/lib/nutrition/label-scan/parse-nutrition-label-fr'
+import { servingLabelForBasis } from '@/lib/nutrition/label-scan/detect-reference-basis'
 import { recognizeLabelTextFromImage } from '@/lib/nutrition/label-scan/run-tesseract-ocr'
 import { parsedLabelHasMacros } from '@/lib/nutrition/label-scan/types'
+import type { ParsedNutritionLabel, ParsedNutritionFieldHintKey } from '@/lib/nutrition/label-scan/types'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
@@ -25,6 +27,8 @@ import { toDateKey } from '@/lib/nutrition/dates'
 import type { MealType } from '@/lib/nutrition/types'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { LabelImagePrefillButton } from '@/components/nutrition/LabelImagePrefillButton'
+import { FoodNutrientField } from '@/components/nutrition/FoodNutrientField'
+import type { FoodNutrientInputValues } from '@/lib/nutrition/food-nutrient-warnings'
 import type { Food } from '@/lib/nutrition/types'
 
 const newFoodSearchSchema = z.object({
@@ -63,6 +67,9 @@ function NewFoodPage() {
     variant: 'success' | 'error'
   } | null>(null)
   const [labelScanPending, setLabelScanPending] = useState(false)
+  const [nutrientFieldHints, setNutrientFieldHints] = useState<
+    Partial<Record<ParsedNutritionFieldHintKey, string>>
+  >({})
 
   const { createFood, lookupBarcode } = useFoodMutations()
   const { addEntry } = useMealLogMutations()
@@ -104,10 +111,15 @@ function NewFoodPage() {
     setSaturatedFatG(draft.saturatedFatG != null ? String(draft.saturatedFatG) : '')
     setServingSizeG(String(draft.servingSizeG))
     setServingLabel(draft.servingLabel)
+    setNutrientFieldHints({})
     setStep(1)
   }
 
-  function applyParsedNutrition(parsed: ReturnType<typeof parseNutritionLabelFr>) {
+  function applyParsedNutrition(
+    parsed: ParsedNutritionLabel,
+    basis: ReturnType<typeof parseNutritionLabelFr>['basis'],
+    fieldHints: Partial<Record<ParsedNutritionFieldHintKey, string>> = {},
+  ) {
     if (parsed.calories != null) {
       setCalories(formatParsedNutrientForInput(parsed.calories))
     }
@@ -131,7 +143,25 @@ function NewFoodPage() {
     }
 
     setServingSizeG('100')
-    setServingLabel('100 g')
+    setServingLabel(servingLabelForBasis(basis))
+    setNutrientFieldHints(fieldHints)
+  }
+
+  function updateNutrientField(
+    field: ParsedNutritionFieldHintKey,
+    value: string,
+    setter: (value: string) => void,
+  ) {
+    setter(value)
+    setNutrientFieldHints((current) => {
+      if (!current[field]) {
+        return current
+      }
+
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
   }
 
   async function handleLabelImage(file: File) {
@@ -140,9 +170,9 @@ function NewFoodPage() {
 
     try {
       const text = await recognizeLabelTextFromImage(file)
-      const parsed = parseNutritionLabelFr(text)
+      const result = parseNutritionLabelFr(text)
 
-      if (!parsedLabelHasMacros(parsed)) {
+      if (!parsedLabelHasMacros(result.nutrients)) {
         setFeedback({
           text: 'Aucune valeur nutritionnelle détectée. Réessayez avec une photo plus nette du tableau.',
           variant: 'error',
@@ -150,11 +180,22 @@ function NewFoodPage() {
         return
       }
 
-      applyParsedNutrition(parsed)
+      applyParsedNutrition(result.nutrients, result.basis, result.fieldHints)
       setStep(1)
+
+      const basisLabel = servingLabelForBasis(result.basis)
+      const warningSuffix =
+        result.warnings.length > 0 ? ` ${result.warnings.join(' ')}` : ''
+      const confidenceHint =
+        result.confidence === 'low'
+          ? ' Confiance faible — contrôle recommandé.'
+          : result.confidence === 'medium'
+            ? ' Vérifiez les valeurs avant enregistrement.'
+            : ''
+
       setFeedback({
-        text: 'Valeurs détectées pour 100 g — vérifiez avant enregistrement.',
-        variant: 'success',
+        text: `Valeurs détectées pour ${basisLabel}.${confidenceHint}${warningSuffix}`,
+        variant: result.confidence === 'low' ? 'error' : 'success',
       })
     } catch (labelError) {
       setFeedback({
@@ -249,6 +290,18 @@ function NewFoodPage() {
     }
   }
 
+  const nutrientInputs: FoodNutrientInputValues = {
+    calories,
+    carbsG,
+    proteinG,
+    fatG,
+    saltG,
+    sugarG,
+    saturatedFatG,
+    servingSizeG,
+  }
+  const perServingLabel = servingLabel.trim() || '100 g'
+
   return (
     <div className="space-y-4 pb-8">
       <div className="flex items-center gap-2">
@@ -290,11 +343,6 @@ function NewFoodPage() {
               <Barcode className="size-4" />
               {barcode ? 'Rescanner' : 'Scanner le code-barres'}
             </Button>
-            <LabelImagePrefillButton
-              className="rounded-full"
-              pending={labelScanPending}
-              onFileSelected={(file) => void handleLabelImage(file)}
-            />
             {barcode ? (
               <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                 {barcode}
@@ -309,15 +357,69 @@ function NewFoodPage() {
             <Label htmlFor="brand">Marque</Label>
             <Input id="brand" value={brand} onChange={(event) => setBrand(event.target.value)} />
           </div>
+          <LabelImagePrefillButton
+            className="w-full"
+            pending={labelScanPending}
+            onFileSelected={(file) => void handleLabelImage(file)}
+          />
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Calories / 100 g" value={calories} onChange={setCalories} />
-            <Field label="Glucides / 100 g" value={carbsG} onChange={setCarbsG} />
-            <Field label="Protéines / 100 g" value={proteinG} onChange={setProteinG} />
-            <Field label="Lipides / 100 g" value={fatG} onChange={setFatG} />
-            <Field label="Sel / 100 g" value={saltG} onChange={setSaltG} />
-            <Field label="Sucre / 100 g" value={sugarG} onChange={setSugarG} />
-            <Field label="Gras satures / 100 g" value={saturatedFatG} onChange={setSaturatedFatG} />
-            <Field label="Portion (g)" value={servingSizeG} onChange={setServingSizeG} />
+            <FoodNutrientField
+              field="calories"
+              label={`Calories / ${perServingLabel}`}
+              value={calories}
+              allValues={nutrientInputs}
+              hint={nutrientFieldHints.calories}
+              onChange={(value) => updateNutrientField('calories', value, setCalories)}
+            />
+            <FoodNutrientField
+              field="carbsG"
+              label={`Glucides / ${perServingLabel}`}
+              value={carbsG}
+              allValues={nutrientInputs}
+              onChange={(value) => updateNutrientField('carbsG', value, setCarbsG)}
+            />
+            <FoodNutrientField
+              field="proteinG"
+              label={`Protéines / ${perServingLabel}`}
+              value={proteinG}
+              allValues={nutrientInputs}
+              onChange={(value) => updateNutrientField('proteinG', value, setProteinG)}
+            />
+            <FoodNutrientField
+              field="fatG"
+              label={`Lipides / ${perServingLabel}`}
+              value={fatG}
+              allValues={nutrientInputs}
+              onChange={(value) => updateNutrientField('fatG', value, setFatG)}
+            />
+            <FoodNutrientField
+              field="saltG"
+              label={`Sel / ${perServingLabel}`}
+              value={saltG}
+              allValues={nutrientInputs}
+              onChange={(value) => updateNutrientField('saltG', value, setSaltG)}
+            />
+            <FoodNutrientField
+              field="sugarG"
+              label={`Sucre / ${perServingLabel}`}
+              value={sugarG}
+              allValues={nutrientInputs}
+              onChange={(value) => updateNutrientField('sugarG', value, setSugarG)}
+            />
+            <FoodNutrientField
+              field="saturatedFatG"
+              label={`Gras saturés / ${perServingLabel}`}
+              value={saturatedFatG}
+              allValues={nutrientInputs}
+              onChange={(value) => updateNutrientField('saturatedFatG', value, setSaturatedFatG)}
+            />
+            <FoodNutrientField
+              field="servingSizeG"
+              label="Portion (g)"
+              value={servingSizeG}
+              allValues={nutrientInputs}
+              onChange={setServingSizeG}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="servingLabel">Libellé portion</Label>
@@ -379,23 +481,6 @@ function NewFoodPage() {
       />
 
       {scanner}
-    </div>
-  )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} inputMode="decimal" />
     </div>
   )
 }

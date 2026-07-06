@@ -1,4 +1,9 @@
-import { formatNutrient, scaleNutrientsPer100g, type PortionInput } from '@/lib/nutrition/nutrient-math'
+import {
+  formatNutrient,
+  portionGrams,
+  scaleNutrientsPer100g,
+  type PortionInput,
+} from '@/lib/nutrition/nutrient-math'
 import type { Food } from '@/lib/nutrition/types'
 
 export type MealLogPortionEntry = {
@@ -27,7 +32,11 @@ export function mealLogEntryToPortion(
 }
 
 function portionFingerprint(portion: PortionInput) {
-  return portion.mode === 'grams' ? `g:${portion.quantityG}` : `s:${portion.servings}`
+  if (portion.mode === 'grams') {
+    return `g:${portion.quantityG}`
+  }
+
+  return `s:${portion.servings}:${portion.servingSizeG ?? 'default'}`
 }
 
 export function pickMostFrequentPortion<T extends Pick<MealLogPortionEntry, 'quantity_g' | 'servings'>>(
@@ -99,10 +108,7 @@ export function formatFoodPortionPreview(
   portion: PortionInput,
 ) {
   const scaled = scaleNutrientsPer100g(food, portion)
-  const grams =
-    portion.mode === 'grams'
-      ? portion.quantityG
-      : portion.servings * Number(food.serving_size_g)
+  const grams = portionGrams(food, portion)
 
   return `${formatNutrient(grams)} g · ${Math.round(scaled.calories)} kcal`
 }

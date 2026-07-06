@@ -1,6 +1,7 @@
 import type { Food, MealLogEntry, MealType } from '@/lib/nutrition/types'
 import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import { scaleNutrientsPer100g } from '@/lib/nutrition/nutrient-math'
+import { portionToStoredFields } from '@/lib/nutrition/portion-options'
 
 export function buildPendingMealLogEntry(input: {
   id: string
@@ -11,6 +12,7 @@ export function buildPendingMealLogEntry(input: {
   portion: PortionInput
 }): MealLogEntry {
   const nutrients = scaleNutrientsPer100g(input.food, input.portion)
+  const stored = portionToStoredFields(input.food, input.portion)
   const now = new Date().toISOString()
 
   return {
@@ -20,8 +22,8 @@ export function buildPendingMealLogEntry(input: {
     meal_type: input.mealType,
     food_id: input.food.id,
     custom_name: null,
-    quantity_g: input.portion.mode === 'grams' ? input.portion.quantityG : null,
-    servings: input.portion.mode === 'servings' ? input.portion.servings : null,
+    quantity_g: stored.quantity_g,
+    servings: stored.servings,
     calories: nutrients.calories,
     carbs_g: nutrients.carbsG,
     protein_g: nutrients.proteinG,

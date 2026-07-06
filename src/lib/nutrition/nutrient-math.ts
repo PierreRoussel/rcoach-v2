@@ -27,15 +27,19 @@ type ScalableFood = Pick<
 
 export type PortionInput =
   | { mode: 'grams'; quantityG: number }
-  | { mode: 'servings'; servings: number }
+  | { mode: 'servings'; servings: number; servingSizeG?: number }
+
+export function portionGrams(food: Pick<Food, 'serving_size_g'>, portion: PortionInput) {
+  if (portion.mode === 'grams') {
+    return portion.quantityG
+  }
+
+  const servingSizeG = portion.servingSizeG ?? Number(food.serving_size_g)
+  return portion.servings * servingSizeG
+}
 
 export function scaleNutrientsPer100g(food: Pick<Food, 'calories' | 'carbs_g' | 'protein_g' | 'fat_g' | 'serving_size_g'>, portion: PortionInput): NutrientTotals {
-  const grams =
-    portion.mode === 'grams'
-      ? portion.quantityG
-      : portion.servings * Number(food.serving_size_g)
-
-  const factor = grams / 100
+  const factor = portionGrams(food, portion) / 100
 
   return {
     calories: roundNutrient(Number(food.calories) * factor),
@@ -43,12 +47,6 @@ export function scaleNutrientsPer100g(food: Pick<Food, 'calories' | 'carbs_g' | 
     proteinG: roundNutrient(Number(food.protein_g) * factor),
     fatG: roundNutrient(Number(food.fat_g) * factor),
   }
-}
-
-function portionGrams(food: Pick<Food, 'serving_size_g'>, portion: PortionInput) {
-  return portion.mode === 'grams'
-    ? portion.quantityG
-    : portion.servings * Number(food.serving_size_g)
 }
 
 function scaleOptionalNutrient(value: number | null | undefined, factor: number) {

@@ -1,12 +1,21 @@
-import type { ParsedNutritionLabel } from '@/lib/nutrition/label-scan/types'
+import { detectReferenceBasis } from '@/lib/nutrition/label-scan/detect-reference-basis'
+import { filterNutritionTableLines } from '@/lib/nutrition/label-scan/filter-polluting-label-lines'
 import { normalizeOcrText } from '@/lib/nutrition/label-scan/normalize-ocr-text'
 import {
   clampKcal,
+  extractFirstKcalFromTail,
   extractFirstMacroFromTail,
-  parseOcrKcalValue,
+  extractSaltFromTail,
+  nutrientTailFromLine,
 } from '@/lib/nutrition/label-scan/parse-ocr-nutrient-value'
+import type {
+  ParsedNutritionLabel,
+  ParsedNutritionLabelResult,
+} from '@/lib/nutrition/label-scan/types'
+import { validateParsedNutrition } from '@/lib/nutrition/label-scan/validate-parsed-nutrition'
+import { referenceColumnTail } from '@/lib/nutrition/label-scan/split-nutrition-columns'
 
-type NutrientField = keyof Omit<ParsedNutritionLabel, never>
+type NutrientField = keyof ParsedNutritionLabel
 
 type NutrientRule = {
   field: NutrientField
@@ -27,50 +36,43 @@ function lineMatches(line: string, patterns: RegExp[]): boolean {
 }
 
 function extractMacroFromLine(line: string): number | null {
-  return extractFirstMacroFromTail(
-    line.includes(':') ? line.slice(line.indexOf(':') + 1) : line,
-  )
+  return extractFirstMacroFromTail(nutrientTailFromLine(line))
 }
 
-function extractCaloriesFromLabel(text: string, lines: string[]): number | null {
+function extractSaltFromLine(line: string): number | null {
+  return extractSaltFromTail(nutrientTailFromLine(line), line)
+}
+
+function extractCaloriesFromLabel(lines: string[]): number | null {
   for (const rawLine of lines) {
-    const kcalMatches = [...rawLine.matchAll(/(\d+[,.]?\d*)\s*kcal/gi)]
-    if (kcalMatches.length > 0) {
-      const parsed = parseOcrKcalValue(kcalMatches[0][1])
-      if (parsed != null) {
-        return parsed
-      }
+    if (!/kcal/i.test(rawLine)) {
+      continue
+    }
+
+    const fromTail = extractFirstKcalFromTail(nutrientTailFromLine(rawLine))
+    if (fromTail != null) {
+      return fromTail
+    }
+
+    const fromLine = extractFirstKcalFromTail(rawLine)
+    if (fromLine != null) {
+      return fromLine
     }
   }
 
   for (const rawLine of lines) {
     const line = normalizeLine(rawLine)
-    if (!/énergie|énergétique/.test(line)) {
+    if (!/énergie|énergétique|energie/.test(line)) {
       continue
     }
 
-    const kjMatches = [...rawLine.matchAll(/(\d+[,.]?\d*)\s*kJ/gi)]
-    if (kjMatches.length > 0) {
-      const kj = Number(kjMatches[0][1].replace(',', '.'))
+    const kjTail = referenceColumnTail(nutrientTailFromLine(rawLine))
+    const kjMatch = kjTail.match(/(\d+[,.]?\d*)\s*kJ/i)
+    if (kjMatch) {
+      const kj = Number(kjMatch[1].replace(',', '.'))
       if (Number.isFinite(kj)) {
         return clampKcal(Math.round(kj / 4.184))
       }
-    }
-  }
-
-  const wholeTextKcal = text.match(/(\d+[,.]?\d*)\s*kcal/i)
-  if (wholeTextKcal) {
-    const parsed = parseOcrKcalValue(wholeTextKcal[1])
-    if (parsed != null) {
-      return parsed
-    }
-  }
-
-  const wholeTextKj = text.match(/(\d+[,.]?\d*)\s*kJ/i)
-  if (wholeTextKj) {
-    const kj = Number(wholeTextKj[1].replace(',', '.'))
-    if (Number.isFinite(kj)) {
-      return clampKcal(Math.round(kj / 4.184))
     }
   }
 
@@ -105,8 +107,8 @@ const NUTRIENT_RULES: NutrientRule[] = [
   },
   {
     field: 'saltG',
-    matches: [/^sel\b/, /\bsel\b/],
-    extract: extractMacroFromLine,
+    matches: [/^sel\b/, /\bsel\b/, /sodium/],
+    extract: extractSaltFromLine,
   },
 ]
 
@@ -197,8 +199,8 @@ function scanWholeText(text: string, current: ParsedNutritionLabel): ParsedNutri
     },
     {
       field: 'saltG',
-      pattern: /\bsel\s*:\s*([^;\n]+)/i,
-      extract: (match) => extractFirstMacroFromTail(match[1]),
+      pattern: /\b(?:sel|sodium)\s*:\s*([^;\n]+)/i,
+      extract: (match) => extractSaltFromTail(match[1]),
     },
   ]
 
@@ -218,23 +220,39 @@ function scanWholeText(text: string, current: ParsedNutritionLabel): ParsedNutri
   return result
 }
 
-export function parseNutritionLabelFr(text: string): ParsedNutritionLabel {
+export function parseNutritionLabelFr(text: string): ParsedNutritionLabelResult {
   const normalized = normalizeOcrText(text)
   if (!normalized.trim()) {
-    return emptyParsedLabel()
+    return {
+      nutrients: emptyParsedLabel(),
+      basis: '100g',
+      confidence: 'low',
+      warnings: [],
+      fieldHints: {},
+    }
   }
 
   const lines = normalized
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
+  const tableLines = filterNutritionTableLines(lines)
+  const tableText = tableLines.join('\n')
 
-  const fromLines = scanLines(lines)
-  const fromWholeText = scanWholeText(normalized, fromLines)
+  const fromLines = scanLines(tableLines)
+  const merged = {
+    ...scanWholeText(tableText, fromLines),
+    calories: extractCaloriesFromLabel(tableLines),
+  }
+
+  const validation = validateParsedNutrition(merged)
 
   return {
-    ...fromWholeText,
-    calories: extractCaloriesFromLabel(normalized, lines),
+    nutrients: validation.nutrients,
+    basis: detectReferenceBasis(normalized),
+    confidence: validation.confidence,
+    warnings: validation.warnings,
+    fieldHints: validation.fieldHints,
   }
 }
 
