@@ -20,6 +20,7 @@ import {
   type FoodSearchResult,
 } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
+import { useDietAddBackNavigation } from '@/hooks/useDietMealBackNavigation'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
@@ -55,6 +56,9 @@ function AddFoodPage() {
   const date = search.date ?? toDateKey(new Date())
   const mealType = (search.mealType ?? 'breakfast') as MealType
   const activeTab = search.tab ?? 'frequent'
+
+  useDietAddBackNavigation(date, mealType)
+
   const searchInputRef = useRef<HTMLInputElement>(null)
   const quickAddResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [query, setQuery] = useState('')
@@ -335,20 +339,15 @@ function AddFoodPage() {
     <div className="space-y-4 pb-24">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
-          {search.mealType ? (
-            <Link
-              to="/app/diet/meals/$mealType"
-              params={{ mealType: search.mealType }}
-              search={{ date }}
-              aria-label="Retour au repas"
-            >
-              <ArrowLeft className="size-5" />
-            </Link>
-          ) : (
-            <Link to="/app/diet" search={{ date }} aria-label="Retour au journal">
-              <ArrowLeft className="size-5" />
-            </Link>
-          )}
+          <Link
+            to="/app/diet/meals/$mealType"
+            params={{ mealType }}
+            search={{ date }}
+            replace
+            aria-label="Retour au repas"
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
         </Button>
         <div className="min-w-0 space-y-1">
           <h1 className="font-display text-2xl font-black text-foreground">Ajouter un aliment</h1>

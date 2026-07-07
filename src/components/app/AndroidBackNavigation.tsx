@@ -3,9 +3,15 @@ import { Capacitor } from '@capacitor/core'
 import { useCanGoBack, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
-import { handleMealPageBack, isDietMealPath } from '@/hooks/useDietMealBackNavigation'
+import {
+  handleAddPageBack,
+  handleMealPageBack,
+  isDietAddPath,
+  isDietMealPath,
+} from '@/hooks/useDietMealBackNavigation'
 import { closeTopOverlayLayer } from '@/lib/navigation/close-top-overlay'
 import { toDateKey } from '@/lib/nutrition/dates'
+import type { MealType } from '@/lib/nutrition/types'
 
 function isDietJournalPath(pathname: string) {
   return pathname === '/app/diet' || pathname === '/app/diet/'
@@ -15,6 +21,22 @@ function resolveDietDate(search: unknown) {
   return typeof search === 'object' && search && 'date' in search && typeof search.date === 'string'
     ? search.date
     : toDateKey(new Date())
+}
+
+function resolveMealType(search: unknown): MealType {
+  const mealTypes = ['breakfast', 'lunch', 'snack', 'dinner'] as const
+
+  if (
+    typeof search === 'object' &&
+    search &&
+    'mealType' in search &&
+    typeof search.mealType === 'string' &&
+    mealTypes.includes(search.mealType as MealType)
+  ) {
+    return search.mealType as MealType
+  }
+
+  return 'breakfast'
 }
 
 export function AndroidBackNavigation() {
@@ -48,6 +70,15 @@ export function AndroidBackNavigation() {
         handleMealPageBack(
           (options) => router.navigate(options),
           resolveDietDate(search),
+        )
+        return
+      }
+
+      if (isDietAddPath(pathname)) {
+        handleAddPageBack(
+          (options) => router.navigate(options),
+          resolveDietDate(search),
+          resolveMealType(search),
         )
         return
       }
