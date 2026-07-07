@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { TrendingUp, X } from 'lucide-react'
+import { Crown, Lock, TrendingUp, X } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -25,12 +26,19 @@ import {
 } from '@/lib/workout/progressive-overload'
 import { cn } from '@/lib/utils'
 
+type OverloadGateState = {
+  isPremium: boolean
+  isFreeExerciseOfDay: boolean
+  isFreeQuotaAvailable: boolean
+}
+
 type ExerciseOverloadHintProps = {
   exercise: Pick<Exercise, 'id' | 'name' | 'equipment'>
   bodyWeightKg?: number | null
   onApply?: (suggestion: OverloadSuggestion) => void
   compact?: boolean
   className?: string
+  overloadGate?: OverloadGateState
 }
 
 function parseOptionalNumber(value: string): number | null {
@@ -176,6 +184,7 @@ export function ExerciseOverloadHint({
   onApply,
   compact = false,
   className,
+  overloadGate,
 }: ExerciseOverloadHintProps) {
   const { data: lastPerformance, isLoading } = useLastExercisePerformance(exercise.id)
   const [dismissed, setDismissed] = useState(false)
@@ -184,6 +193,13 @@ export function ExerciseOverloadHint({
   const suggestion = lastPerformance
     ? suggestProgressiveOverload(exercise, lastPerformance, { bodyWeightKg })
     : null
+
+  const isPremium = overloadGate?.isPremium ?? true
+  const canUseFreeAdvice =
+    !isPremium &&
+    overloadGate?.isFreeExerciseOfDay === true &&
+    overloadGate?.isFreeQuotaAvailable === true
+  const isLocked = !isPremium && !canUseFreeAdvice
 
   useEffect(() => {
     setDismissed(false)
@@ -222,7 +238,38 @@ export function ExerciseOverloadHint({
     return null
   }
 
-  const adjustDialog = onApply ? (
+  if (isLocked) {
+    return (
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-xl border border-border/70 bg-muted/30 px-3 py-2',
+          className,
+        )}
+      >
+        <div className="space-y-2 blur-[2px] opacity-70">
+          <p className="text-xs leading-relaxed text-foreground">{suggestion.message}</p>
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card/70 p-3 text-center backdrop-blur-[1px]">
+          <Lock className="size-4 text-muted-foreground" aria-hidden />
+          <Pill tone="solid-primary" className="gap-1">
+            <Crown className="size-3" aria-hidden />
+            Premium
+          </Pill>
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            {overloadGate?.isFreeQuotaAvailable
+              ? 'Conseil du jour disponible sur un autre exercice.'
+              : 'Conseil gratuit du jour déjà utilisé.'}
+          </p>
+          <Button variant="soft" size="sm" className="h-7 rounded-full px-3 text-xs" asChild>
+            <Link to="/app/premium">Débloquer</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const effectiveOnApply = onApply && (isPremium || canUseFreeAdvice) ? onApply : undefined
+  const adjustDialog = effectiveOnApply ? (
     <OverloadAdjustDialog
       open={adjustOpen}
       onOpenChange={setAdjustOpen}
@@ -244,8 +291,8 @@ export function ExerciseOverloadHint({
         >
           <p className="text-xs leading-relaxed text-foreground">{suggestion.message}</p>
           <OverloadHintActions
-            onApply={onApply ? () => handleApplySuggestion(suggestion) : undefined}
-            onAdjust={onApply ? () => setAdjustOpen(true) : undefined}
+            onApply={effectiveOnApply ? () => handleApplySuggestion(suggestion) : undefined}
+            onAdjust={effectiveOnApply ? () => setAdjustOpen(true) : undefined}
             onDismiss={() => setDismissed(true)}
           />
         </div>
@@ -272,8 +319,8 @@ export function ExerciseOverloadHint({
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="accent">{suggestion.message}</Pill>
           <OverloadHintActions
-            onApply={onApply ? () => handleApplySuggestion(suggestion) : undefined}
-            onAdjust={onApply ? () => setAdjustOpen(true) : undefined}
+            onApply={effectiveOnApply ? () => handleApplySuggestion(suggestion) : undefined}
+            onAdjust={effectiveOnApply ? () => setAdjustOpen(true) : undefined}
             onDismiss={() => setDismissed(true)}
           />
         </div>

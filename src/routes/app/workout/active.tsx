@@ -16,6 +16,7 @@ import {
   type WorkoutRecapData,
 } from '@/components/workout/WorkoutRecapDialog'
 import { WorkoutCelebrationOverlay } from '@/components/workout/WorkoutCelebrationOverlay'
+import { OverloadTeaserOverlay } from '@/components/subscription/OverloadTeaserOverlay'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -41,6 +42,7 @@ import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import { useMyProfile } from '@/hooks/useProfile'
+import { useSubscriptionSummary } from '@/hooks/useSubscription'
 import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
 import { useMyWorkouts, useWorkoutStreakDates } from '@/hooks/useWorkouts'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
@@ -72,11 +74,16 @@ import {
   getValidatedExercisesForSync,
   isWorkoutComplete,
 } from '@/lib/workout/workout-circuit'
-import { buildExerciseSetHistoryFromWorkouts } from '@/lib/workout/template-set-history'
 import {
   applyOverloadToWorkingSets,
   isWorkingSet,
 } from '@/lib/workout/progressive-overload'
+import {
+  getFreeOverloadAdviceState,
+  markFreeOverloadAdviceUsed,
+  resolveDailyOverloadExerciseId,
+} from '@/lib/subscription/overload-advice-quota'
+import { buildExerciseSetHistoryFromWorkouts } from '@/lib/workout/template-set-history'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import {
   buildWorkoutCelebrations,
@@ -125,11 +132,12 @@ export const Route = createFileRoute('/app/workout/active')({
 function ActiveWorkoutPage() {
   const { templateId: initialTemplateId, previewWorkoutCelebration, previewWeeklyStreak } =
     Route.useSearch()
-  const { nhost } = useAuth()
+  const { nhost, user } = useAuth()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const router = useRouter()
   const { data: profile } = useMyProfile()
+  const { isPremium } = useSubscriptionSummary()
   const bodyWeightKg = useCurrentWeightKg()
   const { data: allWorkouts } = useMyWorkouts()
   const { data: streakWorkouts = [] } = useWorkoutStreakDates()
@@ -213,6 +221,25 @@ function ActiveWorkoutPage() {
     before: TemplateExerciseLineSnapshot[]
     after: TemplateExerciseLineSnapshot[]
   } | null>(null)
+  const [overloadTeaserOpen, setOverloadTeaserOpen] = useState(false)
+  const [overloadQuotaVersion, setOverloadQuotaVersion] = useState(0)
+
+  const exerciseIds = useMemo(
+    () => activeExercises.map((exercise) => exercise.exerciseId),
+    [activeExercises],
+  )
+  const dailyOverloadExerciseId = useMemo(() => {
+    if (!user?.id || exerciseIds.length === 0) {
+      return null
+    }
+    return resolveDailyOverloadExerciseId(user.id, exerciseIds)
+  }, [exerciseIds, user?.id])
+  const freeOverloadAdviceState = useMemo(() => {
+    if (!user?.id) {
+      return null
+    }
+    return getFreeOverloadAdviceState(user.id)
+  }, [user?.id, overloadQuotaVersion])
 
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
@@ -621,6 +648,11 @@ function ActiveWorkoutPage() {
               bodyWeightKg={bodyWeightKg ?? undefined}
               templateSetHistory={showLastSetColumn ? setHistory : undefined}
               showLastSetColumn={showLastSetColumn}
+              overloadGate={{
+                isPremium,
+                dailyExerciseId: dailyOverloadExerciseId,
+                isFreeQuotaAvailable: !freeOverloadAdviceState?.used,
+              }}
               onSelectExercise={(index) => {
                 const stepIndex = steps.findIndex((step) => step.exerciseIndex === index)
                 if (stepIndex >= 0) {
@@ -677,6 +709,17 @@ function ActiveWorkoutPage() {
                     ...(set.distanceKm != null ? { distanceKm: set.distanceKm } : {}),
                   })
                 })
+
+                if (
+                  !isPremium &&
+                  user?.id &&
+                  exercise.exerciseId === dailyOverloadExerciseId &&
+                  !freeOverloadAdviceState?.used
+                ) {
+                  markFreeOverloadAdviceUsed(user.id, exercise.exerciseId)
+                  setOverloadQuotaVersion((version) => version + 1)
+                  setOverloadTeaserOpen(true)
+                }
               }}
             />
           )}
@@ -815,6 +858,11 @@ function ActiveWorkoutPage() {
           }}
         />
       ) : null}
+
+      <OverloadTeaserOverlay
+        open={overloadTeaserOpen}
+        onClose={() => setOverloadTeaserOpen(false)}
+      />
     </div>
   )
 }

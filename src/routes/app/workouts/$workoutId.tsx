@@ -72,6 +72,7 @@ function WorkoutDetailPage() {
       <WorkoutSummaryHeader
         displayName={profile?.display_name ?? 'Athlète'}
         avatarUrl={profile?.avatar_url ?? null}
+        isPremium={profile?.is_premium ?? false}
         startedAt={workout.started_at}
         title={workout.title}
         duration={duration}

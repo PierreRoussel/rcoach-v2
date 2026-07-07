@@ -8,7 +8,43 @@ export type Profile = {
   rpe_enabled: boolean
   exercise_locale?: 'fr' | 'en'
   onboarding_completed_at?: string | null
+  is_premium?: boolean
   created_at: string
+}
+
+export type SubscriptionTier = 'free' | 'premium'
+
+export type SubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'past_due'
+
+export type BillingPeriod = 'monthly' | 'annual'
+
+export type SubscriptionProvider = 'none' | 'play' | 'stripe' | 'revenuecat'
+
+export type Subscription = {
+  id: string
+  user_id: string
+  tier: SubscriptionTier
+  status: SubscriptionStatus
+  billing_period: BillingPeriod | null
+  current_period_end: string | null
+  provider: SubscriptionProvider
+  provider_ref: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SubscriptionUpdateInput = {
+  tier?: SubscriptionTier
+  status?: SubscriptionStatus
+  billing_period?: BillingPeriod | null
+  current_period_end?: string | null
+  provider?: SubscriptionProvider
+  provider_ref?: string | null
+}
+
+export type CancellationFeedbackInput = {
+  reason?: string | null
+  comment?: string | null
 }
 
 export type Exercise = {
@@ -147,6 +183,7 @@ export type FriendProfileSummary = {
   display_name: string
   avatar_url: string | null
   friend_code?: string | null
+  is_premium?: boolean
   workouts: Array<{ started_at: string }>
   meal_log_entries: Array<{ logged_date: string; calories: number }>
 }
@@ -167,11 +204,13 @@ export type FriendMotivation = {
     id: string
     display_name: string
     avatar_url: string | null
+    is_premium?: boolean
   } | null
   recipient?: {
     id: string
     display_name: string
     avatar_url: string | null
+    is_premium?: boolean
   } | null
 }
 
@@ -457,6 +496,7 @@ export const GET_MY_PROFILE = `
       rpe_enabled
       exercise_locale
       friend_code
+      is_premium
       onboarding_completed_at
       created_at
     }
@@ -2308,12 +2348,14 @@ export const LIST_MY_FRIENDSHIPS = `
         display_name
         avatar_url
         friend_code
+        is_premium
       }
       addressee {
         id
         display_name
         avatar_url
         friend_code
+        is_premium
       }
     }
   }
@@ -2333,6 +2375,7 @@ export const LIST_ACCEPTED_FRIENDS_ACTIVITY = `
         id
         display_name
         avatar_url
+        is_premium
         workouts(
           where: {
             ended_at: { _is_null: false }
@@ -2354,6 +2397,7 @@ export const LIST_ACCEPTED_FRIENDS_ACTIVITY = `
         id
         display_name
         avatar_url
+        is_premium
         workouts(
           where: {
             ended_at: { _is_null: false }
@@ -2544,6 +2588,7 @@ export const LIST_UNREAD_MOTIVATIONS = `
         id
         display_name
         avatar_url
+        is_premium
       }
     }
   }
@@ -2592,6 +2637,65 @@ export const REPLY_FRIEND_MOTIVATION = `
       read_at
       hearted_at
       reply_message
+    }
+  }
+`
+
+export const GET_MY_SUBSCRIPTION = `
+  query GetMySubscription($userId: uuid!) {
+    subscriptions(where: { user_id: { _eq: $userId } }, limit: 1) {
+      id
+      user_id
+      tier
+      status
+      billing_period
+      current_period_end
+      provider
+      provider_ref
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const UPDATE_MY_SUBSCRIPTION = `
+  mutation UpdateMySubscription($id: uuid!, $changes: subscriptions_set_input!) {
+    update_subscriptions_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      user_id
+      tier
+      status
+      billing_period
+      current_period_end
+      provider
+      provider_ref
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const INSERT_MY_SUBSCRIPTION = `
+  mutation InsertMySubscription($object: subscriptions_insert_input!) {
+    insert_subscriptions_one(object: $object) {
+      id
+      user_id
+      tier
+      status
+      billing_period
+      current_period_end
+      provider
+      provider_ref
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const INSERT_CANCELLATION_FEEDBACK = `
+  mutation InsertCancellationFeedback($object: subscription_cancellation_feedback_insert_input!) {
+    insert_subscription_cancellation_feedback_one(object: $object) {
+      id
     }
   }
 `

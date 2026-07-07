@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
+import { UserAvatar } from '@/components/profile/UserAvatar'
 import {
   formatWorkoutDateTime,
   formatWorkoutVolume,
-  getProfileInitials,
 } from '@/lib/stats/workout-metrics'
+import { cn } from '@/lib/utils'
 
 export type WorkoutSummaryHeaderProps = {
   displayName: string
   avatarUrl: string | null
+  isPremium?: boolean
   startedAt: string
   title: string
   duration: string | null
@@ -73,6 +73,7 @@ function WorkoutStat({
 export function WorkoutSummaryHeader({
   displayName,
   avatarUrl,
+  isPremium = false,
   startedAt,
   title,
   duration,
@@ -86,12 +87,12 @@ export function WorkoutSummaryHeader({
   return (
     <div className={cn('space-y-3', className)}>
       <div className="flex items-center gap-3">
-        <Avatar className={cn(compact ? 'size-9' : 'size-10')}>
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
-          <AvatarFallback className="bg-soft-primary text-xs font-bold text-primary">
-            {getProfileInitials(displayName)}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          displayName={displayName}
+          avatarUrl={avatarUrl}
+          isPremium={isPremium}
+          size={compact ? 'sm' : 'md'}
+        />
         <div className="min-w-0">
           <p
             className={cn(

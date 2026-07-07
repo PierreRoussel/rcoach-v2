@@ -34,5 +34,7 @@
 - "!include public_weight_entries.yaml"
 - "!include public_user_measurements.yaml"
 - "!include public_waist_entries.yaml"
+- "!include public_subscriptions.yaml"
+- "!include public_subscription_cancellation_feedback.yaml"
 - "!include storage_buckets.yaml"
 - "!include storage_files.yaml"

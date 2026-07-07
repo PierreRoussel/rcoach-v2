@@ -1,12 +1,12 @@
 import { Check, X } from 'lucide-react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/profile/UserAvatar'
 import { Button } from '@/components/ui/button'
-import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 type FriendRequestRowProps = {
   displayName: string
   avatarUrl: string | null
+  isPremium?: boolean
   subtitle?: string
   isResponding?: boolean
   onAccept: () => void
@@ -16,6 +16,7 @@ type FriendRequestRowProps = {
 export function FriendRequestRow({
   displayName,
   avatarUrl,
+  isPremium = false,
   subtitle = 'Souhaite vous ajouter en ami',
   isResponding = false,
   onAccept,
@@ -23,12 +24,12 @@ export function FriendRequestRow({
 }: FriendRequestRowProps) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-soft-primary/20 p-3">
-      <Avatar className="size-11 border border-border">
-        <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
-        <AvatarFallback className="text-xs font-bold">
-          {getProfileInitials(displayName)}
-        </AvatarFallback>
-      </Avatar>
+      <UserAvatar
+        displayName={displayName}
+        avatarUrl={avatarUrl}
+        isPremium={isPremium}
+        size="lg"
+      />
 
       <div className="min-w-0 flex-1">
         <p className="truncate font-display font-black text-foreground">{displayName}</p>

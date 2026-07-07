@@ -190,6 +190,23 @@ function ProfilePage() {
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
+          <CardTitle className="font-display font-black">Mon abonnement</CardTitle>
+          <CardDescription>
+            Consultez votre offre, gérez votre facturation et découvrez Premium.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="soft" asChild>
+            <Link to="/app/profile/subscription">Gérer mon abonnement</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/app/premium">Voir les offres</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
           <CardTitle className="font-display font-black">Configurer le compte</CardTitle>
           <CardDescription>
             Identité, préférences de profil et sécurité du compte.

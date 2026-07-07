@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { subWeeks } from 'date-fns'
 import { CalendarDays, Play, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -13,6 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
+import { UpgradePrompt } from '@/components/subscription/PremiumGate'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
 import { TemplateCatalogList } from '@/components/workout/TemplateCatalogList'
 import { WorkoutSessionConflictDialog } from '@/components/workout/WorkoutSessionConflictDialog'
@@ -26,6 +28,7 @@ import {
   useWorkoutTemplates,
 } from '@/hooks/useWorkoutTemplates'
 import { useMyProfile } from '@/hooks/useProfile'
+import { useEntitlement } from '@/hooks/useSubscription'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import {
@@ -36,6 +39,7 @@ import {
 import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
+import { FREE_HISTORY_WEEKS } from '@/lib/subscription/entitlements'
 
 type SessionsSearch = {
   tab?: 'catalog' | 'history' | 'stats'
@@ -300,15 +304,24 @@ function HistoryTab() {
     pageSize: HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
   })
   const { data: profile } = useMyProfile()
+  const { entitled: hasUnlimitedHistory } = useEntitlement('unlimited_history')
   const { targetRef, isIntersecting } = useIntersectionObserver({
     enabled: Boolean(hasNextPage) && !isFetchingNextPage,
   })
 
-  const workouts = useMemo(
-    () => data?.pages.flatMap((page) => page.workouts) ?? [],
-    [data],
-  )
+  const workouts = useMemo(() => {
+    const all = data?.pages.flatMap((page) => page.workouts) ?? []
+    if (hasUnlimitedHistory) {
+      return all
+    }
+
+    const cutoff = subWeeks(new Date(), FREE_HISTORY_WEEKS).toISOString()
+    return all.filter((workout) => workout.started_at >= cutoff)
+  }, [data, hasUnlimitedHistory])
   const loadedCount = workouts.length
+  const hasHiddenHistory =
+    !hasUnlimitedHistory &&
+    (data?.pages.flatMap((page) => page.workouts) ?? []).length > workouts.length
 
   useEffect(() => {
     if (isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -331,6 +344,14 @@ function HistoryTab() {
         </div>
       </CardHeader>
       <CardContent className="px-0 pb-0">
+        {hasHiddenHistory ? (
+          <div className="px-4 pb-4">
+            <UpgradePrompt
+              title="Historique illimité"
+              description={`Le plan Gratuit affiche les ${FREE_HISTORY_WEEKS} dernières semaines. Passez en Premium pour retrouver tout votre historique.`}
+            />
+          </div>
+        ) : null}
         {isLoading ? (
           <p className="px-4 pb-4 text-sm text-muted-foreground">Chargement...</p>
         ) : null}

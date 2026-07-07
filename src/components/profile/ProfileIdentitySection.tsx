@@ -13,6 +13,7 @@ import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useUpdateProfile } from '@/hooks/useProfile'
+import { useSubscriptionSummary } from '@/hooks/useSubscription'
 import type { Profile } from '@/lib/graphql/operations'
 
 type ProfileIdentitySectionProps = {
@@ -119,6 +120,8 @@ function ProfileEditor({ profile }: { profile: Profile }) {
 }
 
 export function ProfileIdentitySection({ profile }: ProfileIdentitySectionProps) {
+  const { isPremium } = useSubscriptionSummary()
+
   return (
     <Card className="rounded-2xl border-border">
       <CardHeader>
@@ -132,6 +135,7 @@ export function ProfileIdentitySection({ profile }: ProfileIdentitySectionProps)
           profileId={profile.id}
           displayName={profile.display_name}
           avatarUrl={profile.avatar_url}
+          isPremium={isPremium}
         />
         <ProfileEditor key={profile.id} profile={profile} />
       </CardContent>

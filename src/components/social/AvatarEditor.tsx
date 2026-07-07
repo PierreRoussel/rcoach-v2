@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Camera, Loader2, Trash2 } from 'lucide-react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/profile/UserAvatar'
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Button } from '@/components/ui/button'
 import { useUpdateProfile } from '@/hooks/useProfile'
@@ -9,16 +9,21 @@ import {
   removeStoredAvatar,
   replaceStoredAvatar,
 } from '@/lib/storage/upload-avatar'
-import { getProfileInitials } from '@/lib/stats/workout-metrics'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 type AvatarEditorProps = {
   profileId: string
   displayName: string
   avatarUrl: string | null
+  isPremium?: boolean
 }
 
-export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditorProps) {
+export function AvatarEditor({
+  profileId,
+  displayName,
+  avatarUrl,
+  isPremium = false,
+}: AvatarEditorProps) {
   const { nhost } = useAuth()
   const updateProfile = useUpdateProfile()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -83,12 +88,12 @@ export function AvatarEditor({ profileId, displayName, avatarUrl }: AvatarEditor
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar className="size-16 border border-border">
-        <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
-        <AvatarFallback className="font-display text-lg font-black">
-          {getProfileInitials(displayName)}
-        </AvatarFallback>
-      </Avatar>
+      <UserAvatar
+        displayName={displayName}
+        avatarUrl={avatarUrl}
+        isPremium={isPremium}
+        size="xl"
+      />
 
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2">

@@ -2,12 +2,11 @@ import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 
 import { MotivationRevealOverlay } from '@/components/social/MotivationRevealOverlay'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/profile/UserAvatar'
 import { AnimateIn } from '@/design-system'
 import { useUnreadMotivations, useUnreadMotivationsCount } from '@/hooks/useFriends'
 import { toReceivedMotivationNotification } from '@/lib/social/motivation-notifications'
 import type { MotivationNotification } from '@/lib/social/motivation-notifications'
-import { getProfileInitials } from '@/lib/stats/workout-metrics'
 import { cn } from '@/lib/utils'
 
 export function MotivationHomeNotificationTile() {
@@ -46,12 +45,12 @@ export function MotivationHomeNotificationTile() {
         aria-label={`${senderName} vous a envoye un emoji ${latest.emoji}`}
       >
         <div className="flex items-center gap-3">
-          <Avatar className="size-11 border-2 border-primary/25">
-            <AvatarImage src={latest.sender?.avatar_url ?? undefined} alt={senderName} />
-            <AvatarFallback className="bg-primary/15 text-xs font-bold text-primary">
-              {getProfileInitials(senderName)}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            displayName={senderName}
+            avatarUrl={latest.sender?.avatar_url}
+            isPremium={latest.sender?.is_premium ?? false}
+            size="lg"
+          />
 
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-bold uppercase tracking-wide text-primary">

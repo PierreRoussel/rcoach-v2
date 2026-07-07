@@ -78,7 +78,12 @@ type ActiveWorkoutCircuitProps = {
     exerciseIndex: number,
     suggestion: OverloadSuggestion,
   ) => void
-  bodyWeightKg?: number | null
+  bodyWeightKg?: number
+  overloadGate?: {
+    isPremium: boolean
+    dailyExerciseId: string | null
+    isFreeQuotaAvailable: boolean
+  } | null
 }
 
 export function ActiveWorkoutCircuit({
@@ -104,6 +109,7 @@ export function ActiveWorkoutCircuit({
   onReorderSets,
   onApplyOverloadSuggestion,
   bodyWeightKg,
+  overloadGate,
 }: ActiveWorkoutCircuitProps) {
   const steps = buildCircuitSteps(exercises)
   const nextPendingStepIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
@@ -423,6 +429,16 @@ export function ActiveWorkoutCircuit({
                   name: exercise.exerciseName,
                   equipment: exercise.equipment ?? null,
                 }}
+                overloadGate={
+                  overloadGate
+                    ? {
+                        isPremium: overloadGate.isPremium,
+                        isFreeExerciseOfDay:
+                          overloadGate.dailyExerciseId === exercise.exerciseId,
+                        isFreeQuotaAvailable: overloadGate.isFreeQuotaAvailable,
+                      }
+                    : undefined
+                }
                 onApply={
                   onApplyOverloadSuggestion
                     ? (suggestion) => onApplyOverloadSuggestion(index, suggestion)

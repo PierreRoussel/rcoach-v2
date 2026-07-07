@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Check, Copy, Loader2, UserMinus, UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/profile/UserAvatar'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -30,7 +30,6 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 import { isValidFriendCode, normalizeFriendCode } from '@/lib/social/friend-code'
 import { getFriendProfile } from '@/lib/social/friend-utils'
 import { getSentMotivationDisplay } from '@/lib/social/sent-motivation'
-import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 export const Route = createFileRoute('/app/friends/')({
   component: FriendsPage,
@@ -251,6 +250,7 @@ function FriendsPage() {
                   key={friendship.id}
                   displayName={name}
                   avatarUrl={requester?.avatar_url ?? null}
+                  isPremium={requester?.is_premium ?? false}
                   isResponding={respondRequest.isPending}
                   onAccept={() =>
                     void respondRequest.mutateAsync({
@@ -315,10 +315,12 @@ function FriendsPage() {
               className="flex items-center justify-between gap-3 rounded-2xl border border-border p-3"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <Avatar className="size-10">
-                  <AvatarImage src={friend.avatar_url ?? undefined} />
-                  <AvatarFallback>{getProfileInitials(friend.display_name)}</AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  displayName={friend.display_name}
+                  avatarUrl={friend.avatar_url}
+                  isPremium={friend.is_premium ?? false}
+                  size="md"
+                />
                 <p className="truncate font-display font-bold">{friend.display_name}</p>
               </div>
               <div className="flex shrink-0 gap-2">

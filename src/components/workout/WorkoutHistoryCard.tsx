@@ -17,7 +17,7 @@ const VISIBLE_EXERCISES = 3
 
 type WorkoutHistoryCardProps = {
   workout: WorkoutSummary
-  profile: Pick<Profile, 'display_name' | 'avatar_url'> | null | undefined
+  profile: Pick<Profile, 'display_name' | 'avatar_url' | 'is_premium'> | null | undefined
   allWorkouts?: WorkoutSummary[]
   /** Pleine largeur dans une liste (sans bordure interne). */
   variant?: 'standalone' | 'embedded'
@@ -70,6 +70,7 @@ export function WorkoutHistoryCard({
         <WorkoutSummaryHeader
           displayName={displayName}
           avatarUrl={profile?.avatar_url ?? null}
+          isPremium={profile?.is_premium ?? false}
           startedAt={workout.started_at}
           title={workout.title}
           duration={duration}
