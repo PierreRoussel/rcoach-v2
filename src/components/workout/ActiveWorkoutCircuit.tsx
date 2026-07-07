@@ -6,6 +6,7 @@ import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
 import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { LastSetPerformanceHint } from '@/components/workout/LastSetPerformanceHint'
+import { RpeDrawer } from '@/components/workout/RpeDrawer'
 import { RpeSelect } from '@/components/workout/RpeSelect'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import {
@@ -34,6 +35,8 @@ import {
 } from '@/lib/workout/template-set-history'
 import type { OverloadSuggestion } from '@/lib/workout/progressive-overload'
 import { scrollElementIntoViewWhenReady } from '@/lib/stats/scroll-to-featured'
+import { formatActiveExerciseCollapsedSummary } from '@/lib/workout/format-exercise-collapsed-summary'
+import type { RpeValue } from '@/lib/workout/rpe-values'
 
 type ActiveWorkoutCircuitProps = {
   exercises: ActiveExerciseEntry[]
@@ -118,6 +121,17 @@ export function ActiveWorkoutCircuit({
     exerciseIndex: number
     setIndex: number
   } | null>(null)
+  const [pendingRpeStep, setPendingRpeStep] = useState<{
+    exerciseIndex: number
+    setIndex: number
+  } | null>(null)
+
+  const pendingRpeExercise =
+    pendingRpeStep != null ? exercises[pendingRpeStep.exerciseIndex] ?? null : null
+  const pendingRpeSet =
+    pendingRpeStep != null
+      ? pendingRpeExercise?.sets[pendingRpeStep.setIndex] ?? null
+      : null
 
   const selectedExercise =
     setOptions != null ? exercises[setOptions.exerciseIndex] ?? null : null
@@ -147,6 +161,38 @@ export function ActiveWorkoutCircuit({
       },
     )
   }, [exercises.length, lastCompletedStep, nextPendingStepIndex, targetStep])
+
+  function handleCompleteStep(exerciseIndex: number, setIndex: number) {
+    const exercise = exercises[exerciseIndex]
+    const set = exercise?.sets[setIndex]
+    const isLastSetOfExercise = setIndex === (exercise?.sets.length ?? 0) - 1
+
+    if (rpeEnabled && isLastSetOfExercise && set?.rpe == null) {
+      setPendingRpeStep({ exerciseIndex, setIndex })
+      return
+    }
+
+    onCompleteStep(exerciseIndex, setIndex)
+  }
+
+  function handlePendingRpeSelect(rpe: RpeValue) {
+    if (!pendingRpeStep) {
+      return
+    }
+
+    onUpdateSet(pendingRpeStep.exerciseIndex, pendingRpeStep.setIndex, { rpe })
+    onCompleteStep(pendingRpeStep.exerciseIndex, pendingRpeStep.setIndex)
+    setPendingRpeStep(null)
+  }
+
+  function handlePendingRpeClose(open: boolean) {
+    if (open || !pendingRpeStep) {
+      return
+    }
+
+    onCompleteStep(pendingRpeStep.exerciseIndex, pendingRpeStep.setIndex)
+    setPendingRpeStep(null)
+  }
 
   function renderSetRow(exerciseIndex: number, setIndex: number) {
     const exercise = exercises[exerciseIndex]
@@ -259,7 +305,7 @@ export function ActiveWorkoutCircuit({
               onClick={() =>
                 isTimed
                   ? onStartHold(exerciseIndex, setIndex)
-                  : onCompleteStep(exerciseIndex, setIndex)
+                  : handleCompleteStep(exerciseIndex, setIndex)
               }
             >
               <Check className="size-4" />
@@ -306,12 +352,17 @@ export function ActiveWorkoutCircuit({
         }}
         onAddSet={onAddPlannedSet}
         showSetCount={false}
-        dragHandle="subtle"
+        dragEnabled={false}
         showDeleteButton={false}
         embedded
         renderBelowTitle={(index) => {
           const exercise = exercises[index]
           if (!exercise) {
+            return null
+          }
+
+          const exerciseComplete = exercise.sets.every((set) => Boolean(set.completedAt))
+          if (exerciseComplete) {
             return null
           }
 
@@ -336,6 +387,18 @@ export function ActiveWorkoutCircuit({
               <span className="text-xs text-muted-foreground">s</span>
             </div>
           )
+        }}
+        renderCollapsedSummary={(index) => {
+          const exercise = exercises[index]
+          if (!exercise) {
+            return null
+          }
+
+          return formatActiveExerciseCollapsedSummary(exercise.sets, {
+            exerciseName: exercise.exerciseName,
+            equipment: exercise.equipment,
+            muscleGroup: exercise.muscleGroup,
+          })
         }}
         renderSetsContent={(index) => {
           const exercise = exercises[index]
@@ -446,6 +509,14 @@ export function ActiveWorkoutCircuit({
         onUpdateSetType={(exerciseIndex, setIndex, setType) =>
           onUpdateSet(exerciseIndex, setIndex, { setType })
         }
+      />
+
+      <RpeDrawer
+        open={pendingRpeStep != null}
+        value={pendingRpeSet?.rpe}
+        exerciseName={pendingRpeExercise?.exerciseName ?? null}
+        onOpenChange={handlePendingRpeClose}
+        onSelect={handlePendingRpeSelect}
       />
     </>
   )

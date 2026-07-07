@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
 import { ActiveWorkoutFinishFab } from '@/components/workout/ActiveWorkoutFinishFab'
+import { ActiveWorkoutSummaryTile } from '@/components/workout/ActiveWorkoutSummaryTile'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { RestTimerBar } from '@/components/workout/RestTimerBar'
 import { HoldTimerBar } from '@/components/workout/HoldTimerBar'
@@ -66,6 +67,7 @@ import {
   buildCircuitSteps,
   countCompletedSets,
   findNextStepIndexAfter,
+  getStepExerciseDisplayName,
   getStepLabel,
   getValidatedExercisesForSync,
   isWorkoutComplete,
@@ -140,7 +142,6 @@ function ActiveWorkoutPage() {
     sourceTemplateId,
     sourceTemplateExerciseLineup,
     exercises: activeExercises,
-    activeStepIndex,
     lastCompletedStep,
     restSecondsLeft,
     restTargetSeconds,
@@ -189,6 +190,13 @@ function ActiveWorkoutPage() {
       exerciseLocale,
     )
   }, [activeExercises, lastCompletedStep, exerciseLocale])
+
+  const currentExerciseLabel = useMemo(() => {
+    const steps = buildCircuitSteps(activeExercises)
+    const currentStep = steps[activeStepIndex] ?? null
+
+    return getStepExerciseDisplayName(activeExercises, currentStep, exerciseLocale)
+  }, [activeExercises, activeStepIndex, exerciseLocale])
 
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -562,11 +570,23 @@ function ActiveWorkoutPage() {
         </Pill>
       ) : null}
 
-      <PageHeader
-        eyebrow="En cours"
-        title={title}
-        description={`Étape ${Math.min(activeStepIndex + 1, Math.max(steps.length, 1))} / ${Math.max(steps.length, 1)} · ${completedCount} série${completedCount > 1 ? 's' : ''} validée${completedCount > 1 ? 's' : ''}`}
-      />
+      <div className="flex items-center gap-2.5">
+        <h1 className="min-w-0 truncate font-display text-2xl font-black text-foreground">
+          {title}
+        </h1>
+        <Pill tone="secondary" className="shrink-0 font-semibold">
+          En cours
+        </Pill>
+      </div>
+
+      {startedAt ? (
+        <ActiveWorkoutSummaryTile
+          startedAt={startedAt}
+          exercises={activeExercises}
+          currentExerciseLabel={currentExerciseLabel}
+          bodyWeightKg={bodyWeightKg}
+        />
+      ) : null}
 
       <Card className="rounded-2xl border-border">
         <CardHeader>
@@ -732,7 +752,10 @@ function ActiveWorkoutPage() {
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={() => {
                 setCancelConfirmOpen(false)
-                void cancelWorkout()
+                void (async () => {
+                  await cancelWorkout()
+                  void navigate({ to: '/app/sessions', search: { tab: 'catalog' } })
+                })()
               }}
             >
               Abandonner

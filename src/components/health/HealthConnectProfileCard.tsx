@@ -228,7 +228,7 @@ export function HealthConnectProfileCard() {
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-soft-secondary text-secondary-foreground">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-soft-secondary text-soft-secondary-fg">
               <Activity className="size-5" />
             </div>
             <div>

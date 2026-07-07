@@ -38,6 +38,9 @@
   --color-soft-accent: var(--soft-accent);
   --color-soft-purple: var(--soft-purple);
   --color-soft-peach: var(--soft-peach);
+  --color-soft-primary-fg: var(--soft-primary-fg);
+  --color-soft-secondary-fg: var(--soft-secondary-fg);
+  --color-soft-accent-fg: var(--soft-accent-fg);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

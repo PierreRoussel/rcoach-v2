@@ -29,7 +29,7 @@ export function WeightProgressSinceStartBadge({
         className={cn(
           'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold',
           isMaintain
-            ? 'border-secondary/30 bg-soft-secondary text-secondary-foreground'
+            ? 'border-secondary/30 bg-soft-secondary text-soft-secondary-fg'
             : 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
           className,
         )}

@@ -9,9 +9,9 @@ type PillProps = {
 
 const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
   default: 'bg-muted text-muted-foreground',
-  primary: 'bg-soft-primary text-primary',
-  secondary: 'bg-soft-secondary text-secondary-foreground',
-  accent: 'bg-soft-accent text-accent-foreground',
+  primary: 'bg-soft-primary text-soft-primary-fg',
+  secondary: 'bg-soft-secondary text-soft-secondary-fg',
+  accent: 'bg-soft-accent text-soft-accent-fg',
   purple: 'bg-soft-purple text-[#6b4fcc]',
   'solid-primary': 'bg-primary text-primary-foreground shadow-soft-primary',
   'solid-accent': 'bg-accent text-accent-foreground shadow-soft-accent',

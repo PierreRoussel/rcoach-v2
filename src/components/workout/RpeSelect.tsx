@@ -5,21 +5,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  formatRpeDisplay,
+  isRpeValue,
+  RPE_VALUES,
+  type RpeValue,
+} from '@/lib/workout/rpe-values'
 import { cn } from '@/lib/utils'
 
-export const RPE_VALUES = [6, 7, 8, 9, 10] as const
-
-export type RpeValue = (typeof RPE_VALUES)[number]
+export { RPE_VALUES, type RpeValue } from '@/lib/workout/rpe-values'
 
 type RpeSelectProps = {
   value: number | null | undefined
   disabled?: boolean
   variant?: 'default' | 'inline'
   onChange: (value: RpeValue) => void
-}
-
-function isRpeValue(value: number | null | undefined): value is RpeValue {
-  return value != null && RPE_VALUES.includes(value as RpeValue)
 }
 
 export function RpeSelect({
@@ -52,7 +52,7 @@ export function RpeSelect({
       <SelectContent>
         {RPE_VALUES.map((rpe) => (
           <SelectItem key={rpe} value={String(rpe)}>
-            {rpe}
+            {formatRpeDisplay(rpe)}
           </SelectItem>
         ))}
       </SelectContent>

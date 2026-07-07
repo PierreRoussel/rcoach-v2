@@ -1,5 +1,21 @@
 /**
- * Pro — dark performance theme (orange / mint / neon).
+ * Pro — dark performance theme (orange / sage mint / amber).
+ *
+ * Accent rollback (neon lime, 2026-06) — restore these four lines to revert:
+ *   --accent: #c8ff00;
+ *   --chart-3: #c8ff00;
+ *   --soft-accent: rgba(200, 255, 0, 0.12);
+ *   preview accent in themes/index.ts: #C8FF00
+ *
+ * Secondary rollback (neon mint, 2026-06) — restore to revert:
+ *   --secondary: #00dfa2;
+ *   --success: #00dfa2;
+ *   --chart-2: #00dfa2;
+ *   --soft-secondary: rgba(0, 223, 162, 0.12);
+ *   --secondary-foreground: #001a10;
+ *   --success-foreground: #001a10;
+ *   gradient end: rgba(0, 223, 162, 0.16)
+ *   preview secondary in themes/index.ts: #00DFA2
  */
 [data-theme='pro'] {
   --background: #0d1b2e;
@@ -10,16 +26,16 @@
   --popover-foreground: #e8f0ff;
   --primary: #ff4d00;
   --primary-foreground: #ffffff;
-  --secondary: #00dfa2;
-  --secondary-foreground: #001a10;
+  --secondary: #5cbba0;
+  --secondary-foreground: #0d1b2e;
   --muted: #1e3050;
   --muted-foreground: #7a9ec0;
-  --accent: #c8ff00;
+  --accent: #ffab2e;
   --accent-foreground: #0d1b2e;
   --destructive: #ff3b3b;
   --destructive-foreground: #ffffff;
-  --success: #00dfa2;
-  --success-foreground: #001a10;
+  --success: #5cbba0;
+  --success-foreground: #0d1b2e;
   --border: rgba(120, 180, 255, 0.12);
   --input: rgba(120, 180, 255, 0.08);
   --input-background: #1e3050;
@@ -28,8 +44,8 @@
   --font-weight-normal: 400;
   --ring: #ff4d00;
   --chart-1: #ff4d00;
-  --chart-2: #00dfa2;
-  --chart-3: #c8ff00;
+  --chart-2: #5cbba0;
+  --chart-3: #ffab2e;
   --chart-4: #4d8fff;
   --chart-5: #ff3b8a;
   --radius: 0.5rem;
@@ -43,10 +59,13 @@
   --sidebar-ring: #ff4d00;
 
   --soft-primary: rgba(255, 77, 0, 0.14);
-  --soft-secondary: rgba(0, 223, 162, 0.12);
-  --soft-accent: rgba(200, 255, 0, 0.12);
+  --soft-secondary: rgba(92, 187, 160, 0.18);
+  --soft-accent: rgba(255, 171, 46, 0.12);
   --soft-purple: rgba(77, 143, 255, 0.14);
   --soft-peach: rgba(255, 59, 138, 0.12);
+  --soft-primary-fg: var(--primary);
+  --soft-secondary-fg: var(--secondary);
+  --soft-accent-fg: var(--accent);
   --nutrient-warning-bg: color-mix(in srgb, var(--chart-3) 18%, var(--card));
   --nutrient-warning-border: color-mix(in srgb, var(--chart-3) 42%, var(--border));
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 72%, var(--foreground));
@@ -54,7 +73,7 @@
     135deg,
     rgba(255, 77, 0, 0.22) 0%,
     var(--card) 45%,
-    rgba(0, 223, 162, 0.16) 100%
+    rgba(92, 187, 160, 0.14) 100%
   );
 
   color-scheme: dark;

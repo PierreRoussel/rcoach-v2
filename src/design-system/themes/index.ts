@@ -31,12 +31,12 @@ export const themes: Record<ThemeId, ThemeDefinition> = {
   pro: {
     id: 'pro',
     label: 'Pro',
-    description: 'Contraste élevé, accents néon — pensé pour la performance.',
+    description: 'Contraste élevé, accents ambre — pensé pour la performance.',
     preview: {
       background: '#0D1B2E',
       primary: '#FF4D00',
-      secondary: '#00DFA2',
-      accent: '#C8FF00',
+      secondary: '#5CBBA0',
+      accent: '#FFAB2E',
     },
     defaultColorModePreference: 'dark',
     supportsColorModePreference: false,

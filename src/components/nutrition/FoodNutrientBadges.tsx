@@ -16,7 +16,7 @@ const badgeToneClasses: Record<
   Extract<NutrientQualityLevel, 'low' | 'high'>,
   string
 > = {
-  low: 'border-secondary/40 bg-soft-secondary text-secondary-foreground',
+  low: 'border-secondary/40 bg-soft-secondary text-soft-secondary-fg',
   high: 'border-[var(--nutrient-warning-border)] bg-[var(--nutrient-warning-bg)] text-[var(--nutrient-warning-fg)]',
 }
 

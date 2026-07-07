@@ -279,6 +279,26 @@ export function getStepLabel(
   return `${displayName} — série ${step.setIndex + 1}`
 }
 
+export function getStepExerciseDisplayName(
+  exercises: CircuitExercise[],
+  step: CircuitStep | null,
+  locale: ExerciseLocale = DEFAULT_EXERCISE_LOCALE,
+): string | null {
+  if (!step) {
+    return null
+  }
+
+  const exercise = exercises[step.exerciseIndex]
+  if (!exercise) {
+    return null
+  }
+
+  return resolveExerciseDisplayName(
+    { name: exercise.exerciseName, name_fr: exercise.exerciseNameFr },
+    locale,
+  )
+}
+
 export function getValidatedExercisesForSync(exercises: CircuitExercise[]) {
   return exercises
     .map((exercise) => ({

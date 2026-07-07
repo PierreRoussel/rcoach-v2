@@ -88,7 +88,7 @@ function SessionSummaryTile({
     ? 'bg-primary/15 text-primary'
     : tone === 'primary'
       ? 'bg-soft-primary text-primary'
-      : 'bg-soft-secondary text-secondary-foreground'
+      : 'bg-soft-secondary text-soft-secondary-fg'
 
   const className = cn(
     'flex min-h-[9.5rem] w-full flex-col rounded-2xl px-3 py-3 text-left shadow-sm transition-colors',

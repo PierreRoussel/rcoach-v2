@@ -7,10 +7,11 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { BarChart2, ChevronDown, GripVertical, Info, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
+import { Pill } from '@/design-system'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -35,6 +36,7 @@ import {
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
+import { isExerciseComplete } from '@/lib/workout/format-exercise-collapsed-summary'
 import type { Exercise } from '@/lib/graphql/operations'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
@@ -52,6 +54,7 @@ type SortableExerciseListProps = {
   onReorder: (from: number, to: number) => void
   onRemove: (index: number) => void
   showSetCount?: boolean
+  dragEnabled?: boolean
   dragHandle?: 'subtle' | 'default'
   showDeleteButton?: boolean
   embedded?: boolean
@@ -64,6 +67,7 @@ type SortableExerciseListProps = {
   onViewStats?: (index: number) => void
   onViewDetails?: (index: number) => void
   renderBelowTitle?: (index: number) => ReactNode
+  renderCollapsedSummary?: (index: number) => string | null
 }
 
 function supersetAccentClass(supersetId: number) {
@@ -303,6 +307,7 @@ function SortableExerciseItem({
   onSelect,
   onRemove,
   showSetCount,
+  dragEnabled = true,
   dragHandle,
   showDeleteButton,
   embedded,
@@ -315,6 +320,7 @@ function SortableExerciseItem({
   onViewDetails,
   renderSetsContent,
   renderBelowTitle,
+  renderCollapsedSummary,
   supersetBadge,
 }: {
   exercise: ActiveExerciseEntry
@@ -324,6 +330,7 @@ function SortableExerciseItem({
   onSelect: () => void
   onRemove: () => void
   showSetCount: boolean
+  dragEnabled: boolean
   dragHandle: 'subtle' | 'default'
   showDeleteButton: boolean
   embedded: boolean
@@ -336,10 +343,26 @@ function SortableExerciseItem({
   onViewDetails?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
   renderBelowTitle?: (index: number) => ReactNode
+  renderCollapsedSummary?: (index: number) => string | null
   supersetBadge?: number
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: exercise.exerciseId })
+    useSortable({ id: exercise.exerciseId, disabled: !dragEnabled })
+
+  const exerciseComplete = isExerciseComplete(exercise.sets)
+  const [open, setOpen] = useState(() => !exerciseComplete)
+
+  useEffect(() => {
+    if (exerciseComplete) {
+      setOpen(false)
+    }
+  }, [exerciseComplete])
+
+  useEffect(() => {
+    if (isActive && !exerciseComplete) {
+      setOpen(true)
+    }
+  }, [exerciseComplete, isActive])
 
   const inSuperset = exercise.supersetId != null
   const accent =
@@ -347,6 +370,8 @@ function SortableExerciseItem({
       ? supersetAccentClass(exercise.supersetId)
       : null
   const hasSetsSection = renderSetsContent != null
+  const collapsedSummary = renderCollapsedSummary?.(index) ?? null
+  const showCollapsedHeader = hasSetsSection && !open && exerciseComplete
 
   const card = (
     <div
@@ -363,70 +388,113 @@ function SortableExerciseItem({
         isDragging && 'opacity-70 shadow-md',
       )}
     >
-      <div className={cn('flex w-full items-center gap-2 py-2', embedded ? 'px-4' : 'px-3')}>
-        <button
-          type="button"
-          className={cn(
-            'shrink-0 text-muted-foreground',
-            dragHandle === 'subtle'
-              ? 'cursor-grab opacity-0 transition-opacity group-hover:opacity-40 active:cursor-grabbing active:opacity-70'
-              : 'cursor-grab active:cursor-grabbing',
-          )}
-          aria-label="Réordonner"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className={dragHandle === 'subtle' ? 'size-3' : 'size-4'} />
-        </button>
+      <div
+        className={cn(
+          'flex w-full items-center gap-2 py-2',
+          embedded ? 'pl-4 pr-0' : 'pl-3 pr-0',
+        )}
+      >
+        {dragEnabled ? (
+          <button
+            type="button"
+            className={cn(
+              'shrink-0 text-muted-foreground',
+              dragHandle === 'subtle'
+                ? 'cursor-grab opacity-0 transition-opacity group-hover:opacity-40 active:cursor-grabbing active:opacity-70'
+                : 'cursor-grab active:cursor-grabbing',
+            )}
+            aria-label="Réordonner"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className={dragHandle === 'subtle' ? 'size-3' : 'size-4'} />
+          </button>
+        ) : null}
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect}>
-          <div className="flex items-center gap-2">
-            <p className="truncate font-display font-black">
-              <DisplayExerciseName
-                name={exercise.exerciseName}
-                nameFr={exercise.exerciseNameFr}
-                exerciseId={exercise.exerciseId}
-              />
-            </p>
-            {supersetBadge != null ? (
-              <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
-                S{supersetBadge}
-              </span>
-            ) : null}
-          </div>
-          {renderBelowTitle?.(index)}
-          {showSetCount ? (
-            <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
-          ) : null}
+          {showCollapsedHeader ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="min-w-0 truncate font-display text-sm font-black text-foreground">
+                <DisplayExerciseName
+                  name={exercise.exerciseName}
+                  nameFr={exercise.exerciseNameFr}
+                  exerciseId={exercise.exerciseId}
+                />
+              </p>
+              <Pill tone="secondary" className="shrink-0 px-2 py-0.5 text-[10px]">
+                Terminé
+              </Pill>
+              {supersetBadge != null ? (
+                <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  S{supersetBadge}
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <p className="truncate font-display font-black">
+                  <DisplayExerciseName
+                    name={exercise.exerciseName}
+                    nameFr={exercise.exerciseNameFr}
+                    exerciseId={exercise.exerciseId}
+                  />
+                </p>
+                {exerciseComplete ? (
+                  <Pill tone="secondary" className="shrink-0 px-2 py-0.5 text-[10px]">
+                    Terminé
+                  </Pill>
+                ) : null}
+                {supersetBadge != null ? (
+                  <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    S{supersetBadge}
+                  </span>
+                ) : null}
+              </div>
+              {open ? renderBelowTitle?.(index) : null}
+              {showSetCount ? (
+                <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
+              ) : null}
+            </>
+          )}
         </button>
-        {hasSetsSection ? (
-          <CollapsibleTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0 [&[data-state=open]>svg]:rotate-180"
-              aria-label="Replier ou déplier les séries"
-            >
-              <ChevronDown className="size-4 transition-transform duration-200" />
+        <div className="flex shrink-0 items-center gap-2">
+          {showCollapsedHeader && collapsedSummary ? (
+            <p className="font-display text-sm font-black tabular-nums text-foreground">
+              {collapsedSummary}
+            </p>
+          ) : null}
+          <div className="flex items-center gap-0">
+            {hasSetsSection ? (
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0 [&[data-state=open]>svg]:rotate-180"
+                  aria-label="Replier ou déplier les séries"
+                >
+                  <ChevronDown className="size-4 transition-transform duration-200" />
+                </Button>
+              </CollapsibleTrigger>
+            ) : null}
+            <ExerciseActionsMenu
+              index={index}
+              exercises={exercises}
+              onRemove={showDeleteButton ? undefined : onRemove}
+              onAddToSuperset={onAddToSuperset}
+              onRemoveFromSuperset={onRemoveFromSuperset}
+              onOpenReorder={onOpenReorder}
+              onReplaceRequest={onReplaceRequest}
+              onViewStats={onViewStats}
+              onViewDetails={onViewDetails}
+            />
+          </div>
+          {showDeleteButton ? (
+            <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
+              <Trash2 className="size-4" />
             </Button>
-          </CollapsibleTrigger>
-        ) : null}
-        <ExerciseActionsMenu
-          index={index}
-          exercises={exercises}
-          onRemove={showDeleteButton ? undefined : onRemove}
-          onAddToSuperset={onAddToSuperset}
-          onRemoveFromSuperset={onRemoveFromSuperset}
-          onOpenReorder={onOpenReorder}
-          onReplaceRequest={onReplaceRequest}
-          onViewStats={onViewStats}
-          onViewDetails={onViewDetails}
-        />
-        {showDeleteButton ? (
-          <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
-            <Trash2 className="size-4" />
-          </Button>
-        ) : null}
+          ) : null}
+        </div>
       </div>
       {hasSetsSection ? (
         <CollapsibleContent
@@ -459,7 +527,11 @@ function SortableExerciseItem({
   )
 
   if (hasSetsSection) {
-    return <Collapsible defaultOpen>{card}</Collapsible>
+    return (
+      <Collapsible open={open} onOpenChange={setOpen}>
+        {card}
+      </Collapsible>
+    )
   }
 
   return card
@@ -510,6 +582,7 @@ export function SortableExerciseList({
   onReorder,
   onRemove,
   showSetCount = true,
+  dragEnabled = true,
   dragHandle = 'default',
   showDeleteButton = true,
   embedded = false,
@@ -522,6 +595,7 @@ export function SortableExerciseList({
   onViewStats,
   onViewDetails,
   renderBelowTitle,
+  renderCollapsedSummary,
 }: SortableExerciseListProps) {
   const sensors = useSortableSensors()
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
@@ -570,6 +644,7 @@ export function SortableExerciseList({
         onSelect={() => onSelect(index)}
         onRemove={() => onRemove(index)}
         showSetCount={showSetCount}
+        dragEnabled={dragEnabled}
         dragHandle={dragHandle}
         showDeleteButton={showDeleteButton}
         embedded={embedded}
@@ -582,6 +657,7 @@ export function SortableExerciseList({
         onViewDetails={onViewDetails}
         renderSetsContent={renderSetsContent}
         renderBelowTitle={renderBelowTitle}
+        renderCollapsedSummary={renderCollapsedSummary}
         supersetBadge={isSplitSuperset(exercises, index)}
       />
     )

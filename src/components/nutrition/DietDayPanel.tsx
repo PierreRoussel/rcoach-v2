@@ -161,7 +161,7 @@ export function DietDayPanel({
           <CalorieSideStat
             className="absolute bottom-0 right-0"
             icon={Target}
-            iconClassName="bg-soft-secondary text-secondary-foreground"
+            iconClassName="bg-soft-secondary text-soft-secondary-fg"
             value={Math.round(daySummary.targets.calories)}
             label="Objectif"
             to="/app/goals"
