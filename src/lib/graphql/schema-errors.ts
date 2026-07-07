@@ -62,6 +62,49 @@ export function isGraphqlScheduleMissingError(error: unknown): boolean {
   )
 }
 
+const SUBSCRIPTION_GRAPHQL_FIELDS = [
+  'subscriptions',
+  'insert_subscriptions_one',
+  'update_subscriptions_by_pk',
+  'subscriptions_insert_input',
+  'subscriptions_set_input',
+] as const
+
+const SUBSCRIPTION_CANCELLATION_FEEDBACK_FIELDS = [
+  'subscription_cancellation_feedback',
+  'insert_subscription_cancellation_feedback_one',
+  'subscription_cancellation_feedback_insert_input',
+] as const
+
+export const SUBSCRIPTION_NOT_DEPLOYED_MESSAGE =
+  'Les abonnements nécessitent le déploiement Nhost (migrations subscriptions).'
+
+export function isGraphqlSubscriptionMissingError(error: unknown): boolean {
+  return SUBSCRIPTION_GRAPHQL_FIELDS.some((field) =>
+    isGraphqlMissingFieldError(error, field),
+  )
+}
+
+export function isGraphqlCancellationFeedbackMissingError(error: unknown): boolean {
+  return SUBSCRIPTION_CANCELLATION_FEEDBACK_FIELDS.some((field) =>
+    isGraphqlMissingFieldError(error, field),
+  )
+}
+
+export function toSubscriptionDeployError(error: unknown): Error {
+  if (isGraphqlSubscriptionMissingError(error)) {
+    return new Error(SUBSCRIPTION_NOT_DEPLOYED_MESSAGE)
+  }
+
+  if (error instanceof Error && isGraphqlDatabaseError(error)) {
+    return new Error(
+      `${error.message} — Vérifiez que les migrations Nhost (subscriptions) sont déployées.`,
+    )
+  }
+
+  return error instanceof Error ? error : new Error(String(error))
+}
+
 export function toScheduleDeployError(error: unknown): Error {
   if (isGraphqlScheduleMissingError(error)) {
     return new Error(SCHEDULE_NOT_DEPLOYED_MESSAGE)

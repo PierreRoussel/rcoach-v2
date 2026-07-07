@@ -30,23 +30,31 @@ export function PremiumOfferPage() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual')
   const [showCelebration, setShowCelebration] = useState(false)
   const [trialError, setTrialError] = useState<string | null>(null)
-  const { isPremium, canStartTrial, hasConsumedTrial } = useSubscriptionSummary()
+  const { isPremium, canStartTrial, hasConsumedTrial, isLoading, refetch } =
+    useSubscriptionSummary()
   const startTrial = useStartPremiumTrial()
 
   useEffect(() => {
     trackEvent('paywall_view', { billingPeriod })
   }, [billingPeriod])
 
+  useEffect(() => {
+    void refetch()
+  }, [refetch])
+
   const priceLabel =
     billingPeriod === 'annual'
       ? `${monthlyEquivalentFromAnnual(PREMIUM_PLAN)}/mois, facturé ${formatPriceEuros(PREMIUM_PLAN.annualPriceCents)}/an`
       : `${formatPriceEuros(PREMIUM_PLAN.monthlyPriceCents)}/mois`
 
-  async function handleStartTrial() {
+  async function handleStartTrial(trialDays?: number) {
     setTrialError(null)
-    trackEvent('paywall_cta_click', { billingPeriod })
+    trackEvent('paywall_cta_click', {
+      billingPeriod,
+      cta: trialDays === PREMIUM_PLAN.subscribeOfferTrialDays ? 'subscribe' : 'trial',
+    })
     try {
-      await startTrial.mutateAsync(billingPeriod)
+      await startTrial.mutateAsync({ billingPeriod, trialDays })
       trackEvent('paywall_conversion', { billingPeriod, status: 'trialing' })
       setShowCelebration(true)
     } catch (error) {
@@ -57,6 +65,8 @@ export function PremiumOfferPage() {
       )
     }
   }
+
+  const ctaDisabled = isPremium || startTrial.isPending || isLoading
 
   return (
     <>
@@ -144,17 +154,31 @@ export function PremiumOfferPage() {
               type="button"
               variant="pill"
               className="w-full gap-2"
-              disabled={isPremium || !canStartTrial || startTrial.isPending}
+              disabled={ctaDisabled}
               onClick={() => void handleStartTrial()}
             >
               <Sparkles className="size-4" aria-hidden />
-              {isPremium
+              {startTrial.isPending
+                ? 'Activation en cours...'
+                : isPremium
                 ? 'Premium déjà actif'
                 : canStartTrial
                   ? 'Commencer l’essai gratuit'
                   : hasConsumedTrial
                     ? 'Essai gratuit déjà utilisé'
                     : 'Commencer l’essai gratuit'}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full"
+              disabled={ctaDisabled}
+              onClick={() => void handleStartTrial(PREMIUM_PLAN.subscribeOfferTrialDays)}
+            >
+              {startTrial.isPending
+                ? 'Activation en cours...'
+                : `M’abonner tout de suite (${PREMIUM_PLAN.subscribeOfferTrialDays} jours offerts)`}
             </Button>
 
             <p className="text-center text-xs leading-relaxed text-muted-foreground">

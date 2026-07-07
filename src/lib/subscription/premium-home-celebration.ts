@@ -8,9 +8,17 @@ export function markPremiumHomeCelebrationPending(): void {
   }
 }
 
+export function hasPremiumHomeCelebrationPending(): boolean {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export function consumePremiumHomeCelebrationPending(): boolean {
   try {
-    if (sessionStorage.getItem(STORAGE_KEY) !== '1') {
+    if (!hasPremiumHomeCelebrationPending()) {
       return false
     }
     sessionStorage.removeItem(STORAGE_KEY)

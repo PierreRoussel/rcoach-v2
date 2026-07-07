@@ -10,6 +10,11 @@ import {
   type SubscriptionUpdateInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import {
+  isGraphqlCancellationFeedbackMissingError,
+  isGraphqlSubscriptionMissingError,
+  toSubscriptionDeployError,
+} from '@/lib/graphql/schema-errors'
 
 export const DEFAULT_FREE_SUBSCRIPTION: Subscription = {
   id: '',
@@ -26,8 +31,7 @@ export const DEFAULT_FREE_SUBSCRIPTION: Subscription = {
 }
 
 function isSubscriptionSchemaError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message.toLowerCase() : ''
-  return message.includes('subscriptions') || message.includes('subscription')
+  return isGraphqlSubscriptionMissingError(error)
 }
 
 export async function fetchMySubscription(
@@ -55,37 +59,74 @@ export async function updateMySubscription(
   userId: string,
   changes: SubscriptionUpdateInput,
 ): Promise<Subscription> {
-  const existing = await fetchMySubscription(nhost, userId)
+  try {
+    const existing = await fetchMySubscription(nhost, userId)
 
-  if (!existing.id) {
-    const inserted = await graphqlRequest<{ insert_subscriptions_one: Subscription }>(
-      nhost,
-      INSERT_MY_SUBSCRIPTION,
-      {
-        object: {
-          user_id: userId,
-          ...changes,
+    if (!existing.id) {
+      const inserted = await graphqlRequest<{ insert_subscriptions_one: Subscription | null }>(
+        nhost,
+        INSERT_MY_SUBSCRIPTION,
+        {
+          object: changes,
         },
+      )
+
+      if (!inserted.insert_subscriptions_one) {
+        throw new Error('Impossible de créer l’abonnement.')
+      }
+
+      return inserted.insert_subscriptions_one
+    }
+
+    const updated = await graphqlRequest<{
+      update_subscriptions_by_pk: Subscription | null
+    }>(
+      nhost,
+      UPDATE_MY_SUBSCRIPTION,
+      {
+        id: existing.id,
+        changes,
       },
     )
-    return inserted.insert_subscriptions_one
+
+    if (!updated.update_subscriptions_by_pk) {
+      const refetched = await fetchMySubscription(nhost, userId)
+      if (!refetched.id) {
+        const inserted = await graphqlRequest<{ insert_subscriptions_one: Subscription | null }>(
+          nhost,
+          INSERT_MY_SUBSCRIPTION,
+          {
+            object: changes,
+          },
+        )
+
+        if (!inserted.insert_subscriptions_one) {
+          throw new Error('Impossible de mettre à jour l’abonnement.')
+        }
+
+        return inserted.insert_subscriptions_one
+      }
+
+      throw new Error('Impossible de mettre à jour l’abonnement.')
+    }
+
+    return updated.update_subscriptions_by_pk
+  } catch (error) {
+    throw toSubscriptionDeployError(error)
   }
-
-  const updated = await graphqlRequest<{ update_subscriptions_by_pk: Subscription }>(
-    nhost,
-    UPDATE_MY_SUBSCRIPTION,
-    {
-      id: existing.id,
-      changes,
-    },
-  )
-
-  return updated.update_subscriptions_by_pk
 }
 
 export async function submitCancellationFeedback(
   nhost: NhostClient,
   input: CancellationFeedbackInput,
 ): Promise<void> {
-  await graphqlRequest(nhost, INSERT_CANCELLATION_FEEDBACK, { object: input })
+  try {
+    await graphqlRequest(nhost, INSERT_CANCELLATION_FEEDBACK, { object: input })
+  } catch (error) {
+    if (isGraphqlCancellationFeedbackMissingError(error)) {
+      return
+    }
+
+    throw error
+  }
 }

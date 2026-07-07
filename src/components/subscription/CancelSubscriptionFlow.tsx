@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Textarea } from '@/components/ui/textarea'
 import { Pill } from '@/design-system'
 import {
@@ -39,6 +40,7 @@ export function CancelSubscriptionFlow({
   const [step, setStep] = useState<1 | 2>(1)
   const [reason, setReason] = useState<string | null>(null)
   const [comment, setComment] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const cancelSubscription = useCancelSubscription()
   const submitFeedback = useSubmitCancellationFeedback()
 
@@ -46,6 +48,7 @@ export function CancelSubscriptionFlow({
     setStep(1)
     setReason(null)
     setComment('')
+    setError(null)
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -56,16 +59,26 @@ export function CancelSubscriptionFlow({
   }
 
   async function finalize(withFeedback: boolean) {
-    if (withFeedback && (reason || comment.trim())) {
-      await submitFeedback.mutateAsync({
-        reason,
-        comment: comment.trim() || null,
-      })
-    }
+    setError(null)
 
-    await cancelSubscription.mutateAsync()
-    handleOpenChange(false)
-    onCanceled?.()
+    try {
+      if (withFeedback && (reason || comment.trim())) {
+        await submitFeedback.mutateAsync({
+          reason,
+          comment: comment.trim() || null,
+        })
+      }
+
+      await cancelSubscription.mutateAsync()
+      handleOpenChange(false)
+      onCanceled?.()
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'Impossible de résilier l’abonnement pour le moment.',
+      )
+    }
   }
 
   const isPending = cancelSubscription.isPending || submitFeedback.isPending
@@ -128,6 +141,7 @@ export function CancelSubscriptionFlow({
                 rows={4}
               />
             </div>
+            {error ? <FeedbackMessage variant="error">{error}</FeedbackMessage> : null}
             <DialogFooter className="flex-col gap-2 sm:flex-col">
               <Button
                 type="button"

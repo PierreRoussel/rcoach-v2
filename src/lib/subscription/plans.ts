@@ -11,6 +11,7 @@ export type PlanDefinition = {
   monthlyPriceCents: number
   annualPriceCents: number
   trialDays: number
+  subscribeOfferTrialDays: number
   features: string[]
   entitlements: PremiumFeature[]
 }
@@ -22,6 +23,8 @@ export const PREMIUM_PLAN: PlanDefinition = {
   monthlyPriceCents: 999,
   annualPriceCents: 4999,
   trialDays: 7,
+  /** Jours offerts sur le CTA « M'abonner tout de suite » (essai avant facturation). */
+  subscribeOfferTrialDays: 14,
   features: [
     'Ajustement illimité des charges',
     'Statistiques avancées',
@@ -52,6 +55,7 @@ export const FREE_PLAN: PlanDefinition = {
   monthlyPriceCents: 0,
   annualPriceCents: 0,
   trialDays: 0,
+  subscribeOfferTrialDays: 0,
   features: [
     'Suivi des séances',
     'Journal nutrition (sans coaching)',

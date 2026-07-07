@@ -1133,6 +1133,21 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
   animation: workout-celebration-spark-keyframes 2.2s ease-in-out 0.8s infinite;
 }
 
+@keyframes premium-home-welcome-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-premium-home-welcome-exit {
+  animation: premium-home-welcome-exit 600ms ease-in forwards;
+}
+
 @keyframes nutrition-streak-pulse {
   0%,
   100% {
@@ -1176,5 +1191,10 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
     background: var(--gradient-hero);
     background-size: auto;
     animation: none;
+  }
+
+  .animate-premium-home-welcome-exit {
+    animation: none;
+    opacity: 0;
   }
 }

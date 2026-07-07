@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   consumePremiumHomeCelebrationPending,
+  hasPremiumHomeCelebrationPending,
   markPremiumHomeCelebrationPending,
 } from '@/lib/subscription/premium-home-celebration'
 
@@ -23,10 +24,13 @@ describe('premium-home-celebration', () => {
   })
 
   it('marks and consumes the pending celebration once', () => {
+    expect(hasPremiumHomeCelebrationPending()).toBe(false)
     expect(consumePremiumHomeCelebrationPending()).toBe(false)
 
     markPremiumHomeCelebrationPending()
+    expect(hasPremiumHomeCelebrationPending()).toBe(true)
     expect(consumePremiumHomeCelebrationPending()).toBe(true)
+    expect(hasPremiumHomeCelebrationPending()).toBe(false)
     expect(consumePremiumHomeCelebrationPending()).toBe(false)
   })
 })

@@ -12,6 +12,9 @@ export function canStartPremiumTrial(input: {
 }
 
 export function isTrialAlreadyConsumedError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message.toLowerCase() : ''
-  return message.includes('trial_already_consumed')
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+  return (
+    message.includes('trial_already_consumed') ||
+    message.includes('trial already consumed')
+  )
 }

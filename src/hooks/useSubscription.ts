@@ -30,6 +30,7 @@ export function useSubscription() {
     queryKey: ['subscription', 'me', userId],
     enabled: isAuthenticated && Boolean(userId),
     queryFn: () => fetchMySubscription(nhost, userId!),
+    refetchOnMount: 'always',
   })
 }
 
@@ -93,18 +94,41 @@ export function useUpdateSubscription() {
 }
 
 export function useStartPremiumTrial() {
-  const updateSubscription = useUpdateSubscription()
-  const { canStartTrial } = useSubscriptionSummary()
+  const { nhost, user } = useAuth()
+  const queryClient = useQueryClient()
+  const userId = user?.id
 
   return useMutation({
-    mutationFn: async (billingPeriod: BillingPeriod) => {
-      if (!canStartTrial) {
+    mutationFn: async (input: {
+      billingPeriod: BillingPeriod
+      trialDays?: number
+    }) => {
+      const { billingPeriod, trialDays } = input
+      if (!userId) {
+        throw new Error('Utilisateur non connecté.')
+      }
+
+      const subscription = await fetchMySubscription(nhost, userId)
+      const isPremium =
+        isPremiumTier(subscription.tier) &&
+        (subscription.status === 'active' || subscription.status === 'trialing')
+
+      if (
+        !canStartPremiumTrial({
+          isPremium,
+          trialConsumedAt: subscription.trial_consumed_at,
+        })
+      ) {
         throw new Error('Vous avez déjà utilisé votre essai gratuit.')
       }
 
-      const trialEnd = addDays(new Date(), PREMIUM_PLAN.trialDays).toISOString()
+      const trialEnd = addDays(
+        new Date(),
+        trialDays ?? PREMIUM_PLAN.trialDays,
+      ).toISOString()
+
       try {
-        return await updateSubscription.mutateAsync({
+        return await updateMySubscription(nhost, userId, {
           tier: 'premium',
           status: 'trialing',
           billing_period: billingPeriod,
@@ -117,6 +141,17 @@ export function useStartPremiumTrial() {
         }
         throw error
       }
+    },
+    onSuccess: (subscription: Subscription) => {
+      if (!userId) {
+        return
+      }
+
+      queryClient.setQueryData(['subscription', 'me', userId], subscription)
+      void queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
+      void queryClient.invalidateQueries({ queryKey: ['friendships'] })
+      void queryClient.invalidateQueries({ queryKey: ['friend-recap'] })
+      void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
     },
   })
 }

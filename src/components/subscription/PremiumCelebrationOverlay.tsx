@@ -196,10 +196,10 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
                   Premium activé
                 </Pill>
 
-                <h2 className="mt-4 font-display text-2xl font-black text-foreground">
+                <h2 className="mt-4 font-display text-2xl font-black text-[#2c2545]">
                   Bienvenue en Premium
                 </h2>
-                <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#5c5278]">
                   Découvrez ce que vous venez de débloquer — balayez pour parcourir les
                   fonctionnalités.
                 </p>
@@ -216,13 +216,13 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
                 >
                   <div className="mx-auto w-full max-w-sm space-y-5">
                     <div className="text-center">
-                      <span className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                      <span className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-[#f3e4eb] text-[#c45f84]">
                         <Icon className="size-6" aria-hidden />
                       </span>
-                      <h3 className="font-display text-xl font-black text-foreground">
+                      <h3 className="font-display text-xl font-black text-[#2c2545]">
                         {slide.title}
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      <p className="mt-2 text-sm leading-relaxed text-[#5c5278]">
                         {slide.description}
                       </p>
                     </div>
@@ -236,10 +236,10 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
               <div className="mx-auto w-full max-w-sm space-y-5 text-center">
                 <Crown className="mx-auto size-10 text-amber-500" aria-hidden />
                 <div className="space-y-2">
-                  <h3 className="font-display text-xl font-black text-foreground">
+                  <h3 className="font-display text-xl font-black text-[#2c2545]">
                     Tout est prêt
                   </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                  <p className="text-sm leading-relaxed text-[#5c5278]">
                     Profitez de votre essai gratuit. Vous pouvez gérer votre abonnement à tout
                     moment depuis votre profil.
                   </p>
@@ -247,7 +247,7 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
                 <Button variant="pill" className="w-full" onClick={finishAndGoHome}>
                   C&apos;est parti
                 </Button>
-                <Button variant="ghost" className="w-full" asChild>
+                <Button variant="ghost" className="w-full text-[#5c5278] hover:text-[#2c2545]" asChild>
                   <Link to="/app/profile/subscription" onClick={dismiss}>
                     Gérer mon abonnement
                   </Link>
@@ -279,7 +279,7 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
             <Button
               type="button"
               variant="outline"
-              className="rounded-full border-amber-300/60 bg-white/70 px-10 shadow-sm backdrop-blur-sm"
+              className="rounded-full border-amber-300/60 bg-white px-10 text-[#2c2545] shadow-sm"
               onClick={() => api?.scrollNext()}
             >
               Suivant
