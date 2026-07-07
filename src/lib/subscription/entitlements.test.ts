@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { hasEntitlement, isPremiumTheme } from '@/lib/subscription/entitlements'
+import { canCreateWorkoutTemplate, hasEntitlement, isPremiumTheme } from '@/lib/subscription/entitlements'
 
 describe('entitlements', () => {
   it('grants premium features only to premium tier', () => {
@@ -11,5 +11,12 @@ describe('entitlements', () => {
   it('identifies premium theme', () => {
     expect(isPremiumTheme('pro')).toBe(true)
     expect(isPremiumTheme('sports-candy')).toBe(false)
+  })
+
+  it('limits free workout templates to six', () => {
+    expect(canCreateWorkoutTemplate('free', 0)).toBe(true)
+    expect(canCreateWorkoutTemplate('free', 5)).toBe(true)
+    expect(canCreateWorkoutTemplate('free', 6)).toBe(false)
+    expect(canCreateWorkoutTemplate('premium', 20)).toBe(true)
   })
 })

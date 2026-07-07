@@ -3,6 +3,7 @@ import { BookmarkPlus, CalendarClock, Link2, MoreVertical, Trash2 } from 'lucide
 import { useState } from 'react'
 
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
+import { TemplateLimitDialog } from '@/components/subscription/TemplateLimitDialog'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -31,6 +32,9 @@ import {
   useTemplateBySourceWorkout,
 } from '@/hooks/useWorkoutSharing'
 import { useDeleteWorkout } from '@/hooks/useWorkouts'
+import { useEntitlement } from '@/hooks/useSubscription'
+import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
+import { FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
 import { cn } from '@/lib/utils'
 
 const DIALOG_CLOSE_MS = 200
@@ -69,8 +73,14 @@ export function WorkoutDetailMenu({
   const enableShare = useEnableWorkoutShare()
   const createTemplate = useCreateTemplateFromWorkout()
   const deleteWorkout = useDeleteWorkout()
+  const { entitled: hasUnlimitedTemplates } = useEntitlement('unlimited_templates')
+  const { data: templates } = useWorkoutTemplates()
+  const templateCount = templates?.length ?? 0
+  const atTemplateLimit =
+    !hasUnlimitedTemplates && templateCount >= FREE_WORKOUT_TEMPLATES
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -206,7 +216,13 @@ export function WorkoutDetailMenu({
           ) : (
             <DropdownMenuItem
               disabled={isBusy}
-              onClick={() => setSaveDialogOpen(true)}
+              onClick={() => {
+                if (atTemplateLimit) {
+                  setLimitDialogOpen(true)
+                  return
+                }
+                setSaveDialogOpen(true)
+              }}
             >
               <BookmarkPlus className="size-4" />
               Enregistrer comme modèle
@@ -249,6 +265,8 @@ export function WorkoutDetailMenu({
         </p>
       ) : null}
 
+      <TemplateLimitDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} />
+
       <SessionNameDialog
         open={saveDialogOpen}
         onOpenChange={setSaveDialogOpen}
@@ -259,6 +277,11 @@ export function WorkoutDetailMenu({
         placeholder={workout.title}
         confirmLabel="Enregistrer"
         defaultName={workout.title}
+        quotaRecap={
+          !hasUnlimitedTemplates
+            ? { current: templateCount, max: FREE_WORKOUT_TEMPLATES }
+            : undefined
+        }
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

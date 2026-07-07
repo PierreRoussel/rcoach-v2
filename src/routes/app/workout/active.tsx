@@ -201,10 +201,15 @@ function ActiveWorkoutPage() {
 
   const currentExerciseLabel = useMemo(() => {
     const steps = buildCircuitSteps(activeExercises)
-    const currentStep = steps[activeStepIndex] ?? null
+    const nextIndex = findNextStepIndexAfter(
+      steps,
+      activeExercises,
+      lastCompletedStep,
+    )
+    const currentStep = nextIndex != null ? steps[nextIndex] ?? null : null
 
     return getStepExerciseDisplayName(activeExercises, currentStep, exerciseLocale)
-  }, [activeExercises, activeStepIndex, exerciseLocale])
+  }, [activeExercises, lastCompletedStep, exerciseLocale])
 
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)

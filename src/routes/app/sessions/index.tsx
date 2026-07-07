@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
+import { TemplateLimitDialog } from '@/components/subscription/TemplateLimitDialog'
 import { UpgradePrompt } from '@/components/subscription/PremiumGate'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
 import { TemplateCatalogList } from '@/components/workout/TemplateCatalogList'
@@ -39,7 +40,7 @@ import {
 import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
-import { FREE_HISTORY_WEEKS } from '@/lib/subscription/entitlements'
+import { FREE_HISTORY_WEEKS, FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
 
 type SessionsSearch = {
   tab?: 'catalog' | 'history' | 'stats'
@@ -97,6 +98,7 @@ function SessionsPage() {
 function CatalogTab() {
   const navigate = useNavigate()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false)
   const [conflictOpen, setConflictOpen] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<
     NonNullable<ReturnType<typeof useWorkoutTemplates>['data']>[number] | null
@@ -109,9 +111,14 @@ function CatalogTab() {
     (state) => state.startWorkoutFromTemplate,
   )
   const { data: templates, isLoading, error } = useWorkoutTemplates()
+  const { entitled: hasUnlimitedTemplates } = useEntitlement('unlimited_templates')
   const { data: scheduledResult } = useScheduledSessions()
   const deleteTemplate = useDeleteWorkoutTemplate()
   const createEmpty = useCreateEmptyWorkoutTemplate()
+
+  const templateCount = templates?.length ?? 0
+  const atTemplateLimit =
+    !hasUnlimitedTemplates && templateCount >= FREE_WORKOUT_TEMPLATES
 
   const nextOccurrenceByTemplateId = useMemo(
     () => buildNextOccurrenceByTemplateId(scheduledResult?.sessions ?? []),
@@ -121,6 +128,10 @@ function CatalogTab() {
   const templatesMissing = isGraphqlTemplatesMissingError(error)
 
   async function handleCreate(name: string) {
+    if (atTemplateLimit) {
+      return
+    }
+
     const template = await createEmpty.mutateAsync(name)
     await navigate({
       to: '/app/sessions/$templateId',
@@ -180,6 +191,15 @@ function CatalogTab() {
     }
   }
 
+  function requestNewTemplate() {
+    if (atTemplateLimit) {
+      setLimitDialogOpen(true)
+      return
+    }
+
+    setDialogOpen(true)
+  }
+
   return (
     <div className="space-y-4">
       <WorkoutSessionConflictDialog
@@ -191,11 +211,17 @@ function CatalogTab() {
         onAbandonAndStart={() => void handleAbandonAndStart()}
         isPending={isStartingTemplate}
       />
+      <TemplateLimitDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} />
       <SessionNameDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onConfirm={handleCreate}
         isPending={createEmpty.isPending}
+        quotaRecap={
+          !hasUnlimitedTemplates
+            ? { current: templateCount, max: FREE_WORKOUT_TEMPLATES }
+            : undefined
+        }
       />
       <Card className="rounded-2xl border-border">
         <CardHeader>
@@ -222,6 +248,12 @@ function CatalogTab() {
               <CardTitle className="font-display font-black">Mes modèles</CardTitle>
               <CardDescription>
                 Séances pré-construites, prêtes à démarrer.
+                {!hasUnlimitedTemplates ? (
+                  <>
+                    {' '}
+                    ({templateCount}/{FREE_WORKOUT_TEMPLATES})
+                  </>
+                ) : null}
               </CardDescription>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -229,7 +261,7 @@ function CatalogTab() {
                 variant="soft"
                 size="sm"
                 className="rounded-full"
-                onClick={() => setDialogOpen(true)}
+                onClick={requestNewTemplate}
               >
                 <Plus className="size-4" />
                 Nouveau
@@ -270,7 +302,7 @@ function CatalogTab() {
               <p className="text-sm text-muted-foreground">
                 Aucun modèle pour le moment.
               </p>
-              <Button variant="pill" className="mt-4" onClick={() => setDialogOpen(true)}>
+              <Button variant="pill" className="mt-4" onClick={requestNewTemplate}>
                 Créer une séance
               </Button>
             </div>

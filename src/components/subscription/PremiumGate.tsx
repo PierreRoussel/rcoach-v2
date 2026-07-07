@@ -45,6 +45,32 @@ type PremiumGateProps = {
   description: string
   children: ReactNode
   className?: string
+  /** Position de l'encart d'incitation (défaut : centré sur le contenu). */
+  overlayPosition?: 'center' | 'top'
+  /** Intensité du flou sur le contenu verrouillé. */
+  blurStrength?: 'default' | 'strong'
+}
+
+function PremiumGateOverlay({
+  title,
+  description,
+}: Pick<PremiumGateProps, 'title' | 'description'>) {
+  return (
+    <Card className="w-full max-w-sm rounded-2xl border-border bg-card/95 shadow-lg backdrop-blur-sm">
+      <CardContent className="space-y-3 p-4 text-center">
+        <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-soft-primary text-primary">
+          <Lock className="size-5" aria-hidden />
+        </div>
+        <div className="space-y-1">
+          <p className="font-display font-black text-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        <Button variant="pill" className="w-full" asChild>
+          <Link to="/app/premium">Passer en Premium</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function PremiumGate({
@@ -53,29 +79,34 @@ export function PremiumGate({
   description,
   children,
   className,
+  overlayPosition = 'center',
+  blurStrength = 'default',
 }: PremiumGateProps) {
   if (entitled) {
     return <>{children}</>
   }
 
+  const blurredContentClassName = cn(
+    'pointer-events-none select-none',
+    blurStrength === 'strong' ? 'blur-lg opacity-40' : 'blur-[1px] opacity-60',
+  )
+
+  if (overlayPosition === 'top') {
+    return (
+      <div className={cn('relative', className)}>
+        <div className="sticky top-0 z-10 flex justify-center px-4 pb-4 pt-2">
+          <PremiumGateOverlay title={title} description={description} />
+        </div>
+        <div className={blurredContentClassName}>{children}</div>
+      </div>
+    )
+  }
+
   return (
     <div className={cn('relative', className)}>
-      <div className="pointer-events-none select-none blur-[1px] opacity-60">{children}</div>
+      <div className={blurredContentClassName}>{children}</div>
       <div className="absolute inset-0 flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm rounded-2xl border-border bg-card/95 shadow-lg backdrop-blur-sm">
-          <CardContent className="space-y-3 p-4 text-center">
-            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-soft-primary text-primary">
-              <Lock className="size-5" aria-hidden />
-            </div>
-            <div className="space-y-1">
-              <p className="font-display font-black text-foreground">{title}</p>
-              <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
-            <Button variant="pill" className="w-full" asChild>
-              <Link to="/app/premium">Passer en Premium</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <PremiumGateOverlay title={title} description={description} />
       </div>
     </div>
   )

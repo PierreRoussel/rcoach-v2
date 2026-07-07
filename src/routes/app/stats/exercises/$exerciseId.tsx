@@ -145,6 +145,8 @@ function ExerciseStatsDetailPage() {
 
           <PremiumGate
             entitled={hasAdvancedStats}
+            overlayPosition="top"
+            blurStrength="strong"
             title="Statistiques avancées"
             description="Passez en Premium pour débloquer les graphiques détaillés et l’historique complet par exercice."
           >

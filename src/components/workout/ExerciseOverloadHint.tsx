@@ -239,31 +239,36 @@ export function ExerciseOverloadHint({
   }
 
   if (isLocked) {
+    const showQuotaUsedMessage = overloadGate?.isFreeQuotaAvailable === false
+
     return (
       <div
         className={cn(
-          'relative overflow-hidden rounded-xl border border-border/70 bg-muted/30 px-3 py-2',
+          'flex flex-col gap-2.5 rounded-xl border border-dashed border-primary/30 bg-soft-primary/15 px-3 py-3',
           className,
         )}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
       >
-        <div className="space-y-2 blur-[2px] opacity-70">
-          <p className="text-xs leading-relaxed text-foreground">{suggestion.message}</p>
+        <div className="flex items-start gap-2.5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm">
+            <Lock className="size-3.5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Pill tone="solid-primary" className="gap-1 text-[10px]">
+              <Crown className="size-3" aria-hidden />
+              Premium
+            </Pill>
+            {showQuotaUsedMessage ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Conseil gratuit du jour déjà utilisé.
+              </p>
+            ) : null}
+          </div>
         </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card/70 p-3 text-center backdrop-blur-[1px]">
-          <Lock className="size-4 text-muted-foreground" aria-hidden />
-          <Pill tone="solid-primary" className="gap-1">
-            <Crown className="size-3" aria-hidden />
-            Premium
-          </Pill>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            {overloadGate?.isFreeQuotaAvailable
-              ? 'Conseil du jour disponible sur un autre exercice.'
-              : 'Conseil gratuit du jour déjà utilisé.'}
-          </p>
-          <Button variant="soft" size="sm" className="h-7 rounded-full px-3 text-xs" asChild>
-            <Link to="/app/premium">Débloquer</Link>
-          </Button>
-        </div>
+        <Button variant="soft" size="sm" className="h-8 w-full rounded-full text-xs" asChild>
+          <Link to="/app/premium">Découvrir Premium</Link>
+        </Button>
       </div>
     )
   }

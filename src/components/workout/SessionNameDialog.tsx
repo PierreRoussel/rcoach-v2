@@ -22,6 +22,8 @@ type SessionNameDialogProps = {
   placeholder?: string
   confirmLabel?: string
   defaultName?: string
+  /** Récap quota modèles (plan Gratuit). */
+  quotaRecap?: { current: number; max: number }
 }
 
 export function SessionNameDialog({
@@ -34,6 +36,7 @@ export function SessionNameDialog({
   placeholder = 'Push A, Upper, Legs...',
   confirmLabel = 'Continuer',
   defaultName = '',
+  quotaRecap,
 }: SessionNameDialogProps) {
   const [name, setName] = useState(defaultName)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +76,14 @@ export function SessionNameDialog({
           <DialogTitle className="font-display font-black">{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {quotaRecap ? (
+          <p className="rounded-xl bg-muted/50 px-3 py-2 text-center text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {quotaRecap.current}/{quotaRecap.max}
+            </span>{' '}
+            modèles utilisés
+          </p>
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="sessionName">Nom</Label>
           <Input
