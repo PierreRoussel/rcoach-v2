@@ -87,6 +87,7 @@ select_permissions:
         - friend_code
         - email
         - onboarding_completed_at
+        - is_premium
       filter:
         _or:
           - id:

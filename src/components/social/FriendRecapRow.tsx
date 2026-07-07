@@ -1,17 +1,16 @@
 import { Flame, Dumbbell } from 'lucide-react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/profile/UserAvatar'
 import { FriendMotivationSendButton } from '@/components/social/FriendMotivationSendButton'
 import { Pill } from '@/design-system'
-import type { FriendMotivation } from '@/lib/graphql/operations'
 import type { FriendActivitySummary } from '@/lib/social/friend-activity'
 import type { MotivationNotification } from '@/lib/social/motivation-notifications'
 import type { SentMotivationDisplay } from '@/lib/social/sent-motivation'
-import { getProfileInitials } from '@/lib/stats/workout-metrics'
 
 type FriendRecapRowProps = {
   displayName: string
   avatarUrl: string | null
+  isPremium?: boolean
   activity: FriendActivitySummary
   motivationNotification: MotivationNotification | null
   sentDisplay: SentMotivationDisplay | null
@@ -22,6 +21,7 @@ type FriendRecapRowProps = {
 export function FriendRecapRow({
   displayName,
   avatarUrl,
+  isPremium = false,
   activity,
   motivationNotification,
   sentDisplay,
@@ -42,12 +42,12 @@ export function FriendRecapRow({
       ) : null}
 
       <div className={`flex items-center gap-3 p-3 ${motivationNotification ? 'pt-10' : ''}`}>
-        <Avatar className="size-11 border border-border">
-          <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
-          <AvatarFallback className="text-xs font-bold">
-            {getProfileInitials(displayName)}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          displayName={displayName}
+          avatarUrl={avatarUrl}
+          isPremium={isPremium}
+          size="lg"
+        />
 
         <div className="min-w-0 flex-1">
           <p className="truncate font-display font-black text-foreground">{displayName}</p>

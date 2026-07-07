@@ -69,6 +69,7 @@ export function FriendsSection() {
                 key={friendship.id}
                 displayName={name}
                 avatarUrl={requester?.avatar_url ?? null}
+                isPremium={requester?.is_premium ?? false}
                 isResponding={respondingId === friendship.id}
                 onAccept={() => void handleRespond(friendship.id, true)}
                 onDecline={() => void handleRespond(friendship.id, false)}
@@ -94,6 +95,7 @@ export function FriendsSection() {
               key={item.friendshipId}
               displayName={item.friend.display_name}
               avatarUrl={item.friend.avatar_url}
+              isPremium={item.friend.is_premium ?? false}
               activity={item.activity}
               motivationNotification={item.motivationNotification}
               sentDisplay={getSentMotivationDisplay(sentMotivations, item.friend.id)}

@@ -18,7 +18,9 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { StatsSummaryCard } from '@/components/stats/StatsSummaryCard'
+import { PremiumGate } from '@/components/subscription/PremiumGate'
 import { useDetailedStats } from '@/hooks/useDetailedStats'
+import { useEntitlement } from '@/hooks/useSubscription'
 import { useExerciseCatalogStats } from '@/hooks/useExerciseCatalogStats'
 import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
 import type { StatsWorkoutPeriod } from '@/lib/stats/stats-workout-period'
@@ -35,6 +37,7 @@ type StatsDashboardProps = {
 export function StatsDashboard({ className }: StatsDashboardProps) {
   const featuredSectionRef = useRef<HTMLElement>(null)
   const [period, setPeriod] = useState<StatsWorkoutPeriod>('3m')
+  const { entitled: hasAdvancedStats } = useEntitlement('advanced_stats')
   const {
     workouts,
     isLoading,
@@ -81,7 +84,12 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
       ) : null}
 
       {!isLoading && !isLoadingAll && !error ? (
-        <>
+        <PremiumGate
+          entitled={hasAdvancedStats}
+          title="Statistiques avancées"
+          description="Débloquez les graphiques détaillés, la heatmap musculaire et l’analyse complète de votre progression."
+        >
+          <>
           <div className="grid grid-cols-2 gap-3">
             <StatsSummaryCard
               icon={<Activity className="size-4 stroke-[2.25] text-primary" />}
@@ -238,7 +246,8 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
               </Card>
             </>
           ) : null}
-        </>
+          </>
+        </PremiumGate>
       ) : null}
     </div>
   )

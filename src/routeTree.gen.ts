@@ -42,6 +42,7 @@ import { Route as AppWorkoutsWorkoutIdRouteImport } from './routes/app/workouts/
 import { Route as AppWorkoutActiveRouteImport } from './routes/app/workout/active'
 import { Route as AppSessionsNewRouteImport } from './routes/app/sessions/new'
 import { Route as AppSessionsTemplateIdRouteImport } from './routes/app/sessions/$templateId'
+import { Route as AppProfileSubscriptionRouteImport } from './routes/app/profile/subscription'
 import { Route as AppProfileSettingsRouteImport } from './routes/app/profile/settings'
 import { Route as AppDietSettingsRouteImport } from './routes/app/diet/settings'
 import { Route as AppDietAddRouteImport } from './routes/app/diet/add'
@@ -215,6 +216,11 @@ const AppSessionsTemplateIdRoute = AppSessionsTemplateIdRouteImport.update({
   path: '/sessions/$templateId',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppProfileSubscriptionRoute = AppProfileSubscriptionRouteImport.update({
+  id: '/subscription',
+  path: '/subscription',
+  getParentRoute: () => AppProfileRouteRoute,
+} as any)
 const AppProfileSettingsRoute = AppProfileSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -265,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/profile/settings': typeof AppProfileSettingsRoute
+  '/app/profile/subscription': typeof AppProfileSubscriptionRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/profile/settings': typeof AppProfileSettingsRoute
+  '/app/profile/subscription': typeof AppProfileSubscriptionRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/profile/settings': typeof AppProfileSettingsRoute
+  '/app/profile/subscription': typeof AppProfileSubscriptionRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
   '/app/sessions/new': typeof AppSessionsNewRoute
   '/app/workout/active': typeof AppWorkoutActiveRoute
@@ -388,6 +397,7 @@ export interface FileRouteTypes {
     | '/app/diet/add'
     | '/app/diet/settings'
     | '/app/profile/settings'
+    | '/app/profile/subscription'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/app/diet/add'
     | '/app/diet/settings'
     | '/app/profile/settings'
+    | '/app/profile/subscription'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/app/diet/add'
     | '/app/diet/settings'
     | '/app/profile/settings'
+    | '/app/profile/subscription'
     | '/app/sessions/$templateId'
     | '/app/sessions/new'
     | '/app/workout/active'
@@ -736,6 +748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSessionsTemplateIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/profile/subscription': {
+      id: '/app/profile/subscription'
+      path: '/subscription'
+      fullPath: '/app/profile/subscription'
+      preLoaderRoute: typeof AppProfileSubscriptionRouteImport
+      parentRoute: typeof AppProfileRouteRoute
+    }
     '/app/profile/settings': {
       id: '/app/profile/settings'
       path: '/settings'
@@ -783,11 +802,13 @@ declare module '@tanstack/react-router' {
 
 interface AppProfileRouteRouteChildren {
   AppProfileSettingsRoute: typeof AppProfileSettingsRoute
+  AppProfileSubscriptionRoute: typeof AppProfileSubscriptionRoute
   AppProfileIndexRoute: typeof AppProfileIndexRoute
 }
 
 const AppProfileRouteRouteChildren: AppProfileRouteRouteChildren = {
   AppProfileSettingsRoute: AppProfileSettingsRoute,
+  AppProfileSubscriptionRoute: AppProfileSubscriptionRoute,
   AppProfileIndexRoute: AppProfileIndexRoute,
 }
 

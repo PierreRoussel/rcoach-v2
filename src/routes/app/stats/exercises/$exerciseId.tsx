@@ -3,8 +3,10 @@ import { ArrowLeft } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 
 import { ExerciseStatsPanel } from '@/components/stats/ExerciseStatsPanel'
+import { PremiumGate } from '@/components/subscription/PremiumGate'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/design-system'
+import { useEntitlement } from '@/hooks/useSubscription'
 import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
 import { useAllExercises } from '@/hooks/useExercises'
 import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
@@ -43,7 +45,7 @@ function ExerciseStatsDetailPage() {
   const { exerciseId } = Route.useParams()
   const { period = '3m', from } = Route.useSearch()
   const navigate = useNavigate()
-  const { workouts, isLoading, isLoadingAll, error } = useStatsWorkouts(
+  const { workouts, isLoading, error } = useStatsWorkouts(
     exercisePeriodToStatsWorkoutFetchPeriod(period),
   )
   const { data: allExercises = [] } = useAllExercises()
@@ -77,6 +79,7 @@ function ExerciseStatsDetailPage() {
     exerciseMeta?.nameFr,
     exerciseMeta?.exerciseId ?? exerciseId,
   )
+  const { entitled: hasAdvancedStats } = useEntitlement('advanced_stats')
 
   useEffect(() => {
     if (from === 'featured') {
@@ -140,12 +143,18 @@ function ExerciseStatsDetailPage() {
             }
           />
 
-          <ExerciseStatsPanel
-            exerciseId={exerciseId}
-            period={period}
-            onPeriodChange={setPeriod}
-            showSummaryLine={false}
-          />
+          <PremiumGate
+            entitled={hasAdvancedStats}
+            title="Statistiques avancées"
+            description="Passez en Premium pour débloquer les graphiques détaillés et l’historique complet par exercice."
+          >
+            <ExerciseStatsPanel
+              exerciseId={exerciseId}
+              period={period}
+              onPeriodChange={setPeriod}
+              showSummaryLine={false}
+            />
+          </PremiumGate>
         </>
       ) : null}
 

@@ -1,0 +1,154 @@
+import { useState } from 'react'
+
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Pill } from '@/design-system'
+import {
+  useCancelSubscription,
+  useSubmitCancellationFeedback,
+} from '@/hooks/useSubscription'
+import { PREMIUM_PLAN } from '@/lib/subscription/plans'
+
+const CANCELLATION_REASONS = [
+  'Trop cher',
+  'Je n’utilise pas assez',
+  'Fonctionnalité manquante',
+  'Problème technique',
+  'Autre',
+] as const
+
+type CancelSubscriptionFlowProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCanceled?: () => void
+}
+
+export function CancelSubscriptionFlow({
+  open,
+  onOpenChange,
+  onCanceled,
+}: CancelSubscriptionFlowProps) {
+  const [step, setStep] = useState<1 | 2>(1)
+  const [reason, setReason] = useState<string | null>(null)
+  const [comment, setComment] = useState('')
+  const cancelSubscription = useCancelSubscription()
+  const submitFeedback = useSubmitCancellationFeedback()
+
+  function reset() {
+    setStep(1)
+    setReason(null)
+    setComment('')
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      reset()
+    }
+    onOpenChange(nextOpen)
+  }
+
+  async function finalize(withFeedback: boolean) {
+    if (withFeedback && (reason || comment.trim())) {
+      await submitFeedback.mutateAsync({
+        reason,
+        comment: comment.trim() || null,
+      })
+    }
+
+    await cancelSubscription.mutateAsync()
+    handleOpenChange(false)
+    onCanceled?.()
+  }
+
+  const isPending = cancelSubscription.isPending || submitFeedback.isPending
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        {step === 1 ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-display font-black">
+                Résilier Premium ?
+              </DialogTitle>
+              <DialogDescription>
+                Vous garderez l’accès Premium jusqu’à la fin de la période en cours. Ensuite,
+                vous perdrez :
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {PREMIUM_PLAN.features.slice(0, 4).map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
+            </ul>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
+                Garder Premium
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setStep(2)}>
+                Continuer la résiliation
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-display font-black">
+                Un dernier mot ? (facultatif)
+              </DialogTitle>
+              <DialogDescription>
+                Votre avis nous aide à améliorer RCoach. Vous pouvez passer cette étape.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {CANCELLATION_REASONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setReason(option)}
+                    className="rounded-full"
+                  >
+                    <Pill tone={reason === option ? 'solid-primary' : 'default'}>{option}</Pill>
+                  </button>
+                ))}
+              </div>
+              <Textarea
+                placeholder="Commentaire libre (facultatif)"
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                rows={4}
+              />
+            </div>
+            <DialogFooter className="flex-col gap-2 sm:flex-col">
+              <Button
+                type="button"
+                variant="pill"
+                disabled={isPending}
+                onClick={() => void finalize(true)}
+              >
+                Envoyer et résilier
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isPending}
+                onClick={() => void finalize(false)}
+              >
+                Résilier sans avis
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}

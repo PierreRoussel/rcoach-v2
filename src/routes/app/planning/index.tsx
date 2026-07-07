@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { PageHeader, Pill } from '@/design-system'
+import { useEntitlement } from '@/hooks/useSubscription'
 import {
   useCreateScheduledSession,
   useDeleteScheduledSession,
@@ -30,6 +31,8 @@ import { useWorkoutWeeklyStreak } from '@/hooks/useWorkouts'
 import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
 import { resolveScheduleTitle } from '@/lib/schedule/resolve-schedule-title'
 import type { ScheduledSessionRecord } from '@/lib/graphql/operations'
+import { FREE_ACTIVE_PROGRAMS } from '@/lib/subscription/entitlements'
+import { UpgradePrompt } from '@/components/subscription/PremiumGate'
 
 import type { PlanningSearchParams } from '@/lib/schedule/planning-navigation'
 
@@ -86,6 +89,7 @@ function PlanningPage() {
   const updateSession = useUpdateScheduledSession()
   const deleteSession = useDeleteScheduledSession()
   const { startPlannedSession, isStarting } = useStartPlannedSession()
+  const { entitled: hasUnlimitedPlanning } = useEntitlement('unlimited_planning')
 
   const [editing, setEditing] = useState<ScheduledSessionRecord | null>(null)
   const [showForm, setShowForm] = useState(Boolean(initialDate || openScheduleForm))
@@ -97,6 +101,9 @@ function PlanningPage() {
   }
 
   function openPlanForm(date: Date) {
+    if (!hasUnlimitedPlanning && activeCount >= FREE_ACTIVE_PROGRAMS) {
+      return
+    }
     setEditing(null)
     setFormDate(date)
     setShowForm(true)
@@ -185,6 +192,13 @@ function PlanningPage() {
       </section>
 
       {scheduleMissing ? <ScheduleDeployNotice /> : null}
+
+      {!hasUnlimitedPlanning && activeCount >= FREE_ACTIVE_PROGRAMS ? (
+        <UpgradePrompt
+          title="Programmes illimités"
+          description={`Le plan Gratuit permet ${FREE_ACTIVE_PROGRAMS} programme actif. Passez en Premium pour planifier sans limite.`}
+        />
+      ) : null}
 
       {sessionsLoading ? (
         <p className="text-sm text-muted-foreground">Chargement du calendrier...</p>
