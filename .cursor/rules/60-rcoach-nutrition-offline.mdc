@@ -1,0 +1,36 @@
+---
+description: Nutrition — cache offline, file de sync et politique de mutation
+globs: src/lib/nutrition/**,src/hooks/useNutrition*.ts,src/hooks/useMealLog*.ts,src/hooks/useFood*.ts,src/routes/app/diet/**
+alwaysApply: false
+---
+
+# Nutrition offline
+
+## Flux mutation
+
+1. Mise à jour **optimiste** du cache Dexie (`nutritionDayCache`, `foodsCache`)
+2. Tentative GraphQL immédiate
+3. Si échec récupérable → `enqueueNutritionMutation` (`nutrition-sync-queue.ts`)
+4. `flushNutritionSyncQueue` / `useNutritionSync` au reconnect
+
+## Politique de file (`nutrition-mutation-policy.ts`)
+
+- **Queue** si : offline, timeout, 5xx, FK `food_id` pas encore sync, food locale (`local-*`)
+- **Ne pas queue** si : auth, permission, contrainte invalide (`isUnrecoverableNutritionSyncError`)
+
+## Foods locaux
+
+- IDs temporaires via `toLocalFoodId` / `isLocalFoodId` (`offline-food.ts`)
+- Créer food localement → sync `upsert_food` avant ou avec l'entrée repas
+
+## Sources données
+
+- Open Food Facts : proxy Vite (web) / fonction Nhost (natif)
+- CIQUAL : catalogue Postgres importé
+- Recherche : `food-search.ts`, tokens accent-fold côté DB
+
+## Anti-patterns
+
+- Mutation repas sans passer par les hooks (`useMealLogMutations`, `useFoodFavorites`…)
+- Ignorer `shouldQueueNutritionMutation` dans un nouveau hook mutation
+- Invalider tout le cache nutrition au lieu des `dateKey` affectées

@@ -1,0 +1,34 @@
+---
+description: Séance active — Zustand, circuit, persistance Dexie
+globs: src/lib/workout/active-store.ts,src/lib/workout/workout-circuit.ts,src/routes/app/workout/active.tsx,src/hooks/useStartPlannedSession.ts
+alwaysApply: false
+---
+
+# Séance active
+
+## État : Zustand uniquement
+
+- Store : `src/lib/workout/active-store.ts` — **seul** usage Zustand du projet
+- **Pas** React Query pour timer, step courant, ou sets en cours
+
+## Persistance Dexie
+
+- Draft : `db.activeDraft` id `'current'` — hydratation au mount, debounce save
+- Fin de séance : mutation GraphQL workout + `flushSyncQueue` (`sync-queue.ts`)
+
+## Circuit & steps
+
+- Logique step/rest : `workout-circuit.ts` (`buildCircuitSteps`, `getStepRestSeconds`)
+- Supersets : `exercise-superset.ts`
+- Types de série : `normal` | `warmup` | `failure` ; exercices timed via `exercise-tracking`
+
+## Wear / Health (Android)
+
+- Sync montre : `useWearWorkoutSync` + `wear-bridge.ts` (séance active uniquement)
+- Health Connect : `push-workout-session.ts` après fin de séance
+
+## Anti-patterns
+
+- Lire/écrire `activeDraft` depuis une route sans passer par le store
+- Dupliquer la logique circuit hors `workout-circuit.ts`
+- Stocker l'état de séance dans React Query ou `useState` global

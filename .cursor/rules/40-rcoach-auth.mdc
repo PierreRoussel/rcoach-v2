@@ -1,0 +1,37 @@
+---
+description: Auth Nhost, PKCE, OAuth Google et guards
+globs: src/lib/auth/**,src/lib/nhost/**,src/routes/auth/**,src/components/auth/**
+alwaysApply: false
+---
+
+# Auth Nhost
+
+## Client & session
+
+- Singleton `nhost` dans `AuthProvider.tsx` ; `useAuth()` partout
+- `AuthQuerySync` vide React Query + cache nutrition au changement d'utilisateur
+
+## Email / mot de passe
+
+- `signInEmailPassword`, `signUpEmailPassword` + PKCE (`pkce-flow.ts`)
+- Callback `/auth/verify?code=` → `tokenExchange`
+- Guards : `requireAuth`, `redirectIfAuthenticated`, `requireAppOnboardingComplete` (`guards.ts`)
+
+## OAuth Google
+
+- `startGoogleSignIn` → `signInProviderURL('google')` + PKCE
+- `openOAuthInSystemBrowser()` (`open-oauth-browser.ts`) : Custom Tabs / intent Chrome PWA / redirect web
+- Optionnel : `VITE_OAUTH_REDIRECT_ORIGIN` si `localhost` ≠ origine réelle
+- `OAuthCallbackListener` dans `__root.tsx` pour deep link `https://localhost/auth/verify`
+- Après login : `ensureUserProfile` + `syncOAuthProfile`
+- URLs à whitelister dans **Nhost** (pas Google) : `{origin}/auth/verify`
+
+## Profil
+
+- Identité : `profiles.display_name`, `profiles.avatar_url`, `friend_code` auto
+- Comptes Google-only : pas de `ChangePasswordForm` (`useMyAuthProviders`)
+
+## Anti-patterns
+
+- OAuth via `window.location` dans WebView Android (erreur `disallowed_useragent`)
+- Redirect OAuth dans Google Cloud au lieu du callback Nhost `.../v1/signin/provider/google/callback`

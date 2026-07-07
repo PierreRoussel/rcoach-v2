@@ -1,0 +1,42 @@
+---
+description: PWA, Capacitor 8, Android et plugins natifs
+globs: capacitor.config.ts,vite.config.ts,android/**,packages/capacitor-**,src/lib/**/*bridge*.ts,src/components/**/Native*.tsx
+alwaysApply: false
+---
+
+# PWA & Capacitor Android
+
+## PWA (`vite.config.ts`)
+
+- `vite-plugin-pwa` : `registerType: 'autoUpdate'`, `devOptions.enabled: false`
+- Manifest : `start_url: '/app'`, `theme_color: '#D4789A'`
+- Workbox : `navigateFallback: '/index.html'`, cache GraphQL en **NetworkFirst**
+
+## Capacitor 8
+
+- `androidScheme: 'https'` → origine app `https://localhost`
+- Build : `npm run build:android` (= vite build + cap sync + patch AGP)
+
+## Guards plateforme
+
+```ts
+import { Capacitor } from '@capacitor/core'
+
+if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+  // Health Connect, Wear, ML Kit barcode…
+}
+```
+
+- Bridges : import dynamique du plugin (`health-connect-bridge.ts`, `wear-bridge.ts`)
+- Web : no-op ou overlay PWA (ex. `PwaBarcodeScannerOverlay` vs `NativeBarcodeScannerOverlay`)
+- **Pas de support iOS** sauf demande explicite
+
+## APIs externes
+
+- Open Food Facts : proxy Vite en web ; fonction Nhost en natif (`open-food-facts.ts`)
+
+## Anti-patterns
+
+- Import top-level d'un plugin Capacitor sans guard (casse le bundle web)
+- OAuth Google dans la WebView principale
+- PWA dev activée (reste `false`)

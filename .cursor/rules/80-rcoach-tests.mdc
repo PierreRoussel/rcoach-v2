@@ -1,0 +1,41 @@
+---
+description: Tests Vitest — conventions et périmètre
+globs: src/**/*.test.ts
+alwaysApply: false
+---
+
+# Tests Vitest
+
+## Config
+
+- `vitest.config.ts` : `environment: 'node'`, `include: ['src/**/*.test.ts']`
+- **Pas** de `*.test.tsx` sans élargir la config
+- Alias `@/` identique à l'app
+
+## Où tester
+
+| Priorité | Cible | Exemples |
+|----------|-------|----------|
+| Haute | Logique pure `lib/` | `nutrient-math`, `nutrition-mutation-policy`, `workout-circuit` |
+| Haute | Parsers / policy | `pkce-flow`, `sync-oauth-profile`, `guards` helpers |
+| Moyenne | Hooks helpers extraits | fonctions exportées testables sans render |
+| Basse | Composants React | éviter sauf config jsdom ajoutée |
+
+## Style
+
+```ts
+import { describe, expect, it, vi } from 'vitest'
+```
+
+- Co-localiser : `foo.ts` + `foo.test.ts`
+- `vi.stubGlobal` / `vi.stubEnv` pour `window`, `import.meta.env`
+- Pas de tests qui assertent le trivial (re-export, constante seule)
+
+## Commandes
+
+```bash
+npm test              # CI
+npm run test:watch    # dev
+```
+
+Ajouter un test quand la logique métier a des branches (offline, policy, calculs).

@@ -1,0 +1,77 @@
+---
+description: Design system Sports Candy — composants, tokens, patterns UI obligatoires
+globs: src/routes/**,src/components/**,src/design-system/**
+alwaysApply: false
+---
+
+# Design system
+
+Thèmes : `sports-candy` (défaut), `pro` — tokens dans `design-system/themes/*.css`. **Ne pas** importer ces CSS hors `src/index.css`.
+
+## Hiérarchie des imports
+
+```
+@/design-system     → layout, nav, titres, badges métier, animations
+@/components/ui/*   → primitives shadcn (Button, Card, Dialog, Input…)
+@/components/<feature>/ → UI spécifique métier (WorkoutDetailMenu, DietDayPanel…)
+```
+
+## Composants design-system (`@/design-system`)
+
+| Composant | Usage |
+|-----------|--------|
+| `PageHeader` | Titre + description de **toute** page (`title`, `eyebrow?`, `description?`) |
+| `Pill` | Tags, statuts, filtres (`tone`: `primary`, `solid-primary`, `accent`…) |
+| `StatCard` | Métrique chiffrée (récap séance, stats) |
+| `AnimateIn` / `StaggerGroup` | Entrées animées listes / tuiles |
+| `AppBottomNav` / `CoachBottomNav` | Nav bas — **uniquement** dans layouts `route.tsx` |
+| `BrandLogo` | Logo app |
+| `AuthShell` | Shell auth desktop ; mobile → `AuthMobileShell` (`components/auth/`) |
+| `ThemeToggle` / `ThemePicker` / `ThemeSetting` | Réglages thème |
+
+## Primitives (`@/components/ui`)
+
+- **Bouton principal** : `<Button variant="pill">` (CTA pleine largeur auth, actions primaires)
+- **Bouton secondaire** : `variant="soft"` ou `variant="outline"`
+- **Formulaires** : `FormField`, `FormMessage`, `Label`, `Input` ; auth → `PasswordField`
+- **Cartes settings / listes** : pattern standard ci-dessous
+
+## Pattern carte (settings, profil, coach)
+
+```tsx
+<Card className="rounded-2xl border-border">
+  <CardHeader>
+    <CardTitle className="font-display font-black">Titre section</CardTitle>
+    <CardDescription>…</CardDescription>
+  </CardHeader>
+  <CardContent>…</CardContent>
+</Card>
+```
+
+Ne pas inventer `rounded-xl`, ombres custom ou titres hors `font-display font-black` pour ce pattern.
+
+## Couleurs & typo
+
+- **Oui** : tokens sémantiques `bg-background`, `text-foreground`, `text-primary`, `bg-soft-primary`, `border-border`, `text-muted-foreground`
+- **Non** : couleurs hex arbitraires (`#…`) dans routes/components — sauf assets SVG externes
+- **Titres page** : `PageHeader` (pas de `<h1>` stylé à la main)
+- **Corps** : `font-body` (défaut) ; **titres** : `font-display`
+
+## Layouts existants (ne pas dupliquer)
+
+- Athlète mobile : `/app` → `max-w-lg`, `AppBottomNav`, `AppWelcomeHeader`
+- Coach : `/coach` → sidebar `md:` + `CoachBottomNav`
+- Auth : `AuthMobileShell` + `AuthMarketingHero`
+
+## Avant un nouveau composant UI
+
+1. Existe-t-il dans `design-system/` ou `components/<feature>/` ?
+2. Peut-on composer `ui/*` + classes tokens sans nouveau composant ?
+3. Si cross-feature → ajouter à `design-system/` ; sinon feature folder.
+
+## Anti-patterns visuels
+
+- Header de page custom alors que `PageHeader` suffit
+- Badge `<span className="rounded-full bg-pink-…">` → utiliser `Pill`
+- `Button` default sans raison là où `pill` / `soft` est la norme du projet
+- Dupliquer la bottom nav ou le shell layout dans une route enfant

@@ -1,0 +1,86 @@
+---
+description: Stack RCoach v2 — versions, backend, déploiement, commandes de vérification
+alwaysApply: true
+---
+
+# RCoach v2 — Stack & versions
+
+> Mettre à jour les versions de ce fichier après `npm update` majeur (vérifier `package-lock.json`).
+
+PWA coach/athlète (FR) : **React 19 + Vite 8 + TanStack Router/Query + Nhost (Auth/Hasura/Postgres) + Capacitor Android**.
+
+## Runtime & tooling
+
+| Couche | Technologie | Version (lockfile) |
+|--------|-------------|-------------------|
+| Node | engines | `>=22.12.0` |
+| Package manager | npm | `10.8.2` |
+| TypeScript | strict | `6.0.3` |
+| Bundler | Vite | `8.1.0` |
+| Tests | Vitest (node) | `4.1.9` |
+| Lint | ESLint flat + TS + react-hooks | `10.x` |
+
+## Frontend
+
+| Lib | Version | Rôle |
+|-----|---------|------|
+| react / react-dom | `19.2.7` | UI |
+| @tanstack/react-router | `1.170.x` | Routing fichier (`src/routes/`) |
+| @tanstack/react-query | `5.101.x` | Données serveur / cache |
+| zustand | `5.0.14` | **Uniquement** séance active (`active-store`) |
+| dexie | `4.4.4` | Offline : sync queue, drafts, cache nutrition |
+| zod | `4.4.x` | Validation search params / forms |
+| react-hook-form + @hookform/resolvers | `7.x` / `5.x` | Formulaires |
+| tailwindcss | `4.3.x` + `@tailwindcss/vite` | Styles (tokens design-system) |
+| recharts | `3.8.x` | Stats |
+| vite-plugin-pwa | `1.3.0` | PWA (SW désactivé en dev) |
+
+## Backend & données
+
+| Lib / service | Version | Rôle |
+|---------------|---------|------|
+| @nhost/nhost-js | `4.7.x` | Auth, GraphQL, Storage, Functions |
+| graphql | `16.14.x` | Protocole |
+| Hasura + Postgres | via Nhost Cloud | API + RLS (`nhost/migrations`, `nhost/metadata`) |
+| @graphql-codegen/* | `6.x` / `5.x` | Codegen depuis `src/graphql/*.graphql` |
+
+**Client GraphQL runtime** : constantes string dans `src/lib/graphql/operations.ts` + `graphqlRequest()` — **pas** d'import runtime depuis `src/generated/` (stub).
+
+## Mobile & natif
+
+| Lib | Version | Rôle |
+|-----|---------|------|
+| @capacitor/core + android | `8.4.1` | Shell Android (`androidScheme: https`) |
+| @capacitor/app | `8.1.0` | Back button, deep links OAuth |
+| @capacitor/browser | `8.0.3` | OAuth Google (Chrome Custom Tabs) |
+| @capacitor-mlkit/barcode-scanning | `7.5.0` | Scan code-barres natif |
+| @rcoach/capacitor-health-connect | workspace | Health Connect |
+| @rcoach/capacitor-wear-bridge | workspace | Wear OS |
+
+Web et Android partagent le même bundle Vite (`webDir: dist`). Pas de support iOS aujourd'hui.
+
+## Hébergement
+
+- **Web** : Cloudflare Pages (`rcoach-v2.pages.dev`)
+- **Backend** : Nhost Cloud (`VITE_NHOST_SUBDOMAIN`, `VITE_NHOST_REGION`)
+- **Env** : `.env.local` (voir `.env.example`)
+
+## Commandes avant merge
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run verify:graphql   # après changement schema Hasura
+npm run verify:routes    # après nouvelle route
+npm run build:android    # après changement Capacitor / natif
+```
+
+## Principes transverses
+
+- Imports `@/*` → `src/*`
+- Logique métier dans `src/lib/<domain>/`, hooks fins dans `src/hooks/`
+- UI partagée : `@/design-system` ; primitives : `@/components/ui`
+- Texte utilisateur en **français**
+- Diff minimal : rule `15-rcoach-dry` (chercher avant d'ajouter)
+- UI cohérente : rule `35-rcoach-design-system`

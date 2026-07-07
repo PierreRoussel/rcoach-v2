@@ -1,0 +1,52 @@
+---
+description: GraphQL, Nhost, migrations et hooks données
+globs: src/lib/graphql/**,src/lib/nutrition/**,src/lib/workout/**,src/lib/db/**,src/graphql/**,src/hooks/**,nhost/**
+alwaysApply: false
+---
+
+# GraphQL & Nhost
+
+## Requêtes runtime
+
+```ts
+import { graphqlRequest } from '@/lib/graphql/request'
+import { GET_MY_PROFILE } from '@/lib/graphql/operations'
+
+const data = await graphqlRequest<{ profiles: Profile[] }>(nhost, GET_MY_PROFILE, { userId })
+```
+
+- Constantes `SCREAMING_SNAKE` dans `operations.ts` ; types co-localisés
+- Champs DB en `snake_case` (`display_name`, `started_at`)
+- Erreurs en français côté `graphqlRequest`
+
+## Codegen
+
+- Fichiers `.graphql` dans `src/graphql/` → `npm run codegen` (secret admin dans `.env.local`)
+- **Ne pas** importer `src/generated/` dans l'app (stub)
+
+## Nouveau champ / table
+
+1. Migration `nhost/migrations/default/<timestamp>_<name>/up.sql` (+ `down.sql`)
+2. Metadata Hasura si permissions nécessaires
+3. Constante + type dans `operations.ts`
+4. Fallback legacy si déploiement décalé (voir `profile-request.ts`)
+5. `npm run verify:graphql`
+
+## Hooks données
+
+```ts
+return useQuery({
+  queryKey: ['nutrition-day', userId, dateKey],
+  enabled: isAuthenticated,
+  queryFn: () => fetchNutritionDay(nhost, userId, dateKey),
+})
+```
+
+- Invalider les clés liées après mutation
+- Nutrition / workouts offline : `nutrition-sync-queue.ts`, `sync-queue.ts` + `flushSyncQueue`
+
+## Anti-patterns
+
+- `fetch()` direct vers Hasura
+- Mutation nutrition/workout sans tenir compte de la file offline
+- Supposer le schema déployé sans fallback

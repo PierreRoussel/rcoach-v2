@@ -1,0 +1,44 @@
+---
+description: Éviter la duplication — chercher, réutiliser, extraire
+globs: src/**
+alwaysApply: false
+---
+
+# Pas de duplication (DRY)
+
+## Avant d'ajouter du code
+
+1. **Chercher** une implémentation existante (`Grep` / recherche IDE) dans l'ordre :
+   - `src/lib/<domain>/` — logique pure
+   - `src/hooks/` — données + mutations
+   - `src/lib/graphql/operations.ts` — requêtes
+   - `src/components/<feature>/` — UI métier
+   - `src/design-system/` — layout / tokens partagés
+2. **Réutiliser** ou **étendre** l'existant (paramètre, option) plutôt que copier-coller.
+3. **Extraire** vers `lib/` ou un composant partagé si la même logique apparaît 2× ou plus.
+
+## Par type de code
+
+| Type | Réutiliser | Ne pas recréer |
+|------|----------|----------------|
+| GraphQL | `operations.ts` + `graphqlRequest` | Nouvelle string query inline dans un hook |
+| Profil | `profile-request.ts`, `fetchMyProfile` | Query profil ad hoc |
+| Nutrition mutation | `useMealLogMutations`, `nutrition-sync-queue` | Mutation directe sans file offline |
+| Workout actif | `active-store.ts`, `workout-circuit.ts` | État séance dans `useState` / RQ |
+| Auth | `pkce-flow.ts`, `guards.ts`, `useAuth()` | Second client Nhost |
+| Formatage | `lib/workout/`, `lib/nutrition/`, `lib/profile/` | Fonction locale dans une route |
+| UI page | `PageHeader`, `Pill`, composants feature | Header / badge custom inline |
+
+## Où mettre une extraction
+
+- Logique sans React → `src/lib/<domain>/nom-descriptif.ts` + `nom-descriptif.test.ts`
+- Données serveur → hook `src/hooks/useNom.ts`
+- UI réutilisée dans **une** feature → `src/components/<feature>/`
+- UI réutilisée **cross-feature** → `src/design-system/` (voir rule design system)
+
+## Anti-patterns
+
+- Copier un bloc d'une route vers une autre « en attendant »
+- Dupliquer une constante GraphQL avec un nom différent
+- Créer `useFoo` alors que `useBar` couvre 90 % du besoin
+- Wrapper de 2 lignes sans valeur ajoutée

@@ -1,0 +1,40 @@
+---
+description: Espace coach ERP — rôles, routes et layout desktop
+globs: src/routes/coach/**,src/lib/coach/**
+alwaysApply: false
+---
+
+# Coach ERP
+
+## Rôles (`profiles.role`)
+
+- `athlete` — app mobile `/app` uniquement
+- `coach` — ERP `/coach`
+- `both` — accès aux deux ; configurable dans paramètres profil
+
+Vérification UI : `profile?.role === 'coach' || profile?.role === 'both'`
+
+## Routes (`src/routes/coach/`)
+
+- Layout : `route.tsx` — sidebar desktop + `CoachBottomNav` mobile
+- `requireAuth` dans `beforeLoad` (pas de guard rôle strict côté route — UI conditionnelle)
+- Clients, programmes, analytics sous `/coach/*`
+
+## vs Athlète `/app`
+
+| | `/app` | `/coach` |
+|---|--------|----------|
+| Layout | `max-w-lg`, bottom nav | Sidebar `md:` + bottom nav mobile |
+| Cible | Séances, nutrition, stats | Gestion clients, templates programmes |
+
+## Données
+
+- Relations coach : table `coach_clients` (invitation email, statut)
+- Programmes : `programs`, `program_days`, `program_exercises`
+- Dashboard : `src/lib/coach/client-dashboard.ts`
+
+## Anti-patterns
+
+- Mélanger navigation coach dans `AppBottomNav`
+- Supposer `role === 'coach'` sans gérer `both`
+- Nouvelle feature coach sans migration si nouvelle table

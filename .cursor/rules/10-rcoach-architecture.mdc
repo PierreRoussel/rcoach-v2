@@ -1,0 +1,38 @@
+---
+description: Architecture des dossiers et séparation des responsabilités
+globs: src/**
+alwaysApply: false
+---
+
+# Architecture RCoach
+
+## Où mettre le code
+
+| Dossier | Contenu |
+|---------|---------|
+| `src/routes/` | Pages TanStack Router (`createFileRoute`, `beforeLoad`, `validateSearch`) |
+| `src/hooks/` | `use*` — React Query + `useAuth()`, peu de logique |
+| `src/lib/<domain>/` | Logique pure, parsers, stores, bridges |
+| `src/components/<feature>/` | UI métier (workout, nutrition, auth…) |
+| `src/components/ui/` | Primitives shadcn (Button, Dialog…) |
+| `src/design-system/` | Theme, layout, nav, tokens |
+| `nhost/migrations/` | Schéma Postgres (timestamp + nom) |
+| `nhost/metadata/` | Permissions Hasura |
+| `packages/capacitor-*` | Plugins Capacitor maison |
+
+## Ne pas faire
+
+- Dupliquer code existant sans chercher — voir rule `15-rcoach-dry`
+- GraphQL / Dexie directement dans les routes
+- Second client Nhost hors `AuthProvider`
+- Éditer `src/routeTree.gen.ts` à la main
+- Nouvelle table/colonne sans migration `nhost/`
+- Zustand pour des listes serveur ; React Query pour le timer de séance active
+
+## État applicatif
+
+1. **React Query** — profil, workouts, nutrition, amis, etc.
+2. **Zustand** — `src/lib/workout/active-store.ts` uniquement
+3. **Dexie** — `syncQueue`, `activeDraft`, caches offline
+
+Query defaults (`main.tsx`) : `staleTime: 30s`, `retry: 1`, `refetchOnWindowFocus: false`.

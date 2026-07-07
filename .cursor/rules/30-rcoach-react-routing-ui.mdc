@@ -1,0 +1,46 @@
+---
+description: React 19, TanStack Router, design system et UI
+globs: src/routes/**,src/components/**,src/design-system/**,src/hooks/**
+alwaysApply: false
+---
+
+# React, routing & UI
+
+## TanStack Router (fichier)
+
+```ts
+export const Route = createFileRoute('/app/diet/')({
+  beforeLoad: requireAuth,
+  validateSearch: z.object({ date: z.string().optional() }),
+  component: DietPage,
+})
+```
+
+- Layouts : `route.tsx` (`/app`, `/coach`)
+- Params : `$workoutId`, `$templateId`…
+- Guards dans `beforeLoad` du layout, pas sur chaque enfant
+- Nouvelle route → `npm run verify:routes`
+
+## Composants
+
+- Fonctionnels uniquement ; hooks custom pour logique réutilisable
+- `cn()` pour classes Tailwind
+- **Design system détaillé** → rule `35-rcoach-design-system` (composants, cartes, tokens)
+- **Réutilisation / DRY** → rule `15-rcoach-dry`
+
+## Imports UI
+
+```ts
+import { PageHeader, Pill } from '@/design-system'
+import { Button } from '@/components/ui/button'
+```
+
+## React 19
+
+- Pas de class components
+- `useAuth()`, `useQuery`, `useMutation` selon le besoin
+- Copy utilisateur en **français** (erreurs, labels, toasts)
+
+## Tests UI
+
+Vitest n'inclut que `src/**/*.test.ts` (pas `.tsx`). Tester la logique pure dans `lib/`, pas les composants sans élargir `vitest.config.ts`.
