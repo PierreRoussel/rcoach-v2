@@ -6,7 +6,13 @@ export type NutritionHintRule = {
   priority: number
   when: (metrics: NutritionHintMetrics) => boolean
   message: (metrics: NutritionHintMetrics) => string
+  messages?: Array<(metrics: NutritionHintMetrics) => string>
+  /** Regroupe des conseils proches pour alterner sans perdre en pertinence. */
+  varietyGroup?: string
 }
+
+/** Écart de priorité max pour alterner dans un même groupe de conseils. */
+export const HINT_VARIETY_PRIORITY_BAND = 32
 
 export const NUTRITION_HINT_FALLBACK =
   'Continue à journaliser tes repas : plus tu notes, plus les conseils deviendront précis et utiles.'
@@ -80,6 +86,66 @@ function getPreviousDaysAverageCalories(metrics: NutritionHintMetrics) {
   return total / previous.length
 }
 
+function formatProteinAmount(metrics: NutritionHintMetrics) {
+  return `${Math.round(metrics.primaryDaily.proteinG)} g${isAnchorDayLogged(metrics) ? '' : '/j'}`
+}
+
+function proteinGapG(metrics: NutritionHintMetrics) {
+  return Math.max(0, Math.round(metrics.macroTargets.proteinG - metrics.primaryDaily.proteinG))
+}
+
+function hintVarietyIndex(seed: string, count: number) {
+  if (count <= 1) {
+    return 0
+  }
+
+  let hash = 0
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0
+  }
+
+  return hash % count
+}
+
+function resolveRuleMessage(rule: NutritionHintRule, metrics: NutritionHintMetrics) {
+  const variants = rule.messages
+  if (!variants || variants.length === 0) {
+    return rule.message(metrics)
+  }
+
+  const index = hintVarietyIndex(`${metrics.anchorDate}:${rule.id}`, variants.length)
+  return variants[index]!(metrics)
+}
+
+/** Priorité à partir de laquelle on évite d'alterner avec des conseils moins urgents. */
+export const HINT_CRITICAL_MIN_PRIORITY = 88
+
+function buildHintVarietyPool(matches: NutritionHintRule[], top: NutritionHintRule) {
+  if (top.priority >= HINT_CRITICAL_MIN_PRIORITY) {
+    return [top]
+  }
+
+  if (!top.varietyGroup) {
+    return [top]
+  }
+
+  const pool = matches
+    .filter(
+      (rule) =>
+        rule.varietyGroup === top.varietyGroup &&
+        rule.priority >= top.priority - HINT_VARIETY_PRIORITY_BAND,
+    )
+    .sort((a, b) => {
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority
+      }
+
+      return a.id.localeCompare(b.id)
+    })
+
+  return pool.length > 0 ? pool : [top]
+}
+
 function hasChronicLowCalories(metrics: NutritionHintMetrics, maxRatio: number) {
   const previous = getPreviousLoggedDays(metrics)
   if (previous.length < 2) {
@@ -118,26 +184,53 @@ const rules: NutritionHintRule[] = [
   },
   {
     id: 'protein-very-low',
+    varietyGroup: 'protein-gap',
     priority: 90,
     when: (m) => m.primaryVsTarget.proteinPct < 0.6 && m.primaryDaily.proteinG > 0,
     message: (m) =>
-      `Tes protéines sont très basses (~${Math.round(m.primaryDaily.proteinG)} g${isAnchorDayLogged(m) ? '' : '/j en moyenne'}). Vise ${m.macroTargets.proteinG} g : ajoute œufs, légumineuses, poisson ou viande maigre à un repas.`,
+      `Tes protéines sont très basses (~${formatProteinAmount(m)}). Vise ${m.macroTargets.proteinG} g : ajoute œufs, légumineuses, poisson ou viande maigre à un repas.`,
+    messages: [
+      (m) =>
+        `Tes protéines sont très basses (~${formatProteinAmount(m)}). Vise ${m.macroTargets.proteinG} g : ajoute œufs, légumineuses, poisson ou viande maigre à un repas.`,
+      (m) =>
+        `Il te manque environ ${proteinGapG(m)} g de protéines par jour. Commence par un repas simple : omelette, sardines ou bol de lentilles corail.`,
+      (m) =>
+        `Apports très bas (~${formatProteinAmount(m)} pour ${m.macroTargets.proteinG} g visés). Prévois une source protéinée à chaque repas principal, même modeste.`,
+    ],
   },
   {
     id: 'protein-low-per-kg',
+    varietyGroup: 'protein-gap',
     priority: 88,
     when: (m) =>
       m.proteinGramsPerKgTarget != null &&
       m.primaryDaily.proteinG < m.proteinGramsPerKgTarget.min * 0.85,
     message: (m) =>
       `Avec ton poids, vise environ ${Math.round(m.proteinGramsPerKgTarget!.min)}–${Math.round(m.proteinGramsPerKgTarget!.max)} g de protéines par jour. Tu es en dessous : pense à en ajouter à chaque repas principal.`,
+    messages: [
+      (m) =>
+        `Avec ton poids, vise environ ${Math.round(m.proteinGramsPerKgTarget!.min)}–${Math.round(m.proteinGramsPerKgTarget!.max)} g de protéines par jour. Tu es en dessous : pense à en ajouter à chaque repas principal.`,
+      (m) =>
+        `Pour ton gabarit, ${Math.round(m.proteinGramsPerKgTarget!.min)} g/j est un bon repère. Tu es à ${formatProteinAmount(m)} : un encas protéiné après l'entraînement peut aider.`,
+    ],
   },
   {
     id: 'protein-low',
+    varietyGroup: 'protein-gap',
     priority: 86,
     when: (m) => m.primaryVsTarget.proteinPct >= 0.6 && m.primaryVsTarget.proteinPct < 0.85,
     message: (m) =>
-      `Tu es un peu bas en protéines (${Math.round(m.primaryDaily.proteinG)} g${isAnchorDayLogged(m) ? '' : '/j'} vs ${m.macroTargets.proteinG} g visés). Un yaourt grec, des lentilles ou du tofu peuvent combler l'écart facilement.`,
+      `Tu es un peu bas en protéines (${formatProteinAmount(m)} vs ${m.macroTargets.proteinG} g visés). Un yaourt grec, des lentilles ou du tofu peuvent combler l'écart facilement.`,
+    messages: [
+      (m) =>
+        `Tu es un peu bas en protéines (${formatProteinAmount(m)} vs ${m.macroTargets.proteinG} g visés). Un yaourt grec, des lentilles ou du tofu peuvent combler l'écart facilement.`,
+      (m) =>
+        `Il te manque environ ${proteinGapG(m)} g de protéines : un œuf dur au petit-déjeuner ou du thon au déjeuner font une vraie différence.`,
+      (m) =>
+        `Tes protéines tournent autour de ${formatProteinAmount(m)} (objectif ${m.macroTargets.proteinG} g). Pense au skyr, aux pois chiches ou au poulet en batch cooking.`,
+      (m) =>
+        `Apports un peu courts (${formatProteinAmount(m)}). Répartis ~20–25 g sur petit-déjeuner, déjeuner et dîner plutôt que tout au même repas.`,
+    ],
   },
   {
     id: 'protein-high',
@@ -168,12 +261,21 @@ const rules: NutritionHintRule[] = [
   },
   {
     id: 'protein-even-distribution',
+    varietyGroup: 'protein-gap',
     priority: 54,
     when: (m) =>
       m.avgVsTarget.proteinPct < 0.85 &&
       m.days.some((d) => d.entryCount > 0 && d.totals.proteinG < 15),
     message: () =>
       'Certaines journées manquent de protéines au global. Répartis-les sur petit-déjeuner, déjeuner et dîner plutôt que tout au même repas.',
+    messages: [
+      () =>
+        'Certaines journées manquent de protéines au global. Répartis-les sur petit-déjeuner, déjeuner et dîner plutôt que tout au même repas.',
+      () =>
+        'Tu as des journées très pauvres en protéines. Fixe-toi une mini-règle : une source protéinée à chaque repas principal.',
+      () =>
+        "Tes protéines sont inégales d'un jour à l'autre. Anticipe le lendemain avec un reste de poulet, de tofu ou de fromage blanc.",
+    ],
   },
   {
     id: 'salt-very-high',
@@ -300,10 +402,19 @@ const rules: NutritionHintRule[] = [
   },
   {
     id: 'carbs-protein-low-combo',
+    varietyGroup: 'protein-gap',
     priority: 77,
     when: (m) => m.primaryVsTarget.carbsPct > 1.15 && m.primaryVsTarget.proteinPct < 0.85,
     message: () =>
       "Beaucoup de glucides, peu de protéines : équilibre en ajoutant une source protéinée à chaque repas plutôt qu'en grignotant.",
+    messages: [
+      () =>
+        "Beaucoup de glucides, peu de protéines : équilibre en ajoutant une source protéinée à chaque repas plutôt qu'en grignotant.",
+      () =>
+        'Tes repas sont plutôt glucidiques et peu protéinés. Ajoute œufs, poisson ou légumineuses plutôt qu’un encas sucré.',
+      () =>
+        'Ratio glucides/protéines déséquilibré : transforme un grignotage en mini-repas protéiné (skyr, jambon de dinde, houmous).',
+    ],
   },
   {
     id: 'fat-very-low',
@@ -574,9 +685,15 @@ export function pickNutritionHint(metrics: NutritionHintMetrics) {
     return a.id.localeCompare(b.id)
   })
 
-  const best = matches[0]!
+  const top = matches[0]!
+  const pool = buildHintVarietyPool(matches, top)
 
-  return { id: best.id, message: best.message(metrics) }
+  const picked = pool[hintVarietyIndex(metrics.anchorDate, pool.length)]!
+
+  return {
+    id: picked.id,
+    message: resolveRuleMessage(picked, metrics),
+  }
 }
 
 export function getNutritionHintRules() {

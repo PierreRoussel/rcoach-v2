@@ -96,6 +96,21 @@ describe('resolveInitialPortionOption', () => {
       quantity: 155,
     })
   })
+
+  it('falls back to safe quantities when portion values are missing', () => {
+    expect(
+      resolveInitialPortionOption({ mode: 'servings', servings: undefined as never }, food, portionTypes),
+    ).toEqual({
+      optionId: 'default',
+      quantity: 1,
+    })
+    expect(
+      resolveInitialPortionOption({ mode: 'grams', quantityG: undefined as never }, food, portionTypes),
+    ).toEqual({
+      optionId: 'default',
+      quantity: 1,
+    })
+  })
 })
 
 describe('portionToStoredFields', () => {

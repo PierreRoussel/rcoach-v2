@@ -15,6 +15,11 @@ function isWholeNumberRatio(value: number) {
   return value > 0 && Math.abs(value - Math.round(value)) < 0.001
 }
 
+function coercePortionQuantity(value: unknown, fallback: number) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
 export function buildPortionOptions(
   food: Pick<Food, 'serving_size_g' | 'serving_label'>,
   portionTypes: FoodPortionType[],
@@ -84,11 +89,15 @@ export function resolveInitialPortionOption(
   food: Pick<Food, 'serving_size_g'>,
   portionTypes: FoodPortionType[],
 ): { optionId: PortionOptionId; quantity: number } {
+  const defaultGramsFallback = Number(food.serving_size_g) || 100
+
   if (portion.mode === 'grams') {
+    const quantityG = coercePortionQuantity(portion.quantityG, defaultGramsFallback)
+
     for (const portionType of portionTypes) {
       const sizeG = Number(portionType.portion_size_g)
       if (sizeG > 0) {
-        const count = portion.quantityG / sizeG
+        const count = quantityG / sizeG
         if (isWholeNumberRatio(count)) {
           return { optionId: portionType.id, quantity: Math.round(count) }
         }
@@ -97,13 +106,13 @@ export function resolveInitialPortionOption(
 
     const defaultSizeG = Number(food.serving_size_g)
     if (defaultSizeG > 0) {
-      const count = portion.quantityG / defaultSizeG
+      const count = quantityG / defaultSizeG
       if (isWholeNumberRatio(count)) {
         return { optionId: 'default', quantity: Math.round(count) }
       }
     }
 
-    return { optionId: 'grams', quantity: portion.quantityG }
+    return { optionId: 'grams', quantity: quantityG }
   }
 
   if (portion.servingSizeG != null) {
@@ -113,12 +122,15 @@ export function resolveInitialPortionOption(
         (portionType) => Number(portionType.portion_size_g) === portion.servingSizeG,
       )
       if (match) {
-        return { optionId: match.id, quantity: portion.servings }
+        return {
+          optionId: match.id,
+          quantity: coercePortionQuantity(portion.servings, 1),
+        }
       }
     }
   }
 
-  return { optionId: 'default', quantity: portion.servings }
+  return { optionId: 'default', quantity: coercePortionQuantity(portion.servings, 1) }
 }
 
 export function portionToStoredFields(

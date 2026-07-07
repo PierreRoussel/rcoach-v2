@@ -18,6 +18,7 @@ export type FoodSearchResult = {
   food?: Food
   offDraft?: OffFoodDraft
   quickAddPortion?: PortionInput
+  usageBadge?: 'recent' | 'frequent'
 }
 
 function toFoodNumber(value: unknown, fallback = 0): number {

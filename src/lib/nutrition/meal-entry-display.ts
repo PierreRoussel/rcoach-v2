@@ -1,3 +1,4 @@
+import { mealLogEntryToPortion } from '@/lib/nutrition/frequent-portion'
 import { formatNutrient, type PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { MealLogEntry } from '@/lib/nutrition/types'
 
@@ -53,13 +54,9 @@ export function formatMealEntryQuantity(entry: MealLogEntry) {
 export function mealEntryToPortionInput(
   entry: Pick<MealLogEntry, 'quantity_g' | 'servings'>,
 ): PortionInput | null {
-  if (entry.quantity_g != null) {
-    return { mode: 'grams', quantityG: Number(entry.quantity_g) }
+  if (entry.quantity_g == null && entry.servings == null) {
+    return null
   }
 
-  if (entry.servings != null) {
-    return { mode: 'servings', servings: Number(entry.servings) }
-  }
-
-  return null
+  return mealLogEntryToPortion(entry)
 }

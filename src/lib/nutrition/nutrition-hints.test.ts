@@ -343,5 +343,69 @@ describe('nutrition hints engine', () => {
     const first = pickNutritionHint(metrics)
     const second = pickNutritionHint(metrics)
     expect(first.id).toBe(second.id)
+    expect(first.message).toBe(second.message)
+  })
+
+  it('rotates protein-gap hints across days while staying relevant', () => {
+    const lowProteinDay = (date: string, proteinG: number, carbsG = 200) =>
+      entry({
+        logged_date: date,
+        meal_type: 'lunch',
+        calories: 1900,
+        carbs_g: carbsG,
+        protein_g: proteinG,
+        fat_g: 55,
+      })
+
+    const metrics = metricsFromEntries(
+      '2026-06-03',
+      [
+        lowProteinDay('2026-06-01', 10),
+        lowProteinDay('2026-06-02', 105),
+        lowProteinDay('2026-06-03', 105, 260),
+      ],
+      baseSettings(),
+    )
+
+    expect(metrics.primaryVsTarget.proteinPct).toBeGreaterThanOrEqual(0.6)
+    expect(metrics.primaryVsTarget.proteinPct).toBeLessThan(0.85)
+
+    const hints = ['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05'].map(
+      (date) => pickNutritionHint({ ...metrics, anchorDate: date }),
+    )
+
+    const proteinGapIds = new Set([
+      'protein-low',
+      'protein-even-distribution',
+      'carbs-protein-low-combo',
+    ])
+    expect(hints.every((hint) => proteinGapIds.has(hint.id))).toBe(true)
+    expect(new Set(hints.map((hint) => hint.message)).size).toBeGreaterThan(1)
+  })
+
+  it('varies protein-low wording when it is the only matching hint', () => {
+    const lowProteinDay = (date: string) =>
+      entry({
+        logged_date: date,
+        meal_type: 'lunch',
+        calories: 1900,
+        carbs_g: 200,
+        protein_g: 105,
+        fat_g: 55,
+      })
+
+    const metrics = metricsFromEntries('2026-06-03', [
+      lowProteinDay('2026-06-01'),
+      lowProteinDay('2026-06-02'),
+      lowProteinDay('2026-06-03'),
+    ])
+
+    const messages = ['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04'].map((date) => {
+      const hint = pickNutritionHint({ ...metrics, anchorDate: date })
+      expect(hint.id).toBe('protein-low')
+      return hint.message
+    })
+
+    expect(new Set(messages).size).toBeGreaterThan(1)
   })
 })

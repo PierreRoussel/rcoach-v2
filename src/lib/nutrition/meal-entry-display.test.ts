@@ -36,4 +36,11 @@ describe('mealEntryToPortionInput', () => {
       servings: 2,
     })
   })
+
+  it('prefers valid servings when grams are zero', () => {
+    expect(mealEntryToPortionInput({ quantity_g: 0, servings: 2 })).toEqual({
+      mode: 'servings',
+      servings: 2,
+    })
+  })
 })

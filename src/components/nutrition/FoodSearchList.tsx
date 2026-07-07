@@ -1,4 +1,4 @@
-import { Barcode, Check, Leaf, Loader2, Plus, Search, Star } from 'lucide-react'
+import { Barcode, Check, Clock, History, Leaf, Loader2, Plus, Search, Star } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { FoodSearchResult } from '@/hooks/useFoodSearch'
@@ -100,6 +100,18 @@ export function FoodSearchList({
             >
               <div className="flex min-w-0 items-center gap-1.5 font-semibold text-foreground">
                 <span className="truncate">{result.name}</span>
+                {result.usageBadge === 'recent' ? (
+                  <Clock
+                    className="size-3.5 shrink-0 text-primary"
+                    aria-label="Aliment récent"
+                  />
+                ) : null}
+                {result.usageBadge === 'frequent' ? (
+                  <History
+                    className="size-3.5 shrink-0 text-primary/80"
+                    aria-label="Aliment fréquent"
+                  />
+                ) : null}
                 {result.source === 'ciqual' ? (
                   <Leaf
                     className="size-3.5 shrink-0 fill-primary/75 text-primary/75"

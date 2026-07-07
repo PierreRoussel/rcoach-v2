@@ -135,5 +135,6 @@ export function sumNutrients(entries: NutrientTotals[]): NutrientTotals {
 }
 
 export function formatNutrient(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+  const safeValue = Number.isFinite(value) ? value : 0
+  return Number.isInteger(safeValue) ? String(safeValue) : safeValue.toFixed(1)
 }

@@ -25,7 +25,12 @@ import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
 import { mapFoodToSearchResult } from '@/lib/nutrition/food-search-result'
+import {
+  buildPersonalFoodSearchCandidates,
+  mergePersonalFoodsIntoSearchResults,
+} from '@/lib/nutrition/personal-food-search'
 import { toDateKey } from '@/lib/nutrition/dates'
+import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food, MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -66,7 +71,7 @@ function AddFoodPage() {
 
   const trimmedQuery = query.trim()
   const isBrowsingCatalog = trimmedQuery.length < 2
-  const shouldLoadMealLogFoods = isBrowsingCatalog
+  const shouldLoadMealLogFoods = true
   const shouldLoadFavorites =
     isBrowsingCatalog && (activeTab === 'favorites' || activeTab === 'recent')
 
@@ -142,8 +147,18 @@ function AddFoodPage() {
   }, [frequentFoods, pinnedFrequentFoods])
 
   const recentResults = useMemo<FoodSearchResult[]>(
-    () => recentFoods.map(mapFoodToSearchResult),
+    () => recentFoods.map((item) => mapFoodToSearchResult(item.food, item.portion)),
     [recentFoods],
+  )
+
+  const personalFoodSearchCandidates = useMemo(
+    () => buildPersonalFoodSearchCandidates(recentFoods, frequentFoods),
+    [frequentFoods, recentFoods],
+  )
+
+  const searchResults = useMemo(
+    () => mergePersonalFoodsIntoSearchResults(results, trimmedQuery, personalFoodSearchCandidates),
+    [personalFoodSearchCandidates, results, trimmedQuery],
   )
 
   const handleToggleFavorite = (result: FoodSearchResult) => {
@@ -384,7 +399,7 @@ function AddFoodPage() {
         />
       ) : (
         <FoodSearchList
-          results={results}
+          results={searchResults}
           favoriteFoodIds={favoriteFoodIds}
           onSelect={(result) => void handleSelect(result)}
           onQuickAdd={(result) => void handleQuickAdd(result)}
@@ -397,7 +412,7 @@ function AddFoodPage() {
       {trimmedQuery.length >= OFF_MIN_QUERY_LENGTH &&
       !isLoading &&
       hasSearchedLocalCatalog &&
-      results.length === 0 ? (
+      searchResults.length === 0 ? (
         <p className="px-1 text-center text-xs text-muted-foreground">
           Aucun aliment local trouvé. Open Food Facts est consulté automatiquement à partir de{' '}
           {OFF_MIN_QUERY_LENGTH} caractères si le catalogue local est vide.

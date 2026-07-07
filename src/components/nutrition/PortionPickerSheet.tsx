@@ -68,9 +68,10 @@ function applyInitialSelection(
   const resolved = resolveInitialPortionOption(initialPortion, food, portionTypes ?? [])
   const hasOption = portionOptions.some((option) => option.id === resolved.optionId)
   const fallbackOptionId = fallback.optionId
+  const quantity = Number.isFinite(resolved.quantity) ? resolved.quantity : fallback.quantity
 
   setSelectedOptionId(hasOption ? resolved.optionId : fallbackOptionId)
-  setQuantity(formatPortionFieldValue(resolved.quantity))
+  setQuantity(formatPortionFieldValue(quantity))
 }
 
 export function PortionPickerSheet({
