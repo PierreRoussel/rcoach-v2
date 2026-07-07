@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import { WeightMaintainDriftGauge } from '@/components/goals/WeightMaintainDriftGauge'
+import { GoalProjectionPremiumBlur } from '@/components/goals/GoalProjectionPremiumBlur'
 import {
   HomeSummaryMetric,
   HomeSummaryMetricDivider,
@@ -13,6 +14,7 @@ import {
   HomeSummaryTileSkeleton,
 } from '@/design-system'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
+import { useEntitlement } from '@/hooks/useSubscription'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import { useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
@@ -30,6 +32,7 @@ export function GoalsHomeSummaryTile() {
   const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: userMeasurements } = useUserMeasurements()
+  const { entitled: hasGoalProjection } = useEntitlement('goal_projection')
 
   const projection =
     goal && nutritionSettings
@@ -101,7 +104,13 @@ export function GoalsHomeSummaryTile() {
 
           <HomeSummaryTileFooter
             left={WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
-            right={estimationLabel}
+            right={
+              estimationLabel ? (
+                <GoalProjectionPremiumBlur entitled={hasGoalProjection} variant="inline">
+                  {estimationLabel}
+                </GoalProjectionPremiumBlur>
+              ) : null
+            }
           />
         </>
       )}

@@ -28,7 +28,8 @@ export const PREMIUM_PLAN: PlanDefinition = {
     'Historique illimité',
     'Programmes personnalisés illimités',
     'Modèles de séance illimités',
-    'Conseils intelligents',
+    'Projection de fin d’objectif',
+    'Conseils nutrition personnalisés',
     'Thème Pro et badge sur votre avatar',
   ],
   entitlements: [
@@ -37,6 +38,7 @@ export const PREMIUM_PLAN: PlanDefinition = {
     'unlimited_history',
     'unlimited_planning',
     'unlimited_templates',
+    'goal_projection',
     'ai_advice',
     'premium_themes',
     'pro_badge',
@@ -52,11 +54,12 @@ export const FREE_PLAN: PlanDefinition = {
   trialDays: 0,
   features: [
     'Suivi des séances',
-    'Nutrition de base',
+    'Journal nutrition (sans coaching)',
     '1 conseil de charge par jour',
     'Historique sur 4 semaines',
     '1 programme actif',
     '6 modèles de séance',
+    'Progression sans date prévisionnelle',
   ],
   entitlements: [],
 }
@@ -67,7 +70,8 @@ export const COMPARE_FEATURES = [
   { id: 'history', label: 'Historique des séances', free: '4 semaines', premium: 'Illimité' },
   { id: 'planning', label: 'Programmes actifs', free: '1', premium: 'Illimité' },
   { id: 'templates', label: 'Modèles de séance', free: '6', premium: 'Illimité' },
-  { id: 'ai', label: 'Conseils intelligents', free: false, premium: true },
+  { id: 'goal_projection', label: 'Projection objectif poids', free: false, premium: true },
+  { id: 'nutrition_advice', label: 'Conseils nutrition', free: false, premium: 'Illimité' },
   { id: 'themes', label: 'Thème Pro', free: false, premium: true },
   { id: 'badge', label: 'Badge Pro sur l’avatar', free: false, premium: true },
 ] as const

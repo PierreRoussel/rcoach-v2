@@ -6,6 +6,8 @@ describe('entitlements', () => {
   it('grants premium features only to premium tier', () => {
     expect(hasEntitlement('premium', 'advanced_stats')).toBe(true)
     expect(hasEntitlement('free', 'advanced_stats')).toBe(false)
+    expect(hasEntitlement('premium', 'goal_projection')).toBe(true)
+    expect(hasEntitlement('free', 'goal_projection')).toBe(false)
   })
 
   it('identifies premium theme', () => {

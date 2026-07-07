@@ -21,18 +21,15 @@ import {
   useSubscriptionSummary,
   useUpdateSubscription,
 } from '@/hooks/useSubscription'
-import type { SubscriptionStatus } from '@/lib/graphql/operations'
+import {
+  billingPeriodLabel,
+  SUBSCRIPTION_STATUS_LABELS,
+  subscriptionTierLabel,
+} from '@/lib/subscription/subscription-labels'
 
 export const Route = createFileRoute('/app/profile/subscription')({
   component: SubscriptionManagementPage,
 })
-
-const STATUS_LABELS: Record<SubscriptionStatus, string> = {
-  active: 'Actif',
-  trialing: 'Essai gratuit',
-  canceled: 'Résilié',
-  past_due: 'Paiement en attente',
-}
 
 function SubscriptionManagementPage() {
   const {
@@ -136,13 +133,13 @@ function SubscriptionManagementPage() {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone={isPremium ? 'solid-primary' : 'default'}>
-              {tier === 'premium' ? 'Premium' : 'Gratuit'}
+              {subscriptionTierLabel(tier)}
             </Pill>
-            <Pill tone={isPastDue ? 'accent' : 'secondary'}>{STATUS_LABELS[status]}</Pill>
+            <Pill tone={isPastDue ? 'accent' : 'secondary'}>
+              {SUBSCRIPTION_STATUS_LABELS[status]}
+            </Pill>
             {billingPeriod ? (
-              <Pill tone="purple">
-                {billingPeriod === 'annual' ? 'Annuel' : 'Mensuel'}
-              </Pill>
+              <Pill tone="purple">{billingPeriodLabel(billingPeriod)}</Pill>
             ) : null}
           </div>
           <p className="text-sm text-muted-foreground">

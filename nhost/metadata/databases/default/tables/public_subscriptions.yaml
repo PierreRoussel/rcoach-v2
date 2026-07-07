@@ -17,6 +17,7 @@ select_permissions:
         - current_period_end
         - provider
         - provider_ref
+        - trial_consumed_at
         - created_at
         - updated_at
       filter:

@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { PageHeader, Pill } from '@/design-system'
@@ -28,7 +29,8 @@ import {
 export function PremiumOfferPage() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual')
   const [showCelebration, setShowCelebration] = useState(false)
-  const { isPremium } = useSubscriptionSummary()
+  const [trialError, setTrialError] = useState<string | null>(null)
+  const { isPremium, canStartTrial, hasConsumedTrial } = useSubscriptionSummary()
   const startTrial = useStartPremiumTrial()
 
   useEffect(() => {
@@ -41,10 +43,19 @@ export function PremiumOfferPage() {
       : `${formatPriceEuros(PREMIUM_PLAN.monthlyPriceCents)}/mois`
 
   async function handleStartTrial() {
+    setTrialError(null)
     trackEvent('paywall_cta_click', { billingPeriod })
-    await startTrial.mutateAsync(billingPeriod)
-    trackEvent('paywall_conversion', { billingPeriod, status: 'trialing' })
-    setShowCelebration(true)
+    try {
+      await startTrial.mutateAsync(billingPeriod)
+      trackEvent('paywall_conversion', { billingPeriod, status: 'trialing' })
+      setShowCelebration(true)
+    } catch (error) {
+      setTrialError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de démarrer l’essai pour le moment.',
+      )
+    }
   }
 
   return (
@@ -71,15 +82,20 @@ export function PremiumOfferPage() {
         <Card className="overflow-hidden rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
           <CardHeader className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Pill tone="solid-primary">Essai gratuit {PREMIUM_PLAN.trialDays} jours</Pill>
+              {canStartTrial ? (
+                <Pill tone="solid-primary">Essai gratuit {PREMIUM_PLAN.trialDays} jours</Pill>
+              ) : null}
               {billingPeriod === 'annual' ? (
-                <Pill tone="accent">Économisez {annualSavingsPercent(PREMIUM_PLAN)}%</Pill>
+                <Pill tone="solid-gold">Économisez {annualSavingsPercent(PREMIUM_PLAN)}%</Pill>
               ) : null}
             </div>
             <div className="flex items-center gap-3">
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                <Crown className="size-6" aria-hidden />
-              </span>
+              <div
+                className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/40 bg-gradient-to-br from-amber-400/25 to-yellow-500/15 text-amber-400"
+                aria-hidden
+              >
+                <Crown className="size-6" />
+              </div>
               <div>
                 <CardTitle className="font-display text-xl font-black">
                   Un coach dans votre poche
@@ -112,23 +128,41 @@ export function PremiumOfferPage() {
             <div className="rounded-xl bg-card/80 px-3 py-2 text-center">
               <p className="font-display text-2xl font-black text-foreground">{priceLabel}</p>
               <p className="text-xs text-muted-foreground">
-                {PREMIUM_PLAN.trialDays} jours gratuits, puis facturation selon l’offre choisie
+                {canStartTrial
+                  ? `${PREMIUM_PLAN.trialDays} jours gratuits, puis facturation selon l’offre choisie`
+                  : hasConsumedTrial
+                    ? 'Essai gratuit déjà utilisé sur ce compte'
+                    : 'Facturation selon l’offre choisie'}
               </p>
             </div>
+
+            {trialError ? (
+              <FeedbackMessage variant="error">{trialError}</FeedbackMessage>
+            ) : null}
 
             <Button
               type="button"
               variant="pill"
               className="w-full gap-2"
-              disabled={isPremium || startTrial.isPending}
+              disabled={isPremium || !canStartTrial || startTrial.isPending}
               onClick={() => void handleStartTrial()}
             >
               <Sparkles className="size-4" aria-hidden />
-              {isPremium ? 'Premium déjà actif' : 'Commencer l’essai gratuit'}
+              {isPremium
+                ? 'Premium déjà actif'
+                : canStartTrial
+                  ? 'Commencer l’essai gratuit'
+                  : hasConsumedTrial
+                    ? 'Essai gratuit déjà utilisé'
+                    : 'Commencer l’essai gratuit'}
             </Button>
 
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Sans engagement · Annulable à tout moment · Aucun paiement avant la fin de l’essai
+              {canStartTrial
+                ? 'Sans engagement · Annulable à tout moment · Aucun paiement avant la fin de l’essai'
+                : hasConsumedTrial
+                  ? 'L’essai gratuit n’est disponible qu’une seule fois par compte. L’abonnement payant arrive bientôt.'
+                  : 'Sans engagement · Annulable à tout moment'}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
               <button type="button" className="underline-offset-2 hover:underline">

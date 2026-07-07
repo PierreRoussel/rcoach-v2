@@ -20,6 +20,7 @@ export const DEFAULT_FREE_SUBSCRIPTION: Subscription = {
   current_period_end: null,
   provider: 'none',
   provider_ref: null,
+  trial_consumed_at: null,
   created_at: new Date(0).toISOString(),
   updated_at: new Date(0).toISOString(),
 }

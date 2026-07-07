@@ -29,6 +29,7 @@ export type Subscription = {
   current_period_end: string | null
   provider: SubscriptionProvider
   provider_ref: string | null
+  trial_consumed_at: string | null
   created_at: string
   updated_at: string
 }
@@ -2652,6 +2653,7 @@ export const GET_MY_SUBSCRIPTION = `
       current_period_end
       provider
       provider_ref
+      trial_consumed_at
       created_at
       updated_at
     }
@@ -2669,6 +2671,7 @@ export const UPDATE_MY_SUBSCRIPTION = `
       current_period_end
       provider
       provider_ref
+      trial_consumed_at
       created_at
       updated_at
     }
@@ -2686,6 +2689,7 @@ export const INSERT_MY_SUBSCRIPTION = `
       current_period_end
       provider
       provider_ref
+      trial_consumed_at
       created_at
       updated_at
     }

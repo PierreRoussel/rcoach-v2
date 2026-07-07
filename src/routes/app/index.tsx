@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { History, Target, UtensilsCrossed } from 'lucide-react'
 
 import { GoalsHomeSummaryTile } from '@/components/goals/GoalsHomeSummaryTile'
+import { PremiumHomeWelcomeAnimation } from '@/components/subscription/PremiumHomeWelcomeAnimation'
 import { HomeSessionsSummaryTiles } from '@/components/workout/HomeSessionsSummaryTiles'
 import { MotivationHomeNotificationTile } from '@/components/social/MotivationHomeNotificationTile'
 import { NutritionHomeSummaryTile } from '@/components/nutrition/NutritionHomeSummaryTile'
@@ -19,6 +20,7 @@ function AppHomePage() {
 
   return (
     <div className="space-y-4">
+      <PremiumHomeWelcomeAnimation />
       <AnimateIn as="section" className="rounded-3xl border border-border bg-gradient-hero-animated p-5">
         <StaggerGroup baseDelay={80}>
           <PageHeader

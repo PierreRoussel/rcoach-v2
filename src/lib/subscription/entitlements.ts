@@ -6,6 +6,7 @@ export type PremiumFeature =
   | 'unlimited_history'
   | 'unlimited_planning'
   | 'unlimited_templates'
+  | 'goal_projection'
   | 'ai_advice'
   | 'premium_themes'
   | 'pro_badge'
@@ -23,6 +24,7 @@ const PREMIUM_FEATURES = new Set<PremiumFeature>([
   'unlimited_history',
   'unlimited_planning',
   'unlimited_templates',
+  'goal_projection',
   'ai_advice',
   'premium_themes',
   'pro_badge',

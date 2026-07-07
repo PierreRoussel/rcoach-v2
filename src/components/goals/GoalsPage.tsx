@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 import { Target } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { GoalProjectionPremiumBlur } from '@/components/goals/GoalProjectionPremiumBlur'
 import { WaistAdjustTile } from '@/components/goals/WaistAdjustTile'
 import { WaistProgressChart } from '@/components/goals/WaistProgressChart'
 import { WeightMaintainDriftGauge } from '@/components/goals/WeightMaintainDriftGauge'
@@ -42,6 +43,7 @@ import {
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
+import { useEntitlement } from '@/hooks/useSubscription'
 import { useWaistEntries } from '@/hooks/useWaistEntries'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { cn } from '@/lib/utils'
@@ -69,6 +71,7 @@ export function GoalsPage({
   const { data: weightEntries = [], isLoading: entriesLoading } =
     useWeightEntries()
   const { data: waistEntries = [], isLoading: waistEntriesLoading } = useWaistEntries()
+  const { entitled: hasGoalProjection } = useEntitlement('goal_projection')
   const updateGoal = useUpdateWeightGoal()
   const upsertNutrition = useUpsertNutritionSettings()
   const {
@@ -294,27 +297,32 @@ export function GoalsPage({
                     Objectif atteint — bravo !
                   </p>
                 ) : projection.weeklyRateKg > 0 && projection.projectedDate ? (
-                  <>
-                    <p>
-                      Rythme estimé :{' '}
-                      <span className="font-semibold">
-                        {formatWeeklyRate(projection.weeklyRateKg)}
-                      </span>
-                    </p>
-                    <p>
-                      Arrivée estimée :{' '}
-                      <span className="font-semibold text-primary">
-                        {format(projection.projectedDate, 'd MMMM yyyy', {
-                          locale: fr,
-                        })}
-                      </span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Encore {formatWeightKg(projection.remainingKg)} à{' '}
-                      {goal.goal_type === 'lose' ? 'perdre' : 'gagner'} avec un
-                      déficit de {Math.abs(projection.dailyDeficitKcal)} kcal/j.
-                    </p>
-                  </>
+                  <GoalProjectionPremiumBlur
+                    entitled={hasGoalProjection}
+                    showPremiumCta
+                  >
+                    <div className="space-y-2">
+                      <p>
+                        Rythme estimé :{' '}
+                        <span className="font-semibold">
+                          {formatWeeklyRate(projection.weeklyRateKg)}
+                        </span>
+                      </p>
+                      <p>
+                        Arrivée estimée :{' '}
+                        <span className="font-semibold text-primary">
+                          {format(projection.projectedDate, 'd MMMM yyyy', {
+                            locale: fr,
+                          })}
+                        </span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        Encore {formatWeightKg(projection.remainingKg)} à{' '}
+                        {goal.goal_type === 'lose' ? 'perdre' : 'gagner'} avec un
+                        déficit de {Math.abs(projection.dailyDeficitKcal)} kcal/j.
+                      </p>
+                    </div>
+                  </GoalProjectionPremiumBlur>
                 ) : (
                   <p className="text-muted-foreground">
                     Ajustez votre objectif calorique pour activer une projection

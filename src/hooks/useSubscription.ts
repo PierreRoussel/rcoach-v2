@@ -15,6 +15,11 @@ import { isPremiumTier } from '@/lib/subscription/entitlements'
 import type { PremiumFeature } from '@/lib/subscription/entitlements'
 import type { BillingPeriod } from '@/lib/subscription/plans'
 import { PREMIUM_PLAN } from '@/lib/subscription/plans'
+import {
+  canStartPremiumTrial,
+  hasConsumedPremiumTrial,
+  isTrialAlreadyConsumedError,
+} from '@/lib/subscription/trial-eligibility'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useSubscription() {
@@ -38,6 +43,12 @@ export function useSubscriptionSummary() {
     isPremiumTier(tier) && (status === 'active' || status === 'trialing')
   const isPastDue = status === 'past_due'
   const billingPeriod = subscription?.billing_period ?? null
+  const trialConsumedAt = subscription?.trial_consumed_at ?? null
+  const hasConsumedTrial = hasConsumedPremiumTrial(trialConsumedAt)
+  const canStartTrial = canStartPremiumTrial({
+    isPremium,
+    trialConsumedAt,
+  })
 
   return {
     ...query,
@@ -47,6 +58,9 @@ export function useSubscriptionSummary() {
     billingPeriod,
     isPremium,
     isPastDue,
+    trialConsumedAt,
+    hasConsumedTrial,
+    canStartTrial,
     currentPeriodEnd: subscription?.current_period_end ?? null,
   }
 }
@@ -80,17 +94,29 @@ export function useUpdateSubscription() {
 
 export function useStartPremiumTrial() {
   const updateSubscription = useUpdateSubscription()
+  const { canStartTrial } = useSubscriptionSummary()
 
   return useMutation({
     mutationFn: async (billingPeriod: BillingPeriod) => {
+      if (!canStartTrial) {
+        throw new Error('Vous avez déjà utilisé votre essai gratuit.')
+      }
+
       const trialEnd = addDays(new Date(), PREMIUM_PLAN.trialDays).toISOString()
-      return updateSubscription.mutateAsync({
-        tier: 'premium',
-        status: 'trialing',
-        billing_period: billingPeriod,
-        current_period_end: trialEnd,
-        provider: 'none',
-      })
+      try {
+        return await updateSubscription.mutateAsync({
+          tier: 'premium',
+          status: 'trialing',
+          billing_period: billingPeriod,
+          current_period_end: trialEnd,
+          provider: 'none',
+        })
+      } catch (error) {
+        if (isTrialAlreadyConsumedError(error)) {
+          throw new Error('Vous avez déjà utilisé votre essai gratuit.')
+        }
+        throw error
+      }
     },
   })
 }
