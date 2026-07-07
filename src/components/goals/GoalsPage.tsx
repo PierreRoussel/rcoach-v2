@@ -8,6 +8,7 @@ import { WaistProgressChart } from '@/components/goals/WaistProgressChart'
 import { WeightMaintainDriftGauge } from '@/components/goals/WeightMaintainDriftGauge'
 import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
 import { WeightGoalReachedCelebrationOverlay } from '@/components/goals/WeightGoalReachedCelebrationOverlay'
+import { WeightGoalSetupCelebrationOverlay } from '@/components/goals/WeightGoalSetupCelebrationOverlay'
 import { WeightGoalSetupWizard } from '@/components/goals/WeightGoalSetupWizard'
 import { WeightMilestoneOverlay } from '@/components/goals/WeightMilestoneOverlay'
 import { WeightProgressChart } from '@/components/goals/WeightProgressChart'
@@ -27,6 +28,7 @@ import {
   useNutritionSettings,
   useUpsertNutritionSettings,
 } from '@/hooks/useNutritionSettings'
+import { useWeightGoalSetupCelebration } from '@/hooks/useWeightGoalSetupCelebration'
 import { useWeightEntries } from '@/hooks/useWeightEntries'
 import { useUpdateWeightGoal, useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
@@ -53,9 +55,13 @@ function formatWeeklyRate(weeklyRateKg: number) {
 
 type GoalsPageProps = {
   previewWeightGoalReached?: boolean
+  previewWeightGoalSetup?: 'lose' | 'gain' | null
 }
 
-export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) {
+export function GoalsPage({
+  previewWeightGoalReached = false,
+  previewWeightGoalSetup = null,
+}: GoalsPageProps) {
   const { user } = useAuth()
   const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
@@ -65,6 +71,17 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
   const { data: waistEntries = [], isLoading: waistEntriesLoading } = useWaistEntries()
   const updateGoal = useUpdateWeightGoal()
   const upsertNutrition = useUpsertNutritionSettings()
+  const {
+    onWizardCompleted,
+    setupCelebrationPayload,
+    setupCelebrationOpen,
+    isSetupCelebrationPreview,
+    nutritionSettings: setupCelebrationNutritionSettings,
+    userMeasurements: setupCelebrationUserMeasurements,
+    closeSetupCelebration,
+  } = useWeightGoalSetupCelebration({
+    previewGoalType: previewWeightGoalSetup,
+  })
 
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardMode, setWizardMode] = useState<'create' | 'edit'>('create')
@@ -376,6 +393,7 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         mode={wizardMode}
+        onCompleted={onWizardCompleted}
       />
 
       <WeightMilestoneOverlay
@@ -404,6 +422,17 @@ export function GoalsPage({ previewWeightGoalReached = false }: GoalsPageProps) 
             setCelebrationGoal(null)
           }}
           onSwitchToMaintain={handleSwitchToMaintain}
+        />
+      ) : null}
+
+      {setupCelebrationPayload ? (
+        <WeightGoalSetupCelebrationOverlay
+          open={setupCelebrationOpen}
+          payload={setupCelebrationPayload}
+          nutritionSettings={setupCelebrationNutritionSettings}
+          userMeasurements={setupCelebrationUserMeasurements}
+          isPreview={isSetupCelebrationPreview}
+          onClose={closeSetupCelebration}
         />
       ) : null}
     </>

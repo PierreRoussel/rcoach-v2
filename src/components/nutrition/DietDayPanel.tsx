@@ -7,6 +7,7 @@ import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
 import { MealSummaryCard } from '@/components/nutrition/MealSummaryCard'
 import { NutritionCalendarDrawer } from '@/components/nutrition/NutritionCalendarDrawer'
 import { NutritionStreakBadge } from '@/components/nutrition/NutritionStreakBadge'
+import { useNutritionStreakGamificationActions } from '@/components/nutrition/NutritionStreakGamificationProvider'
 import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn, Pill, StaggerGroup } from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
@@ -91,6 +92,7 @@ export function DietDayPanel({
   animateEntrance = false,
 }: DietDayPanelProps) {
   const { data: daySummary, isLoading } = useNutritionDay(date, settings)
+  const { showRecoveryChallenge } = useNutritionStreakGamificationActions()
   const [calendarOpen, setCalendarOpen] = useState(false)
 
   const previewByMeal = useMemo(() => {
@@ -130,7 +132,15 @@ export function DietDayPanel({
       <CardContent className="relative space-y-5 p-4">
         <NutritionStreakBadge
           streak={streak}
-          onClick={() => setCalendarOpen(true)}
+          onStreakClick={() => {
+            if (isFrozen) {
+              showRecoveryChallenge()
+              return
+            }
+
+            setCalendarOpen(true)
+          }}
+          onCalendarClick={() => setCalendarOpen(true)}
           className="absolute right-3 top-3 z-10"
           isFrozen={isFrozen}
           validatedToday={validatedToday}

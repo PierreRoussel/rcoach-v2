@@ -48,19 +48,57 @@ export function countConsecutiveStreakEndingOn(
 }
 
 export function computeActiveStreak(validatedDates: Set<string>, today: string): number {
-  let anchor: string | null = null
-
-  if (validatedDates.has(today)) {
-    anchor = today
-  } else if (validatedDates.has(addDays(today, -1))) {
-    anchor = addDays(today, -1)
-  }
-
+  const anchor = getActiveStreakAnchor(validatedDates, today)
   if (!anchor) {
     return 0
   }
 
   return countConsecutiveStreakEndingOn(validatedDates, anchor)
+}
+
+export function getActiveStreakAnchor(
+  validatedDates: Set<string>,
+  today: string,
+): string | null {
+  if (validatedDates.has(today)) {
+    return today
+  }
+
+  if (validatedDates.has(addDays(today, -1))) {
+    return addDays(today, -1)
+  }
+
+  return null
+}
+
+export function getLatestValidatedDate(validatedDates: Set<string>): string | null {
+  if (validatedDates.size === 0) {
+    return null
+  }
+
+  return [...validatedDates].sort().at(-1) ?? null
+}
+
+export function getLastStreakDay(
+  validatedDates: Set<string>,
+  recovery: RecoveryState | null,
+  today: string,
+): string | null {
+  const anchor = getActiveStreakAnchor(validatedDates, today)
+  if (anchor) {
+    return anchor
+  }
+
+  if (recovery && recovery.progress < 2) {
+    return addDays(recovery.startedOn, -1)
+  }
+
+  const missedState = detectMissedDayState(validatedDates, today)
+  if (missedState.kind === 'recovery_eligible') {
+    return addDays(today, -2)
+  }
+
+  return getLatestValidatedDate(validatedDates)
 }
 
 export function detectMissedDayState(
@@ -135,6 +173,29 @@ export function createRecoveryState(frozenStreak: number, today: string): Recove
     progress: 0,
     startedOn: today,
   }
+}
+
+export function resolveEffectiveRecovery(
+  validatedDates: Set<string>,
+  recovery: RecoveryState | null,
+  today: string,
+): RecoveryState | null {
+  if (recovery) {
+    if (recovery.progress >= 2) {
+      return null
+    }
+
+    if (!isRecoveryExpired(recovery, validatedDates, today)) {
+      return recovery
+    }
+  }
+
+  const missedState = detectMissedDayState(validatedDates, today)
+  if (missedState.kind === 'recovery_eligible') {
+    return createRecoveryState(missedState.frozenStreak, today)
+  }
+
+  return null
 }
 
 export function isRecoveryExpired(

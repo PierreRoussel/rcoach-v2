@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 
 type NutritionStreakBadgeProps = {
   streak: number
-  onClick: () => void
+  onStreakClick: () => void
+  onCalendarClick: () => void
   className?: string
   isFrozen?: boolean
   validatedToday?: boolean
@@ -15,7 +16,8 @@ type NutritionStreakBadgeProps = {
 
 export function NutritionStreakBadge({
   streak,
-  onClick,
+  onStreakClick,
+  onCalendarClick,
   className,
   isFrozen = false,
   validatedToday = false,
@@ -42,7 +44,7 @@ export function NutritionStreakBadge({
     <div className={cn('inline-flex items-center gap-0.5', className)}>
       <button
         type="button"
-        onClick={onClick}
+        onClick={onStreakClick}
         className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         aria-label={label}
       >
@@ -70,7 +72,7 @@ export function NutritionStreakBadge({
         variant="ghost"
         size="icon"
         className="size-8 shrink-0 rounded-full text-primary"
-        onClick={onClick}
+        onClick={onCalendarClick}
         aria-label="Ouvrir le calendrier nutrition"
       >
         <CalendarDays className="size-4" />

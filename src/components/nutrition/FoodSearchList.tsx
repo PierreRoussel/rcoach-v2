@@ -23,17 +23,13 @@ type FoodSearchListProps = {
 
 function formatPortionLine(result: FoodSearchResult) {
   const portion = result.quickAddPortion ?? { mode: 'servings' as const, servings: 1 }
+  const food = result.food
 
-  return formatFoodPortionPreview(
-    {
-      calories: result.calories,
-      carbs_g: result.carbsG,
-      protein_g: result.proteinG,
-      fat_g: result.fatG,
-      serving_size_g: result.servingSizeG,
-    },
-    portion,
-  )
+  if (!food) {
+    return `${Math.round(result.calories)} kcal`
+  }
+
+  return formatFoodPortionPreview(food, portion)
 }
 
 function QuickAddButton({

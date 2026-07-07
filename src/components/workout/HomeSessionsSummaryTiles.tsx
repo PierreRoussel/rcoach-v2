@@ -27,7 +27,7 @@ import {
   formatWorkoutDuration,
   formatWorkoutVolume,
 } from '@/lib/stats/workout-metrics'
-import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
+import { DisplayExercise } from '@/components/workout/DisplayExerciseName'
 import { cn } from '@/lib/utils'
 
 const MAX_VISIBLE_EXERCISES = 2
@@ -209,11 +209,7 @@ function LastSessionTile({
               <Dumbbell className="size-3 shrink-0 text-primary/70" />
               <span className="truncate">
                 {entry.setCount} série{entry.setCount > 1 ? 's' : ''} ·{' '}
-                <DisplayExerciseName
-                  name={entry.exercise.name}
-                  nameFr={entry.exercise.name_fr}
-                  exerciseId={entry.exercise.id}
-                />
+                <DisplayExercise exercise={entry.exercise} />
               </span>
             </li>
           ))}

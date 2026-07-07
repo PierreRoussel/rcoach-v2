@@ -21,11 +21,17 @@ export function mealLogEntryToPortion(
   entry: Pick<MealLogPortionEntry, 'quantity_g' | 'servings'>,
 ): PortionInput {
   if (entry.quantity_g != null) {
-    return { mode: 'grams', quantityG: Number(entry.quantity_g) }
+    const quantityG = Number(entry.quantity_g)
+    if (Number.isFinite(quantityG) && quantityG > 0) {
+      return { mode: 'grams', quantityG }
+    }
   }
 
   if (entry.servings != null) {
-    return { mode: 'servings', servings: Number(entry.servings) }
+    const servings = Number(entry.servings)
+    if (Number.isFinite(servings) && servings > 0) {
+      return { mode: 'servings', servings }
+    }
   }
 
   return { mode: 'servings', servings: 1 }

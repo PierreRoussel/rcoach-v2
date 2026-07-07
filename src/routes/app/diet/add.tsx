@@ -13,14 +13,19 @@ import { Button } from '@/components/ui/button'
 import { useFoodFavorites, useFoodFavoriteMutations, useFoodMutations } from '@/hooks/useFoodFavorites'
 import { useFrequentFoods, type FrequentFood } from '@/hooks/useFrequentFoods'
 import { useRecentFoods } from '@/hooks/useRecentFoods'
-import { useFoodSearch, OFF_MIN_QUERY_LENGTH, mapOffDraftToFoodSearchResult, type FoodSearchResult } from '@/hooks/useFoodSearch'
+import {
+  useFoodSearch,
+  OFF_MIN_QUERY_LENGTH,
+  mapOffDraftToFoodSearchResult,
+  type FoodSearchResult,
+} from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
 import { resolveOffDraftFromBarcode } from '@/lib/nutrition/off-product-lookup'
+import { mapFoodToSearchResult } from '@/lib/nutrition/food-search-result'
 import { toDateKey } from '@/lib/nutrition/dates'
-import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import type { Food, MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -33,25 +38,6 @@ const addSearchSchema = z.object({
 type AddFoodTab = 'frequent' | 'recent' | 'favorites'
 
 const QUICK_ADD_SUCCESS_MS = 1500
-
-function mapFoodToSearchResult(food: Food, quickAddPortion?: PortionInput): FoodSearchResult {
-  return {
-    id: food.id,
-    name: food.name,
-    brand: food.brand,
-    calories: Number(food.calories),
-    carbsG: Number(food.carbs_g),
-    proteinG: Number(food.protein_g),
-    fatG: Number(food.fat_g),
-    servingSizeG: Number(food.serving_size_g),
-    servingLabel: food.serving_label,
-    source: food.source,
-    barcode: food.barcode,
-    offProductId: food.off_product_id,
-    food,
-    quickAddPortion,
-  }
-}
 
 export const Route = createFileRoute('/app/diet/add')({
   validateSearch: addSearchSchema,
@@ -145,13 +131,15 @@ function AddFoodPage() {
     [favorites],
   )
 
-  const frequentResults = useMemo<FoodSearchResult[]>(
-    () =>
-      (pinnedFrequentFoods ?? frequentFoods).map((item) =>
-        mapFoodToSearchResult(item.food, item.portion),
-      ),
-    [frequentFoods, pinnedFrequentFoods],
-  )
+  const frequentResults = useMemo<FoodSearchResult[]>(() => {
+    const ordered = pinnedFrequentFoods ?? frequentFoods
+    const freshByFoodId = new Map(frequentFoods.map((item) => [item.food.id, item]))
+
+    return ordered.map((item) => {
+      const fresh = freshByFoodId.get(item.food.id)
+      return mapFoodToSearchResult(fresh?.food ?? item.food, fresh?.portion ?? item.portion)
+    })
+  }, [frequentFoods, pinnedFrequentFoods])
 
   const recentResults = useMemo<FoodSearchResult[]>(
     () => recentFoods.map(mapFoodToSearchResult),

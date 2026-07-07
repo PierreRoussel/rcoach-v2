@@ -4,6 +4,7 @@ import {
   buildPortionOptions,
   portionInputFromOption,
   portionToStoredFields,
+  resolveDefaultPortionSelection,
   resolveInitialPortionOption,
 } from '@/lib/nutrition/portion-options'
 
@@ -52,6 +53,17 @@ describe('portionInputFromOption', () => {
       mode: 'servings',
       servings: 3,
       servingSizeG: 30,
+    })
+  })
+})
+
+describe('resolveDefaultPortionSelection', () => {
+  it('defaults to one serving of the food portion', () => {
+    const options = buildPortionOptions(food, portionTypes)
+
+    expect(resolveDefaultPortionSelection(food, options)).toEqual({
+      optionId: 'default',
+      quantity: 1,
     })
   })
 })

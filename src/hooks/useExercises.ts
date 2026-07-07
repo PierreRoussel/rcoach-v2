@@ -18,12 +18,13 @@ import {
 } from '@/lib/workout/translate-exercise-name'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-export function useAllExercises() {
+export function useAllExercises(options?: { enabled?: boolean }) {
   const { nhost, isAuthenticated } = useAuth()
+  const enabled = options?.enabled ?? true
 
   return useQuery({
     queryKey: ['exercises', 'all'],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && enabled,
     staleTime: 30 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{ exercises: Exercise[] }>(

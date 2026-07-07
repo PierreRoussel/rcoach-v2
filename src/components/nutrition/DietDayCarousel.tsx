@@ -1,6 +1,6 @@
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -70,7 +70,13 @@ export function DietDayCarousel({
   className,
   animateEntrance = false,
 }: DietDayCarouselProps) {
-  const dates = buildDateWindow(date, 14)
+  const dates = useMemo(() => buildDateWindow(date, 14), [date])
+  const datesRef = useRef(dates)
+  datesRef.current = dates
+
+  const onDateChangeRef = useRef(onDateChange)
+  onDateChangeRef.current = onDateChange
+
   const activeIndex = dates.indexOf(date)
   const resolvedIndex = activeIndex >= 0 ? activeIndex : 14
   const [displayDate, setDisplayDate] = useState(date)
@@ -103,29 +109,31 @@ export function DietDayCarousel({
       return
     }
 
-    const index = resolveActiveIndex(api, dates.length)
-    const nextDate = dates[index]
+    const currentDates = datesRef.current
+    const index = resolveActiveIndex(api, currentDates.length)
+    const nextDate = currentDates[index]
     if (nextDate) {
-      setDisplayDate(nextDate)
+      setDisplayDate((current) => (current === nextDate ? current : nextDate))
     }
 
     setMountedIndices((current) => {
-      const next = expandMountedIndices(current, index, dates.length)
+      const next = expandMountedIndices(current, index, currentDates.length)
       return setsAreEqual(current, next) ? current : next
     })
-  }, [api, dates])
+  }, [api])
 
   const syncUrlFromCarousel = useCallback(() => {
     if (!api) {
       return
     }
 
+    const currentDates = datesRef.current
     const index = api.selectedScrollSnap()
-    const nextDate = dates[index]
+    const nextDate = currentDates[index]
     if (nextDate && nextDate !== date) {
-      onDateChange(nextDate)
+      onDateChangeRef.current(nextDate)
     }
-  }, [api, date, dates, onDateChange])
+  }, [api, date])
 
   useEffect(() => {
     if (!api) {
@@ -150,7 +158,7 @@ export function DietDayCarousel({
     if (index >= 0 && api.selectedScrollSnap() !== index) {
       api.scrollTo(index, false)
     }
-  }, [api, date, dates])
+  }, [api, date, dates.length])
 
   function handleChevronChange(nextDate: string) {
     setDisplayDate(nextDate)

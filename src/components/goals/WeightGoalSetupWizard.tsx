@@ -38,6 +38,12 @@ import {
   useUpsertWeightGoal,
 } from '@/hooks/useWeightGoal'
 import {
+  buildWeightGoalSetupCelebrationPayload,
+  shouldShowWeightGoalSetupCelebration,
+  type WeightGoalSetupCelebrationPayload,
+  type WeightGoalSetupCompletedEvent,
+} from '@/lib/goals/weight-goal-setup-celebration'
+import {
   clampWeightKg,
   formatWeightKg,
   inferWeightGoalType,
@@ -55,7 +61,7 @@ type WeightGoalSetupWizardProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   mode: 'create' | 'edit'
-  onCompleted?: () => void
+  onCompleted?: (result?: WeightGoalSetupCompletedEvent) => void
 }
 
 const STEP_LABELS = [
@@ -106,6 +112,9 @@ export function WeightGoalSetupWizard({
   const prevOpenRef = useRef(false)
   const hydratedForOpenRef = useRef(false)
   const calorieActionTakenRef = useRef(false)
+  const pendingCelebrationRef = useRef<WeightGoalSetupCelebrationPayload | null>(
+    null,
+  )
 
   useEffect(() => {
     if (!open) {
@@ -240,6 +249,28 @@ export function WeightGoalSetupWizard({
     activityLevel: formState.activityLevel,
     goal: tdeeGoalType,
   })
+
+  function emitCompleted(options?: {
+    dailyCalorieTarget?: number
+    tdee?: number
+  }) {
+    const base = pendingCelebrationRef.current
+    pendingCelebrationRef.current = null
+
+    if (!base) {
+      onCompleted?.({ showCelebration: false })
+      return
+    }
+
+    onCompleted?.({
+      showCelebration: true,
+      payload: {
+        ...base,
+        dailyCalorieTarget: options?.dailyCalorieTarget ?? base.dailyCalorieTarget,
+        tdee: options?.tdee ?? base.tdee,
+      },
+    })
+  }
 
   function handleNextStep() {
     if (step === 0) {
@@ -400,9 +431,34 @@ export function WeightGoalSetupWizard({
         delta: fallbackTdee.dailyTarget - previousCalories,
       }
 
+      const shouldCelebrate = shouldShowWeightGoalSetupCelebration({
+        mode,
+        previousTargetKg: mode === 'edit' ? existingGoal?.target_weight_kg : null,
+        nextTargetKg: normalizedTarget,
+        goalType: weightGoalType,
+      })
+
+      pendingCelebrationRef.current = shouldCelebrate
+        ? buildWeightGoalSetupCelebrationPayload({
+            currentKg: normalizedCurrent,
+            targetKg: normalizedTarget,
+            dailyCalorieTarget: savedSettings.daily_calorie_target,
+            tdee: effectiveSuggestion.tdee,
+            userMeasurements: {
+              sex: bodyMetrics.sex,
+              age: bodyMetrics.age,
+              height_cm: bodyMetrics.heightCm,
+              waist_cm: userMeasurements?.waist_cm ?? null,
+            },
+          })
+        : null
+
       if (!shouldSuggestCalorieUpdate(effectiveSuggestion)) {
         onOpenChange(false)
-        onCompleted?.()
+        emitCompleted({
+          dailyCalorieTarget: savedSettings.daily_calorie_target,
+          tdee: effectiveSuggestion.tdee,
+        })
         return
       }
 
@@ -433,7 +489,7 @@ export function WeightGoalSetupWizard({
 
     if (!pendingCalorieSuggestion) {
       setCalorieDialogOpen(false)
-      onCompleted?.()
+      emitCompleted()
       return
     }
 
@@ -456,8 +512,14 @@ export function WeightGoalSetupWizard({
     }
 
     setCalorieDialogOpen(false)
+    const suggestion = pendingCalorieSuggestion
     setPendingCalorieSuggestion(null)
-    onCompleted?.()
+    emitCompleted({
+      dailyCalorieTarget: accept
+        ? suggestion.suggestedCalories
+        : suggestion.previousCalories,
+      tdee: suggestion.tdee,
+    })
   }
 
   const isSaving =

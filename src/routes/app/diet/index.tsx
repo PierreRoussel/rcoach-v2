@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { DietDayCarousel } from '@/components/nutrition/DietDayCarousel'
@@ -46,7 +46,10 @@ function DietPage() {
     useNutritionSettings()
   const { data: weightGoal, isFetched: weightGoalFetched } = useWeightGoal()
   const { streak, isFrozen, validatedToday } = useNutritionStreak(settings?.daily_calorie_target ?? 0)
-  const { reconcileOnDietPageOpen } = useNutritionStreakGamificationActions()
+  const { reconcileOnDietPageOpen, isStreakDataReady } = useNutritionStreakGamificationActions()
+  const reconcileOnDietPageOpenRef = useRef(reconcileOnDietPageOpen)
+  reconcileOnDietPageOpenRef.current = reconcileOnDietPageOpen
+  const hasReconciledDietOpenRef = useRef(false)
   const { data: pendingSyncCount = 0 } = usePendingNutritionSyncCount()
   const isOnline = useOnlineStatus()
   const shouldAnimateEntrance = useDietEntranceAnimation()
@@ -69,18 +72,27 @@ function DietPage() {
     wizardDismissed
 
   useEffect(() => {
-    if (settings && hasSetup) {
-      void reconcileOnDietPageOpen()
+    if (!isStreakDataReady || hasReconciledDietOpenRef.current) {
+      return
     }
-  }, [hasSetup, reconcileOnDietPageOpen, settings])
 
-  function handleDateChange(nextDate: string) {
+    hasReconciledDietOpenRef.current = true
+    void reconcileOnDietPageOpenRef.current()
+  }, [isStreakDataReady])
+
+  useEffect(() => {
+    return () => {
+      hasReconciledDietOpenRef.current = false
+    }
+  }, [])
+
+  const handleDateChange = useCallback((nextDate: string) => {
     setActiveDate(nextDate)
     void navigate({
       search: { date: nextDate },
       replace: true,
     })
-  }
+  }, [navigate])
 
   async function retryPendingSync() {
     if (!isOnline || isRetryingSync) {

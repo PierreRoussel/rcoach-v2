@@ -3,6 +3,7 @@ import { Target } from 'lucide-react'
 import { useState } from 'react'
 
 import { WeightAdjustTile } from '@/components/goals/WeightAdjustTile'
+import { WeightGoalSetupCelebrationOverlay } from '@/components/goals/WeightGoalSetupCelebrationOverlay'
 import { WeightGoalSetupWizard } from '@/components/goals/WeightGoalSetupWizard'
 import { WeightMilestoneOverlay } from '@/components/goals/WeightMilestoneOverlay'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/card'
 import { FormMessage } from '@/components/ui/form'
 import { useAdjustWeightGoal } from '@/hooks/useAdjustWeightGoal'
+import { useWeightGoalSetupCelebration } from '@/hooks/useWeightGoalSetupCelebration'
 import { useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
@@ -28,6 +30,15 @@ export function GoalsSection() {
   const [wizardMode, setWizardMode] = useState<'create' | 'edit'>('create')
   const [milestoneOpen, setMilestoneOpen] = useState(false)
   const [milestoneCount, setMilestoneCount] = useState<number | null>(null)
+  const {
+    onWizardCompleted,
+    setupCelebrationPayload,
+    setupCelebrationOpen,
+    isSetupCelebrationPreview,
+    nutritionSettings,
+    userMeasurements,
+    closeSetupCelebration,
+  } = useWeightGoalSetupCelebration()
 
   const { adjustWeight, isPending: adjustPending, error: adjustError } =
     useAdjustWeightGoal({
@@ -119,7 +130,19 @@ export function GoalsSection() {
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         mode={wizardMode}
+        onCompleted={onWizardCompleted}
       />
+
+      {setupCelebrationPayload ? (
+        <WeightGoalSetupCelebrationOverlay
+          open={setupCelebrationOpen}
+          payload={setupCelebrationPayload}
+          nutritionSettings={nutritionSettings}
+          userMeasurements={userMeasurements}
+          isPreview={isSetupCelebrationPreview}
+          onClose={closeSetupCelebration}
+        />
+      ) : null}
 
       <WeightMilestoneOverlay
         open={milestoneOpen}

@@ -10,7 +10,7 @@ import {
   formatWorkoutDuration,
 } from '@/lib/stats/workout-metrics'
 import { countWorkoutSets } from '@/hooks/useWorkouts'
-import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
+import { DisplayExercise } from '@/components/workout/DisplayExerciseName'
 import { cn } from '@/lib/utils'
 
 const VISIBLE_EXERCISES = 3
@@ -93,11 +93,7 @@ export function WorkoutHistoryCard({
                 </span>
                 <span className="truncate">
                   {summary.setCount} série{summary.setCount > 1 ? 's' : ''} de{' '}
-                  <DisplayExerciseName
-                    name={summary.exercise.name}
-                    nameFr={summary.exercise.name_fr}
-                    exerciseId={summary.exercise.id}
-                  />
+                  <DisplayExercise exercise={summary.exercise} />
                   {summary.suffix}
                 </span>
               </li>

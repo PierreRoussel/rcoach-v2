@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -27,11 +28,10 @@ import { addDays, toDateKey } from '@/lib/nutrition/dates'
 import {
   applyDayValidation,
   computeDisplayStreak,
-  detectMissedDayState,
   isEligibleSameDayLog,
   isRecoveryExpired,
   reconcileStreakState,
-  shouldShowRecoveryDialog,
+  resolveEffectiveRecovery,
   toValidatedDateSet,
   type RecoveryState,
   type StreakEvent,
@@ -52,12 +52,14 @@ type NutritionStreakGamificationContextValue = {
   recoveryProgress: number | null
   validatedToday: boolean
   isLoading: boolean
+  isStreakDataReady: boolean
   error: Error | null
   validateTodayIfNeeded: (input: {
     loggedDate: string
     hadEntriesBefore: boolean
   }) => Promise<void>
   reconcileOnDietPageOpen: () => Promise<void>
+  showRecoveryChallenge: () => void
   dismissRecoveryDialog: () => void
 }
 
@@ -70,6 +72,10 @@ function celebrationStorageKey(today: string) {
 
 function recoveryDismissedStorageKey(today: string) {
   return `nutrition-streak-recovery-dismissed-${today}`
+}
+
+function isRecoveryDialogDismissedForToday(today: string) {
+  return Boolean(sessionStorage.getItem(recoveryDismissedStorageKey(today)))
 }
 
 function mapRecoveryRow(row: NutritionStreakRecovery | null): RecoveryState | null {
@@ -139,6 +145,7 @@ export function NutritionStreakGamificationProvider({
   const [recoveryDialogOpen, setRecoveryDialogOpen] = useState(false)
   const [recoveryDialogFrozenStreak, setRecoveryDialogFrozenStreak] = useState(0)
   const [recoveryDialogProgress, setRecoveryDialogProgress] = useState(0)
+  const [pendingRecovery, setPendingRecovery] = useState<RecoveryState | null>(null)
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -196,10 +203,50 @@ export function NutritionStreakGamificationProvider({
     [recoveryQuery.data],
   )
 
-  const { streak: displayStreak, isFrozen, recoveryProgress } = useMemo(
-    () => computeDisplayStreak(validatedDates, recovery, today),
-    [validatedDates, recovery, today],
+  useEffect(() => {
+    if (recovery && recovery.progress < 2) {
+      setPendingRecovery(recovery)
+      return
+    }
+
+    if (!recovery || recovery.progress >= 2) {
+      setPendingRecovery((current) => {
+        if (!current || current.progress >= 2) {
+          return null
+        }
+
+        if (isRecoveryExpired(current, validatedDates, today)) {
+          return null
+        }
+
+        return current
+      })
+    }
+  }, [recovery, today, validatedDates])
+
+  const effectiveRecovery = useMemo(
+    () => resolveEffectiveRecovery(validatedDates, recovery ?? pendingRecovery, today),
+    [validatedDates, recovery, pendingRecovery, today],
   )
+
+  const recoveryRef = useRef(recovery)
+  const validatedDatesRef = useRef(validatedDates)
+  const effectiveRecoveryRef = useRef(effectiveRecovery)
+  const pendingRecoveryRef = useRef(pendingRecovery)
+  recoveryRef.current = recovery
+  validatedDatesRef.current = validatedDates
+  effectiveRecoveryRef.current = effectiveRecovery
+  pendingRecoveryRef.current = pendingRecovery
+
+  const isReconcilingRef = useRef(false)
+
+  const { streak: displayStreak, isFrozen, recoveryProgress } = useMemo(
+    () => computeDisplayStreak(validatedDates, effectiveRecovery, today),
+    [validatedDates, effectiveRecovery, today],
+  )
+
+  const isStreakDataReady =
+    Boolean(user?.id) && validatedQuery.isFetched && recoveryQuery.isFetched
 
   const invalidateStreakQueries = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['nutrition-streak-validated'] })
@@ -316,7 +363,12 @@ export function NutritionStreakGamificationProvider({
         return
       }
 
-      const result = applyDayValidation(validatedDates, recovery, today, {
+      const activeRecovery =
+        recoveryRef.current ??
+        pendingRecoveryRef.current ??
+        effectiveRecoveryRef.current
+
+      const result = applyDayValidation(validatedDates, activeRecovery, today, {
         hadEntriesBefore,
       })
 
@@ -325,7 +377,14 @@ export function NutritionStreakGamificationProvider({
       }
 
       try {
-        await persistValidationResult(today, result.recovery, recovery)
+        await persistValidationResult(today, result.recovery, recoveryRef.current)
+
+        if (result.recovery && result.recovery.progress < 2) {
+          setPendingRecovery(result.recovery)
+        } else if (result.event.kind === 'recovery_complete' || !result.recovery) {
+          setPendingRecovery(null)
+        }
+
         handleStreakEvent(result.event, today)
       } catch {
         // Offline or API failure — streak validation is best-effort until sync.
@@ -334,71 +393,121 @@ export function NutritionStreakGamificationProvider({
     [
       handleStreakEvent,
       persistValidationResult,
-      recovery,
       today,
       user?.id,
       validatedDates,
     ],
   )
 
+  const deleteRecoveryAsync = deleteRecovery.mutateAsync
+  const upsertRecoveryAsync = upsertRecovery.mutateAsync
+
+  const openRecoveryDialog = useCallback((frozenStreak: number, progress: number) => {
+    setRecoveryDialogFrozenStreak((current) =>
+      current === frozenStreak ? current : frozenStreak,
+    )
+    setRecoveryDialogProgress((current) => (current === progress ? current : progress))
+    setRecoveryDialogOpen(true)
+  }, [])
+
+  const showRecoveryChallenge = useCallback(() => {
+    const activeRecovery = effectiveRecoveryRef.current
+    if (!activeRecovery || activeRecovery.progress >= 2) {
+      return
+    }
+
+    openRecoveryDialog(activeRecovery.frozenStreak, activeRecovery.progress)
+  }, [openRecoveryDialog])
+
   const reconcileOnDietPageOpen = useCallback(async () => {
-    if (!user?.id) {
+    if (!user?.id || isReconcilingRef.current) {
       return
     }
 
-    let activeRecovery = recovery
+    isReconcilingRef.current = true
 
-    if (activeRecovery && isRecoveryExpired(activeRecovery, validatedDates, today)) {
-      try {
-        await deleteRecovery.mutateAsync()
-      } catch {
-        return
+    try {
+      const validatedDates = validatedDatesRef.current
+      let activeRecovery = recoveryRef.current
+
+      if (activeRecovery && isRecoveryExpired(activeRecovery, validatedDates, today)) {
+        try {
+          await deleteRecoveryAsync()
+        } catch {
+          return
+        }
+        activeRecovery = null
       }
-      activeRecovery = null
-    }
 
-    if (activeRecovery && activeRecovery.progress < 2) {
-      const dismissedKey = sessionStorage.getItem(recoveryDismissedStorageKey(today))
-      if (dismissedKey !== today) {
-        setRecoveryDialogFrozenStreak(activeRecovery.frozenStreak)
-        setRecoveryDialogProgress(activeRecovery.progress)
-        setRecoveryDialogOpen(true)
-      }
-      return
-    }
-
-    const missedState = detectMissedDayState(validatedDates, today)
-    const reconcileResult = reconcileStreakState(validatedDates, null, today)
-
-    if (reconcileResult.recovery && reconcileResult.shouldOpenRecoveryDialog) {
-      try {
-        await upsertRecovery.mutateAsync(reconcileResult.recovery)
-      } catch {
+      if (activeRecovery && activeRecovery.progress < 2) {
+        setPendingRecovery(activeRecovery)
+        if (!isRecoveryDialogDismissedForToday(today)) {
+          openRecoveryDialog(activeRecovery.frozenStreak, activeRecovery.progress)
+        }
         return
       }
 
-      const dismissedKey = sessionStorage.getItem(recoveryDismissedStorageKey(today))
-      if (
-        shouldShowRecoveryDialog(missedState, null, dismissedKey, today)
-      ) {
-        setRecoveryDialogFrozenStreak(reconcileResult.recovery.frozenStreak)
-        setRecoveryDialogProgress(0)
-        setRecoveryDialogOpen(true)
+      const reconcileResult = reconcileStreakState(validatedDates, null, today)
+
+      if (reconcileResult.recovery && reconcileResult.shouldOpenRecoveryDialog) {
+        if (!activeRecovery) {
+          try {
+            await upsertRecoveryAsync(reconcileResult.recovery)
+          } catch {
+            // Offline or API failure — local pending recovery still drives the UI.
+          }
+        }
+
+        setPendingRecovery(reconcileResult.recovery)
+
+        if (!isRecoveryDialogDismissedForToday(today)) {
+          openRecoveryDialog(
+            reconcileResult.recovery.frozenStreak,
+            activeRecovery?.progress ?? 0,
+          )
+        }
       }
+    } finally {
+      isReconcilingRef.current = false
     }
-  }, [
-    deleteRecovery,
-    recovery,
-    today,
-    upsertRecovery,
-    user?.id,
-    validatedDates,
-  ])
+  }, [deleteRecoveryAsync, openRecoveryDialog, today, upsertRecoveryAsync, user?.id])
 
   const dismissRecoveryDialog = useCallback(() => {
     sessionStorage.setItem(recoveryDismissedStorageKey(today), '1')
     setRecoveryDialogOpen(false)
   }, [today])
+
+  const reconcileOnDietPageOpenRef = useRef(reconcileOnDietPageOpen)
+  reconcileOnDietPageOpenRef.current = reconcileOnDietPageOpen
+
+  useEffect(() => {
+    if (!isStreakDataReady || !effectiveRecovery || effectiveRecovery.progress >= 2) {
+      return
+    }
+
+    if (isRecoveryDialogDismissedForToday(today) || recoveryDialogOpen) {
+      return
+    }
+
+    openRecoveryDialog(effectiveRecovery.frozenStreak, effectiveRecovery.progress)
+  }, [
+    effectiveRecovery,
+    isStreakDataReady,
+    openRecoveryDialog,
+    recoveryDialogOpen,
+    today,
+  ])
+
+  const handleRecoveryDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        dismissRecoveryDialog()
+      } else {
+        setRecoveryDialogOpen(true)
+      }
+    },
+    [dismissRecoveryDialog],
+  )
 
   const validatedToday = validatedDates.has(today)
 
@@ -409,9 +518,11 @@ export function NutritionStreakGamificationProvider({
       recoveryProgress,
       validatedToday,
       isLoading: validatedQuery.isLoading || recoveryQuery.isLoading,
+      isStreakDataReady,
       error: (validatedQuery.error ?? recoveryQuery.error) as Error | null,
       validateTodayIfNeeded,
       reconcileOnDietPageOpen,
+      showRecoveryChallenge,
       dismissRecoveryDialog,
     }),
     [
@@ -420,7 +531,9 @@ export function NutritionStreakGamificationProvider({
       isFrozen,
       recoveryProgress,
       validatedToday,
+      isStreakDataReady,
       reconcileOnDietPageOpen,
+      showRecoveryChallenge,
       recoveryQuery.error,
       recoveryQuery.isLoading,
       validateTodayIfNeeded,
@@ -450,13 +563,7 @@ export function NutritionStreakGamificationProvider({
         open={recoveryDialogOpen}
         frozenStreak={recoveryDialogFrozenStreak}
         progress={recoveryDialogProgress}
-        onOpenChange={(open) => {
-          if (!open) {
-            dismissRecoveryDialog()
-          } else {
-            setRecoveryDialogOpen(true)
-          }
-        }}
+        onOpenChange={handleRecoveryDialogOpenChange}
       />
     </NutritionStreakGamificationContext.Provider>
   )
@@ -475,10 +582,19 @@ export function useNutritionStreakGamification() {
 }
 
 export function useNutritionStreakGamificationActions() {
-  const { validateTodayIfNeeded, reconcileOnDietPageOpen } =
-    useNutritionStreakGamification()
+  const {
+    validateTodayIfNeeded,
+    reconcileOnDietPageOpen,
+    isStreakDataReady,
+    showRecoveryChallenge,
+  } = useNutritionStreakGamification()
 
-  return { validateTodayIfNeeded, reconcileOnDietPageOpen }
+  return {
+    validateTodayIfNeeded,
+    reconcileOnDietPageOpen,
+    isStreakDataReady,
+    showRecoveryChallenge,
+  }
 }
 
 export function useOptionalNutritionStreakGamificationActions() {

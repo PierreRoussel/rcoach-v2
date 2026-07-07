@@ -61,6 +61,24 @@ export function portionInputFromOption(
   }
 }
 
+export function resolveDefaultPortionSelection(
+  food: Pick<Food, 'serving_size_g'>,
+  portionOptions: PortionOption[],
+): { optionId: PortionOptionId; quantity: number } {
+  const defaultOption = portionOptions.find((option) => option.id === 'default')
+
+  if (defaultOption?.kind === 'portion') {
+    return { optionId: 'default', quantity: 1 }
+  }
+
+  const firstOption = portionOptions[0]
+  if (firstOption?.kind === 'grams') {
+    return { optionId: 'grams', quantity: Number(food.serving_size_g) || 100 }
+  }
+
+  return { optionId: firstOption?.id ?? 'grams', quantity: 1 }
+}
+
 export function resolveInitialPortionOption(
   portion: PortionInput,
   food: Pick<Food, 'serving_size_g'>,

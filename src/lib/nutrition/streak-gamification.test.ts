@@ -6,9 +6,11 @@ import {
   computeDisplayStreak,
   createRecoveryState,
   detectMissedDayState,
+  getLastStreakDay,
   isEligibleSameDayLog,
   isRecoveryExpired,
   reconcileStreakState,
+  resolveEffectiveRecovery,
   toValidatedDateSet,
 } from '@/lib/nutrition/streak-gamification'
 import { computeMonthOnTargetSummary, aggregateNutritionDays } from '@/lib/nutrition/streak'
@@ -140,6 +142,48 @@ describe('reconcileStreakState', () => {
     const result = reconcileStreakState(dates, null, '2026-06-25')
     expect(result.shouldOpenRecoveryDialog).toBe(true)
     expect(result.recovery?.frozenStreak).toBe(2)
+  })
+})
+
+describe('resolveEffectiveRecovery', () => {
+  it('derives a pending recovery when eligible but not persisted yet', () => {
+    const dates = toValidatedDateSet(['2026-07-05'])
+    expect(resolveEffectiveRecovery(dates, null, '2026-07-07')).toEqual({
+      frozenStreak: 1,
+      progress: 0,
+      startedOn: '2026-07-07',
+    })
+  })
+
+  it('keeps frozen recovery after today is validated during the challenge', () => {
+    const dates = toValidatedDateSet(['2026-07-05', '2026-07-07'])
+    const pending = createRecoveryState(1, '2026-07-07')
+    const withProgress = { ...pending, progress: 1 }
+
+    expect(resolveEffectiveRecovery(dates, withProgress, '2026-07-07')).toEqual(withProgress)
+    expect(computeDisplayStreak(dates, withProgress, '2026-07-07')).toEqual({
+      streak: 1,
+      isFrozen: true,
+      recoveryProgress: 1,
+    })
+  })
+
+  it('prefers the persisted recovery row', () => {
+    const dates = toValidatedDateSet(['2026-07-05'])
+    const persisted = createRecoveryState(1, '2026-07-07')
+    expect(resolveEffectiveRecovery(dates, persisted, '2026-07-07')).toEqual(persisted)
+  })
+})
+
+describe('getLastStreakDay', () => {
+  it('returns today when today is validated', () => {
+    const dates = toValidatedDateSet(['2026-06-23', '2026-06-24', '2026-06-25'])
+    expect(getLastStreakDay(dates, null, '2026-06-25')).toBe('2026-06-25')
+  })
+
+  it('returns day before yesterday when recovery is eligible', () => {
+    const dates = toValidatedDateSet(['2026-06-22', '2026-06-23'])
+    expect(getLastStreakDay(dates, null, '2026-06-25')).toBe('2026-06-23')
   })
 })
 

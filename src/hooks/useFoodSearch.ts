@@ -16,31 +16,18 @@ import {
   sortFoodSearchResultsGrouped,
 } from '@/lib/nutrition/food-search-tokens'
 import {
+  mapFoodToSearchResult,
+  type FoodSearchResult,
+} from '@/lib/nutrition/food-search-result'
+import {
   OFF_MIN_QUERY_LENGTH,
   searchOffProducts,
   type OffFoodDraft,
 } from '@/lib/nutrition/open-food-facts'
-import type { Food } from '@/lib/nutrition/types'
-import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-export type FoodSearchResult = {
-  id: string
-  name: string
-  brand: string | null
-  calories: number
-  carbsG: number
-  proteinG: number
-  fatG: number
-  servingSizeG: number
-  servingLabel: string
-  source: Food['source'] | 'open_food_facts_live'
-  barcode?: string | null
-  offProductId?: string | null
-  food?: Food
-  offDraft?: OffFoodDraft
-  quickAddPortion?: PortionInput
-}
+export type { FoodSearchResult }
+export { mapFoodToSearchResult }
 
 export type FoodSearchOptions = {
   searchOffExternally?: boolean
@@ -61,24 +48,6 @@ export function mapOffDraftToFoodSearchResult(draft: OffFoodDraft): FoodSearchRe
     barcode: draft.barcode,
     offProductId: draft.offProductId,
     offDraft: draft,
-  }
-}
-
-function mapDbFood(food: Food): FoodSearchResult {
-  return {
-    id: food.id,
-    name: food.name,
-    brand: food.brand,
-    calories: Number(food.calories),
-    carbsG: Number(food.carbs_g),
-    proteinG: Number(food.protein_g),
-    fatG: Number(food.fat_g),
-    servingSizeG: Number(food.serving_size_g),
-    servingLabel: food.serving_label,
-    source: food.source,
-    barcode: food.barcode,
-    offProductId: food.off_product_id,
-    food,
   }
 }
 
@@ -143,7 +112,7 @@ export function useFoodSearch(
       const food = await findFoodByBarcodeInDatabase(nhost, trimmed)
       if (food) {
         await cacheFood(food)
-        return [mapDbFood(food)]
+        return [mapFoodToSearchResult(food)]
       }
 
       const draft = await resolveOffDraftFromBarcode(nhost, trimmed)
@@ -184,7 +153,7 @@ export function useFoodSearch(
       const key = food.ciqual_code
         ? `ciqual:${food.ciqual_code}`
         : (food.off_product_id ?? food.id)
-      merged.set(key, mapDbFood(food))
+      merged.set(key, mapFoodToSearchResult(food))
     }
 
     for (const draft of offQuery.data ?? []) {

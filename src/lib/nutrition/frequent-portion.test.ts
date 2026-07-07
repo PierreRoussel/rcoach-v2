@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildFrequentFoods,
   formatFoodPortionPreview,
+  mealLogEntryToPortion,
   pickMostFrequentPortion,
 } from '@/lib/nutrition/frequent-portion'
 
@@ -26,6 +27,15 @@ const skyr = {
   created_at: '',
   updated_at: '',
 }
+
+describe('mealLogEntryToPortion', () => {
+  it('falls back to servings when grams are invalid', () => {
+    expect(mealLogEntryToPortion({ quantity_g: 0, servings: 2 })).toEqual({
+      mode: 'servings',
+      servings: 2,
+    })
+  })
+})
 
 describe('pickMostFrequentPortion', () => {
   it('returns the most logged portion for a food', () => {

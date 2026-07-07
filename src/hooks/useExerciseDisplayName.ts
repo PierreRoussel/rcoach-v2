@@ -1,40 +1,68 @@
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
 import { useAllExercises } from '@/hooks/useExercises'
-import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
-import type { ExerciseNameSource } from '@/lib/workout/translate-exercise-name'
+import {
+  needsExerciseCatalogLookup,
+  resolveExerciseDisplayName,
+  resolveExerciseNameFr,
+  type ExerciseDisplayInput,
+  type ExerciseNameSource,
+} from '@/lib/workout/translate-exercise-name'
+
+function normalizeExerciseDisplayInput(
+  nameOrInput: string | ExerciseDisplayInput | null | undefined,
+  nameFr?: string | null,
+  exerciseId?: string | null,
+): ExerciseDisplayInput | null {
+  if (nameOrInput == null) {
+    return null
+  }
+
+  if (typeof nameOrInput === 'object') {
+    if (!nameOrInput.name?.trim()) {
+      return null
+    }
+
+    return nameOrInput
+  }
+
+  if (!nameOrInput.trim()) {
+    return null
+  }
+
+  return {
+    name: nameOrInput,
+    name_fr: nameFr,
+    id: exerciseId,
+  }
+}
 
 export function useExerciseDisplayName(
-  canonicalName: string | null | undefined,
+  nameOrInput: string | ExerciseDisplayInput | null | undefined,
   nameFr?: string | null,
   exerciseId?: string | null,
 ): string {
   const locale = useExerciseLocale()
-  const { data: exercises } = useAllExercises()
+  const input = normalizeExerciseDisplayInput(nameOrInput, nameFr, exerciseId)
+  const needsCatalog = input != null && needsExerciseCatalogLookup(input)
+  const { data: exercises } = useAllExercises({ enabled: needsCatalog })
 
-  if (!canonicalName) {
+  if (!input) {
     return ''
   }
 
-  const resolvedNameFr =
-    nameFr ??
-    (exerciseId
-      ? (exercises?.find((exercise) => exercise.id === exerciseId)?.name_fr ?? null)
-      : null)
-
   return resolveExerciseDisplayName(
-    { name: canonicalName, name_fr: resolvedNameFr },
+    {
+      name: input.name,
+      name_fr: resolveExerciseNameFr(input, exercises),
+    },
     locale,
   )
 }
 
 export function useExerciseDisplayNameFromExercise(
-  exercise: ExerciseNameSource | null | undefined,
+  exercise: ExerciseDisplayInput | null | undefined,
 ): string {
-  const locale = useExerciseLocale()
-
-  if (!exercise?.name) {
-    return ''
-  }
-
-  return resolveExerciseDisplayName(exercise, locale)
+  return useExerciseDisplayName(exercise ?? null)
 }
+
+export type { ExerciseDisplayInput, ExerciseNameSource }

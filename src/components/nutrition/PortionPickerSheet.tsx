@@ -20,6 +20,7 @@ import { formatNutrient, scaleNutrientsPer100g, type PortionInput } from '@/lib/
 import {
   buildPortionOptions,
   portionInputFromOption,
+  resolveDefaultPortionSelection,
   resolveInitialPortionOption,
   type PortionOption,
   type PortionOptionId,
@@ -56,17 +57,17 @@ function applyInitialSelection(
   setSelectedOptionId: (id: PortionOptionId) => void,
   setQuantity: (value: string) => void,
 ) {
-  const fallbackOptionId = portionOptions[0]?.id ?? 'grams'
-  const fallbackQuantity = formatPortionFieldValue(Number(food.serving_size_g) || 100)
+  const fallback = resolveDefaultPortionSelection(food, portionOptions)
 
   if (!initialPortion) {
-    setSelectedOptionId(fallbackOptionId)
-    setQuantity(fallbackQuantity)
+    setSelectedOptionId(fallback.optionId)
+    setQuantity(formatPortionFieldValue(fallback.quantity))
     return
   }
 
   const resolved = resolveInitialPortionOption(initialPortion, food, portionTypes ?? [])
   const hasOption = portionOptions.some((option) => option.id === resolved.optionId)
+  const fallbackOptionId = fallback.optionId
 
   setSelectedOptionId(hasOption ? resolved.optionId : fallbackOptionId)
   setQuantity(formatPortionFieldValue(resolved.quantity))
@@ -86,8 +87,8 @@ export function PortionPickerSheet({
     () => (food ? buildPortionOptions(food, portionTypes) : []),
     [food, portionTypes],
   )
-  const [selectedOptionId, setSelectedOptionId] = useState<PortionOptionId>('grams')
-  const [quantity, setQuantity] = useState('100')
+  const [selectedOptionId, setSelectedOptionId] = useState<PortionOptionId>('default')
+  const [quantity, setQuantity] = useState('1')
 
   const selectedOption =
     portionOptions.find((option) => option.id === selectedOptionId) ?? portionOptions[0]

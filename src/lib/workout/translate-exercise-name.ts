@@ -8,6 +8,40 @@ export type ExerciseNameSource = {
   name_fr?: string | null
 }
 
+export type ExerciseDisplayInput = ExerciseNameSource & {
+  id?: string | null
+}
+
+export type ExerciseCatalogNameSource = Pick<ExerciseNameSource, 'name_fr'> & {
+  id: string
+}
+
+export function needsExerciseCatalogLookup(
+  exercise: Pick<ExerciseDisplayInput, 'name_fr' | 'id'>,
+): boolean {
+  if (exercise.name_fr?.trim()) {
+    return false
+  }
+
+  return Boolean(exercise.id)
+}
+
+export function resolveExerciseNameFr(
+  exercise: ExerciseDisplayInput,
+  catalog?: ReadonlyArray<ExerciseCatalogNameSource> | null,
+): string | null {
+  const storedFrench = exercise.name_fr?.trim()
+  if (storedFrench) {
+    return storedFrench
+  }
+
+  if (!exercise.id || !catalog?.length) {
+    return null
+  }
+
+  return catalog.find((entry) => entry.id === exercise.id)?.name_fr?.trim() ?? null
+}
+
 export function resolveExerciseDisplayName(
   exercise: ExerciseNameSource,
   locale: ExerciseLocale,

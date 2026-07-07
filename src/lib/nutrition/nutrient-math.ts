@@ -31,11 +31,16 @@ export type PortionInput =
 
 export function portionGrams(food: Pick<Food, 'serving_size_g'>, portion: PortionInput) {
   if (portion.mode === 'grams') {
-    return portion.quantityG
+    const quantityG = Number(portion.quantityG)
+    return Number.isFinite(quantityG) && quantityG > 0 ? quantityG : 0
   }
 
   const servingSizeG = portion.servingSizeG ?? Number(food.serving_size_g)
-  return portion.servings * servingSizeG
+  const safeServingSizeG = Number.isFinite(servingSizeG) && servingSizeG > 0 ? servingSizeG : 100
+  const servings = Number(portion.servings)
+  const safeServings = Number.isFinite(servings) && servings > 0 ? servings : 1
+
+  return safeServings * safeServingSizeG
 }
 
 export function scaleNutrientsPer100g(food: Pick<Food, 'calories' | 'carbs_g' | 'protein_g' | 'fat_g' | 'serving_size_g'>, portion: PortionInput): NutrientTotals {
