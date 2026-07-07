@@ -18,3 +18,16 @@ export { AppBottomNav } from '@/design-system/components/app-bottom-nav'
 export { AnimateIn, StaggerGroup } from '@/design-system/components/animate-in'
 export { CoachBottomNav } from '@/design-system/components/coach-bottom-nav'
 export { AuthShell } from '@/design-system/components/auth-shell'
+export {
+  HomeSummaryMetric,
+  HomeSummaryMetricDivider,
+  HomeSummaryMetricsRow,
+  HomeSummaryProgress,
+  HomeSummaryTile,
+  HomeSummaryTileFooter,
+  HomeSummaryTileSkeleton,
+} from '@/design-system/components/home-summary-tile'
+export {
+  HomeNotificationTile,
+  type HomeNotificationTileTone,
+} from '@/design-system/components/home-notification-tile'

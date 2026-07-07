@@ -2,59 +2,59 @@
  * Pro — dark performance theme (orange / mint / neon).
  */
 [data-theme='pro'] {
-  --background: #0b0d16;
-  --foreground: #edf0fa;
-  --card: #13172a;
-  --card-foreground: #edf0fa;
-  --popover: #13172a;
-  --popover-foreground: #edf0fa;
-  --primary: #ff5c00;
+  --background: #0d1b2e;
+  --foreground: #e8f0ff;
+  --card: #152338;
+  --card-foreground: #e8f0ff;
+  --popover: #152338;
+  --popover-foreground: #e8f0ff;
+  --primary: #ff4d00;
   --primary-foreground: #ffffff;
-  --secondary: #00c9a0;
-  --secondary-foreground: #0b0d16;
-  --muted: #1c2138;
-  --muted-foreground: #7a85a8;
-  --accent: #e8ff00;
-  --accent-foreground: #0b0d16;
+  --secondary: #00dfa2;
+  --secondary-foreground: #001a10;
+  --muted: #1e3050;
+  --muted-foreground: #7a9ec0;
+  --accent: #c8ff00;
+  --accent-foreground: #0d1b2e;
   --destructive: #ff3b3b;
   --destructive-foreground: #ffffff;
-  --success: #00c9a0;
-  --success-foreground: #0b0d16;
-  --border: rgba(255, 255, 255, 0.07);
-  --input: rgba(255, 255, 255, 0.05);
-  --input-background: #1c2138;
-  --switch-background: #2e3550;
+  --success: #00dfa2;
+  --success-foreground: #001a10;
+  --border: rgba(120, 180, 255, 0.12);
+  --input: rgba(120, 180, 255, 0.08);
+  --input-background: #1e3050;
+  --switch-background: #2a4060;
   --font-weight-medium: 600;
   --font-weight-normal: 400;
-  --ring: #ff5c00;
-  --chart-1: #ff5c00;
-  --chart-2: #00c9a0;
-  --chart-3: #e8ff00;
-  --chart-4: #6b8cff;
+  --ring: #ff4d00;
+  --chart-1: #ff4d00;
+  --chart-2: #00dfa2;
+  --chart-3: #c8ff00;
+  --chart-4: #4d8fff;
   --chart-5: #ff3b8a;
-  --radius: 0.625rem;
-  --sidebar: #13172a;
-  --sidebar-foreground: #edf0fa;
-  --sidebar-primary: #ff5c00;
+  --radius: 0.5rem;
+  --sidebar: #152338;
+  --sidebar-foreground: #e8f0ff;
+  --sidebar-primary: #ff4d00;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1c2138;
-  --sidebar-accent-foreground: #edf0fa;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #ff5c00;
+  --sidebar-accent: #1e3050;
+  --sidebar-accent-foreground: #e8f0ff;
+  --sidebar-border: rgba(120, 180, 255, 0.1);
+  --sidebar-ring: #ff4d00;
 
-  --soft-primary: rgba(255, 92, 0, 0.14);
-  --soft-secondary: rgba(0, 201, 160, 0.12);
-  --soft-accent: rgba(232, 255, 0, 0.12);
-  --soft-purple: rgba(107, 140, 255, 0.14);
+  --soft-primary: rgba(255, 77, 0, 0.14);
+  --soft-secondary: rgba(0, 223, 162, 0.12);
+  --soft-accent: rgba(200, 255, 0, 0.12);
+  --soft-purple: rgba(77, 143, 255, 0.14);
   --soft-peach: rgba(255, 59, 138, 0.12);
   --nutrient-warning-bg: color-mix(in srgb, var(--chart-3) 18%, var(--card));
   --nutrient-warning-border: color-mix(in srgb, var(--chart-3) 42%, var(--border));
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 72%, var(--foreground));
   --gradient-hero: linear-gradient(
     135deg,
-    rgba(255, 92, 0, 0.22) 0%,
+    rgba(255, 77, 0, 0.22) 0%,
     var(--card) 45%,
-    rgba(0, 201, 160, 0.16) 100%
+    rgba(0, 223, 162, 0.16) 100%
   );
 
   color-scheme: dark;

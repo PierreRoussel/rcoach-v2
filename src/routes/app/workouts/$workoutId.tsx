@@ -115,9 +115,20 @@ function WorkoutDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {workout.workout_exercises.map((entry) => (
-            <div
+            <button
               key={entry.id}
-              className="rounded-2xl border border-border bg-card p-4"
+              type="button"
+              className="w-full rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/20"
+              aria-label={`Voir les statistiques de ${entry.exercise.name_fr ?? entry.exercise.name}`}
+              onClick={() =>
+                setStatsExercise({
+                  exerciseId: entry.exercise.id,
+                  exerciseName: entry.exercise.name,
+                  exerciseNameFr: entry.exercise.name_fr,
+                  muscleGroup: entry.exercise.muscle_group,
+                  equipment: entry.exercise.equipment,
+                })
+              }
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -129,24 +140,12 @@ function WorkoutDetailPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    aria-label="Statistiques"
-                    onClick={() =>
-                      setStatsExercise({
-                        exerciseId: entry.exercise.id,
-                        exerciseName: entry.exercise.name,
-                        exerciseNameFr: entry.exercise.name_fr,
-                        muscleGroup: entry.exercise.muscle_group,
-                        equipment: entry.exercise.equipment,
-                      })
-                    }
+                  <span
+                    className="flex size-8 items-center justify-center text-muted-foreground"
+                    aria-hidden
                   >
                     <BarChart2 className="size-4" />
-                  </Button>
+                  </span>
                   <Pill tone="secondary">
                     <Dumbbell className="size-3" />
                     {entry.sets.length} sets
@@ -171,7 +170,7 @@ function WorkoutDetailPage() {
                   ))}
                 </ul>
               ) : null}
-            </div>
+            </button>
           ))}
         </CardContent>
       </Card>

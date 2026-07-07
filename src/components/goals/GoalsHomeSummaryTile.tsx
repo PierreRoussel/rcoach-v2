@@ -1,21 +1,30 @@
-import { Link } from '@tanstack/react-router'
-import { ChevronRight, Target } from 'lucide-react'
+import { TrendingDown, TrendingUp, Target } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-import { Progress } from '@/components/ui/progress'
 import { WeightMaintainDriftGauge } from '@/components/goals/WeightMaintainDriftGauge'
+import {
+  HomeSummaryMetric,
+  HomeSummaryMetricDivider,
+  HomeSummaryMetricsRow,
+  HomeSummaryProgress,
+  HomeSummaryTile,
+  HomeSummaryTileFooter,
+  HomeSummaryTileSkeleton,
+} from '@/design-system'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import { useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
-  formatWeightKg,
   formatMaintainGoalStatusLabel,
   goalProgressPercent,
   projectWeightGoalCompletion,
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
-import { cn } from '@/lib/utils'
+
+function formatWeightNumber(value: number) {
+  return value.toFixed(1).replace('.', ',')
+}
 
 export function GoalsHomeSummaryTile() {
   const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
@@ -27,80 +36,75 @@ export function GoalsHomeSummaryTile() {
       ? projectWeightGoalCompletion(goal, nutritionSettings, new Date(), userMeasurements)
       : null
 
+  const estimationLabel =
+    goal &&
+    goal.goal_type !== 'maintain' &&
+    projection?.projectedDate &&
+    !projection.isReached
+      ? `estimé le ${format(projection.projectedDate, 'd MMMM', { locale: fr })}`
+      : null
+
   return (
-    <Link
+    <HomeSummaryTile
       to="/app/goals"
-      className={cn(
-        'block rounded-2xl border border-secondary/20 bg-gradient-to-br from-soft-secondary/75 via-card to-soft-secondary/35 px-3.5 py-3 shadow-sm',
-        'transition-colors active:bg-muted/40',
-      )}
-      aria-label="Ouvrir la page objectifs"
+      ariaLabel="Ouvrir la page objectifs"
+      icon={Target}
+      title="Objectif poids"
+      iconClassName="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
     >
-      <div className="flex items-center gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-soft-secondary text-secondary-foreground">
-          <Target className="size-4" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-display text-sm font-bold text-foreground">
-              Objectif poids
-            </p>
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-          </div>
-
-          {goalLoading ? (
-            <div className="mt-2 space-y-2">
-              <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-              <div className="h-1.5 animate-pulse rounded-full bg-muted" />
-            </div>
-          ) : !goal ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Définissez votre objectif poids pour suivre votre progression.
-            </p>
-          ) : (
-            <>
-              <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
-                <span>
-                  <span className="font-display text-base font-black tabular-nums text-foreground">
-                    {formatWeightKg(goal.current_weight_kg)}
-                  </span>
-                  <span className="ml-1 text-muted-foreground">actuel</span>
-                </span>
-                <span className="text-muted-foreground/50">·</span>
-                <span>
-                  <span className="font-display text-base font-black tabular-nums text-foreground">
-                    {formatWeightKg(goal.target_weight_kg)}
-                  </span>
-                  <span className="ml-1 text-muted-foreground">cible</span>
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {goal.goal_type === 'maintain'
-                  ? formatMaintainGoalStatusLabel(goal)
-                  : WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
-                {goal.goal_type !== 'maintain' &&
-                projection?.projectedDate &&
-                !projection.isReached
-                  ? ` · estimé le ${format(projection.projectedDate, 'd MMM', { locale: fr })}`
-                  : ''}
-              </p>
-              {goal.goal_type === 'maintain' ? (
-                <WeightMaintainDriftGauge
-                  goal={goal}
-                  compact
-                  className="mt-2"
-                />
+      {goalLoading ? (
+        <HomeSummaryTileSkeleton />
+      ) : !goal ? (
+        <p className="text-sm text-muted-foreground">
+          Définissez votre objectif poids pour suivre votre progression.
+        </p>
+      ) : goal.goal_type === 'maintain' ? (
+        <>
+          <HomeSummaryMetricsRow>
+            <HomeSummaryMetric
+              value={formatWeightNumber(goal.current_weight_kg)}
+              label="kg actuel"
+            />
+            <HomeSummaryMetric
+              value={formatWeightNumber(goal.target_weight_kg)}
+              label="kg cible"
+              tone="accent"
+              className="text-right"
+            />
+          </HomeSummaryMetricsRow>
+          <HomeSummaryTileFooter left={formatMaintainGoalStatusLabel(goal)} />
+          <WeightMaintainDriftGauge goal={goal} compact className="mt-3" />
+        </>
+      ) : (
+        <>
+          <HomeSummaryMetricsRow>
+            <HomeSummaryMetric
+              value={formatWeightNumber(goal.current_weight_kg)}
+              label="kg actuel"
+            />
+            <HomeSummaryMetricDivider>
+              {goal.goal_type === 'lose' ? (
+                <TrendingDown className="size-5" strokeWidth={2.25} />
               ) : (
-                <Progress
-                  value={goalProgressPercent(goal)}
-                  className="mt-2 h-1.5 bg-muted"
-                />
+                <TrendingUp className="size-5" strokeWidth={2.25} />
               )}
-            </>
-          )}
-        </div>
-      </div>
-    </Link>
+            </HomeSummaryMetricDivider>
+            <HomeSummaryMetric
+              value={formatWeightNumber(goal.target_weight_kg)}
+              label="kg cible"
+              tone="accent"
+              className="text-right"
+            />
+          </HomeSummaryMetricsRow>
+
+          <HomeSummaryProgress value={goalProgressPercent(goal)} />
+
+          <HomeSummaryTileFooter
+            left={WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
+            right={estimationLabel}
+          />
+        </>
+      )}
+    </HomeSummaryTile>
   )
 }

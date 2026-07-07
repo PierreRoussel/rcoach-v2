@@ -1,6 +1,8 @@
+import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { ExerciseStatsPanel } from '@/components/stats/ExerciseStatsPanel'
+import { Button } from '@/components/ui/button'
 import {
   Drawer,
   DrawerContent,
@@ -52,9 +54,29 @@ export function ExerciseStatsDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl px-0">
         <DrawerHeader className="shrink-0 px-4 pb-2 text-left">
-          <DrawerTitle className="font-display font-black">
-            {displayExerciseName || 'Statistiques'}
-          </DrawerTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DrawerTitle className="min-w-0 flex-1 font-display font-black">
+              {displayExerciseName || 'Statistiques'}
+            </DrawerTitle>
+            {exercise ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 px-2 text-primary"
+                asChild
+              >
+                <Link
+                  to="/app/stats/exercises/$exerciseId"
+                  params={{ exerciseId: exercise.exerciseId }}
+                  search={{ period }}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Voir plus
+                </Link>
+              </Button>
+            ) : null}
+          </div>
           <DrawerDescription>
             {[muscleLabel, exercise?.equipment].filter(Boolean).join(' · ') ||
               "Progression et historique de l'exercice"}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarClock, ChevronRight } from 'lucide-react'
+import { AlertTriangle, RotateCcw } from 'lucide-react'
 import { endOfDay, startOfDay, subDays } from 'date-fns'
 
 import {
@@ -12,13 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { HomeNotificationTile } from '@/design-system'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useStartPlannedSession } from '@/hooks/useStartPlannedSession'
 import { useMyWorkoutsInRange } from '@/hooks/useWorkouts'
 import { getYesterdayMissedOccurrences } from '@/lib/schedule/missed-occurrences'
 import type { ScheduleOccurrence } from '@/lib/schedule/expand-occurrences'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
-import { cn } from '@/lib/utils'
 
 function formatMissedSessionMessage(occurrences: ScheduleOccurrence[]): string {
   const primary = occurrences[0]
@@ -82,36 +82,16 @@ export function MissedPlannedSessionHomeTile() {
 
   return (
     <>
-      <button
-        type="button"
-        className={cn(
-          'block w-full rounded-2xl border border-amber-500/35 bg-gradient-to-br from-amber-500/10 via-card to-card px-3.5 py-3 text-left shadow-sm',
-          'transition-colors active:bg-muted/40',
-        )}
-        aria-label={`Compléter la séance manquée : ${sessionLabel}`}
+      <HomeNotificationTile
+        tone="warning"
+        eyebrow="Séance manquée"
+        title={formatMissedSessionMessage(missedOccurrences)}
+        actionLabel="Compléter aujourd'hui"
+        actionIcon={RotateCcw}
+        icon={AlertTriangle}
+        ariaLabel={`Compléter la séance manquée : ${sessionLabel}`}
         onClick={() => setConfirmOpen(true)}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
-            <CalendarClock className="size-4" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-display text-sm font-bold text-foreground">
-                Séance manquée
-              </p>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-            </div>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {formatMissedSessionMessage(missedOccurrences)}
-            </p>
-            <p className="mt-2 text-xs font-medium text-primary">
-              Compléter aujourd&apos;hui
-            </p>
-          </div>
-        </div>
-      </button>
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
