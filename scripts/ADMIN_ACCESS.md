@@ -16,12 +16,15 @@ SELECT id, display_name, role FROM public.profiles WHERE role = 'admin';
 
 ## 2b. Migrations JWT obligatoires pour le dashboard admin
 
-Sans ces migrations, `is_request_admin()` ne lit pas l’id utilisateur dans le JWT Nhost → `forbidden` même si `profiles.role = admin` :
+Sans `request_hasura_user_id()` / `is_request_admin()` corrigées → `forbidden` même si `profiles.role = admin` :
 
 - `1744500000000_fix_admin_kpi_functions`
 - `1744700000000_fix_hasura_jwt_user_id`
+- `1744710000000_enhance_request_hasura_user_id`
 
-Contrôle des migrations appliquées (Hasura → Data → SQL) :
+**Correctif immédiat** (sans attendre le deploy) : exécuter [`hotfix-admin-jwt.sql`](../scripts/hotfix-admin-jwt.sql) dans Hasura → Data → SQL.
+
+Contrôle des migrations appliquées :
 
 ```sql
 SELECT version FROM hdb_catalog.schema_migrations ORDER BY version DESC LIMIT 10;
