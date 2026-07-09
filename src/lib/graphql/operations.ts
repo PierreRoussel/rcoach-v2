@@ -219,6 +219,23 @@ export type FriendMotivation = {
   } | null
 }
 
+export type UserBadge = {
+  id: string
+  user_id: string
+  badge_key: string
+  unlocked_at: string
+}
+
+export type FriendProfileDetail = {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  is_premium?: boolean
+  user_badges: UserBadge[]
+  workouts: WorkoutSummary[]
+  meal_log_entries: Array<{ logged_date: string; calories: number }>
+}
+
 export const GET_MY_AUTH_USER_LOCALE = `
   query GetMyAuthUserLocale($id: uuid!) {
     user(id: $id) {
@@ -313,6 +330,7 @@ export const LIST_MY_WORKOUTS = `
       title
       started_at
       ended_at
+      share_token
       workout_template_id
       workout_exercises {
         id
@@ -349,6 +367,7 @@ export const GET_MY_LAST_COMPLETED_WORKOUT = `
       title
       started_at
       ended_at
+      share_token
       workout_template_id
       workout_exercises {
         id
@@ -423,6 +442,7 @@ export const LIST_MY_WORKOUTS_PAGE = `
       title
       started_at
       ended_at
+      share_token
       workout_template_id
       workout_exercises {
         id
@@ -467,6 +487,7 @@ export const LIST_MY_WORKOUTS_STATS_PAGE = `
       title
       started_at
       ended_at
+      share_token
       workout_template_id
       workout_exercises {
         id
@@ -504,6 +525,7 @@ export const LIST_MY_WORKOUTS_STATS_ALL_PAGE = `
       title
       started_at
       ended_at
+      share_token
       workout_template_id
       workout_exercises {
         id
@@ -2874,6 +2896,97 @@ export const INSERT_SUPPORT_REQUEST = `
   mutation InsertSupportRequest($object: support_requests_insert_input!) {
     insert_support_requests_one(object: $object) {
       id
+    }
+  }
+`
+
+export const LIST_MY_BADGES = `
+  query ListMyBadges($userId: uuid!) {
+    user_badges(
+      where: { user_id: { _eq: $userId } }
+      order_by: { unlocked_at: desc }
+    ) {
+      id
+      user_id
+      badge_key
+      unlocked_at
+    }
+  }
+`
+
+export const INSERT_USER_BADGE = `
+  mutation InsertUserBadge($badgeKey: String!) {
+    insert_user_badges_one(
+      object: { badge_key: $badgeKey }
+      on_conflict: {
+        constraint: user_badges_user_id_badge_key_key
+        update_columns: []
+      }
+    ) {
+      id
+      user_id
+      badge_key
+      unlocked_at
+    }
+  }
+`
+
+export const GET_FRIEND_PROFILE = `
+  query GetFriendProfile(
+    $friendId: uuid!
+    $workoutLimit: Int!
+    $mealSince: date!
+    $workoutSince: timestamptz!
+  ) {
+    profiles_by_pk(id: $friendId) {
+      id
+      display_name
+      avatar_url
+      is_premium
+      user_badges(order_by: { unlocked_at: desc }) {
+        id
+        user_id
+        badge_key
+        unlocked_at
+      }
+      workouts(
+        where: {
+          ended_at: { _is_null: false }
+          started_at: { _gte: $workoutSince }
+        }
+        order_by: { started_at: desc }
+        limit: $workoutLimit
+      ) {
+        id
+        title
+        started_at
+        ended_at
+        share_token
+        workout_exercises(order_by: { sort_order: asc }) {
+          id
+          exercise {
+            id
+            name
+            name_fr
+            muscle_group
+            equipment
+          }
+          sets(order_by: { set_index: asc }) {
+            set_index
+            weight_kg
+            reps
+            set_type
+            rpe
+          }
+        }
+      }
+      meal_log_entries(
+        where: { logged_date: { _gte: $mealSince } }
+        order_by: { logged_date: desc }
+      ) {
+        logged_date
+        calories
+      }
     }
   }
 `

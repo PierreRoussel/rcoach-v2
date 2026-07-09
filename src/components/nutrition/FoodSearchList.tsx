@@ -49,8 +49,8 @@ function QuickAddButton({
       variant="outline"
       size="icon"
       className={cn(
-        'size-8 shrink-0 rounded-full transition-colors',
-        rowStatus === 'success' && 'border-primary bg-soft-primary text-soft-primary-fg',
+        'size-8 shrink-0 rounded-full border-primary text-primary transition-colors hover:bg-soft-primary hover:text-soft-primary-fg',
+        rowStatus === 'success' && 'bg-soft-primary text-soft-primary-fg',
       )}
       disabled={rowStatus === 'adding' || rowStatus === 'success'}
       onClick={() => onQuickAdd(result)}

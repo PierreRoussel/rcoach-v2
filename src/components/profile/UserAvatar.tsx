@@ -4,13 +4,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
 import { cn } from '@/lib/utils'
 
-type UserAvatarSize = 'sm' | 'md' | 'lg' | 'xl'
+type UserAvatarSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
 const sizeClasses: Record<UserAvatarSize, string> = {
   sm: 'size-9',
   md: 'size-10',
   lg: 'size-11',
   xl: 'size-16',
+  '2xl': 'size-24',
 }
 
 const badgeSizeClasses: Record<UserAvatarSize, string> = {
@@ -18,6 +19,7 @@ const badgeSizeClasses: Record<UserAvatarSize, string> = {
   md: 'size-4',
   lg: 'size-4.5',
   xl: 'size-5',
+  '2xl': 'size-6',
 }
 
 const fallbackIconClasses: Record<UserAvatarSize, string> = {
@@ -25,6 +27,7 @@ const fallbackIconClasses: Record<UserAvatarSize, string> = {
   md: 'size-4.5',
   lg: 'size-5',
   xl: 'size-7',
+  '2xl': 'size-10',
 }
 
 function resolveAvatarUrl(avatarUrl?: string | null): string | null {
@@ -65,7 +68,9 @@ export function UserAvatar({
           delayMs={0}
           className={cn(
             'bg-primary/15 font-bold text-primary',
-            size === 'xl' ? 'font-display text-lg font-black' : 'text-xs',
+            size === 'xl' || size === '2xl'
+              ? 'font-display text-lg font-black'
+              : 'text-xs',
           )}
         >
           {initials ? (

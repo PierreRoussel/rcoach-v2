@@ -16,6 +16,7 @@ import {
   type WorkoutRecapData,
 } from '@/components/workout/WorkoutRecapDialog'
 import { WorkoutCelebrationOverlay } from '@/components/workout/WorkoutCelebrationOverlay'
+import { BadgeUnlockOverlay } from '@/components/gamification/BadgeUnlockOverlay'
 import { OverloadTeaserOverlay } from '@/components/subscription/OverloadTeaserOverlay'
 import { Button } from '@/components/ui/button'
 import {
@@ -55,6 +56,8 @@ import {
 } from '@/hooks/useWorkoutTemplates'
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
+import { useSyncMyBadges } from '@/hooks/useBadges'
+import { getBadgeDefinition, type BadgeDefinition } from '@/lib/gamification/badges'
 import { pushWorkoutSession } from '@/lib/health/push-workout-session'
 import { readHeartRateSummary } from '@/lib/health/read-heart-rate-summary'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -228,6 +231,9 @@ function ActiveWorkoutPage() {
   } | null>(null)
   const [overloadTeaserOpen, setOverloadTeaserOpen] = useState(false)
   const [overloadQuotaVersion, setOverloadQuotaVersion] = useState(0)
+  const [pendingBadgeUnlocks, setPendingBadgeUnlocks] = useState<BadgeDefinition[]>([])
+  const [badgeOverlayOpen, setBadgeOverlayOpen] = useState(false)
+  const syncBadges = useSyncMyBadges()
 
   const exerciseIds = useMemo(
     () => activeExercises.map((exercise) => exercise.exerciseId),
@@ -299,9 +305,31 @@ function ActiveWorkoutPage() {
       return
     }
 
+    if (pendingBadgeUnlocks.length > 0) {
+      setBadgeOverlayOpen(true)
+      return
+    }
+
     if (finishedWorkoutId) {
       setIsRecapFlow(false)
       setCelebrationQueue([])
+      void navigate({
+        to: '/app/workouts/$workoutId',
+        params: { workoutId: finishedWorkoutId },
+      })
+      return
+    }
+
+    setRecapOpen(true)
+  }
+
+  function dismissBadgeOverlay() {
+    setBadgeOverlayOpen(false)
+
+    if (finishedWorkoutId) {
+      setIsRecapFlow(false)
+      setCelebrationQueue([])
+      setPendingBadgeUnlocks([])
       void navigate({
         to: '/app/workouts/$workoutId',
         params: { workoutId: finishedWorkoutId },
@@ -459,8 +487,16 @@ function ActiveWorkoutPage() {
         startedAt: draft.startedAt,
       })
 
+      const newBadgeKeys = await syncBadges.mutateAsync().catch(() => [] as const)
+      const unlockedBadges = newBadgeKeys
+        .map((key) => getBadgeDefinition(key))
+        .filter((badge): badge is BadgeDefinition => badge != null)
+      setPendingBadgeUnlocks(unlockedBadges)
+
       if (celebrations.length > 0) {
         setCelebrationQueue(celebrations)
+      } else if (unlockedBadges.length > 0) {
+        setBadgeOverlayOpen(true)
       } else {
         setRecapOpen(true)
       }
@@ -585,6 +621,11 @@ function ActiveWorkoutPage() {
             currentCelebration?.kind === 'weekly_streak' ? currentCelebration.streak : undefined
           }
           onClose={dismissCelebration}
+        />
+        <BadgeUnlockOverlay
+          badges={pendingBadgeUnlocks}
+          open={badgeOverlayOpen}
+          onClose={dismissBadgeOverlay}
         />
       </>
     )

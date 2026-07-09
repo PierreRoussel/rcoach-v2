@@ -4,6 +4,7 @@ import { format, startOfDay, subDays, subWeeks } from 'date-fns'
 import {
   COUNT_UNREAD_MOTIVATIONS,
   DELETE_FRIENDSHIP,
+  GET_FRIEND_PROFILE,
   INSERT_FRIEND_MOTIVATION,
   INSERT_FRIENDSHIP,
   LIST_ACCEPTED_FRIENDS_ACTIVITY,
@@ -20,6 +21,7 @@ import {
   UPDATE_FRIENDSHIP_STATUS,
   type FriendMotivation,
   type Friendship,
+  type FriendProfileDetail,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { summarizeFriendActivity } from '@/lib/social/friend-activity'
@@ -41,6 +43,32 @@ const SENT_MOTIVATIONS_KEY = ['friend-motivations', 'sent']
 
 function friendsQueryKey(userId: string | undefined) {
   return [...FRIENDS_QUERY_KEY, userId]
+}
+
+export function useFriendProfile(friendId: string) {
+  const { nhost, isAuthenticated } = useAuth()
+  const now = new Date()
+  const mealSince = format(subDays(now, NUTRITION_STREAK_LOOKBACK_DAYS), 'yyyy-MM-dd')
+  const workoutSince = subWeeks(startOfDay(now), WORKOUT_STREAK_LOOKBACK_WEEKS).toISOString()
+
+  return useQuery({
+    queryKey: [...FRIENDS_QUERY_KEY, 'profile', friendId, mealSince, workoutSince],
+    enabled: isAuthenticated && Boolean(friendId),
+    queryFn: async () => {
+      const data = await graphqlRequest<{ profiles_by_pk: FriendProfileDetail | null }>(
+        nhost,
+        GET_FRIEND_PROFILE,
+        {
+          friendId,
+          workoutLimit: 5,
+          mealSince,
+          workoutSince,
+        },
+      )
+
+      return data.profiles_by_pk
+    },
+  })
 }
 
 export function useFriendships() {

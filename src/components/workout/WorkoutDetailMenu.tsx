@@ -1,8 +1,9 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { BookmarkPlus, CalendarClock, Link2, MoreVertical, Trash2 } from 'lucide-react'
+import { BookmarkPlus, CalendarClock, MoreVertical, Share2, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
+import { WorkoutShareDialog } from '@/components/workout/WorkoutShareDialog'
 import { TemplateLimitDialog } from '@/components/subscription/TemplateLimitDialog'
 import {
   AlertDialog,
@@ -22,13 +23,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { WorkoutDetail, WorkoutSummary } from '@/lib/graphql/operations'
-import { isGraphqlMissingFieldError } from '@/lib/graphql/schema-errors'
 import { buildPlanningSearchParams } from '@/lib/schedule/planning-navigation'
 import {
-  copyWorkoutShareLink,
-  ensureWorkoutShareToken,
   useCreateTemplateFromWorkout,
-  useEnableWorkoutShare,
   useTemplateBySourceWorkout,
 } from '@/hooks/useWorkoutSharing'
 import { useDeleteWorkout } from '@/hooks/useWorkouts'
@@ -70,7 +67,6 @@ export function WorkoutDetailMenu({
     menuOpen && !workout.workout_template_id,
   )
   const linkedTemplateId = workout.workout_template_id ?? savedTemplate?.id ?? null
-  const enableShare = useEnableWorkoutShare()
   const createTemplate = useCreateTemplateFromWorkout()
   const deleteWorkout = useDeleteWorkout()
   const { entitled: hasUnlimitedTemplates } = useEntitlement('unlimited_templates')
@@ -82,43 +78,8 @@ export function WorkoutDetailMenu({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [limitDialogOpen, setLimitDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [currentShareToken, setCurrentShareToken] = useState(
-    workout.share_token,
-  )
-
-  async function handleShare() {
-    setError(null)
-    setMessage(null)
-
-    try {
-      const shareToken = await ensureWorkoutShareToken(
-        { ...workout, share_token: currentShareToken ?? workout.share_token },
-        async (input) => {
-          const result = await enableShare.mutateAsync(input)
-          setCurrentShareToken(result.share_token)
-          return result
-        },
-      )
-
-      const url = await copyWorkoutShareLink(shareToken)
-      setMessage(`Lien copie : ${url}`)
-    } catch (shareError) {
-      if (isGraphqlMissingFieldError(shareError, 'share_token')) {
-        setError(
-          'Le partage nécessite un redéploiement Nhost (migration workout_sharing).',
-        )
-        return
-      }
-
-      setError(
-        shareError instanceof Error
-          ? shareError.message
-          : 'Impossible de partager la séance.',
-      )
-    }
-  }
 
   async function handleSaveAsTemplate(name: string) {
     setError(null)
@@ -158,8 +119,7 @@ export function WorkoutDetailMenu({
     }
   }
 
-  const isBusy =
-    enableShare.isPending || createTemplate.isPending || deleteWorkout.isPending
+  const isBusy = createTemplate.isPending || deleteWorkout.isPending
 
   return (
     <div
@@ -182,9 +142,9 @@ export function WorkoutDetailMenu({
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem
             disabled={isBusy}
-            onClick={() => void handleShare()}
+            onClick={() => setShareDialogOpen(true)}
           >
-            <Link2 className="size-4" />
+            <Share2 className="size-4" />
             Partager la séance
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -243,16 +203,6 @@ export function WorkoutDetailMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {!compact && currentShareToken ? (
-        <p className="max-w-48 truncate text-right font-data text-[10px] text-muted-foreground">
-          Lien actif
-        </p>
-      ) : null}
-      {!compact && message ? (
-        <p className="max-w-56 text-right text-xs text-success">
-          {message}
-        </p>
-      ) : null}
       {error ? (
         <p
           className={
@@ -264,6 +214,12 @@ export function WorkoutDetailMenu({
           {error}
         </p>
       ) : null}
+
+      <WorkoutShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        workout={workout}
+      />
 
       <TemplateLimitDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} />
 

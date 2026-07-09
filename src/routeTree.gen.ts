@@ -54,6 +54,7 @@ import { Route as AppSessionsNewRouteImport } from './routes/app/sessions/new'
 import { Route as AppSessionsTemplateIdRouteImport } from './routes/app/sessions/$templateId'
 import { Route as AppProfileSubscriptionRouteImport } from './routes/app/profile/subscription'
 import { Route as AppProfileSettingsRouteImport } from './routes/app/profile/settings'
+import { Route as AppFriendsFriendIdRouteImport } from './routes/app/friends/$friendId'
 import { Route as AppDietSettingsRouteImport } from './routes/app/diet/settings'
 import { Route as AppDietAddRouteImport } from './routes/app/diet/add'
 import { Route as AppStatsExercisesExerciseIdRouteImport } from './routes/app/stats/exercises/$exerciseId'
@@ -286,6 +287,11 @@ const AppProfileSettingsRoute = AppProfileSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppProfileRouteRoute,
 } as any)
+const AppFriendsFriendIdRoute = AppFriendsFriendIdRouteImport.update({
+  id: '/friends/$friendId',
+  path: '/friends/$friendId',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDietSettingsRoute = AppDietSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -339,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
+  '/app/friends/$friendId': typeof AppFriendsFriendIdRoute
   '/app/profile/settings': typeof AppProfileSettingsRoute
   '/app/profile/subscription': typeof AppProfileSubscriptionRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/coach': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
+  '/app/friends/$friendId': typeof AppFriendsFriendIdRoute
   '/app/profile/settings': typeof AppProfileSettingsRoute
   '/app/profile/subscription': typeof AppProfileSubscriptionRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
+  '/app/friends/$friendId': typeof AppFriendsFriendIdRoute
   '/app/profile/settings': typeof AppProfileSettingsRoute
   '/app/profile/subscription': typeof AppProfileSubscriptionRoute
   '/app/sessions/$templateId': typeof AppSessionsTemplateIdRoute
@@ -494,6 +503,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/app/diet/add'
     | '/app/diet/settings'
+    | '/app/friends/$friendId'
     | '/app/profile/settings'
     | '/app/profile/subscription'
     | '/app/sessions/$templateId'
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/app/diet/add'
     | '/app/diet/settings'
+    | '/app/friends/$friendId'
     | '/app/profile/settings'
     | '/app/profile/subscription'
     | '/app/sessions/$templateId'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/app/diet/add'
     | '/app/diet/settings'
+    | '/app/friends/$friendId'
     | '/app/profile/settings'
     | '/app/profile/subscription'
     | '/app/sessions/$templateId'
@@ -958,6 +970,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileSettingsRouteImport
       parentRoute: typeof AppProfileRouteRoute
     }
+    '/app/friends/$friendId': {
+      id: '/app/friends/$friendId'
+      path: '/friends/$friendId'
+      fullPath: '/app/friends/$friendId'
+      preLoaderRoute: typeof AppFriendsFriendIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/diet/settings': {
       id: '/app/diet/settings'
       path: '/settings'
@@ -1051,6 +1070,7 @@ interface AppRouteRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppStatsRoute: typeof AppStatsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppFriendsFriendIdRoute: typeof AppFriendsFriendIdRoute
   AppSessionsTemplateIdRoute: typeof AppSessionsTemplateIdRoute
   AppSessionsNewRoute: typeof AppSessionsNewRoute
   AppWorkoutActiveRoute: typeof AppWorkoutActiveRoute
@@ -1071,6 +1091,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppStatsRoute: AppStatsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppFriendsFriendIdRoute: AppFriendsFriendIdRoute,
   AppSessionsTemplateIdRoute: AppSessionsTemplateIdRoute,
   AppSessionsNewRoute: AppSessionsNewRoute,
   AppWorkoutActiveRoute: AppWorkoutActiveRoute,

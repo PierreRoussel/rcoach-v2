@@ -21,6 +21,7 @@ type WorkoutHistoryCardProps = {
   allWorkouts?: WorkoutSummary[]
   /** Pleine largeur dans une liste (sans bordure interne). */
   variant?: 'standalone' | 'embedded'
+  readOnly?: boolean
   className?: string
 }
 
@@ -39,6 +40,7 @@ export function WorkoutHistoryCard({
   profile,
   allWorkouts = [],
   variant = 'standalone',
+  readOnly = false,
   className,
 }: WorkoutHistoryCardProps) {
   const displayName = profile?.display_name ?? 'Athlète'
@@ -48,43 +50,26 @@ export function WorkoutHistoryCard({
   const visibleExercises = workout.workout_exercises.slice(0, VISIBLE_EXERCISES)
   const hiddenCount = workout.workout_exercises.length - visibleExercises.length
 
-  return (
-    <div
-      className={cn(
-        'relative block w-full transition-colors',
-        variant === 'standalone'
-          ? 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm hover:shadow-md'
-          : 'w-full border-border px-4 py-3 pr-12 hover:bg-muted/20',
-        className,
-      )}
-    >
-      <div className="absolute right-3 top-3 z-10">
-        <WorkoutDetailMenu workout={workout} compact />
-      </div>
+  const body = (
+    <>
+      <WorkoutSummaryHeader
+        displayName={displayName}
+        avatarUrl={profile?.avatar_url ?? null}
+        isPremium={profile?.is_premium ?? false}
+        startedAt={workout.started_at}
+        title={workout.title}
+        duration={duration}
+        volumeKg={volumeKg}
+        recordsCount={recordsCount}
+        compact
+      />
 
-      <Link
-        to="/app/workouts/$workoutId"
-        params={{ workoutId: workout.id }}
-        className="block w-full min-w-0"
-      >
-        <WorkoutSummaryHeader
-          displayName={displayName}
-          avatarUrl={profile?.avatar_url ?? null}
-          isPremium={profile?.is_premium ?? false}
-          startedAt={workout.started_at}
-          title={workout.title}
-          duration={duration}
-          volumeKg={volumeKg}
-          recordsCount={recordsCount}
-          compact
-        />
+      {workout.workout_exercises.length > 0 ? (
+        <ul className="mt-3 space-y-1.5">
+          {visibleExercises.map((entry) => {
+            const summary = formatExerciseSummary(entry)
 
-        {workout.workout_exercises.length > 0 ? (
-          <ul className="mt-3 space-y-1.5">
-            {visibleExercises.map((entry) => {
-              const summary = formatExerciseSummary(entry)
-
-              return (
+            return (
               <li
                 key={entry.id}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -98,21 +83,51 @@ export function WorkoutHistoryCard({
                   {summary.suffix}
                 </span>
               </li>
-              )
-            })}
-            {hiddenCount > 0 ? (
-              <li className="pl-9 text-xs text-muted-foreground">
-                Afficher {hiddenCount} exercice{hiddenCount > 1 ? 's' : ''} de plus
-              </li>
-            ) : null}
-          </ul>
-        ) : (
-          <p className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
-            <Dumbbell className="size-3" />
-            {countWorkoutSets(workout)} sets
-          </p>
-        )}
-      </Link>
+            )
+          })}
+          {hiddenCount > 0 ? (
+            <li className="pl-9 text-xs text-muted-foreground">
+              Afficher {hiddenCount} exercice{hiddenCount > 1 ? 's' : ''} de plus
+            </li>
+          ) : null}
+        </ul>
+      ) : (
+        <p className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
+          <Dumbbell className="size-3" />
+          {countWorkoutSets(workout)} sets
+        </p>
+      )}
+    </>
+  )
+
+  return (
+    <div
+      className={cn(
+        'relative block w-full transition-colors',
+        variant === 'standalone'
+          ? 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm hover:shadow-md'
+          : 'w-full rounded-2xl border border-border px-4 py-3',
+        !readOnly && variant === 'embedded' ? 'pr-12 hover:bg-muted/20' : '',
+        className,
+      )}
+    >
+      {!readOnly ? (
+        <div className="absolute right-3 top-3 z-10">
+          <WorkoutDetailMenu workout={workout} compact />
+        </div>
+      ) : null}
+
+      {readOnly ? (
+        <div className="block w-full min-w-0">{body}</div>
+      ) : (
+        <Link
+          to="/app/workouts/$workoutId"
+          params={{ workoutId: workout.id }}
+          className="block w-full min-w-0"
+        >
+          {body}
+        </Link>
+      )}
     </div>
   )
 }

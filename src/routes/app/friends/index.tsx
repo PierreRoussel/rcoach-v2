@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Check, Copy, Loader2, UserMinus, UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -315,13 +315,19 @@ function FriendsPage() {
               className="flex items-center justify-between gap-3 rounded-2xl border border-border p-3"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <UserAvatar
-                  displayName={friend.display_name}
-                  avatarUrl={friend.avatar_url}
-                  isPremium={friend.is_premium ?? false}
-                  size="md"
-                />
-                <p className="truncate font-display font-bold">{friend.display_name}</p>
+                <Link
+                  to="/app/friends/$friendId"
+                  params={{ friendId: friend.id }}
+                  className="flex min-w-0 items-center gap-3 rounded-xl transition-colors hover:bg-muted/30"
+                >
+                  <UserAvatar
+                    displayName={friend.display_name}
+                    avatarUrl={friend.avatar_url}
+                    isPremium={friend.is_premium ?? false}
+                    size="md"
+                  />
+                  <p className="truncate font-display font-bold">{friend.display_name}</p>
+                </Link>
               </div>
               <div className="flex shrink-0 gap-2">
                 <FriendMotivationSendButton

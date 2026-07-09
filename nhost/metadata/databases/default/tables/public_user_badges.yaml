@@ -1,0 +1,48 @@
+table:
+  name: user_badges
+  schema: public
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - user_id
+        - badge_key
+        - unlocked_at
+      filter:
+        _or:
+          - user_id:
+              _eq: X-Hasura-User-Id
+          - user:
+              coach_clients_as_athlete:
+                coach_id:
+                  _eq: X-Hasura-User-Id
+                status:
+                  _eq: active
+          - user:
+              friendships_as_addressee:
+                requester_id:
+                  _eq: X-Hasura-User-Id
+                status:
+                  _eq: accepted
+          - user:
+              friendships_as_requester:
+                addressee_id:
+                  _eq: X-Hasura-User-Id
+                status:
+                  _eq: accepted
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - badge_key
+        - unlocked_at

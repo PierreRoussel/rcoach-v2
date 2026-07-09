@@ -72,6 +72,13 @@ array_relationships:
         table:
           name: meal_log_entries
           schema: public
+  - name: user_badges
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: user_badges
+          schema: public
 select_permissions:
   - role: user
     permission:

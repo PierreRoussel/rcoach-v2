@@ -32,6 +32,22 @@ select_permissions:
                       _eq: X-Hasura-User-Id
                     status:
                       _eq: active
+          - workout_exercise:
+              workout:
+                user:
+                  friendships_as_addressee:
+                    requester_id:
+                      _eq: X-Hasura-User-Id
+                    status:
+                      _eq: accepted
+          - workout_exercise:
+              workout:
+                user:
+                  friendships_as_requester:
+                    addressee_id:
+                      _eq: X-Hasura-User-Id
+                    status:
+                      _eq: accepted
   - role: public
     permission:
       columns:

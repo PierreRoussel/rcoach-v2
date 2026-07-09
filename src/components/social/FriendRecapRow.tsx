@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { WorkoutStreakIcon } from '@/components/schedule/WorkoutStreakIcon'
 
 import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
@@ -9,6 +10,7 @@ import type { MotivationNotification } from '@/lib/social/motivation-notificatio
 import type { SentMotivationDisplay } from '@/lib/social/sent-motivation'
 
 type FriendRecapRowProps = {
+  friendId: string
   displayName: string
   avatarUrl: string | null
   isPremium?: boolean
@@ -20,6 +22,7 @@ type FriendRecapRowProps = {
 }
 
 export function FriendRecapRow({
+  friendId,
   displayName,
   avatarUrl,
   isPremium = false,
@@ -43,27 +46,33 @@ export function FriendRecapRow({
       ) : null}
 
       <div className={`flex items-center gap-3 p-3 ${motivationNotification ? 'pt-10' : ''}`}>
-        <UserAvatar
-          displayName={displayName}
-          avatarUrl={avatarUrl}
-          isPremium={isPremium}
-          size="lg"
-        />
+        <Link
+          to="/app/friends/$friendId"
+          params={{ friendId }}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl transition-colors hover:bg-muted/30"
+        >
+          <UserAvatar
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            isPremium={isPremium}
+            size="lg"
+          />
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-display font-black text-foreground">{displayName}</p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            <Pill tone="solid-purple" className="gap-1 py-0.5 text-[10px]">
-              <WorkoutStreakIcon variant="on-accent" className="size-3" />
-              {activity.workoutStreak} sem.
-            </Pill>
-            <NutritionStreakPill
-              streak={activity.nutritionStreak}
-              format="compact"
-              className="gap-1 py-0.5 text-[10px]"
-            />
+          <div className="min-w-0 flex-1 text-left">
+            <p className="truncate font-display font-black text-foreground">{displayName}</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              <Pill tone="solid-purple" className="gap-1 py-0.5 text-[10px]">
+                <WorkoutStreakIcon variant="on-accent" className="size-3" />
+                {activity.workoutStreak} sem.
+              </Pill>
+              <NutritionStreakPill
+                streak={activity.nutritionStreak}
+                format="compact"
+                className="gap-1 py-0.5 text-[10px]"
+              />
+            </div>
           </div>
-        </div>
+        </Link>
 
         <FriendMotivationSendButton
           friendName={displayName}

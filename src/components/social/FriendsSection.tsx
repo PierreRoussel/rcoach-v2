@@ -93,6 +93,7 @@ export function FriendsSection() {
           {items.map((item) => (
             <FriendRecapRow
               key={item.friendshipId}
+              friendId={item.friend.id}
               displayName={item.friend.display_name}
               avatarUrl={item.friend.avatar_url}
               isPremium={item.friend.is_premium ?? false}

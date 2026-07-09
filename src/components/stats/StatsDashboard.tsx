@@ -70,8 +70,6 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
 
   return (
     <div className={cn('space-y-4', className)}>
-      <StatsPeriodSelector value={period} onChange={setPeriod} />
-
       {isLoading || isLoadingAll ? (
         <p className="text-sm text-muted-foreground">
           {isLoading
@@ -88,10 +86,13 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
       {!isLoading && !isLoadingAll && !error ? (
         <PremiumGate
           entitled={hasAdvancedStats}
+          overlayPosition="top"
           title="Statistiques avancées"
           description="Débloquez les graphiques détaillés, la heatmap musculaire et l’analyse complète de votre progression."
         >
-          <>
+          <div className="space-y-4">
+          <StatsPeriodSelector value={period} onChange={setPeriod} />
+
           <div className="grid grid-cols-2 gap-3">
             <StatsSummaryCard
               icon={<Activity className="size-4 stroke-[2.25] text-primary" />}
@@ -248,7 +249,7 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
               </Card>
             </>
           ) : null}
-          </>
+          </div>
         </PremiumGate>
       ) : null}
     </div>
