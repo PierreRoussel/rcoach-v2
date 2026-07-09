@@ -70,8 +70,8 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
+-- Nhost migrations cannot DROP/CREATE triggers on auth.users (not table owner).
+-- Neutralize handle_new_user so on_auth_user_created becomes a no-op if still attached.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql

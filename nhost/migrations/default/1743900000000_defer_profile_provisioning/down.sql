@@ -32,12 +32,8 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
+-- Trigger on auth.users cannot be recreated from Hasura migrations on Nhost.
+-- Restoring handle_new_user re-enables auto-provisioning if on_auth_user_created still exists.
 
 CREATE OR REPLACE FUNCTION public.ensure_user_profile()
 RETURNS uuid
