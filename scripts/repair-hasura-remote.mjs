@@ -97,6 +97,25 @@ async function main() {
       }
       console.log(`Table ${table} already tracked`)
     }
+
+    try {
+      await hasuraMetadata(
+        'pg_create_select_permission',
+        {
+          source: 'default',
+          table: { schema: 'public', name: table },
+          role: 'user',
+          permission: { columns: ['value'], filter: {} },
+        },
+        env,
+      )
+      console.log(`Select permission on ${table} (user)`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (!message.includes('already exists')) {
+        throw error
+      }
+    }
   }
 
   const functions = [
@@ -126,6 +145,23 @@ async function main() {
         throw error
       }
       console.log(`Function ${fn.name} already tracked`)
+    }
+
+    try {
+      await hasuraMetadata(
+        'pg_create_function_permission',
+        {
+          function: { schema: 'public', name: fn.name },
+          role: 'user',
+          permission: {},
+        },
+        env,
+      )
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (!message.includes('already exists')) {
+        throw error
+      }
     }
   }
 

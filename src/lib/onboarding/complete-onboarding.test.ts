@@ -33,9 +33,9 @@ describe('completeAppOnboarding', () => {
     vi.mocked(ensureUserProfile).mockResolvedValue('user-1')
   })
 
-  it('calls complete_my_onboarding as a query', async () => {
+  it('calls complete_my_onboarding as a mutation', async () => {
     vi.mocked(graphqlRequest).mockResolvedValueOnce({
-      complete_my_onboarding: '2026-01-01T00:00:00.000Z',
+      complete_my_onboarding: { value: '2026-01-01T00:00:00.000Z' },
     })
 
     await completeAppOnboarding({} as NhostClient, 'user-1', emptyForm)
@@ -46,7 +46,7 @@ describe('completeAppOnboarding', () => {
   it('falls back to onboarding_completed_at update when the rpc is missing', async () => {
     vi.mocked(graphqlRequest).mockImplementation(async (_nhost, query) => {
       if (query === COMPLETE_MY_ONBOARDING) {
-        throw new Error("field 'complete_my_onboarding' not found in type: 'query_root'")
+        throw new Error("field 'complete_my_onboarding' not found in type: 'mutation_root'")
       }
 
       if (query === UPDATE_MY_PROFILE) {
@@ -72,7 +72,7 @@ describe('completeAppOnboarding', () => {
   it('throws when neither rpc nor update path is available', async () => {
     vi.mocked(graphqlRequest).mockImplementation(async (_nhost, query) => {
       if (query === COMPLETE_MY_ONBOARDING) {
-        throw new Error("field 'complete_my_onboarding' not found in type: 'query_root'")
+        throw new Error("field 'complete_my_onboarding' not found in type: 'mutation_root'")
       }
 
       if (query === UPDATE_MY_PROFILE) {
