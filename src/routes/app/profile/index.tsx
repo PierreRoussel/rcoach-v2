@@ -29,8 +29,7 @@ import { LEGAL_PATHS } from '@/lib/legal/config'
 import { ProfileSubscriptionHighlightCard } from '@/components/profile/ProfileSubscriptionHighlightCard'
 import { UserMeasurementsSection } from '@/components/profile/UserMeasurementsSection'
 import { FriendsSection } from '@/components/social/FriendsSection'
-import { ProfileBadgesSection } from '@/components/gamification/ProfileBadgesSection'
-import { GoalsSection } from '@/components/goals/GoalsSection'
+import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
 import { ThemePicker, ThemeSetting } from '@/design-system'
 import { themeSupportsColorModePreference } from '@/design-system/themes'
 import { useTheme } from '@/design-system/theme-provider'
@@ -145,13 +144,11 @@ function ProfilePage() {
 
   return (
     <div className="space-y-4">
+      <ProfileIdentitySection />
+
       <FriendsSection />
 
-      <ProfileBadgesSection />
-
       <UserMeasurementsSection />
-
-      <GoalsSection />
 
       <Card className="rounded-2xl border-border">
         <CardHeader>

@@ -22,6 +22,7 @@ type WorkoutHistoryCardProps = {
   /** Pleine largeur dans une liste (sans bordure interne). */
   variant?: 'standalone' | 'embedded'
   readOnly?: boolean
+  onPress?: () => void
   className?: string
 }
 
@@ -46,6 +47,7 @@ export function WorkoutHistoryCard({
   allWorkouts = [],
   variant = 'standalone',
   readOnly = false,
+  onPress,
   className,
 }: WorkoutHistoryCardProps) {
   const displayName = profile?.display_name ?? 'Athlète'
@@ -116,6 +118,7 @@ export function WorkoutHistoryCard({
         variant === 'standalone'
           ? 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm hover:shadow-md'
           : 'w-full rounded-2xl border border-border px-4 py-3',
+        readOnly && onPress ? 'cursor-pointer hover:bg-muted/20' : '',
         !readOnly && variant === 'embedded' ? 'pr-12 hover:bg-muted/20' : '',
         className,
       )}
@@ -126,7 +129,15 @@ export function WorkoutHistoryCard({
         </div>
       ) : null}
 
-      {readOnly ? (
+      {readOnly && onPress ? (
+        <button
+          type="button"
+          className="block w-full min-w-0 text-left"
+          onClick={onPress}
+        >
+          {body}
+        </button>
+      ) : readOnly ? (
         <div className="block w-full min-w-0">{body}</div>
       ) : (
         <Link

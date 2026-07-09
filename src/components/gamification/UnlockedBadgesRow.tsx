@@ -5,12 +5,18 @@ import { BadgeDetailDrawer } from '@/components/gamification/BadgeDetailDrawer'
 import type { BadgeShelfItem } from '@/hooks/useBadges'
 import { cn } from '@/lib/utils'
 
-type FriendProfileBadgeRowProps = {
+type UnlockedBadgesRowProps = {
   items: BadgeShelfItem[]
   isLoading?: boolean
+  /** Masquer la ligne si vide (ami) ou afficher 3 emplacements vides (profil perso). */
+  whenEmpty?: 'hide' | 'placeholders'
 }
 
-export function FriendProfileBadgeRow({ items, isLoading = false }: FriendProfileBadgeRowProps) {
+export function UnlockedBadgesRow({
+  items,
+  isLoading = false,
+  whenEmpty = 'hide',
+}: UnlockedBadgesRowProps) {
   const [selectedBadge, setSelectedBadge] = useState<BadgeShelfItem | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const unlockedItems = items.filter((item) => item.unlocked)
@@ -43,7 +49,23 @@ export function FriendProfileBadgeRow({ items, isLoading = false }: FriendProfil
   }
 
   if (unlockedItems.length === 0) {
-    return null
+    if (whenEmpty === 'hide') {
+      return null
+    }
+
+    return (
+      <div className="flex divide-x divide-border/50">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex min-w-[33.333%] flex-1 items-center justify-center py-2"
+            aria-hidden={index > 0}
+          >
+            <span className="size-12 rounded-full border border-dashed border-border/70 bg-background/30" />
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (

@@ -1133,6 +1133,188 @@ html:active-view-transition-type(fade)::view-transition-new(root) {
   animation: workout-celebration-spark-keyframes 2.2s ease-in-out 0.8s infinite;
 }
 
+@keyframes badge-unlock-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes badge-unlock-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  70% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes badge-unlock-pop-delay {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes badge-unlock-blob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate3d(12px, -18px, 0) scale(1.06);
+  }
+
+  66% {
+    transform: translate3d(-10px, 10px, 0) scale(0.96);
+  }
+}
+
+@keyframes badge-unlock-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes badge-unlock-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes badge-unlock-ring {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.55;
+  }
+
+  100% {
+    transform: scale(1.06);
+    opacity: 0.9;
+  }
+}
+
+@keyframes badge-unlock-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes badge-unlock-spark {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8) rotate(-12deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(12deg);
+  }
+}
+
+@keyframes badge-unlock-ray {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scaleY(0.85);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scaleY(1.05);
+  }
+}
+
+@keyframes badge-unlock-particle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-badge-unlock-enter {
+  animation: badge-unlock-enter 360ms ease-out both;
+}
+
+.animate-badge-unlock-pop {
+  animation: badge-unlock-pop 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-badge-unlock-pop-delay {
+  animation: badge-unlock-pop-delay 560ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+
+.animate-badge-unlock-blob {
+  animation: badge-unlock-blob ease-in-out infinite;
+}
+
+.animate-badge-unlock-float {
+  animation: badge-unlock-float 3.4s ease-in-out infinite;
+}
+
+.animate-badge-unlock-glow {
+  animation: badge-unlock-glow 2.6s ease-in-out infinite;
+}
+
+.animate-badge-unlock-ring {
+  animation: badge-unlock-ring 2.8s ease-in-out infinite alternate;
+}
+
+.animate-badge-unlock-orbit {
+  animation: badge-unlock-orbit 16s linear infinite;
+}
+
+.animate-badge-unlock-spark {
+  animation: badge-unlock-spark 2.4s ease-in-out infinite;
+}
+
+.animate-badge-unlock-ray {
+  animation: badge-unlock-ray 2.2s ease-in-out infinite;
+}
+
+.animate-badge-unlock-particle {
+  animation: badge-unlock-particle 2s ease-in-out infinite;
+}
+
 @keyframes premium-home-welcome-exit {
   from {
     opacity: 1;

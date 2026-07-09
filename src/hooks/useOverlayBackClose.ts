@@ -5,6 +5,16 @@ type UseOverlayBackCloseOptions = {
   enabled?: boolean
 }
 
+type OverlayStackEntry = {
+  historyKey: string
+  historyPushed: boolean
+  closeFromBack: () => void
+}
+
+const overlayStack: OverlayStackEntry[] = []
+let globalPopStateListenerAttached = false
+let ignoreNextPopState = false
+
 function pushOverlayHistoryEntry(historyKey: string) {
   window.history.pushState(
     { ...window.history.state, [historyKey]: true },
@@ -23,6 +33,48 @@ function historyHasOverlayEntry(historyKey: string) {
   )
 }
 
+function attachGlobalPopStateListener() {
+  if (globalPopStateListenerAttached) {
+    return
+  }
+
+  globalPopStateListenerAttached = true
+
+  window.addEventListener('popstate', () => {
+    if (ignoreNextPopState) {
+      ignoreNextPopState = false
+      return
+    }
+
+    const top = overlayStack[overlayStack.length - 1]
+    if (!top?.historyPushed) {
+      return
+    }
+
+    top.historyPushed = false
+    top.closeFromBack()
+  })
+}
+
+function registerOverlay(entry: OverlayStackEntry) {
+  attachGlobalPopStateListener()
+  overlayStack.push(entry)
+
+  return () => {
+    const index = overlayStack.indexOf(entry)
+    if (index >= 0) {
+      overlayStack.splice(index, 1)
+    }
+  }
+}
+
+function removeOverlayEntry(entry: OverlayStackEntry) {
+  const index = overlayStack.indexOf(entry)
+  if (index >= 0) {
+    overlayStack.splice(index, 1)
+  }
+}
+
 export function useOverlayBackClose(
   open: boolean,
   onOpenChange: (open: boolean) => void,
@@ -35,7 +87,7 @@ export function useOverlayBackClose(
   const historyPushedRef = useRef(false)
   const closingFromPopStateRef = useRef(false)
   const closingFromRouteChangeRef = useRef(false)
-  const suppressHistoryBackRef = useRef(false)
+  const entryRef = useRef<OverlayStackEntry | null>(null)
   const locationKey = useRouterState({
     select: (state) => state.location.href,
   })
@@ -49,20 +101,24 @@ export function useOverlayBackClose(
     pushOverlayHistoryEntry(resolvedHistoryKey)
     historyPushedRef.current = true
 
-    const handlePopState = () => {
-      if (suppressHistoryBackRef.current) {
-        suppressHistoryBackRef.current = false
-        return
-      }
-
-      closingFromPopStateRef.current = true
-      historyPushedRef.current = false
-      onOpenChange(false)
+    const entry: OverlayStackEntry = {
+      historyKey: resolvedHistoryKey,
+      historyPushed: true,
+      closeFromBack: () => {
+        closingFromPopStateRef.current = true
+        historyPushedRef.current = false
+        onOpenChange(false)
+      },
     }
+    entryRef.current = entry
 
-    window.addEventListener('popstate', handlePopState)
+    const unregister = registerOverlay(entry)
+
     return () => {
-      window.removeEventListener('popstate', handlePopState)
+      unregister()
+      if (entryRef.current === entry) {
+        entryRef.current = null
+      }
     }
   }, [enabled, onOpenChange, open, resolvedHistoryKey])
 
@@ -79,6 +135,13 @@ export function useOverlayBackClose(
     locationKeyRef.current = locationKey
     closingFromRouteChangeRef.current = true
     historyPushedRef.current = false
+
+    const entry = entryRef.current
+    if (entry) {
+      entry.historyPushed = false
+      removeOverlayEntry(entry)
+    }
+
     onOpenChange(false)
   }, [enabled, locationKey, onOpenChange, open])
 
@@ -99,14 +162,18 @@ export function useOverlayBackClose(
 
         onOpenChange(false)
 
-        if (historyPushedRef.current && historyHasOverlayEntry(resolvedHistoryKey)) {
-          historyPushedRef.current = false
-          suppressHistoryBackRef.current = true
+        const entry = entryRef.current
+        if (entry) {
+          entry.historyPushed = false
+          removeOverlayEntry(entry)
+        }
+        historyPushedRef.current = false
+
+        if (historyHasOverlayEntry(resolvedHistoryKey)) {
+          ignoreNextPopState = true
           window.history.back()
-          return
         }
 
-        historyPushedRef.current = false
         return
       }
 
