@@ -33,6 +33,8 @@ export type BadgeDefinitionRecord = {
   rule_threshold: number | null
   is_active: boolean
   sort_order: number
+  unlock_count?: number
+  unlock_percent?: number
   created_at?: string
   updated_at?: string
 }
@@ -335,6 +337,8 @@ export function mapBadgeRecordToDefinition(record: BadgeDefinitionRecord): Badge
     rule_threshold: record.rule_threshold,
     is_active: record.is_active,
     sort_order: record.sort_order,
+    unlock_count: record.unlock_count ?? 0,
+    unlock_percent: Number(record.unlock_percent ?? 0),
     created_at: record.created_at,
     updated_at: record.updated_at,
     icon: resolveBadgeIcon(record.icon_name),
@@ -420,4 +424,12 @@ export function getBadgeCategoryLabel(category: BadgeCategory) {
 
 export function getBadgeTierLabel(tier: BadgeTier) {
   return BADGE_TIER_OPTIONS.find((option) => option.value === tier)?.label ?? tier
+}
+
+export function formatBadgeUnlockPercent(percent: number) {
+  return `${percent.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`
+}
+
+export function formatBadgeUnlockStat(percent: number) {
+  return `Débloquée par ${formatBadgeUnlockPercent(percent)} des utilisateurs`
 }

@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 import { CalendarCheck, Lock, Sparkles } from 'lucide-react'
 
 import { BadgeArt } from '@/components/gamification/BadgeArt'
+import { BadgeUnlockStat } from '@/components/gamification/BadgeUnlockStat'
 import {
   Drawer,
   DrawerContent,
@@ -79,6 +80,7 @@ export function BadgeDetailDrawer({ badge, open, onOpenChange }: BadgeDetailDraw
               <Pill tone="secondary">{getBadgeCategoryLabel(badge.category)}</Pill>
               <Pill tone="secondary">{getBadgeTierLabel(badge.tier)}</Pill>
             </div>
+            <BadgeUnlockStat percent={badge.unlock_percent ?? 0} centered />
           </div>
 
           <section className="rounded-2xl border border-border bg-card p-4">

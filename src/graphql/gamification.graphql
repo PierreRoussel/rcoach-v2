@@ -40,6 +40,8 @@ query ListActiveBadgeDefinitions {
     rule_threshold
     is_active
     sort_order
+    unlock_count
+    unlock_percent
     created_at
     updated_at
   }
@@ -57,6 +59,8 @@ query ListAllBadgeDefinitions {
     rule_threshold
     is_active
     sort_order
+    unlock_count
+    unlock_percent
     created_at
     updated_at
   }
@@ -74,6 +78,8 @@ mutation InsertBadgeDefinition($object: badge_definitions_insert_input!) {
     rule_threshold
     is_active
     sort_order
+    unlock_count
+    unlock_percent
     created_at
     updated_at
   }
@@ -94,6 +100,8 @@ mutation UpdateBadgeDefinition(
     rule_threshold
     is_active
     sort_order
+    unlock_count
+    unlock_percent
     created_at
     updated_at
   }

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Crown, Sparkles, Star, Trophy } from 'lucide-react'
 
 import { BadgeArt } from '@/components/gamification/BadgeArt'
+import { BadgeUnlockStat } from '@/components/gamification/BadgeUnlockStat'
 import { Button } from '@/components/ui/button'
 import type { BadgeDefinition, BadgeTier } from '@/lib/gamification/badges'
 import { hasBadgeAsset } from '@/lib/gamification/badge-assets'
@@ -251,6 +252,12 @@ export function BadgeUnlockOverlay({ badges, open, onClose }: BadgeUnlockOverlay
         >
           {primary.description}
         </p>
+
+        <BadgeUnlockStat
+          percent={primary.unlock_percent ?? 0}
+          centered
+          className="mt-3 animate-badge-unlock-pop-delay"
+        />
 
         {badges.length > 1 ? (
           <ul

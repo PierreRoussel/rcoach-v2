@@ -11,13 +11,13 @@ import { Pill } from '@/design-system'
 import { useBadgeCatalog } from '@/hooks/useBadgeCatalog'
 import {
   buildBadgeShelfItems,
-  getUnlockedBadgeDefinitions,
   useMyBadges,
   useSyncMyBadges,
 } from '@/hooks/useBadges'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useWorkoutWeeklyStreak } from '@/hooks/useWorkouts'
+import type { BadgeDefinition } from '@/lib/gamification/badges'
 
 export function ProfileIdentitySection() {
   const { data: profile } = useMyProfile()
@@ -28,9 +28,7 @@ export function ProfileIdentitySection() {
   const { streak: nutritionStreak } = useNutritionStreak()
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [overlayOpen, setOverlayOpen] = useState(false)
-  const [newBadges, setNewBadges] = useState(
-    () => [] as ReturnType<typeof getUnlockedBadgeDefinitions>,
-  )
+  const [newBadges, setNewBadges] = useState<BadgeDefinition[]>([])
 
   const badgeItems = useMemo(
     () => buildBadgeShelfItems(badges, catalog),
@@ -38,19 +36,9 @@ export function ProfileIdentitySection() {
   )
 
   useEffect(() => {
-    void syncBadges.mutateAsync().then((keys) => {
-      const unlocked = getUnlockedBadgeDefinitions(
-        keys.map((key) => ({
-          id: `optimistic-${key}`,
-          user_id: '',
-          badge_key: key,
-          unlocked_at: new Date().toISOString(),
-        })),
-        catalog,
-      )
-
-      if (unlocked.length > 0) {
-        setNewBadges(unlocked)
+    void syncBadges.mutateAsync().then((result) => {
+      if (result.definitions.length > 0) {
+        setNewBadges(result.definitions)
         setOverlayOpen(true)
       }
     })

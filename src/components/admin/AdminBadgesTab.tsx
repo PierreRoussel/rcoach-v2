@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { AdminDataTable } from '@/components/admin/AdminDataTable'
+import { BadgeUnlockOverlay } from '@/components/gamification/BadgeUnlockOverlay'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -44,9 +45,11 @@ import {
   BADGE_RULE_OPTIONS,
   BADGE_TIER_OPTIONS,
   formatBadgeRule,
+  mapBadgeRecordToDefinition,
   normalizeBadgeKey,
   resolveBadgeIcon,
   type BadgeDefinitionRecord,
+  type BadgeDefinition,
 } from '@/lib/gamification/badges'
 
 const EMPTY_FORM: BadgeDefinitionInput = {
@@ -73,8 +76,43 @@ export function AdminBadgesTab() {
   const [form, setForm] = useState<BadgeFormState>({ ...EMPTY_FORM, isNew: true })
   const [message, setMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [previewBadges, setPreviewBadges] = useState<BadgeDefinition[]>([])
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const selectedRule = BADGE_RULE_OPTIONS.find((option) => option.value === form.rule_type)
+
+  function openPreview(definition: BadgeDefinition) {
+    setPreviewBadges([definition])
+    setPreviewOpen(true)
+  }
+
+  function previewFromRecord(record: BadgeDefinitionRecord) {
+    openPreview(mapBadgeRecordToDefinition(record))
+  }
+
+  function previewFromForm() {
+    const key = normalizeBadgeKey(form.key) || 'preview_badge'
+    if (!form.label.trim() || !form.description.trim()) {
+      setActionError('Renseignez au minimum le titre et la description pour l’aperçu.')
+      return
+    }
+
+    setActionError(null)
+    openPreview(
+      mapBadgeRecordToDefinition({
+        key,
+        label: form.label.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        tier: form.tier,
+        icon_name: form.icon_name,
+        rule_type: form.rule_type,
+        rule_threshold: form.rule_threshold,
+        is_active: form.is_active,
+        sort_order: form.sort_order,
+      }),
+    )
+  }
 
   function openCreateDialog() {
     setForm({ ...EMPTY_FORM, isNew: true })
@@ -216,9 +254,18 @@ export function AdminBadgesTab() {
       {
         id: 'actions',
         header: '',
-        className: 'w-28',
+        className: 'w-36',
         cell: (row: BadgeDefinitionRecord) => (
           <div className="flex justify-end gap-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-label={`Aperçu déblocage ${row.label}`}
+              onClick={() => previewFromRecord(row)}
+            >
+              <Eye className="size-4" />
+            </Button>
             <Button
               type="button"
               size="icon"
@@ -293,6 +340,13 @@ export function AdminBadgesTab() {
         actionError={actionError}
         isPending={createBadge.isPending || updateBadge.isPending}
         onSubmit={() => void handleSubmit()}
+        onPreview={previewFromForm}
+      />
+
+      <BadgeUnlockOverlay
+        badges={previewBadges}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
       />
     </div>
   )
@@ -307,6 +361,7 @@ function BadgeDefinitionDialog({
   actionError,
   isPending,
   onSubmit,
+  onPreview,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -316,6 +371,7 @@ function BadgeDefinitionDialog({
   actionError: string | null
   isPending: boolean
   onSubmit: () => void
+  onPreview: () => void
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -520,7 +576,10 @@ function BadgeDefinitionDialog({
           {actionError ? <FeedbackMessage variant="error">{actionError}</FeedbackMessage> : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={onPreview}>
+            Aperçu déblocage
+          </Button>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>

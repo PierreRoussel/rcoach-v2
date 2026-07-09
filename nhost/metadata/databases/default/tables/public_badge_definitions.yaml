@@ -25,6 +25,8 @@ select_permissions:
         - rule_threshold
         - is_active
         - sort_order
+        - unlock_count
+        - unlock_percent
         - created_at
         - updated_at
       filter:

@@ -243,6 +243,8 @@ export type BadgeDefinitionRow = {
   rule_threshold: number | null
   is_active: boolean
   sort_order: number
+  unlock_count: number
+  unlock_percent: number
   created_at: string
   updated_at: string
 }
@@ -3072,6 +3074,8 @@ export const LIST_ACTIVE_BADGE_DEFINITIONS = `
       rule_threshold
       is_active
       sort_order
+      unlock_count
+      unlock_percent
       created_at
       updated_at
     }
@@ -3091,6 +3095,8 @@ export const LIST_ALL_BADGE_DEFINITIONS = `
       rule_threshold
       is_active
       sort_order
+      unlock_count
+      unlock_percent
       created_at
       updated_at
     }
@@ -3110,6 +3116,8 @@ export const INSERT_BADGE_DEFINITION = `
       rule_threshold
       is_active
       sort_order
+      unlock_count
+      unlock_percent
       created_at
       updated_at
     }
@@ -3132,6 +3140,8 @@ export const UPDATE_BADGE_DEFINITION = `
       rule_threshold
       is_active
       sort_order
+      unlock_count
+      unlock_percent
       created_at
       updated_at
     }

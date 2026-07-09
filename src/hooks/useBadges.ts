@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, subDays } from 'date-fns'
 
-import { useBadgeCatalog } from '@/hooks/useBadgeCatalog'
+import { BADGE_CATALOG_QUERY_KEY, fetchActiveBadgeCatalog, useBadgeCatalog } from '@/hooks/useBadgeCatalog'
 import {
   evaluateEligibleBadges,
   findNewBadgeKeys,
@@ -30,6 +30,11 @@ import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
 import { useWorkoutStreakDates } from '@/hooks/useWorkouts'
 
 const BADGES_QUERY_KEY = ['user-badges']
+
+export type SyncBadgesResult = {
+  keys: string[]
+  definitions: BadgeDefinition[]
+}
 
 export type BadgeShelfItem = BadgeDefinition & {
   unlocked: boolean
@@ -98,9 +103,9 @@ export function useSyncMyBadges() {
   const { data: catalog = [] } = useBadgeCatalog()
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<SyncBadgesResult> => {
       if (!userId) {
-        return [] as string[]
+        return { keys: [], definitions: [] }
       }
 
       let existingBadges: UserBadge[] = []
@@ -112,7 +117,7 @@ export function useSyncMyBadges() {
         )
         existingBadges = data.user_badges
       } catch {
-        return []
+        return { keys: [], definitions: [] }
       }
 
       const nutritionStreak = await fetchNutritionStreak(userId, nhost).catch(() => 0)
@@ -147,10 +152,23 @@ export function useSyncMyBadges() {
         }
       }
 
-      return inserted
+      let freshCatalog: BadgeDefinitionRecord[] = catalog
+      if (inserted.length > 0) {
+        freshCatalog = await fetchActiveBadgeCatalog(nhost)
+        queryClient.setQueryData(BADGE_CATALOG_QUERY_KEY, freshCatalog)
+      }
+
+      const definitions = inserted
+        .map((key) => getBadgeDefinitionFromCatalog(key, freshCatalog))
+        .filter((badge): badge is BadgeDefinition => badge != null)
+
+      return { keys: inserted, definitions }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: BADGES_QUERY_KEY })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: BADGES_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: BADGE_CATALOG_QUERY_KEY }),
+      ])
     },
   })
 }
