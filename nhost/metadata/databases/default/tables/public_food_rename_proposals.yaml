@@ -25,21 +25,21 @@ select_permissions:
         - created_at
         - updated_at
       filter:
-        _or:
-          - proposed_by:
-              _eq: X-Hasura-User-Id
-          - _exists:
-              _table:
-                name: profiles
-                schema: public
-              _where:
-                _and:
-                  - id:
-                      _eq: X-Hasura-User-Id
-                  - role:
-                      _in:
-                        - coach
-                        - both
+        proposed_by:
+          _eq: X-Hasura-User-Id
+  - role: admin
+    permission:
+      columns:
+        - id
+        - food_id
+        - proposed_name
+        - proposed_by
+        - status
+        - reviewed_by
+        - reviewed_at
+        - created_at
+        - updated_at
+      filter: {}
 insert_permissions:
   - role: user
     permission:
@@ -53,28 +53,15 @@ insert_permissions:
         - food_id
         - proposed_name
 update_permissions:
-  - role: user
+  - role: admin
     permission:
       columns:
         - status
         - reviewed_by
         - reviewed_at
       filter:
-        _and:
-          - status:
-              _eq: pending
-          - _exists:
-              _table:
-                name: profiles
-                schema: public
-              _where:
-                _and:
-                  - id:
-                      _eq: X-Hasura-User-Id
-                  - role:
-                      _in:
-                        - coach
-                        - both
+        status:
+          _eq: pending
       check:
         status:
           _in:

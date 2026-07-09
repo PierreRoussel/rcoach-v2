@@ -17,15 +17,18 @@ import {
   useReviewFoodRenameProposal,
 } from '@/hooks/useFoodRenameAndPortions'
 import { useMyProfile } from '@/hooks/useProfile'
+import { requireAdmin } from '@/lib/auth/guards'
+import { isAdminProfile } from '@/lib/profile/roles'
 
 export const Route = createFileRoute('/coach/validate-product-renames/')({
+  beforeLoad: requireAdmin,
   component: ValidateProductRenamesPage,
 })
 
 function ValidateProductRenamesPage() {
   const { data: profile } = useMyProfile()
-  const isCoach = profile?.role === 'coach' || profile?.role === 'both'
-  const { data: proposals = [], isLoading, error } = usePendingFoodRenameProposals(isCoach)
+  const isAdmin = isAdminProfile(profile)
+  const { data: proposals = [], isLoading, error } = usePendingFoodRenameProposals(isAdmin)
   const reviewProposal = useReviewFoodRenameProposal()
   const [message, setMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -50,21 +53,21 @@ function ValidateProductRenamesPage() {
     }
   }
 
-  if (!isCoach) {
+  if (!isAdmin) {
     return (
       <div className="space-y-4">
         <PageHeader
-          eyebrow="Coach"
+          eyebrow="Admin"
           title="Valider les renommages produit"
-          description="Cette page est réservée aux comptes coach."
+          description="Cette page est réservée aux administrateurs."
         />
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
-            Passez votre profil en rôle coach ou both dans{' '}
-            <Link to="/app/profile" className="font-semibold text-primary">
-              votre profil
-            </Link>{' '}
-            pour accéder à la validation des renommages.
+            Vous n&apos;avez pas les droits pour valider les renommages produit.{' '}
+            <Link to="/coach" className="font-semibold text-primary">
+              Retour au dashboard coach
+            </Link>
+            .
           </CardContent>
         </Card>
       </div>
@@ -74,7 +77,7 @@ function ValidateProductRenamesPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Coach"
+        eyebrow="Admin"
         title="Valider les renommages produit"
         description="Approuvez ou refusez les propositions de noms envoyées par les utilisateurs."
       />
