@@ -351,12 +351,14 @@ type WorkoutCalendarPanelProps = Omit<WorkoutCalendarProps, 'markers' | 'streak'
   onStartPlanned?: (occurrence: ScheduleOccurrence) => void
   onPlanDate?: (date: Date) => void
   isStarting?: boolean
+  hideCalendarStreak?: boolean
 }
 
 export function WorkoutCalendarPanel({
   onStartPlanned,
   onPlanDate,
   isStarting,
+  hideCalendarStreak = false,
   mode = 'compact',
   className,
   ...calendarProps
@@ -399,7 +401,7 @@ export function WorkoutCalendarPanel({
         nutritionDays={nutritionDays}
         showNutrition={nutritionConfigured}
         mode={mode}
-        streak={weeklyStreak}
+        streak={hideCalendarStreak ? undefined : weeklyStreak}
         month={visibleMonth}
         onMonthChange={setVisibleMonth}
         selected={selected}

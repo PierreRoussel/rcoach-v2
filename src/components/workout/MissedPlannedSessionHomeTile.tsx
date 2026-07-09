@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, RotateCcw } from 'lucide-react'
+import { Play, Sparkles } from 'lucide-react'
 import { endOfDay, startOfDay, subDays } from 'date-fns'
 
 import {
@@ -32,7 +32,7 @@ function formatMissedSessionMessage(occurrences: ScheduleOccurrence[]): string {
       ? ` (+${occurrences.length - 1} autre${occurrences.length > 2 ? 's' : ''})`
       : ''
 
-  return `${label} était prévue hier${suffix}`
+  return `${label} — tu peux encore la rattraper aujourd'hui${suffix}`
 }
 
 export function MissedPlannedSessionHomeTile() {
@@ -83,24 +83,24 @@ export function MissedPlannedSessionHomeTile() {
   return (
     <>
       <HomeNotificationTile
-        tone="warning"
-        eyebrow="Séance manquée"
+        tone="encouraging"
+        eyebrow="Encore le temps"
         title={formatMissedSessionMessage(missedOccurrences)}
-        actionLabel="Compléter aujourd'hui"
-        actionIcon={RotateCcw}
-        icon={AlertTriangle}
-        ariaLabel={`Compléter la séance manquée : ${sessionLabel}`}
+        actionLabel="Lancer la séance"
+        actionIcon={Play}
+        icon={Sparkles}
+        ariaLabel={`Rattraper la séance : ${sessionLabel}`}
         onClick={() => setConfirmOpen(true)}
       />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Compléter la séance ?</AlertDialogTitle>
+            <AlertDialogTitle>Rattraper la séance ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous aviez prévu{' '}
-              <span className="font-semibold text-foreground">{sessionLabel}</span> hier.
-              Voulez-vous la faire maintenant ?
+              Bonne idée de boucler{' '}
+              <span className="font-semibold text-foreground">{sessionLabel}</span> aujourd&apos;hui.
+              On démarre ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

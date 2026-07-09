@@ -28,18 +28,18 @@ export function TrialExpiredOverlay({
     <div key="ended" className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
       <Crown className="mb-4 size-10 text-muted-foreground" aria-hidden />
       <Pill tone="secondary">Essai terminé</Pill>
-      <h2 className="mt-4 font-display text-2xl font-black text-[#2c2545]">
+      <h2 className="mt-4 font-display text-2xl font-black text-foreground">
         Votre essai Premium est terminé
       </h2>
-      <p className="mt-3 text-sm leading-relaxed text-[#5c5278]">
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
         Vous êtes repassé au plan Gratuit. Reprenez Premium pour retrouver tous vos avantages.
       </p>
     </div>,
     <div key="lost" className="mx-auto w-full max-w-sm space-y-4">
-      <h3 className="text-center font-display text-xl font-black text-[#2c2545]">
+      <h3 className="text-center font-display text-xl font-black text-foreground">
         Privilèges perdus
       </h3>
-      <ul className="space-y-2 text-sm text-[#5c5278]">
+      <ul className="space-y-2 text-sm text-muted-foreground">
         {lostFeatures.map((feature) => (
           <li key={feature.id} className="rounded-xl border border-border bg-white/70 px-3 py-2">
             {feature.label}
@@ -49,10 +49,10 @@ export function TrialExpiredOverlay({
     </div>,
     <div key="frozen" className="mx-auto w-full max-w-sm space-y-4 text-center">
       <Lock className="mx-auto size-10 text-amber-500" aria-hidden />
-      <h3 className="font-display text-xl font-black text-[#2c2545]">
+      <h3 className="font-display text-xl font-black text-foreground">
         Modèles gelés
       </h3>
-      <p className="text-sm leading-relaxed text-[#5c5278]">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         {templateCount > FREE_WORKOUT_TEMPLATES ? (
           <>
             {FREE_WORKOUT_TEMPLATES} modèles restent accessibles (les plus utilisés).
@@ -67,13 +67,13 @@ export function TrialExpiredOverlay({
     </div>,
     <div key="cta" className="mx-auto w-full max-w-sm space-y-4 text-center">
       <Sparkles className="mx-auto size-8 text-amber-500" aria-hidden />
-      <h3 className="font-display text-xl font-black text-[#2c2545]">
+      <h3 className="font-display text-xl font-black text-foreground">
         Reprendre Premium
       </h3>
       <Button variant="pill" className="w-full" asChild onClick={onDismiss}>
         <Link to="/app/premium">Voir les offres Premium</Link>
       </Button>
-      <Button variant="ghost" className="w-full text-[#5c5278]" asChild onClick={onDismiss}>
+      <Button variant="ghost" className="w-full text-muted-foreground" asChild onClick={onDismiss}>
         <Link to="/app/profile/subscription">Gérer mon abonnement</Link>
       </Button>
       <Button variant="outline" className="w-full" onClick={onDismiss}>

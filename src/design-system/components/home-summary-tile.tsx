@@ -83,7 +83,7 @@ export function HomeSummaryMetric({
           className={cn(
             'font-display text-[1.65rem] font-medium tabular-nums tracking-tight',
             tone === 'accent' && 'text-emerald-800 dark:text-emerald-300',
-            tone === 'purple' && 'text-[#6b4fcc] dark:text-purple-300',
+            tone === 'purple' && 'text-soft-purple-fg',
             tone === 'danger' && 'text-destructive',
             tone === 'default' && 'text-foreground',
           )}

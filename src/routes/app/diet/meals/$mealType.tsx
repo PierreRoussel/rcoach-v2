@@ -228,7 +228,7 @@ function MealDetailPage() {
                     calories={Number(entry.calories)}
                     quantityG={entry.quantity_g}
                     servings={entry.servings}
-                    servingSizeG={Number(entry.food?.serving_size_g ?? 100)}
+                    servingLabel={entry.food?.serving_label ?? '100 g'}
                     onSelect={() => setDetailEntry(entry)}
                     onEdit={
                       isQuickMealEntry(entry) || !entry.food

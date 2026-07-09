@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { Apple, Flame, Scale, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -63,10 +62,10 @@ export function GoalCoachingGuidanceOverlay({
       <div key="weight" className="mx-auto w-full max-w-sm space-y-4">
         <div className="text-center">
           <Scale className="mx-auto mb-3 size-10 text-violet-500" aria-hidden />
-          <h3 className="font-display text-xl font-black text-[#2c2545]">
+          <h3 className="font-display text-xl font-black text-foreground">
             Confirmez votre poids actuel
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-[#5c5278]">
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Un poids à jour nous aide à analyser correctement votre stagnation.
           </p>
         </div>
@@ -103,10 +102,10 @@ export function GoalCoachingGuidanceOverlay({
     const dietSlide = (
       <div key="diet" className="mx-auto w-full max-w-sm space-y-4 text-center">
         <Apple className="mx-auto size-10 text-violet-500" aria-hidden />
-        <h3 className="font-display text-xl font-black text-[#2c2545]">
+        <h3 className="font-display text-xl font-black text-foreground">
           Analyse de votre diète
         </h3>
-        <p className="text-sm leading-relaxed text-[#5c5278]">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Sur les 14 derniers jours, vous avez enregistré{' '}
           <strong>{dietAdherence.loggedDays} jours</strong> de calories.
         </p>
@@ -125,10 +124,10 @@ export function GoalCoachingGuidanceOverlay({
             className="mx-auto w-full max-w-sm space-y-4 text-center"
           >
             <TrendingUp className="mx-auto size-10 text-violet-500" aria-hidden />
-            <h3 className="font-display text-xl font-black text-[#2c2545]">
+            <h3 className="font-display text-xl font-black text-foreground">
               Journal assez complet ?
             </h3>
-            <p className="text-sm leading-relaxed text-[#5c5278]">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Pour aller plus loin, pensez à noter vos protéines, vos repas et
               vos boissons. Un journal détaillé aide à affiner les recommandations.
             </p>
@@ -140,18 +139,13 @@ export function GoalCoachingGuidanceOverlay({
             className="mx-auto w-full max-w-sm space-y-4 text-center"
           >
             <Flame className="mx-auto size-10 text-violet-500" aria-hidden />
-            <h3 className="font-display text-xl font-black text-[#2c2545]">
+            <h3 className="font-display text-xl font-black text-foreground">
               Défi 1 semaine
             </h3>
-            <p className="text-sm leading-relaxed text-[#5c5278]">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Visez au moins 10 jours de suivi calorique sur 14. Commencez par
               enregistrer chaque repas cette semaine.
             </p>
-            <Button variant="pill" className="w-full" asChild>
-              <Link to="/app/diet" onClick={onClose}>
-                Ouvrir mon journal
-              </Link>
-            </Button>
           </div>,
         ]
 
@@ -164,10 +158,10 @@ export function GoalCoachingGuidanceOverlay({
                   className="mx-auto mb-3 size-10 text-violet-500"
                   aria-hidden
                 />
-                <h3 className="font-display text-xl font-black text-[#2c2545]">
+                <h3 className="font-display text-xl font-black text-foreground">
                   Ajustement calorique
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#5c5278]">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Suggestion pour votre objectif de {goalLabel.toLowerCase()}.
                 </p>
               </div>
@@ -248,7 +242,7 @@ export function GoalCoachingGuidanceOverlay({
           <Button
             type="button"
             variant="ghost"
-            className="rounded-full text-[#5c5278]"
+            className="rounded-full text-muted-foreground"
             onClick={onClose}
           >
             Fermer

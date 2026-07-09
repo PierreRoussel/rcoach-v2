@@ -1,5 +1,6 @@
-import { Flame, Snowflake, UtensilsCrossed } from 'lucide-react'
+import { UtensilsCrossed } from 'lucide-react'
 
+import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
 import {
   HomeSummaryMetric,
   HomeSummaryMetricsRow,
@@ -7,7 +8,6 @@ import {
   HomeSummaryTile,
   HomeSummaryTileFooter,
   HomeSummaryTileSkeleton,
-  Pill,
 } from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
@@ -16,40 +16,6 @@ import { toDateKey } from '@/lib/nutrition/dates'
 
 function formatCalories(value: number) {
   return Math.round(value).toLocaleString('fr-FR')
-}
-
-function DietStreakBadge({
-  streak,
-  isFrozen,
-  recoveryProgress,
-}: {
-  streak: number
-  isFrozen: boolean
-  recoveryProgress: number | null
-}) {
-  if (streak <= 0 && !isFrozen) {
-    return null
-  }
-
-  return (
-    <Pill
-      tone={isFrozen ? 'default' : 'secondary'}
-      className="h-7 shrink-0 gap-1 px-2.5 py-0 text-xs font-bold"
-      title={
-        isFrozen
-          ? `Série gelée : ${streak} jour${streak > 1 ? 's' : ''}${recoveryProgress != null ? ` — recovery ${recoveryProgress}/2` : ''}`
-          : `Série : ${streak} jour${streak > 1 ? 's' : ''}`
-      }
-    >
-      {isFrozen ? (
-        <Snowflake className="size-3.5 text-sky-500" aria-hidden />
-      ) : (
-        <Flame className="size-3.5 fill-current" aria-hidden />
-      )}
-      {streak}
-      {isFrozen ? <span className="font-medium text-muted-foreground">gelé</span> : null}
-    </Pill>
-  )
 }
 
 export function NutritionHomeSummaryTile() {
@@ -79,13 +45,19 @@ export function NutritionHomeSummaryTile() {
       ariaLabel="Ouvrir le journal nutrition"
       icon={UtensilsCrossed}
       title="Diète aujourd'hui"
-      iconClassName="bg-secondary/20 text-secondary dark:text-emerald-300"
+      iconClassName="bg-soft-secondary text-soft-secondary-fg"
       headerAddon={
-        !streakLoading && isOnboarded ? (
-          <DietStreakBadge
+        !streakLoading && isOnboarded && (streak > 0 || isFrozen) ? (
+          <NutritionStreakPill
             streak={streak}
             isFrozen={isFrozen}
-            recoveryProgress={recoveryProgress}
+            format="count"
+            className="h-7 shrink-0 px-2.5 py-0 text-xs font-bold"
+            title={
+              isFrozen
+                ? `Série gelée : ${streak} jour${streak > 1 ? 's' : ''}${recoveryProgress != null ? ` — recovery ${recoveryProgress}/2` : ''}`
+                : `Série : ${streak} jour${streak > 1 ? 's' : ''}`
+            }
           />
         ) : null
       }
@@ -120,7 +92,7 @@ export function NutritionHomeSummaryTile() {
           <HomeSummaryTileFooter
             left={`Objectif ${formatCalories(target)} kcal`}
             right={`${progressLabel}% atteint`}
-            rightClassName="text-secondary dark:text-emerald-300"
+            rightClassName="text-soft-secondary-fg"
           />
         </>
       )}

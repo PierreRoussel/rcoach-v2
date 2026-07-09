@@ -204,7 +204,7 @@ function Calendar({
         today: '',
         outside: '',
         disabled: 'opacity-40',
-        range_middle: 'aria-selected:bg-soft-primary/50 aria-selected:text-primary',
+        range_middle: 'aria-selected:bg-soft-primary/50 aria-selected:text-soft-primary-fg',
         hidden: 'invisible',
         ...classNames,
       }}

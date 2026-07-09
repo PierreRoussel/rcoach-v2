@@ -1,24 +1,14 @@
-import { Flame } from 'lucide-react'
-
-import { Pill } from '@/design-system'
-import { formatWeeklyStreakLabel } from '@/lib/schedule/weekly-streak'
-import { cn } from '@/lib/utils'
+import { WorkoutStreakPill } from '@/components/schedule/WorkoutStreakPill'
 
 type WeeklyStreakIndicatorProps = {
   streak: number
   className?: string
 }
 
+/** Compact sport streak for calendar headers (profile, stats). */
 export function WeeklyStreakIndicator({
   streak,
   className,
 }: WeeklyStreakIndicatorProps) {
-  return (
-    <span title={formatWeeklyStreakLabel(streak)}>
-      <Pill tone="solid-primary" className={cn('shrink-0', className)}>
-        <Flame className="size-3 fill-current" />
-        {streak}
-      </Pill>
-    </span>
-  )
+  return <WorkoutStreakPill streak={streak} format="count" className={className} />
 }

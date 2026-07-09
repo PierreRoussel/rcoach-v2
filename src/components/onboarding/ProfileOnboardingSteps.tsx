@@ -153,7 +153,7 @@ export function ProfileOnboardingSteps({
                   className={cn(
                     'h-24 rounded-2xl border text-base font-semibold transition-colors',
                     form.sex === value
-                      ? 'border-primary bg-soft-primary text-primary'
+                      ? 'border-primary bg-soft-primary text-soft-primary-fg'
                       : 'border-border bg-card text-foreground',
                   )}
                   onClick={() => handleSexSelect(value)}

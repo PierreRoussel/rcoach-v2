@@ -53,7 +53,7 @@ export function MotivationHomeNotificationTile() {
           />
 
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">
+            <p className="text-xs font-bold uppercase tracking-wide text-soft-primary-fg">
               Nouveau message
             </p>
             <p className="font-display text-sm font-black leading-snug text-foreground">
@@ -68,7 +68,7 @@ export function MotivationHomeNotificationTile() {
 
           <div className="flex shrink-0 items-center gap-1">
             <span className="text-4xl leading-none">{latest.emoji}</span>
-            <ChevronRight className="size-4 text-primary/70" />
+            <ChevronRight className="size-4 text-soft-primary-fg" />
           </div>
         </div>
       </button>

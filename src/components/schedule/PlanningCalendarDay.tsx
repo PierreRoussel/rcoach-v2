@@ -1,132 +1,108 @@
 import { format } from 'date-fns'
-import { Check, Dumbbell, X } from 'lucide-react'
 import * as React from 'react'
 import type { DayButtonProps, DayProps } from 'react-day-picker'
 
-import { MEAL_ICONS, MEAL_ICON_TINT } from '@/lib/nutrition/meal-visuals'
 import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
-import { MEAL_TYPES } from '@/lib/nutrition/types'
 import {
   getMarkerKind,
   type CalendarMarkers,
-  type DayMarkerKind,
 } from '@/lib/schedule/calendar-markers'
 import { cn } from '@/lib/utils'
-
-const dayButtonBase =
-  'relative flex w-full shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl p-0.5 font-display text-sm font-bold tabular-nums transition-all duration-200 hover:bg-muted/60 active:scale-[0.98]'
 
 function dayButtonAppearance(
   modifiers: DayButtonProps['modifiers'],
   className?: string,
-  showNutrition = false,
+  planningLayout = false,
 ) {
   return cn(
-    dayButtonBase,
-    showNutrition ? 'min-h-[3.75rem]' : 'aspect-square h-10 w-10 rounded-full',
+    'relative flex shrink-0 flex-col items-center justify-center p-0 font-display text-sm font-bold tabular-nums transition-all duration-200 hover:bg-muted/50 active:scale-[0.98]',
+    planningLayout
+      ? 'h-11 w-10 gap-0.5 rounded-lg'
+      : 'aspect-square h-10 w-10 rounded-full hover:scale-[1.03] hover:bg-muted/60',
     modifiers.selected &&
-      'scale-[1.02] bg-primary font-black text-primary-foreground shadow-lg shadow-primary/35 hover:bg-primary hover:text-primary-foreground',
+      'scale-105 bg-primary font-black text-primary-foreground shadow-lg shadow-primary/35 hover:bg-primary hover:text-primary-foreground',
     !modifiers.selected &&
       modifiers.today &&
       'text-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-card',
     !modifiers.selected &&
       modifiers.missed &&
-      'text-muted-foreground/40 line-through decoration-muted-foreground/35',
+      'text-muted-foreground/50',
     modifiers.outside && 'text-muted-foreground/25 hover:bg-transparent',
     className,
   )
 }
 
-const sportBarClass: Record<DayMarkerKind, string> = {
-  done: 'bg-primary shadow-sm shadow-primary/30',
-  planned: 'border border-dashed border-secondary bg-secondary/35',
-  missed: 'bg-muted-foreground/35',
-  mixed: 'bg-gradient-to-r from-primary to-secondary',
+function nutritionNumberStyle(
+  nutrition: NutritionDayAggregate | undefined,
+  showNutrition: boolean,
+  modifiers: DayButtonProps['modifiers'],
+) {
+  if (
+    !showNutrition ||
+    modifiers.selected ||
+    modifiers.outside ||
+    !nutrition?.hasLogs
+  ) {
+    return null
+  }
+
+  if (nutrition.status === 'on_target') {
+    return 'bg-soft-secondary text-secondary-foreground ring-1 ring-secondary/25'
+  }
+
+  if (nutrition.status === 'over_target') {
+    return 'bg-[color-mix(in_srgb,var(--destructive)_16%,var(--card))] text-destructive ring-1 ring-destructive/20'
+  }
+
+  return null
 }
 
-function SportDayIndicator({
-  kind,
-  sessionCount,
-  compact,
-}: {
-  kind: DayMarkerKind
-  sessionCount: number
-  compact: boolean
-}) {
-  return (
-    <div
-      className={cn(
-        'flex w-full items-center justify-center gap-0.5 px-0.5',
-        compact ? 'h-2' : 'h-3',
-      )}
-      aria-hidden
-    >
-      <Dumbbell
-        className={cn(
-          'shrink-0',
-          compact ? 'size-1.5' : 'size-2',
-          kind === 'missed' ? 'text-muted-foreground/45' : 'text-primary/75',
-        )}
-      />
+function SportDayMarker({ modifiers }: { modifiers: DayButtonProps['modifiers'] }) {
+  if (modifiers.selected) {
+    return null
+  }
+
+  const isMixed =
+    Boolean(modifiers.mixed) ||
+    (Boolean(modifiers.done) && Boolean(modifiers.planned))
+
+  if (isMixed) {
+    return (
       <span
-        className={cn(
-          'rounded-full',
-          compact ? 'h-0.5 min-w-[0.75rem] flex-1' : 'h-1 min-w-[0.875rem] flex-1',
-          sportBarClass[kind],
-        )}
+        aria-hidden
+        className="h-1 w-4 shrink-0 overflow-hidden rounded-full bg-gradient-to-r from-primary to-secondary"
       />
-      {sessionCount > 1 ? (
-        <span className="text-[0.5rem] font-bold leading-none text-muted-foreground">
-          {sessionCount}
-        </span>
-      ) : null}
-    </div>
-  )
-}
-
-function MealBadgesRow({
-  nutrition,
-  compact,
-}: {
-  nutrition: NutritionDayAggregate
-  compact: boolean
-}) {
-  if (!nutrition.hasLogs) {
-    return null
+    )
   }
 
-  const loggedMeals = MEAL_TYPES.filter((mealType) =>
-    nutrition.loggedMeals?.includes(mealType),
-  )
-
-  if (loggedMeals.length === 0) {
-    return null
+  if (modifiers.done) {
+    return (
+      <span
+        aria-hidden
+        className="h-1 w-4 shrink-0 rounded-full bg-primary"
+      />
+    )
   }
 
-  return (
-    <div className="flex items-center justify-center gap-0.5" aria-hidden>
-      {loggedMeals.map((mealType) => {
-        const Icon = MEAL_ICONS[mealType]
-        return (
-          <span
-            key={mealType}
-            className={cn(
-              'flex items-center justify-center rounded-full',
-              MEAL_ICON_TINT[mealType],
-              compact ? 'size-2.5' : 'size-3',
-            )}
-          >
-            <Icon className={compact ? 'size-1.5' : 'size-2'} />
-          </span>
-        )
-      })}
-      {nutrition.status === 'on_target' ? (
-        <Check className={cn('text-emerald-500', compact ? 'size-1.5' : 'size-2')} />
-      ) : nutrition.status === 'over_target' ? (
-        <X className={cn('text-destructive', compact ? 'size-1.5' : 'size-2')} />
-      ) : null}
-    </div>
-  )
+  if (modifiers.planned) {
+    return (
+      <span
+        aria-hidden
+        className="h-1 w-4 shrink-0 rounded-full bg-secondary"
+      />
+    )
+  }
+
+  if (modifiers.missed) {
+    return (
+      <span
+        aria-hidden
+        className="h-1 w-4 shrink-0 rounded-full bg-muted-foreground/35"
+      />
+    )
+  }
+
+  return null
 }
 
 export function PlanningCalendarDay({
@@ -139,7 +115,7 @@ export function PlanningCalendarDay({
   return (
     <div
       {...props}
-      className={cn('flex min-h-[3.75rem] items-stretch justify-center p-0', className)}
+      className={cn('flex h-11 min-w-0 items-center justify-center p-0', className)}
     >
       {children}
     </div>
@@ -167,11 +143,16 @@ export function PlanningCalendarDayButton({
   const marker = markers.get(dateKey)
   const sportKind = getMarkerKind(marker)
   const nutrition = nutritionDays?.get(dateKey)
-  const hasNutritionBadges = Boolean(
-    showNutrition && nutrition?.hasLogs && (nutrition.loggedMeals?.length ?? 0) > 0,
-  )
-  const useTallLayout = showNutrition && (hasNutritionBadges || compact === false)
-  const sessionCount = (marker?.workouts.length ?? 0) + (marker?.planned.length ?? 0)
+  const nutritionStyle = nutritionNumberStyle(nutrition, showNutrition, modifiers)
+  const planningLayout = !compact
+  const showSportMarker =
+    !modifiers.selected &&
+    Boolean(
+      modifiers.done ||
+        modifiers.planned ||
+        modifiers.missed ||
+        modifiers.mixed,
+    )
 
   React.useEffect(() => {
     if (!modifiers.focused || !ref.current) {
@@ -209,23 +190,23 @@ export function PlanningCalendarDayButton({
     <button
       ref={ref}
       type="button"
-      className={dayButtonAppearance(modifiers, className, useTallLayout)}
+      className={dayButtonAppearance(modifiers, className, planningLayout)}
       aria-label={ariaLabel || undefined}
       {...props}
     >
-      {sportKind && !modifiers.selected ? (
-        <SportDayIndicator
-          kind={sportKind}
-          sessionCount={sessionCount}
-          compact={compact && !useTallLayout}
-        />
-      ) : (
-        <span className={cn(useTallLayout ? 'h-3' : 'h-0')} aria-hidden />
-      )}
-      <span className="relative z-[1] leading-none">{children}</span>
-      {hasNutritionBadges && !modifiers.selected ? (
-        <MealBadgesRow nutrition={nutrition!} compact={compact} />
-      ) : null}
+      <span
+        className={cn(
+          'flex size-7 items-center justify-center rounded-full leading-none',
+          nutritionStyle,
+          modifiers.missed &&
+            !modifiers.selected &&
+            !nutritionStyle &&
+            'line-through decoration-muted-foreground/40',
+        )}
+      >
+        {children}
+      </span>
+      {showSportMarker ? <SportDayMarker modifiers={modifiers} /> : null}
     </button>
   )
 }
@@ -236,11 +217,10 @@ export function createPlanningCalendarComponents(options: {
   showNutrition?: boolean
   compact?: boolean
 }) {
-  const useTallDayCell =
-    options.showNutrition && (options.compact === false || options.nutritionDays)
+  const usePlanningLayout = !options.compact
 
   return {
-    ...(useTallDayCell
+    ...(usePlanningLayout
       ? {
           Day: PlanningCalendarDay,
         }

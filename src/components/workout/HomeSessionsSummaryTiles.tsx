@@ -85,9 +85,9 @@ function SessionSummaryTile({
   ariaLabel,
 }: SessionSummaryTileProps) {
   const iconClass = highlighted
-    ? 'bg-primary/15 text-primary'
+    ? 'bg-primary/15 text-soft-primary-fg'
     : tone === 'primary'
-      ? 'bg-soft-primary text-primary'
+      ? 'bg-soft-primary text-soft-primary-fg'
       : 'bg-soft-secondary text-soft-secondary-fg'
 
   const className = cn(
@@ -172,7 +172,7 @@ function LastSessionTile({
         <p className="text-sm text-muted-foreground">
           Aucune séance terminée pour le moment.
         </p>
-        <p className="mt-2 text-sm font-medium text-primary">Démarrer une séance</p>
+        <p className="mt-2 text-sm font-medium text-soft-primary-fg">Démarrer une séance</p>
       </SessionSummaryTile>
     )
   }
@@ -206,7 +206,7 @@ function LastSessionTile({
               key={entry.exercise.id}
               className="flex items-center gap-1 truncate text-sm text-muted-foreground"
             >
-              <Dumbbell className="size-3 shrink-0 text-primary/70" />
+              <Dumbbell className="size-3 shrink-0 text-soft-primary-fg" />
               <span className="truncate">
                 {entry.setCount} série{entry.setCount > 1 ? 's' : ''} ·{' '}
                 <DisplayExercise exercise={entry.exercise} />
@@ -310,7 +310,7 @@ function NextSessionTile({
           <p className="mt-2 text-sm text-muted-foreground">Séance libre</p>
         )}
         {isToday ? (
-          <p className="mt-2 text-sm font-medium text-primary">Commencer la séance</p>
+          <p className="mt-2 text-sm font-medium text-soft-primary-fg">Commencer la séance</p>
         ) : null}
       </SessionSummaryTile>
 
@@ -363,7 +363,7 @@ export function HomeSessionsSummaryTiles() {
         <Link
           to="/app/sessions"
           search={{ tab: 'history' }}
-          className="text-sm font-medium text-primary underline-offset-2 hover:underline"
+          className="text-sm font-medium text-soft-primary-fg underline-offset-2 hover:underline"
         >
           Voir tout
         </Link>

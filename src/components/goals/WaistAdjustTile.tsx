@@ -154,7 +154,7 @@ export function WaistAdjustDrawer({
                   className={cn(
                     'flex h-12 w-full items-center justify-center rounded-xl px-4 font-display text-lg font-bold tabular-nums transition-colors',
                     isSelected
-                      ? 'bg-soft-primary text-primary'
+                      ? 'bg-soft-primary text-soft-primary-fg'
                       : 'text-foreground hover:bg-muted/60',
                   )}
                   onClick={() => handleSelect(option)}

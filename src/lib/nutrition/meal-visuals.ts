@@ -26,17 +26,17 @@ export const MEAL_ICONS: Record<MealType, LucideIcon> = {
 }
 
 export const MEAL_ICON_TINT: Record<MealType, string> = {
-  breakfast: 'bg-soft-accent text-[#e8b84b]',
-  lunch: 'bg-soft-secondary text-[#1aae8a]',
-  snack: 'bg-soft-peach text-[#b87848]',
-  dinner: 'bg-soft-purple text-[#9b78c8]',
+  breakfast: 'bg-soft-accent text-soft-accent-fg',
+  lunch: 'bg-soft-secondary text-soft-secondary-fg',
+  snack: 'bg-soft-peach text-soft-peach-fg',
+  dinner: 'bg-soft-purple text-soft-purple-fg',
 }
 
 export const MEAL_RING_STROKE: Record<MealType, string> = {
-  breakfast: 'text-[#e8b84b]',
-  lunch: 'text-[#1aae8a]',
-  snack: 'text-[#b87848]',
-  dinner: 'text-[#9b78c8]',
+  breakfast: 'text-soft-accent-fg',
+  lunch: 'text-soft-secondary-fg',
+  snack: 'text-soft-peach-fg',
+  dinner: 'text-soft-purple-fg',
 }
 
 /** @deprecated Prefer MEAL_COLOR — kept for SVG stroke attributes. */

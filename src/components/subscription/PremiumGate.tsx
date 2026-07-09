@@ -58,7 +58,7 @@ function PremiumGateOverlay({
   return (
     <Card className="w-full max-w-sm rounded-2xl border-border bg-card/95 shadow-lg backdrop-blur-sm">
       <CardContent className="space-y-3 p-4 text-center">
-        <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-soft-primary text-primary">
+        <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-soft-primary text-soft-primary-fg">
           <Lock className="size-5" aria-hidden />
         </div>
         <div className="space-y-1">

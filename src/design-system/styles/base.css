@@ -41,6 +41,10 @@
   --color-soft-primary-fg: var(--soft-primary-fg);
   --color-soft-secondary-fg: var(--soft-secondary-fg);
   --color-soft-accent-fg: var(--soft-accent-fg);
+  --color-soft-purple-fg: var(--soft-purple-fg);
+  --color-soft-peach-fg: var(--soft-peach-fg);
+  --color-nutrition-streak: var(--nutrition-streak);
+  --color-nutrition-streak-foreground: var(--nutrition-streak-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

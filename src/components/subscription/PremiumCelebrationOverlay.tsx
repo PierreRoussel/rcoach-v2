@@ -11,6 +11,7 @@ import {
 
 import {
   DetailedStatsMockup,
+  GoalCoachingMockup,
   GoalProjectionMockup,
   NutritionHintMockup,
   OverloadAdviceMockup,
@@ -63,6 +64,14 @@ const FEATURE_SLIDES: FeatureSlide[] = [
       'Estimez votre date d’arrivée au poids cible selon votre déficit calorique actuel.',
     icon: Target,
     mockup: <GoalProjectionMockup />,
+  },
+  {
+    id: 'goal_coaching',
+    title: 'Coach dynamique anti-stagnation',
+    description:
+      'En cas de stagnation, un parcours guidé analyse votre diète et propose un ajustement calorique adapté.',
+    icon: Sparkles,
+    mockup: <GoalCoachingMockup />,
   },
   {
     id: 'nutrition_hint',
@@ -196,10 +205,10 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
                   Premium activé
                 </Pill>
 
-                <h2 className="mt-4 font-display text-2xl font-black text-[#2c2545]">
+                <h2 className="mt-4 font-display text-2xl font-black text-foreground">
                   Bienvenue en Premium
                 </h2>
-                <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#5c5278]">
+                <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
                   Découvrez ce que vous venez de débloquer — balayez pour parcourir les
                   fonctionnalités.
                 </p>
@@ -219,10 +228,10 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
                       <span className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-[#f3e4eb] text-[#c45f84]">
                         <Icon className="size-6" aria-hidden />
                       </span>
-                      <h3 className="font-display text-xl font-black text-[#2c2545]">
+                      <h3 className="font-display text-xl font-black text-foreground">
                         {slide.title}
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-[#5c5278]">
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {slide.description}
                       </p>
                     </div>
@@ -236,10 +245,10 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
               <div className="mx-auto w-full max-w-sm space-y-5 text-center">
                 <Crown className="mx-auto size-10 text-amber-500" aria-hidden />
                 <div className="space-y-2">
-                  <h3 className="font-display text-xl font-black text-[#2c2545]">
+                  <h3 className="font-display text-xl font-black text-foreground">
                     Tout est prêt
                   </h3>
-                  <p className="text-sm leading-relaxed text-[#5c5278]">
+                  <p className="text-sm leading-relaxed text-muted-foreground">
                     Profitez de votre essai gratuit. Vous pouvez gérer votre abonnement à tout
                     moment depuis votre profil.
                   </p>
@@ -247,7 +256,7 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
                 <Button variant="pill" className="w-full" onClick={finishAndGoHome}>
                   C&apos;est parti
                 </Button>
-                <Button variant="ghost" className="w-full text-[#5c5278] hover:text-[#2c2545]" asChild>
+                <Button variant="ghost" className="w-full text-muted-foreground hover:text-foreground" asChild>
                   <Link to="/app/profile/subscription" onClick={dismiss}>
                     Gérer mon abonnement
                   </Link>
@@ -279,7 +288,7 @@ export function PremiumCelebrationOverlay({ open, onClose }: PremiumCelebrationO
             <Button
               type="button"
               variant="outline"
-              className="rounded-full border-amber-300/60 bg-white px-10 text-[#2c2545] shadow-sm"
+              className="rounded-full border-amber-300/60 bg-white px-10 text-foreground shadow-sm"
               onClick={() => api?.scrollNext()}
             >
               Suivant

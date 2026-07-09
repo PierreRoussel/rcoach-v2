@@ -149,7 +149,7 @@ export function FullscreenCarouselOverlay({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full border-amber-300/60 bg-white px-10 text-[#2c2545] shadow-sm"
+              className="rounded-full border-amber-300/60 bg-white px-10 text-foreground shadow-sm"
               onClick={() => api?.scrollNext()}
             >
               Suivant

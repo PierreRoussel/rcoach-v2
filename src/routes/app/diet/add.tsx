@@ -30,9 +30,9 @@ import {
   buildPersonalFoodSearchCandidates,
   mergePersonalFoodsIntoSearchResults,
 } from '@/lib/nutrition/personal-food-search'
-import { toDateKey } from '@/lib/nutrition/dates'
+import { formatFrenchDateLabel, toDateKey } from '@/lib/nutrition/dates'
 import type { PortionInput } from '@/lib/nutrition/nutrient-math'
-import type { Food, MealType } from '@/lib/nutrition/types'
+import { MEAL_LABELS, type Food, type MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 const addSearchSchema = z.object({
@@ -190,7 +190,7 @@ function AddFoodPage() {
             onQuickAdd={(result) => void handleQuickAdd(result)}
             quickAddState={quickAddState}
             onToggleFavorite={handleToggleFavorite}
-            emptyLabel="Vos aliments fréquents apparaîtront ici."
+            emptyLabel="Vos aliments fréquents apparaîtront ici après quelques ajouts."
           />
         ),
       },
@@ -220,7 +220,7 @@ function AddFoodPage() {
             onQuickAdd={(result) => void handleQuickAdd(result)}
             quickAddState={quickAddState}
             onToggleFavorite={handleToggleFavorite}
-            emptyLabel="Aucun favori pour le moment."
+            emptyLabel="Aucun favori. Touchez l'étoile sur un aliment pour l'ajouter ici."
           />
         ),
       },
@@ -350,30 +350,42 @@ function AddFoodPage() {
           </Link>
         </Button>
         <div className="min-w-0 space-y-1">
+          <p className="text-xs font-medium text-primary">
+            {MEAL_LABELS[mealType]} · {formatFrenchDateLabel(date)}
+          </p>
           <h1 className="font-display text-2xl font-black text-foreground">Ajouter un aliment</h1>
           <p className="text-sm text-muted-foreground">
-            Recherchez, scannez ou créez un aliment.
+            Recherchez un aliment, parcourez vos listes ou utilisez les raccourcis ci-dessous.
           </p>
         </div>
       </div>
 
-      <Input
-        ref={searchInputRef}
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Rechercher un aliment..."
-      />
+      <div className="space-y-2">
+        <label htmlFor="food-search" className="text-sm font-semibold text-foreground">
+          Rechercher
+        </label>
+        <Input
+          id="food-search"
+          ref={searchInputRef}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Nom, marque ou code-barres..."
+        />
+      </div>
 
-      <FoodQuickActions
-        onSearchFocus={() => searchInputRef.current?.focus()}
-        onScan={() => void handleScan()}
-        onCreate={() =>
-          void navigate({
-            to: '/app/diet/foods/new',
-            search: { date, mealType, mode: 'manual' },
-          })
-        }
-      />
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-foreground">Autres options</p>
+        <FoodQuickActions
+          onSearchFocus={() => searchInputRef.current?.focus()}
+          onScan={() => void handleScan()}
+          onCreate={() =>
+            void navigate({
+              to: '/app/diet/foods/new',
+              search: { date, mealType, mode: 'manual' },
+            })
+          }
+        />
+      </div>
 
       {canTriggerOffSearch ? (
         <Button
@@ -391,21 +403,35 @@ function AddFoodPage() {
       ) : null}
 
       {trimmedQuery.length < 2 ? (
-        <SwipeableTabPanels
-          value={activeTab}
-          onChange={handleBrowseTabChange}
-          tabs={browseTabs}
-        />
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">Vos aliments</p>
+            <p className="text-xs text-muted-foreground">
+              Touchez + pour ajouter avec la dernière portion, ou l&apos;aliment pour choisir la
+              quantité.
+            </p>
+          </div>
+          <SwipeableTabPanels
+            value={activeTab}
+            onChange={handleBrowseTabChange}
+            tabs={browseTabs}
+          />
+        </div>
       ) : (
-        <FoodSearchList
-          results={searchResults}
-          favoriteFoodIds={favoriteFoodIds}
-          onSelect={(result) => void handleSelect(result)}
-          onQuickAdd={(result) => void handleQuickAdd(result)}
-          quickAddState={quickAddState}
-          onToggleFavorite={handleToggleFavorite}
-          emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun résultat.'}
-        />
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-foreground">
+            Résultats pour « {trimmedQuery} »
+          </p>
+          <FoodSearchList
+            results={searchResults}
+            favoriteFoodIds={favoriteFoodIds}
+            onSelect={(result) => void handleSelect(result)}
+            onQuickAdd={(result) => void handleQuickAdd(result)}
+            quickAddState={quickAddState}
+            onToggleFavorite={handleToggleFavorite}
+            emptyLabel={isLoading ? 'Recherche en cours...' : 'Aucun résultat pour cette recherche.'}
+          />
+        </div>
       )}
 
       {trimmedQuery.length >= OFF_MIN_QUERY_LENGTH &&

@@ -33,7 +33,7 @@ export function StatCard({
         {value}
       </div>
       <div className="text-sm font-semibold text-foreground/70">{label}</div>
-      {sub ? <div className="text-xs text-muted-foreground">{sub}</div> : null}
+      {sub ? <div className="text-xs text-foreground/65">{sub}</div> : null}
     </div>
   )
 }

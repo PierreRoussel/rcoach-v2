@@ -23,9 +23,9 @@ export const themes: Record<ThemeId, ThemeDefinition> = {
     description: 'Pastels vibrants pour une expérience sportive mobile-first.',
     preview: {
       background: '#f7f5fb',
-      primary: '#5b9bd5',
-      secondary: '#1aae8a',
-      accent: '#e8b84b',
+      primary: '#d4789a',
+      secondary: '#85c9ae',
+      accent: '#b8a8d8',
     },
   },
   pro: {

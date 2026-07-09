@@ -16,13 +16,21 @@ const toneStyles = {
     title: 'font-body text-sm font-bold leading-snug text-foreground',
     action: 'font-body text-sm font-medium text-[var(--nutrient-warning-fg)]',
   },
-  primary: {
+  encouraging: {
     container:
-      'border border-primary/35 bg-gradient-to-br from-soft-primary via-card to-soft-accent shadow-sm active:scale-[0.99]',
-    iconWrap: 'bg-primary/15 text-primary',
+      'border border-primary/20 bg-card shadow-sm active:scale-[0.99]',
+    iconWrap: 'bg-soft-primary text-primary',
     eyebrow: 'font-body text-xs font-bold uppercase tracking-wide text-primary',
     title: 'font-display text-sm font-black leading-snug text-foreground',
     action: 'font-body text-sm font-semibold text-primary',
+  },
+  primary: {
+    container:
+      'border border-primary/35 bg-gradient-to-br from-soft-primary via-card to-soft-accent shadow-sm active:scale-[0.99]',
+    iconWrap: 'bg-primary/15 text-soft-primary-fg',
+    eyebrow: 'font-body text-xs font-bold uppercase tracking-wide text-soft-primary-fg',
+    title: 'font-display text-sm font-black leading-snug text-foreground',
+    action: 'font-body text-sm font-semibold text-soft-primary-fg',
   },
 } as const
 

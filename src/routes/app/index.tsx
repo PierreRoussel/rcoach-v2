@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { History, Target, UtensilsCrossed } from 'lucide-react'
+import { CalendarDays, Target, UtensilsCrossed } from 'lucide-react'
 
 import { GoalsHomeSummaryTile } from '@/components/goals/GoalsHomeSummaryTile'
 import { PremiumHomeWelcomeAnimation } from '@/components/subscription/PremiumHomeWelcomeAnimation'
@@ -41,16 +41,16 @@ function AppHomePage() {
               Diète
             </Link>
           </Button>
-          <Button variant="soft" asChild>
+          <Button variant="soft-purple" asChild>
             <Link to="/app/goals">
               <Target className="size-4" />
               Objectif
             </Link>
           </Button>
-          <Button variant="soft" asChild>
-            <Link to="/app/sessions">
-              <History className="size-4" />
-              Mes séances
+          <Button variant="outline" className="rounded-full" asChild>
+            <Link to="/app/planning">
+              <CalendarDays className="size-4" />
+              Mon calendrier
             </Link>
           </Button>
         </StaggerGroup>

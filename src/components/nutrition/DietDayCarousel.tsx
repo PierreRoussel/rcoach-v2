@@ -209,7 +209,7 @@ export function DietDayCarousel({
   )
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('diet-day-carousel space-y-1', className)}>
       {animateEntrance ? <AnimateIn delay={80}>{dateHeader}</AnimateIn> : dateHeader}
       {animateEntrance ? <AnimateIn delay={160}>{daySlides}</AnimateIn> : daySlides}
     </div>
