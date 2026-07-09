@@ -18,6 +18,7 @@ import type { BillingPeriod } from '@/lib/subscription/plans'
 import { PREMIUM_PLAN } from '@/lib/subscription/plans'
 import {
   canStartPremiumTrial,
+  canSubscribeToPremiumOffer,
   hasConsumedPremiumTrial,
   isTrialAlreadyConsumedError,
 } from '@/lib/subscription/trial-eligibility'
@@ -142,8 +143,9 @@ export function useStartPremiumTrial() {
     mutationFn: async (input: {
       billingPeriod: BillingPeriod
       trialDays?: number
+      subscribeOffer?: boolean
     }) => {
-      const { billingPeriod, trialDays } = input
+      const { billingPeriod, trialDays, subscribeOffer = false } = input
       if (!userId) {
         throw new Error('Utilisateur non connecté.')
       }
@@ -151,7 +153,11 @@ export function useStartPremiumTrial() {
       const subscription = await fetchMySubscription(nhost, userId)
       const isPremium = isSubscriptionPeriodActive(subscription)
 
-      if (
+      if (subscribeOffer) {
+        if (!canSubscribeToPremiumOffer({ isPremium })) {
+          throw new Error('Premium déjà actif.')
+        }
+      } else if (
         !canStartPremiumTrial({
           isPremium,
           trialConsumedAt: subscription.trial_consumed_at,

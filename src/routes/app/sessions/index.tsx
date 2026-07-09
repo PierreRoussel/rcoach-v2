@@ -5,7 +5,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
 import { StatsDashboard } from '@/components/stats/StatsDashboard'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   Card,
   CardContent,
@@ -48,6 +57,7 @@ import {
   rankTemplatesByUsage,
   resolveFrozenTemplateIds,
 } from '@/lib/subscription/template-access'
+import { cn } from '@/lib/utils'
 import { useMyWorkouts } from '@/hooks/useWorkouts'
 
 type SessionsSearch = {
@@ -108,6 +118,10 @@ function CatalogTab() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [limitDialogOpen, setLimitDialogOpen] = useState(false)
   const [frozenDialogOpen, setFrozenDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [pendingDeleteTemplate, setPendingDeleteTemplate] = useState<
+    NonNullable<ReturnType<typeof useWorkoutTemplates>['data']>[number] | null
+  >(null)
   const [conflictOpen, setConflictOpen] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<
     NonNullable<ReturnType<typeof useWorkoutTemplates>['data']>[number] | null
@@ -227,6 +241,32 @@ function CatalogTab() {
     setDialogOpen(true)
   }
 
+  function requestDeleteTemplate(templateId: string) {
+    const template = templates?.find((entry) => entry.id === templateId)
+    if (!template) {
+      return
+    }
+
+    setPendingDeleteTemplate(template)
+    setDeleteDialogOpen(true)
+  }
+
+  function handleDeleteDialogOpenChange(open: boolean) {
+    setDeleteDialogOpen(open)
+    if (!open) {
+      setPendingDeleteTemplate(null)
+    }
+  }
+
+  async function handleConfirmDeleteTemplate() {
+    if (!pendingDeleteTemplate) {
+      return
+    }
+
+    await deleteTemplate.mutateAsync(pendingDeleteTemplate.id)
+    handleDeleteDialogOpenChange(false)
+  }
+
   return (
     <div className="space-y-4">
       <WorkoutSessionConflictDialog
@@ -251,6 +291,33 @@ function CatalogTab() {
             : undefined
         }
       />
+      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce modèle ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              « {pendingDeleteTemplate?.name ?? 'Ce modèle'} » sera définitivement supprimé.
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTemplate.isPending}>
+              Annuler
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={deleteTemplate.isPending}
+              className={cn(
+                buttonVariants(),
+                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+              )}
+              onClick={() => void handleConfirmDeleteTemplate()}
+            >
+              {deleteTemplate.isPending ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
@@ -347,7 +414,7 @@ function CatalogTab() {
               frozenTemplateIds={frozenTemplateIds}
               onStart={requestStart}
               onFrozenTap={() => setFrozenDialogOpen(true)}
-              onDelete={(templateId) => void deleteTemplate.mutateAsync(templateId)}
+              onDelete={requestDeleteTemplate}
               isDeleting={deleteTemplate.isPending}
             />
           ) : null}

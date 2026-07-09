@@ -11,6 +11,12 @@ export function canStartPremiumTrial(input: {
   return !input.isPremium && !hasConsumedPremiumTrial(input.trialConsumedAt)
 }
 
+export function canSubscribeToPremiumOffer(input: {
+  isPremium: boolean
+}): boolean {
+  return !input.isPremium
+}
+
 export function isTrialAlreadyConsumedError(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
   return (

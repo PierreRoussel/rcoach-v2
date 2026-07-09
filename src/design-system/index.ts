@@ -10,6 +10,7 @@ export {
 export { BrandLogo } from '@/design-system/components/brand-logo'
 export { PageHeader } from '@/design-system/components/page-header'
 export { Pill } from '@/design-system/components/pill'
+export { FrozenBadge } from '@/design-system/components/frozen-badge'
 export { StatCard } from '@/design-system/components/stat-card'
 export { ThemeToggle } from '@/design-system/components/theme-toggle'
 export { ThemeSetting } from '@/design-system/components/theme-setting'

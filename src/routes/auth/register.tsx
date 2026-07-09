@@ -14,6 +14,7 @@ import {
   buildEmailVerificationRedirectUrl,
   storePkceChallenge,
 } from '@/lib/auth/pkce-flow'
+import { mapAuthError } from '@/lib/auth/auth-errors'
 import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
 import { validateNewPassword } from '@/lib/auth/password-policy'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -61,7 +62,12 @@ function RegisterPage() {
       })
 
       if (response.status !== 200) {
-        setError("Impossible de créer le compte. L'email est peut-être déjà utilisé.")
+        setError(
+          mapAuthError(
+            response.body,
+            "Impossible de créer le compte. L'email est peut-être déjà utilisé.",
+          ),
+        )
         return
       }
 
@@ -72,8 +78,10 @@ function RegisterPage() {
       }
 
       setSuccess('Compte créé — vérifiez votre email pour confirmer.')
-    } catch {
-      setError('Inscription impossible. Réessayez plus tard.')
+    } catch (error) {
+      setError(
+        mapAuthError(error, 'Inscription impossible. Réessayez plus tard.'),
+      )
     } finally {
       setIsSubmitting(false)
     }

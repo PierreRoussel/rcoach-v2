@@ -30,31 +30,33 @@ export function PremiumOfferPage() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual')
   const [showCelebration, setShowCelebration] = useState(false)
   const [trialError, setTrialError] = useState<string | null>(null)
-  const { isPremium, canStartTrial, hasConsumedTrial, isLoading, refetch } =
-    useSubscriptionSummary()
+  const { isPremium, canStartTrial, hasConsumedTrial, isLoading } = useSubscriptionSummary()
   const startTrial = useStartPremiumTrial()
 
   useEffect(() => {
     trackEvent('paywall_view', { billingPeriod })
   }, [billingPeriod])
 
-  useEffect(() => {
-    void refetch()
-  }, [refetch])
-
   const priceLabel =
     billingPeriod === 'annual'
       ? `${monthlyEquivalentFromAnnual(PREMIUM_PLAN)}/mois, facturé ${formatPriceEuros(PREMIUM_PLAN.annualPriceCents)}/an`
       : `${formatPriceEuros(PREMIUM_PLAN.monthlyPriceCents)}/mois`
 
-  async function handleStartTrial(trialDays?: number) {
+  async function handleStartTrial(options?: {
+    trialDays?: number
+    subscribeOffer?: boolean
+  }) {
     setTrialError(null)
     trackEvent('paywall_cta_click', {
       billingPeriod,
-      cta: trialDays === PREMIUM_PLAN.subscribeOfferTrialDays ? 'subscribe' : 'trial',
+      cta: options?.subscribeOffer ? 'subscribe' : 'trial',
     })
     try {
-      await startTrial.mutateAsync({ billingPeriod, trialDays })
+      await startTrial.mutateAsync({
+        billingPeriod,
+        trialDays: options?.trialDays,
+        subscribeOffer: options?.subscribeOffer,
+      })
       trackEvent('paywall_conversion', { billingPeriod, status: 'trialing' })
       setShowCelebration(true)
     } catch (error) {
@@ -67,6 +69,8 @@ export function PremiumOfferPage() {
   }
 
   const ctaDisabled = isPremium || startTrial.isPending || isLoading
+  const subscribeDisabled = ctaDisabled
+  const trialDisabled = ctaDisabled || !canStartTrial
 
   return (
     <>
@@ -154,7 +158,7 @@ export function PremiumOfferPage() {
               type="button"
               variant="pill"
               className="w-full gap-2"
-              disabled={ctaDisabled}
+              disabled={trialDisabled}
               onClick={() => void handleStartTrial()}
             >
               <Sparkles className="size-4" aria-hidden />
@@ -173,8 +177,13 @@ export function PremiumOfferPage() {
               type="button"
               variant="outline"
               className="w-full rounded-full"
-              disabled={ctaDisabled}
-              onClick={() => void handleStartTrial(PREMIUM_PLAN.subscribeOfferTrialDays)}
+              disabled={subscribeDisabled}
+              onClick={() =>
+                void handleStartTrial({
+                  trialDays: PREMIUM_PLAN.subscribeOfferTrialDays,
+                  subscribeOffer: true,
+                })
+              }
             >
               {startTrial.isPending
                 ? 'Activation en cours...'

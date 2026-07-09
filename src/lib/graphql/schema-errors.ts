@@ -68,6 +68,7 @@ const SUBSCRIPTION_GRAPHQL_FIELDS = [
   'update_subscriptions_by_pk',
   'subscriptions_insert_input',
   'subscriptions_set_input',
+  'reconcile_my_subscription',
 ] as const
 
 const SUBSCRIPTION_CANCELLATION_FEEDBACK_FIELDS = [

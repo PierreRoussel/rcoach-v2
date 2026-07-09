@@ -10,6 +10,7 @@ import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
+import { mapAuthError } from '@/lib/auth/auth-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/login')({
@@ -38,14 +39,19 @@ function LoginPage() {
       const response = await nhost.auth.signInEmailPassword({ email, password })
 
       if (response.status !== 200 || response.body.session == null) {
-        setError('Email ou mot de passe incorrect.')
+        setError(
+          mapAuthError(
+            response.body,
+            'Email ou mot de passe incorrect.',
+          ),
+        )
         return
       }
 
       const destination = await resolveDefaultAuthenticatedPath()
       await navigate({ to: destination })
-    } catch {
-      setError('Connexion impossible. Vérifiez vos identifiants.')
+    } catch (error) {
+      setError(mapAuthError(error, 'Connexion impossible. Vérifiez vos identifiants.'))
     } finally {
       setIsSubmitting(false)
     }

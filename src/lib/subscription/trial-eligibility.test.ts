@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   canStartPremiumTrial,
+  canSubscribeToPremiumOffer,
   hasConsumedPremiumTrial,
   isTrialAlreadyConsumedError,
 } from '@/lib/subscription/trial-eligibility'
@@ -26,6 +27,11 @@ describe('trial-eligibility', () => {
     expect(
       canStartPremiumTrial({ isPremium: true, trialConsumedAt: null }),
     ).toBe(false)
+  })
+
+  it('allows subscribe offer whenever premium is inactive', () => {
+    expect(canSubscribeToPremiumOffer({ isPremium: false })).toBe(true)
+    expect(canSubscribeToPremiumOffer({ isPremium: true })).toBe(false)
   })
 
   it('recognizes backend trial guard errors', () => {

@@ -1,5 +1,5 @@
+import { CalendarDays, Dumbbell, Folder, Pencil, Play, Snowflake, Trash2 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { CalendarDays, Dumbbell, Folder, Lock, Pencil, Play, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
 
 import {
@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
-import { Pill } from '@/design-system'
+import { FrozenBadge, Pill } from '@/design-system'
 import type { WorkoutTemplate, ScheduledSessionRecord } from '@/lib/graphql/operations'
 import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
 import {
@@ -77,12 +77,7 @@ function TemplateCatalogRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="font-display font-black">{template.name}</p>
-            {isFrozen ? (
-              <Pill tone="secondary" className="gap-1">
-                <Lock className="size-3" />
-                Gelé
-              </Pill>
-            ) : null}
+            {isFrozen ? <FrozenBadge /> : null}
           </div>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <Dumbbell className="size-3 shrink-0" />
@@ -98,20 +93,29 @@ function TemplateCatalogRow({
       </div>
       <div className="relative z-[2] mt-3 flex w-full min-w-0 gap-2">
         <Button
-          variant="pill"
+          variant={isFrozen ? 'soft' : 'pill'}
           size="sm"
           className="min-w-0 flex-1"
           onClick={handleStart}
         >
-          <Play className="size-4" />
-          {isFrozen ? 'Gelé' : 'Démarrer'}
+          {isFrozen ? (
+            <>
+              <Snowflake className="size-4 text-sky-400" aria-hidden />
+              <span className="text-muted-foreground">gelé</span>
+            </>
+          ) : (
+            <>
+              <Play className="size-4" />
+              Démarrer
+            </>
+          )}
         </Button>
         <Button
           variant="soft"
           size="sm"
           className="min-w-0 flex-1"
+          disabled={isFrozen}
           asChild={!isFrozen}
-          onClick={isFrozen ? () => onFrozenTap?.(template) : undefined}
         >
           {isFrozen ? (
             <>
@@ -129,6 +133,7 @@ function TemplateCatalogRow({
           variant="ghost"
           size="icon"
           className="shrink-0"
+          aria-label={`Supprimer le modèle ${template.name}`}
           onClick={() => (isFrozen ? onFrozenTap?.(template) : onDelete(template.id))}
           disabled={isDeleting}
         >
