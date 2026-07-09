@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { FoodQuickActions, FoodSearchList, type FoodQuickAddState } from '@/components/nutrition/FoodSearchList'
+import { FoodSearchRecentSuggestions } from '@/components/nutrition/FoodSearchRecentSuggestions'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { QuickAddSheet } from '@/components/nutrition/QuickAddSheet'
 import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
@@ -21,6 +22,7 @@ import {
 } from '@/hooks/useFoodSearch'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useDietAddBackNavigation } from '@/hooks/useDietMealBackNavigation'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
@@ -31,6 +33,10 @@ import {
   mergePersonalFoodsIntoSearchResults,
 } from '@/lib/nutrition/personal-food-search'
 import { formatFrenchDateLabel, toDateKey } from '@/lib/nutrition/dates'
+import {
+  pushFoodSearchHistory,
+  readFoodSearchHistory,
+} from '@/lib/nutrition/food-search-history'
 import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import { MEAL_LABELS, type Food, type MealType } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -44,6 +50,8 @@ const addSearchSchema = z.object({
 type AddFoodTab = 'frequent' | 'recent' | 'favorites'
 
 const QUICK_ADD_SUCCESS_MS = 1500
+const SEARCH_HISTORY_DEBOUNCE_MS = 700
+const SEARCH_BLUR_DELAY_MS = 150
 
 export const Route = createFileRoute('/app/diet/add')({
   validateSearch: addSearchSchema,
@@ -60,8 +68,11 @@ function AddFoodPage() {
   useDietAddBackNavigation(date, mealType)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const searchBlurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const quickAddResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [query, setQuery] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [searchOffExternally, setSearchOffExternally] = useState(false)
   const [selectedFood, setSelectedFood] = useState<Food | null>(null)
   const [selectedPortion, setSelectedPortion] = useState<PortionInput | null>(null)
@@ -74,6 +85,7 @@ function AddFoodPage() {
   } | null>(null)
 
   const trimmedQuery = query.trim()
+  const debouncedQuery = useDebouncedValue(trimmedQuery, SEARCH_HISTORY_DEBOUNCE_MS)
   const isBrowsingCatalog = trimmedQuery.length < 2
   const shouldLoadMealLogFoods = true
   const shouldLoadFavorites =
@@ -95,7 +107,8 @@ function AddFoodPage() {
   const { ensureOffFood } = useFoodMutations()
   const { addEntry, addQuickEntry } = useMealLogMutations()
   const { requestScan, scanner } = useBarcodeScanner()
-  const { nhost } = useAuth()
+  const { nhost, user } = useAuth()
+  const userId = user?.id ?? 'offline'
 
   useEffect(() => {
     setSearchOffExternally(false)
@@ -106,8 +119,19 @@ function AddFoodPage() {
       if (quickAddResetTimerRef.current) {
         clearTimeout(quickAddResetTimerRef.current)
       }
+      if (searchBlurTimerRef.current) {
+        clearTimeout(searchBlurTimerRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      return
+    }
+
+    setRecentSearches(pushFoodSearchHistory(userId, debouncedQuery))
+  }, [debouncedQuery, userId])
 
   function clearQuickAddResetTimer() {
     if (quickAddResetTimerRef.current) {
@@ -300,6 +324,31 @@ function AddFoodPage() {
     }
   }
 
+  function handleSearchFocus() {
+    if (searchBlurTimerRef.current) {
+      clearTimeout(searchBlurTimerRef.current)
+      searchBlurTimerRef.current = null
+    }
+
+    setSearchFocused(true)
+    setRecentSearches(readFoodSearchHistory(userId))
+  }
+
+  function handleSearchBlur() {
+    searchBlurTimerRef.current = setTimeout(() => {
+      setSearchFocused(false)
+      searchBlurTimerRef.current = null
+    }, SEARCH_BLUR_DELAY_MS)
+  }
+
+  function handleRecentSearchSelect(value: string) {
+    setQuery(value)
+    searchInputRef.current?.focus()
+  }
+
+  const showRecentSearches =
+    searchFocused && trimmedQuery.length < 2 && recentSearches.length > 0
+
   async function handleScan() {
     setFeedback(null)
 
@@ -369,8 +418,16 @@ function AddFoodPage() {
           ref={searchInputRef}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onFocus={handleSearchFocus}
+          onBlur={handleSearchBlur}
           placeholder="Nom, marque ou code-barres..."
         />
+        {showRecentSearches ? (
+          <FoodSearchRecentSuggestions
+            queries={recentSearches}
+            onSelect={handleRecentSearchSelect}
+          />
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -405,11 +462,6 @@ function AddFoodPage() {
       {trimmedQuery.length < 2 ? (
         <div className="space-y-3">
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-foreground">Vos aliments</p>
-            <p className="text-xs text-muted-foreground">
-              Touchez + pour ajouter avec la dernière portion, ou l&apos;aliment pour choisir la
-              quantité.
-            </p>
           </div>
           <SwipeableTabPanels
             value={activeTab}

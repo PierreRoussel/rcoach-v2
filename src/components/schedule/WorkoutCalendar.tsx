@@ -1,7 +1,9 @@
 import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, CircleHelp } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 
 import { createPlanningCalendarComponents } from '@/components/schedule/PlanningCalendarDay'
 import { Calendar } from '@/components/ui/calendar'
@@ -120,17 +122,21 @@ export function WorkoutCalendar({
   const displayMonth = controlledMonth ?? internalMonth
   const previousSelectedRef = useRef<Date | undefined>(currentSelected)
   const [legendOpen, setLegendOpen] = useState(false)
-  function setDisplayMonth(monthOrUpdater: Date | ((month: Date) => Date)) {
-    const nextMonth =
-      typeof monthOrUpdater === 'function'
-        ? monthOrUpdater(displayMonth)
-        : monthOrUpdater
+  const setDisplayMonth = useCallback(
+    (monthOrUpdater: Date | ((month: Date) => Date)) => {
+      const activeMonth = controlledMonth ?? internalMonth
+      const nextMonth =
+        typeof monthOrUpdater === 'function'
+          ? monthOrUpdater(activeMonth)
+          : monthOrUpdater
 
-    if (controlledMonth === undefined) {
-      setInternalMonth(nextMonth)
-    }
-    onMonthChange?.(nextMonth)
-  }
+      if (controlledMonth === undefined) {
+        setInternalMonth(nextMonth)
+      }
+      onMonthChange?.(nextMonth)
+    },
+    [controlledMonth, internalMonth, onMonthChange],
+  )
 
   useEffect(() => {
     if (!currentSelected) {
@@ -191,6 +197,19 @@ export function WorkoutCalendar({
     setInternalSelected(date)
   }
 
+  const goToPreviousMonth = useCallback(() => {
+    setDisplayMonth((month) => subMonths(month, 1))
+  }, [setDisplayMonth])
+
+  const goToNextMonth = useCallback(() => {
+    setDisplayMonth((month) => addMonths(month, 1))
+  }, [setDisplayMonth])
+
+  const { swipeProps } = useHorizontalSwipe({
+    onSwipeLeft: goToNextMonth,
+    onSwipeRight: goToPreviousMonth,
+  })
+
   return (
     <div className={cn('w-full', !embedded && 'space-y-3', className)}>
       <div
@@ -214,7 +233,7 @@ export function WorkoutCalendar({
               type="button"
               className={navButtonClass}
               aria-label="Mois precedent"
-              onClick={() => setDisplayMonth((month) => subMonths(month, 1))}
+              onClick={goToPreviousMonth}
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -225,7 +244,7 @@ export function WorkoutCalendar({
               type="button"
               className={navButtonClass}
               aria-label="Mois suivant"
-              onClick={() => setDisplayMonth((month) => addMonths(month, 1))}
+              onClick={goToNextMonth}
             >
               <ChevronRight className="size-4" />
             </button>
@@ -250,17 +269,23 @@ export function WorkoutCalendar({
           </div>
         </div>
 
-        <Calendar
-          mode="single"
-          month={displayMonth}
-          onMonthChange={setDisplayMonth}
-          selected={currentSelected}
-          onSelect={handleSelect}
-          locale={fr}
-          modifiers={modifiers}
-          components={planningComponents}
-          className="relative border-0 bg-transparent p-0 shadow-none"
-        />
+        <div
+          {...swipeProps}
+          className="touch-pan-y select-none"
+          aria-label="Glisser horizontalement pour changer de mois"
+        >
+          <Calendar
+            mode="single"
+            month={displayMonth}
+            onMonthChange={setDisplayMonth}
+            selected={currentSelected}
+            onSelect={handleSelect}
+            locale={fr}
+            modifiers={modifiers}
+            components={planningComponents}
+            className="relative border-0 bg-transparent p-0 shadow-none"
+          />
+        </div>
       </div>
 
       {mode === 'full' ? (
