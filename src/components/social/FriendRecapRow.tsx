@@ -1,4 +1,4 @@
-import { Dumbbell } from 'lucide-react'
+import { WorkoutStreakIcon } from '@/components/schedule/WorkoutStreakIcon'
 
 import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
 import { UserAvatar } from '@/components/profile/UserAvatar'
@@ -54,7 +54,7 @@ export function FriendRecapRow({
           <p className="truncate font-display font-black text-foreground">{displayName}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <Pill tone="solid-purple" className="gap-1 py-0.5 text-[10px]">
-              <Dumbbell className="size-3" />
+              <WorkoutStreakIcon variant="on-accent" className="size-3" />
               {activity.workoutStreak} sem.
             </Pill>
             <NutritionStreakPill

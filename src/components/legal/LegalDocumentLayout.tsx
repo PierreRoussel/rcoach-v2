@@ -1,11 +1,13 @@
-import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
+import { AppReturnNav } from '@/components/legal/AppReturnNav'
+import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLink'
 import type { LegalDocument } from '@/content/legal/types'
 import { BrandLogo } from '@/design-system'
 import {
   isLegalConfigComplete,
   LEGAL_LAST_UPDATED,
+  LEGAL_PATHS,
   supportMailto,
 } from '@/lib/legal/config'
 import { cn } from '@/lib/utils'
@@ -23,14 +25,15 @@ export function LegalDocumentLayout({
 }: LegalDocumentLayoutProps) {
   return (
     <div className={cn('mx-auto min-h-svh max-w-2xl bg-background px-4 py-8', className)}>
+      <AppReturnNav className="mb-4" />
       <div className="mb-8 flex items-center justify-between gap-4">
         <BrandLogo compact />
-        <Link
-          to="/help"
+        <StandaloneDocumentLink
+          path={LEGAL_PATHS.help}
           className="text-sm font-medium text-primary underline-offset-2 hover:underline"
         >
           Aide & support
-        </Link>
+        </StandaloneDocumentLink>
       </div>
 
       {!isLegalConfigComplete() ? (
@@ -69,17 +72,29 @@ export function LegalDocumentLayout({
           </a>
         </p>
         <p className="mt-2">
-          <Link to="/legal/privacy" className="underline-offset-2 hover:underline">
+          <StandaloneDocumentLink
+            path={LEGAL_PATHS.privacy}
+            forceInternal
+            className="underline-offset-2 hover:underline"
+          >
             Confidentialité
-          </Link>
+          </StandaloneDocumentLink>
           {' · '}
-          <Link to="/legal/terms" className="underline-offset-2 hover:underline">
+          <StandaloneDocumentLink
+            path={LEGAL_PATHS.terms}
+            forceInternal
+            className="underline-offset-2 hover:underline"
+          >
             CGU
-          </Link>
+          </StandaloneDocumentLink>
           {' · '}
-          <Link to="/about" className="underline-offset-2 hover:underline">
+          <StandaloneDocumentLink
+            path={LEGAL_PATHS.about}
+            forceInternal
+            className="underline-offset-2 hover:underline"
+          >
             À propos
-          </Link>
+          </StandaloneDocumentLink>
         </p>
       </footer>
     </div>

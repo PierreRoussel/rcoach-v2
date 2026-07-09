@@ -1,6 +1,5 @@
-import { Dumbbell } from 'lucide-react'
-
 import { Pill } from '@/design-system'
+import { WorkoutStreakIcon } from '@/components/schedule/WorkoutStreakIcon'
 import { formatWeeklyStreakLabel } from '@/lib/schedule/weekly-streak'
 import { cn } from '@/lib/utils'
 
@@ -38,7 +37,7 @@ export function WorkoutStreakPill({
 }: WorkoutStreakPillProps) {
   const pill = (
     <Pill tone="solid-purple" className={cn('gap-1.5', className)}>
-      <Dumbbell className="size-3.5 shrink-0" aria-hidden />
+      <WorkoutStreakIcon variant="on-accent" className="size-3.5" />
       {formatWorkoutStreakLabel(streak, format)}
     </Pill>
   )

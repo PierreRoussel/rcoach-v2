@@ -24,6 +24,8 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
+import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLink'
+import { LEGAL_PATHS } from '@/lib/legal/config'
 import { ProfileSubscriptionHighlightCard } from '@/components/profile/ProfileSubscriptionHighlightCard'
 import { UserMeasurementsSection } from '@/components/profile/UserMeasurementsSection'
 import { FriendsSection } from '@/components/social/FriendsSection'
@@ -262,7 +264,9 @@ function ProfilePage() {
         </CardHeader>
         <CardContent>
           <Button variant="soft" asChild>
-            <Link to="/help">Ouvrir le centre d&apos;aide</Link>
+            <StandaloneDocumentLink path={LEGAL_PATHS.help}>
+              Ouvrir le centre d&apos;aide
+            </StandaloneDocumentLink>
           </Button>
         </CardContent>
       </Card>

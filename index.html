@@ -3,8 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#5B9BD5" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F7F5FB" />
+    <script>
+      ;(function syncInitialPwaChromeColor() {
+        try {
+          var stored = JSON.parse(window.localStorage.getItem('rcoach-theme') || '{}')
+          var prefersDark =
+            stored.colorModePreference === 'dark' ||
+            (stored.colorModePreference === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches) ||
+            stored.colorMode === 'dark'
+          var themeId = stored.themeId === 'pro' ? 'pro' : 'sports-candy'
+          var background =
+            themeId === 'pro' ? '#0D1B2E' : prefersDark ? '#18143A' : '#F7F5FB'
+          var themeColorMeta = document.querySelector('meta[name="theme-color"]')
+          if (themeColorMeta) {
+            themeColorMeta.setAttribute('content', background)
+          }
+          var statusBarMeta = document.querySelector(
+            'meta[name="apple-mobile-web-app-status-bar-style"]',
+          )
+          if (statusBarMeta) {
+            statusBarMeta.setAttribute(
+              'content',
+              prefersDark || themeId === 'pro' ? 'black-translucent' : 'default',
+            )
+          }
+        } catch (_error) {
+          /* ignore malformed theme preferences */
+        }
+      })()
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

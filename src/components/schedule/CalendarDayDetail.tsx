@@ -44,6 +44,7 @@ type CalendarDayDetailProps = {
   nutritionDay?: NutritionDayAggregate
   dailyTarget?: number
   showNutrition?: boolean
+  embedded?: boolean
   onStartPlanned?: (occurrence: ScheduleOccurrence) => void
   onPlanDate?: (date: Date) => void
   isStarting?: boolean
@@ -108,12 +109,32 @@ function SimplePastActivityForm({ date }: { date: Date }) {
   )
 }
 
+export function PlanningDayConnector({ date }: { date: Date }) {
+  return (
+    <div
+      className="relative border-t border-primary/20 bg-gradient-to-b from-soft-primary/25 to-soft-primary/5 px-4 py-2.5"
+      aria-hidden
+    >
+      <div className="pointer-events-none absolute left-1/2 top-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
+        <span className="size-2.5 rotate-45 border border-primary/25 bg-card shadow-sm" />
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <CalendarDays className="size-3.5 shrink-0 text-soft-primary-fg" />
+        <p className="font-display text-sm font-bold capitalize text-foreground">
+          {format(date, 'EEEE d MMMM', { locale: fr })}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export function CalendarDayDetail({
   markers,
   date,
   nutritionDay,
   dailyTarget,
   showNutrition = false,
+  embedded = false,
   onStartPlanned,
   onPlanDate,
   isStarting = false,
@@ -130,28 +151,40 @@ export function CalendarDayDetail({
   return (
     <div
       className={cn(
-        'animate-in fade-in slide-in-from-top-2 space-y-4 rounded-xl border border-border/60',
-        'bg-muted/10 p-4 duration-300',
+        'animate-in fade-in slide-in-from-top-2 space-y-4 duration-300',
+        embedded
+          ? 'bg-muted/10 px-4 pb-4 pt-3'
+          : 'rounded-xl border border-border/60 bg-muted/10 p-4',
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <p className="font-display text-lg font-black capitalize leading-tight text-foreground">
-            {formatDayMarkerTitle(marker, date)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {hasContent
-              ? 'Détail de la journée sélectionnée'
-              : isPastDay
-                ? 'Aucune activité enregistrée pour ce jour'
-                : 'Rien de prévu pour ce jour'}
-          </p>
+      {!embedded ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <p className="font-display text-lg font-black capitalize leading-tight text-foreground">
+              {formatDayMarkerTitle(marker, date)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {hasContent
+                ? 'Détail de la journée sélectionnée'
+                : isPastDay
+                  ? 'Aucune activité enregistrée pour ce jour'
+                  : 'Rien de prévu pour ce jour'}
+            </p>
+          </div>
+          <Pill tone="purple" className="shrink-0 py-1">
+            <CalendarDays className="size-3" />
+            Jour
+          </Pill>
         </div>
-        <Pill tone="purple" className="shrink-0 py-1">
-          <CalendarDays className="size-3" />
-          Jour
-        </Pill>
-      </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          {hasContent
+            ? 'Détail de la journée sélectionnée'
+            : isPastDay
+              ? 'Aucune activité enregistrée pour ce jour'
+              : 'Rien de prévu pour ce jour'}
+        </p>
+      )}
 
       {marker?.workouts.length ? (
         <section className="space-y-2">
@@ -352,6 +385,8 @@ type WorkoutCalendarPanelProps = Omit<WorkoutCalendarProps, 'markers' | 'streak'
   onPlanDate?: (date: Date) => void
   isStarting?: boolean
   hideCalendarStreak?: boolean
+  belowCalendar?: React.ReactNode
+  initialSelectedDate?: Date
 }
 
 export function WorkoutCalendarPanel({
@@ -359,13 +394,13 @@ export function WorkoutCalendarPanel({
   onPlanDate,
   isStarting,
   hideCalendarStreak = false,
+  belowCalendar,
+  initialSelectedDate,
   mode = 'compact',
   className,
   ...calendarProps
 }: WorkoutCalendarPanelProps) {
-  const [selected, setSelected] = useState<Date | undefined>(
-    mode === 'full' ? new Date() : undefined,
-  )
+  const [selected, setSelected] = useState<Date | undefined>(initialSelectedDate)
   const [visibleMonth, setVisibleMonth] = useState(
     () => startOfMonth(selected ?? new Date()),
   )
@@ -394,20 +429,50 @@ export function WorkoutCalendarPanel({
     : undefined
 
   return (
-    <div className={cn('space-y-4', className)}>
-      <WorkoutCalendar
-        {...calendarProps}
-        markers={markers}
-        nutritionDays={nutritionDays}
-        showNutrition={nutritionConfigured}
-        mode={mode}
-        streak={hideCalendarStreak ? undefined : weeklyStreak}
-        month={visibleMonth}
-        onMonthChange={setVisibleMonth}
-        selected={selected}
-        onSelect={setSelected}
-      />
-      {selected ? (
+    <div
+      className={cn(
+        mode === 'full'
+          ? 'overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-card via-card to-muted/15 shadow-sm'
+          : 'space-y-4',
+        className,
+      )}
+    >
+      <div className={mode === 'full' ? 'p-3 sm:p-4' : undefined}>
+        <WorkoutCalendar
+          {...calendarProps}
+          markers={markers}
+          nutritionDays={nutritionDays}
+          showNutrition={nutritionConfigured}
+          mode={mode}
+          embedded={mode === 'full'}
+          streak={hideCalendarStreak ? undefined : weeklyStreak}
+          month={visibleMonth}
+          onMonthChange={setVisibleMonth}
+          selected={selected}
+          onSelect={setSelected}
+        />
+      </div>
+      {belowCalendar && mode === 'full' ? (
+        <div className="border-t border-border/50 px-3 py-3 sm:px-4">{belowCalendar}</div>
+      ) : belowCalendar ? (
+        <div className="mt-3">{belowCalendar}</div>
+      ) : null}
+      {selected && mode === 'full' ? (
+        <>
+          <PlanningDayConnector date={selected} />
+          <CalendarDayDetail
+            markers={markers}
+            date={selected}
+            nutritionDay={selectedNutritionDay}
+            dailyTarget={dailyTarget}
+            showNutrition={nutritionConfigured}
+            embedded
+            onStartPlanned={onStartPlanned}
+            onPlanDate={onPlanDate}
+            isStarting={isStarting}
+          />
+        </>
+      ) : selected ? (
         <CalendarDayDetail
           markers={markers}
           date={selected}

@@ -1,7 +1,6 @@
 import { Dumbbell, Flame, ListChecks } from 'lucide-react'
 
-import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
-import { WorkoutStreakPill } from '@/components/schedule/WorkoutStreakPill'
+import { WorkoutStreakIcon } from '@/components/schedule/WorkoutStreakIcon'
 import { Pill, StatCard } from '@/design-system'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
@@ -18,7 +17,8 @@ export function PlanningStreakBar({
   className,
   activePlanningCount,
   onPlanningClick,
-}: PlanningStreakBarProps) {  const { streak: weeklyStreak } = useWorkoutWeeklyStreak()
+}: PlanningStreakBarProps) {
+  const { streak: weeklyStreak } = useWorkoutWeeklyStreak()
   const { data: settings } = useNutritionSettings()
   const dailyTarget = settings?.daily_calorie_target ?? 0
   const {
@@ -27,44 +27,39 @@ export function PlanningStreakBar({
     isLoading: nutritionStreakLoading,
   } = useNutritionStreak(dailyTarget)
 
-  const nutritionTitle = isFrozen
-    ? `Série gelée : ${nutritionStreak} jour${nutritionStreak > 1 ? 's' : ''}`
-    : `Série nutrition : ${nutritionStreak} jour${nutritionStreak > 1 ? 's' : ''}`
-
   return (
     <div className={cn('space-y-3', className)}>
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <StatCard
-            icon={<Dumbbell className="size-4" />}
-            value={String(weeklyStreak)}
-            label="Sport"
-            sub="Semaines avec séance"
-            tone="purple"
-          />
-          <WorkoutStreakPill streak={weeklyStreak} format="full" />
-        </div>
+        <StatCard
+          icon={<WorkoutStreakIcon className="size-4" />}
+          value={String(weeklyStreak)}
+          label="Sport"
+          sub="Semaines avec séance"
+          tone="purple"
+        />
 
-        <div className="space-y-2">
-          {nutritionStreakLoading ? (
-            <div className="h-[8.5rem] animate-pulse rounded-2xl bg-muted" />
-          ) : (
-            <>
-              <StatCard
-                icon={<Flame className="size-4 fill-current text-nutrition-streak-foreground" />}
-                value={String(nutritionStreak)}
-                label="Diète"
-                sub="Jours objectif validés"
-                className="border border-[color-mix(in_srgb,var(--nutrition-streak-foreground)_22%,var(--border))] bg-nutrition-streak"
+        {nutritionStreakLoading ? (
+          <div className="h-[8.5rem] animate-pulse rounded-2xl bg-muted" />
+        ) : (
+          <StatCard
+            icon={
+              <Flame
+                className={cn(
+                  'size-4 fill-current',
+                  isFrozen ? 'text-sky-500' : 'text-nutrition-streak-foreground',
+                )}
               />
-              <NutritionStreakPill
-                streak={nutritionStreak}
-                isFrozen={isFrozen}
-                title={nutritionTitle}
-              />
-            </>
-          )}
-        </div>
+            }
+            value={String(nutritionStreak)}
+            label="Diète"
+            sub={
+              isFrozen
+                ? 'Série gelée — jours objectif validés'
+                : 'Jours objectif validés'
+            }
+            className="border border-[color-mix(in_srgb,var(--nutrition-streak-foreground)_22%,var(--border))] bg-nutrition-streak"
+          />
+        )}
       </div>
 
       {activePlanningCount != null && onPlanningClick ? (

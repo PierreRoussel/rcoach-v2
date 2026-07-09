@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLink'
 import { Capacitor } from '@capacitor/core'
 import { Activity, ExternalLink, Link2, Unlink } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -253,9 +253,12 @@ export function HealthConnectProfileCard() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          <Link to={LEGAL_PATHS.privacy} className="text-primary underline-offset-2 hover:underline">
+          <StandaloneDocumentLink
+            path={LEGAL_PATHS.privacy}
+            className="text-primary underline-offset-2 hover:underline"
+          >
             Politique de confidentialité
-          </Link>{' '}
+          </StandaloneDocumentLink>{' '}
           — données santé traitées uniquement si vous activez la synchronisation.
         </p>
 

@@ -1,5 +1,4 @@
-import { Link } from '@tanstack/react-router'
-
+import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLink'
 import { LEGAL_PATHS } from '@/lib/legal/config'
 import { cn } from '@/lib/utils'
 
@@ -8,23 +7,30 @@ type LegalLinksRowProps = {
   includeCgv?: boolean
 }
 
+const linkClassName = 'underline-offset-2 hover:underline'
+
 export function LegalLinksRow({ className, includeCgv = false }: LegalLinksRowProps) {
   return (
-    <div className={cn('flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground', className)}>
-      <Link to={LEGAL_PATHS.terms} className="underline-offset-2 hover:underline">
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground',
+        className,
+      )}
+    >
+      <StandaloneDocumentLink path={LEGAL_PATHS.terms} className={linkClassName}>
         CGU
-      </Link>
-      <Link to={LEGAL_PATHS.privacy} className="underline-offset-2 hover:underline">
+      </StandaloneDocumentLink>
+      <StandaloneDocumentLink path={LEGAL_PATHS.privacy} className={linkClassName}>
         Confidentialité
-      </Link>
+      </StandaloneDocumentLink>
       {includeCgv ? (
-        <Link to={LEGAL_PATHS.cgv} className="underline-offset-2 hover:underline">
+        <StandaloneDocumentLink path={LEGAL_PATHS.cgv} className={linkClassName}>
           CGV
-        </Link>
+        </StandaloneDocumentLink>
       ) : null}
-      <Link to={LEGAL_PATHS.help} className="underline-offset-2 hover:underline">
+      <StandaloneDocumentLink path={LEGAL_PATHS.help} className={linkClassName}>
         Support
-      </Link>
+      </StandaloneDocumentLink>
     </div>
   )
 }

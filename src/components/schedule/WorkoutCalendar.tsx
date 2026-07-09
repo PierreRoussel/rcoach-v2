@@ -31,6 +31,7 @@ export type WorkoutCalendarProps = {
   nutritionDays?: Map<string, NutritionDayAggregate>
   showNutrition?: boolean
   mode?: 'compact' | 'full'
+  embedded?: boolean
   selected?: Date
   onSelect?: (date: Date | undefined) => void
   month?: Date
@@ -99,6 +100,7 @@ export function WorkoutCalendar({
   nutritionDays,
   showNutrition = false,
   mode = 'compact',
+  embedded = false,
   selected,
   onSelect,
   month: controlledMonth,
@@ -190,16 +192,18 @@ export function WorkoutCalendar({
   }
 
   return (
-    <div className={cn('w-full space-y-3', className)}>
+    <div className={cn('w-full', !embedded && 'space-y-3', className)}>
       <div
         className={cn(
           'relative w-full overflow-hidden',
-          mode === 'compact'
-            ? 'rounded-3xl border border-border/70 bg-gradient-to-b from-card via-card to-soft-purple/20 px-2 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:px-3'
-            : 'rounded-2xl border border-border/60 bg-muted/15 px-3 py-4 sm:px-4',
+          embedded
+            ? 'px-0 py-0'
+            : mode === 'compact'
+              ? 'rounded-3xl border border-border/70 bg-gradient-to-b from-card via-card to-soft-purple/20 px-2 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:px-3'
+              : 'rounded-2xl border border-border/60 bg-muted/15 px-3 py-4 sm:px-4',
         )}
       >
-        {mode === 'compact' ? (
+        {mode === 'compact' && !embedded ? (
           <div
             className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-primary/25 to-transparent"
             aria-hidden

@@ -14,6 +14,7 @@ import {
   themeSupportsColorModePreference,
   type ThemeId,
 } from '@/design-system/themes'
+import { syncPwaChromeColor } from '@/lib/pwa/sync-pwa-chrome-color'
 
 export type ColorModePreference = 'light' | 'dark' | 'system'
 export type ResolvedColorMode = 'light' | 'dark'
@@ -87,6 +88,7 @@ function applyThemeToDocument(themeId: ThemeId, colorMode: ResolvedColorMode) {
   root.dataset.theme = themeId
   root.classList.toggle('dark', colorMode === 'dark')
   root.style.colorScheme = colorMode
+  syncPwaChromeColor(colorMode)
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 
+import { AppReturnNav } from '@/components/legal/AppReturnNav'
 import { LegalLinksRow } from '@/components/legal/LegalLinksRow'
 import { BrandLogo } from '@/design-system'
 import {
@@ -37,6 +38,7 @@ const faqItems = [
 function HelpPage() {
   return (
     <div className="mx-auto min-h-svh max-w-2xl bg-background px-4 py-8">
+      <AppReturnNav className="mb-4" />
       <BrandLogo compact />
       <header className="mt-8 space-y-2">
         <h1 className="font-display text-3xl font-black">Aide & support</h1>

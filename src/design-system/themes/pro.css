@@ -73,6 +73,8 @@
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 72%, var(--foreground));
   --nutrition-streak: rgba(252, 232, 214, 0.14);
   --nutrition-streak-foreground: #f0a050;
+  --workout-streak: #9b8cff;
+  --workout-streak-foreground: #0d1b2e;
   --gradient-hero: linear-gradient(
     135deg,
     rgba(255, 77, 0, 0.22) 0%,

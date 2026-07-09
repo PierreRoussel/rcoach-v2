@@ -569,8 +569,12 @@ export function NutritionStreakGamificationProvider({
   )
 }
 
+export function useOptionalNutritionStreakGamification() {
+  return useContext(NutritionStreakGamificationContext)
+}
+
 export function useNutritionStreakGamification() {
-  const context = useContext(NutritionStreakGamificationContext)
+  const context = useOptionalNutritionStreakGamification()
 
   if (!context) {
     throw new Error(

@@ -65,6 +65,8 @@
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 38%, #5a4210);
   --nutrition-streak: #fce8d6;
   --nutrition-streak-foreground: #b86a18;
+  --workout-streak: #6b4fcc;
+  --workout-streak-foreground: #ffffff;
   --gradient-hero: linear-gradient(
     135deg,
     var(--soft-primary) 0%,
@@ -126,6 +128,8 @@
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 78%, var(--foreground));
   --nutrition-streak: rgba(252, 232, 214, 0.2);
   --nutrition-streak-foreground: #e8a04a;
+  --workout-streak: #b8a8d8;
+  --workout-streak-foreground: #18143a;
   --gradient-hero: linear-gradient(
     135deg,
     rgba(212, 120, 154, 0.18) 0%,

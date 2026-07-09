@@ -17,7 +17,8 @@ import { FormMessage } from '@/components/ui/form'
 import { LegalLinksRow } from '@/components/legal/LegalLinksRow'
 import { clearAuthSession } from '@/lib/auth/clear-auth-session'
 import { deleteMyAccount } from '@/lib/legal/delete-my-account'
-import { LEGAL_PATHS, supportMailto } from '@/lib/legal/config'
+import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLink'
+import { LEGAL_PATHS } from '@/lib/legal/config'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function AccountLegalSupportSection() {
@@ -49,7 +50,9 @@ export function AccountLegalSupportSection() {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <Button variant="soft" size="sm" asChild>
-          <Link to={LEGAL_PATHS.help}>Centre d&apos;aide</Link>
+          <StandaloneDocumentLink path={LEGAL_PATHS.help}>
+            Centre d&apos;aide
+          </StandaloneDocumentLink>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <a href={supportMailto('Support RCoach')}>Contacter le support</a>

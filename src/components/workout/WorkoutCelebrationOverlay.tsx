@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { CalendarDays, CircleCheckBig, Sparkles } from 'lucide-react'
+import { CircleCheckBig, Sparkles } from 'lucide-react'
 
+import { WorkoutStreakIcon } from '@/components/schedule/WorkoutStreakIcon'
 import { Button } from '@/components/ui/button'
 import type { WorkoutCelebrationKind } from '@/lib/workout/workout-celebration'
 import { cn } from '@/lib/utils'
@@ -69,9 +70,9 @@ function CelebrationIcon({
   }
 
   return (
-    <div className="relative flex size-24 items-center justify-center rounded-full bg-white/75 shadow-[0_12px_40px_rgba(16,185,129,0.18)] backdrop-blur-sm animate-workout-celebration-float">
-      <CalendarDays className="size-11 text-emerald-600" aria-hidden />
-      <span className="absolute -bottom-1 rounded-full bg-emerald-600 px-2 py-0.5 font-display text-xs font-black text-white">
+    <div className="relative flex size-24 items-center justify-center rounded-full bg-white/75 shadow-[0_12px_40px_color-mix(in_srgb,var(--workout-streak)_28%,transparent)] backdrop-blur-sm animate-workout-celebration-float">
+      <WorkoutStreakIcon className="size-11" />
+      <span className="absolute -bottom-1 rounded-full bg-workout-streak px-2 py-0.5 font-display text-xs font-black text-workout-streak-foreground">
         {weeklyStreak}
       </span>
     </div>

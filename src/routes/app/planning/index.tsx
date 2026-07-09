@@ -184,11 +184,6 @@ function PlanningPage() {
         description="Séances, nutrition et régularité — tout au même endroit."
       />
 
-      <PlanningStreakBar
-        activePlanningCount={sessionsLoading ? undefined : activeCount}
-        onPlanningClick={scrollToPlanningRules}
-      />
-
       {scheduleMissing ? <ScheduleDeployNotice /> : null}
 
       {!hasUnlimitedPlanning && activeCount >= FREE_ACTIVE_PROGRAMS ? (
@@ -236,6 +231,12 @@ function PlanningPage() {
           <WorkoutCalendarPanel
             mode="full"
             hideCalendarStreak
+            belowCalendar={
+              <PlanningStreakBar
+                activePlanningCount={sessionsLoading ? undefined : activeCount}
+                onPlanningClick={scrollToPlanningRules}
+              />
+            }
             onStartPlanned={(occurrence) => void startPlannedSession(occurrence)}
             onPlanDate={openPlanForm}
             isStarting={isStarting}

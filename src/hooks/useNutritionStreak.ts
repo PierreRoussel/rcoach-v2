@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
-import { useNutritionStreakGamification } from '@/components/nutrition/NutritionStreakGamificationProvider'
+import { useOptionalNutritionStreakGamification } from '@/components/nutrition/NutritionStreakGamificationProvider'
 import { fetchNutritionHintRangeEntries } from '@/lib/nutrition/fetch-nutrition-day-entries'
 import {
   aggregateNutritionDays,
@@ -55,6 +55,19 @@ export function useNutritionLogHistory(
 }
 
 export function useNutritionStreak(_dailyTarget?: number) {
+  const context = useOptionalNutritionStreakGamification()
+
+  if (!context) {
+    return {
+      streak: 0,
+      isLoading: true,
+      error: null,
+      isFrozen: false,
+      recoveryProgress: null,
+      validatedToday: false,
+    }
+  }
+
   const {
     displayStreak,
     isLoading,
@@ -62,7 +75,7 @@ export function useNutritionStreak(_dailyTarget?: number) {
     isFrozen,
     recoveryProgress,
     validatedToday,
-  } = useNutritionStreakGamification()
+  } = context
 
   return {
     streak: displayStreak,
