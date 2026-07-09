@@ -538,6 +538,12 @@ export const ENSURE_USER_PROFILE = `
   }
 `
 
+export const COMPLETE_MY_ONBOARDING = `
+  mutation CompleteMyOnboarding {
+    complete_my_onboarding
+  }
+`
+
 /** Fallback when onboarding_completed_at migration is not deployed yet. */
 export const GET_MY_PROFILE_ONBOARDING_LEGACY = `
   query GetMyProfileOnboardingLegacy($userId: uuid!) {
