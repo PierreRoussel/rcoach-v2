@@ -150,11 +150,6 @@ export function DietDayPanel({
           <CalorieRingGauge
             consumed={daySummary.totals.calories}
             target={daySummary.targets.calories}
-            macros={{
-              carbsG: daySummary.totals.carbsG,
-              proteinG: daySummary.totals.proteinG,
-              fatG: daySummary.totals.fatG,
-            }}
           />
           <CalorieSideStat
             className="absolute bottom-0 left-0"

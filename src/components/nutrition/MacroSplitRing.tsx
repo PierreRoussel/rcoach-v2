@@ -12,6 +12,7 @@ type MacroSplitRingProps = {
   strokeWidth: number
   size: number
   isOverTarget?: boolean
+  accentClassName?: string
   className?: string
 }
 
@@ -22,6 +23,7 @@ export function MacroSplitRing({
   strokeWidth,
   size,
   isOverTarget = false,
+  accentClassName = 'text-primary',
   className,
 }: MacroSplitRingProps) {
   const circumference = 2 * Math.PI * radius
@@ -95,7 +97,7 @@ export function MacroSplitRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - progress)}
-          className="text-primary transition-[stroke-dashoffset] duration-500"
+          className={cn(accentClassName, 'transition-[stroke-dashoffset] duration-500')}
         />
       )}
     </svg>

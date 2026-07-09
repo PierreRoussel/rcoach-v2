@@ -1,18 +1,15 @@
 import { MacroSplitRing } from '@/components/nutrition/MacroSplitRing'
-import type { MacroGrams } from '@/lib/nutrition/macro-visuals'
 import { cn } from '@/lib/utils'
 
 type CalorieRingGaugeProps = {
   consumed: number
   target: number
-  macros?: MacroGrams
   className?: string
 }
 
 export function CalorieRingGauge({
   consumed,
   target,
-  macros,
   className,
 }: CalorieRingGaugeProps) {
   const isOverTarget = target > 0 && consumed > target
@@ -34,11 +31,11 @@ export function CalorieRingGauge({
     >
       <MacroSplitRing
         progress={progress}
-        macros={macros}
         radius={radius}
         strokeWidth={10}
         size={size}
         isOverTarget={isOverTarget}
+        accentClassName="text-primary"
         className="size-full"
       />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
