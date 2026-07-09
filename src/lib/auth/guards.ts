@@ -1,7 +1,11 @@
 import { redirect } from '@tanstack/react-router'
 
 import { bootstrapAuthUserLocaleIfNeeded } from '@/lib/auth/auth-user-locale'
-import { fetchMyProfile } from '@/lib/graphql/profile-request'
+import {
+  hasEnsuredProfileForUser,
+  loadMyProfileCached,
+  markProfileEnsuredForUser,
+} from '@/lib/auth/guard-profile'
 import { ensureUserProfile } from '@/lib/onboarding/ensure-user-profile'
 import { isAdminProfile } from '@/lib/profile/roles'
 import { nhost } from '@/lib/nhost/AuthProvider'
@@ -19,8 +23,13 @@ export async function ensureAuthenticatedProfile() {
     return
   }
 
+  if (hasEnsuredProfileForUser(userId)) {
+    return
+  }
+
   await ensureUserProfile(nhost, userId)
   await bootstrapAuthUserLocaleIfNeeded(nhost, userId)
+  markProfileEnsuredForUser(userId)
 }
 
 export async function requireAuthenticatedUser() {
@@ -43,7 +52,7 @@ export async function resolveDefaultAuthenticatedPath(): Promise<'/app' | '/app/
   }
 
   try {
-    const profile = await fetchMyProfile(nhost, userId)
+    const profile = await loadMyProfileCached(nhost, userId)
     return isAppOnboardingComplete(profile) ? '/app' : '/app/onboarding'
   } catch {
     // Avoid locking out returning users when profile fetch fails transiently.
@@ -75,7 +84,7 @@ export async function requireAppOnboardingComplete() {
   }
 
   try {
-    const profile = await fetchMyProfile(nhost, userId)
+    const profile = await loadMyProfileCached(nhost, userId)
 
     if (!isAppOnboardingComplete(profile)) {
       throw redirect({ to: '/app/onboarding' })
@@ -96,7 +105,7 @@ export async function redirectIfAppOnboardingComplete() {
   }
 
   try {
-    const profile = await fetchMyProfile(nhost, userId)
+    const profile = await loadMyProfileCached(nhost, userId)
 
     if (isAppOnboardingComplete(profile)) {
       throw redirect({ to: '/app' })
@@ -119,7 +128,7 @@ export async function requireAdmin() {
   }
 
   try {
-    const profile = await fetchMyProfile(nhost, userId)
+    const profile = await loadMyProfileCached(nhost, userId)
 
     if (!isAdminProfile(profile)) {
       throw redirect({ to: '/coach' })

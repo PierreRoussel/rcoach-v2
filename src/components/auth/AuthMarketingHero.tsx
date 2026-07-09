@@ -23,7 +23,7 @@ export function AuthMarketingHero({
   compact = false,
 }: AuthMarketingHeroProps) {
   const content = AUTH_MARKETING_CONTENT[variant]
-  const showMockups = variant !== 'recovery' && variant !== 'register'
+  const showMockups = variant !== 'recovery' 
 
   return (
     <div className={cn('relative flex flex-col items-center text-center', className)}>

@@ -1,0 +1,5 @@
+function:
+  name: complete_my_onboarding
+  schema: public
+permissions:
+  - role: user

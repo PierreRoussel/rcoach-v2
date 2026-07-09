@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -6,20 +6,11 @@ import { createRoot } from 'react-dom/client'
 import { AuthQuerySync } from '@/components/auth/AuthQuerySync'
 import { ThemeProvider } from '@/design-system'
 import { AuthProvider } from '@/lib/nhost/AuthProvider'
+import { queryClient } from '@/lib/query-client'
 import { resolveViewTransitionTypes } from '@/lib/router/view-transition-types'
 import { routeTree } from '@/routeTree.gen'
 
 import './index.css'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
 
 const router = createRouter({
   routeTree,

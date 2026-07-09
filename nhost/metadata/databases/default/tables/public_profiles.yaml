@@ -89,9 +89,23 @@ select_permissions:
         - onboarding_completed_at
         - is_premium
       filter:
+        id:
+          _eq: X-Hasura-User-Id
+  - role: user
+    permission:
+      columns:
+        - id
+        - display_name
+        - avatar_url
+        - role
+        - unit_system
+        - rpe_enabled
+        - exercise_locale
+        - created_at
+        - friend_code
+        - is_premium
+      filter:
         _or:
-          - id:
-              _eq: X-Hasura-User-Id
           - coach_clients_as_athlete:
               coach_id:
                 _eq: X-Hasura-User-Id
@@ -128,7 +142,6 @@ update_permissions:
         - unit_system
         - rpe_enabled
         - exercise_locale
-        - onboarding_completed_at
       filter:
         id:
           _eq: X-Hasura-User-Id

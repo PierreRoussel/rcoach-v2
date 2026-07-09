@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
+import { resetAuthenticatedProfileSession } from '@/lib/auth/guard-profile'
 import { clearNutritionOfflineData } from '@/lib/nutrition/clear-nutrition-offline-data'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -17,6 +18,7 @@ export function AuthQuerySync() {
       previousUserIdRef.current !== userId
     ) {
       queryClient.clear()
+      resetAuthenticatedProfileSession()
       void clearNutritionOfflineData()
     }
 
