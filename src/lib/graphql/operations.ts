@@ -2668,6 +2668,42 @@ export const REPLY_FRIEND_MOTIVATION = `
   }
 `
 
+export const START_MY_PREMIUM_TRIAL = `
+  mutation StartMyPremiumTrial($billingPeriod: String!) {
+    start_my_premium_trial(args: { p_billing_period: $billingPeriod }) {
+      id
+      user_id
+      tier
+      status
+      billing_period
+      current_period_end
+      provider
+      provider_ref
+      trial_consumed_at
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const CANCEL_MY_SUBSCRIPTION = `
+  mutation CancelMySubscription {
+    cancel_my_subscription {
+      id
+      user_id
+      tier
+      status
+      billing_period
+      current_period_end
+      provider
+      provider_ref
+      trial_consumed_at
+      created_at
+      updated_at
+    }
+  }
+`
+
 export const RECONCILE_MY_SUBSCRIPTION = `
   query ReconcileMySubscription {
     reconcile_my_subscription {

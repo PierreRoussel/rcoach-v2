@@ -7,6 +7,7 @@ import {
   billingPeriodFromStripeInterval,
   createCheckoutSession,
   mapStripeSubscriptionStatus,
+  resolveStripeCustomerId,
   retrieveSubscription,
 } from '../_billing/stripe.ts'
 import {
@@ -67,8 +68,8 @@ export default async function stripeCheckout(
   try {
     const existing = await fetchSubscriptionByUserId(userId)
     const customerId =
-      existing?.provider === 'stripe' && existing.provider_ref?.startsWith('cus_')
-        ? existing.provider_ref
+      existing?.provider === 'stripe'
+        ? await resolveStripeCustomerId(existing.provider_ref)
         : null
 
     const session = await createCheckoutSession({

@@ -16,7 +16,13 @@ import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { PageHeader, Pill } from '@/design-system'
-import { useStartPremiumTrial, useSubscriptionSummary } from '@/hooks/useSubscription'
+import {
+  usePurchasePremium,
+  useRestorePremiumPurchases,
+  useStartPremiumTrial,
+  useSubscriptionSummary,
+} from '@/hooks/useSubscription'
+import { isBillingAvailable, resolveBillingChannel } from '@/lib/billing/billing-channel'
 import { trackEvent } from '@/lib/analytics/track-event'
 import type { BillingPeriod } from '@/lib/subscription/plans'
 import {
@@ -29,9 +35,13 @@ import {
 export function PremiumOfferPage() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual')
   const [showCelebration, setShowCelebration] = useState(false)
-  const [trialError, setTrialError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const { isPremium, canStartTrial, hasConsumedTrial, isLoading } = useSubscriptionSummary()
   const startTrial = useStartPremiumTrial()
+  const purchasePremium = usePurchasePremium()
+  const restorePurchases = useRestorePremiumPurchases()
+  const billingChannel = resolveBillingChannel()
+  const billingReady = isBillingAvailable()
 
   useEffect(() => {
     trackEvent('paywall_view', { billingPeriod })
@@ -42,25 +52,15 @@ export function PremiumOfferPage() {
       ? `${monthlyEquivalentFromAnnual(PREMIUM_PLAN)}/mois, facturé ${formatPriceEuros(PREMIUM_PLAN.annualPriceCents)}/an`
       : `${formatPriceEuros(PREMIUM_PLAN.monthlyPriceCents)}/mois`
 
-  async function handleStartTrial(options?: {
-    trialDays?: number
-    subscribeOffer?: boolean
-  }) {
-    setTrialError(null)
-    trackEvent('paywall_cta_click', {
-      billingPeriod,
-      cta: options?.subscribeOffer ? 'subscribe' : 'trial',
-    })
+  async function handleStartTrial() {
+    setActionError(null)
+    trackEvent('paywall_cta_click', { billingPeriod, cta: 'trial' })
     try {
-      await startTrial.mutateAsync({
-        billingPeriod,
-        trialDays: options?.trialDays,
-        subscribeOffer: options?.subscribeOffer,
-      })
+      await startTrial.mutateAsync({ billingPeriod })
       trackEvent('paywall_conversion', { billingPeriod, status: 'trialing' })
       setShowCelebration(true)
     } catch (error) {
-      setTrialError(
+      setActionError(
         error instanceof Error
           ? error.message
           : 'Impossible de démarrer l’essai pour le moment.',
@@ -68,8 +68,38 @@ export function PremiumOfferPage() {
     }
   }
 
-  const ctaDisabled = isPremium || startTrial.isPending || isLoading
-  const subscribeDisabled = ctaDisabled
+  async function handleSubscribe() {
+    setActionError(null)
+    trackEvent('paywall_cta_click', { billingPeriod, cta: 'subscribe' })
+    try {
+      await purchasePremium.mutateAsync({ billingPeriod })
+      trackEvent('paywall_conversion', { billingPeriod, status: 'purchase_started' })
+      if (billingChannel === 'play') {
+        setShowCelebration(true)
+      }
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : 'Impossible de lancer l’achat pour le moment.',
+      )
+    }
+  }
+
+  async function handleRestorePurchases() {
+    setActionError(null)
+    try {
+      await restorePurchases.mutateAsync()
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de restaurer les achats pour le moment.',
+      )
+    }
+  }
+
+  const isPending = startTrial.isPending || purchasePremium.isPending || restorePurchases.isPending
+  const ctaDisabled = isPremium || isPending || isLoading
+  const subscribeDisabled = ctaDisabled || !billingReady
   const trialDisabled = ctaDisabled || !canStartTrial
 
   return (
@@ -150,8 +180,8 @@ export function PremiumOfferPage() {
               </p>
             </div>
 
-            {trialError ? (
-              <FeedbackMessage variant="error">{trialError}</FeedbackMessage>
+            {actionError ? (
+              <FeedbackMessage variant="error">{actionError}</FeedbackMessage>
             ) : null}
 
             <Button
@@ -165,12 +195,12 @@ export function PremiumOfferPage() {
               {startTrial.isPending
                 ? 'Activation en cours...'
                 : isPremium
-                ? 'Premium déjà actif'
-                : canStartTrial
-                  ? 'Commencer l’essai gratuit'
-                  : hasConsumedTrial
-                    ? 'Essai gratuit déjà utilisé'
-                    : 'Commencer l’essai gratuit'}
+                  ? 'Premium déjà actif'
+                  : canStartTrial
+                    ? 'Commencer l’essai gratuit'
+                    : hasConsumedTrial
+                      ? 'Essai gratuit déjà utilisé'
+                      : 'Commencer l’essai gratuit'}
             </Button>
 
             <Button
@@ -178,28 +208,30 @@ export function PremiumOfferPage() {
               variant="outline"
               className="w-full rounded-full"
               disabled={subscribeDisabled}
-              onClick={() =>
-                void handleStartTrial({
-                  trialDays: PREMIUM_PLAN.subscribeOfferTrialDays,
-                  subscribeOffer: true,
-                })
-              }
+              onClick={() => void handleSubscribe()}
             >
-              {startTrial.isPending
-                ? 'Activation en cours...'
-                : `M’abonner tout de suite (${PREMIUM_PLAN.subscribeOfferTrialDays} jours offerts)`}
+              {purchasePremium.isPending
+                ? 'Redirection vers le paiement...'
+                : billingReady
+                  ? `M’abonner (${billingChannel === 'play' ? 'Google Play' : 'carte bancaire'})`
+                  : 'Achat indisponible sur cette plateforme'}
             </Button>
 
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
               {canStartTrial
                 ? 'Sans engagement · Annulable à tout moment · Aucun paiement avant la fin de l’essai'
                 : hasConsumedTrial
-                  ? 'L’essai gratuit n’est disponible qu’une seule fois par compte. L’abonnement payant arrive bientôt.'
+                  ? 'L’essai gratuit n’est disponible qu’une seule fois par compte.'
                   : 'Sans engagement · Annulable à tout moment'}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-              <button type="button" className="underline-offset-2 hover:underline">
-                Restaurer mes achats
+              <button
+                type="button"
+                className="underline-offset-2 hover:underline disabled:opacity-50"
+                disabled={!billingReady || restorePurchases.isPending}
+                onClick={() => void handleRestorePurchases()}
+              >
+                {restorePurchases.isPending ? 'Restauration...' : 'Restaurer mes achats'}
               </button>
               <Link to="/app/profile/settings" className="underline-offset-2 hover:underline">
                 CGU

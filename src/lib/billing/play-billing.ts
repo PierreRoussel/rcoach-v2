@@ -70,6 +70,12 @@ declare global {
 
 let storeInitPromise: Promise<CdvStore> | null = null
 let pendingAccessToken: string | null = null
+let pendingVerification:
+  | {
+      resolve: () => void
+      reject: (error: Error) => void
+    }
+  | null = null
 
 function getCdvPurchase(): CdvPurchaseNamespace {
   const cdv = window.CdvPurchase
@@ -78,6 +84,40 @@ function getCdvPurchase(): CdvPurchaseNamespace {
   }
 
   return cdv
+}
+
+function settlePendingVerification(error?: Error) {
+  if (!pendingVerification) {
+    return
+  }
+
+  if (error) {
+    pendingVerification.reject(error)
+  } else {
+    pendingVerification.resolve()
+  }
+
+  pendingVerification = null
+}
+
+function waitForPurchaseVerification(timeoutMs = 120_000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      pendingVerification = null
+      reject(new Error('Délai dépassé lors de la validation de l’achat.'))
+    }, timeoutMs)
+
+    pendingVerification = {
+      resolve: () => {
+        window.clearTimeout(timeoutId)
+        resolve()
+      },
+      reject: (error) => {
+        window.clearTimeout(timeoutId)
+        reject(error)
+      },
+    }
+  })
 }
 
 async function getInitializedStore(): Promise<CdvStore> {
@@ -99,25 +139,35 @@ async function getInitializedStore(): Promise<CdvStore> {
       })
 
       store.when().approved(async (transaction) => {
-        const productId = transaction.products[0]?.id
-        const purchaseToken = transaction.nativePurchase?.purchaseToken
-        const billingPeriod = productId
-          ? billingPeriodFromPlayProductId(productId)
-          : null
+        try {
+          const productId = transaction.products[0]?.id
+          const purchaseToken = transaction.nativePurchase?.purchaseToken
+          const billingPeriod = productId
+            ? billingPeriodFromPlayProductId(productId)
+            : null
 
-        if (productId && purchaseToken && billingPeriod && pendingAccessToken) {
-          await verifyPlayPurchase(pendingAccessToken, {
-            productId,
-            purchaseToken,
-            billingPeriod,
-          })
+          if (productId && purchaseToken && billingPeriod && pendingAccessToken) {
+            await verifyPlayPurchase(pendingAccessToken, {
+              productId,
+              purchaseToken,
+              billingPeriod,
+            })
+          }
+
+          await transaction.finish()
+          settlePendingVerification()
+        } catch (error) {
+          settlePendingVerification(
+            error instanceof Error ? error : new Error('Échec de la vérification Google Play.'),
+          )
         }
-
-        await transaction.finish()
       })
 
       store.error((error) => {
         console.error('Play Billing error', error)
+        settlePendingVerification(
+          error instanceof Error ? error : new Error('Erreur Google Play Billing.'),
+        )
       })
 
       await store.initialize([cdv.Platform.GOOGLE_PLAY])
@@ -146,13 +196,17 @@ export async function purchasePlaySubscription(
     throw new Error('Offre Google Play introuvable. Vérifiez la configuration Play Console.')
   }
 
+  const verification = waitForPurchaseVerification()
   await store.order(offer)
+  await verification
 }
 
 export async function restorePlayPurchases(accessToken: string): Promise<void> {
   pendingAccessToken = accessToken
   const store = await getInitializedStore()
+  const verification = waitForPurchaseVerification(8_000)
   await store.update()
+  await verification
 }
 
 export function openPlaySubscriptionManagement(): void {

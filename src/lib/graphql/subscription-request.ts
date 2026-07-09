@@ -1,10 +1,12 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
 import {
+  CANCEL_MY_SUBSCRIPTION,
   GET_MY_SUBSCRIPTION,
   INSERT_CANCELLATION_FEEDBACK,
   INSERT_MY_SUBSCRIPTION,
   RECONCILE_MY_SUBSCRIPTION,
+  START_MY_PREMIUM_TRIAL,
   UPDATE_MY_SUBSCRIPTION,
   type CancellationFeedbackInput,
   type Subscription,
@@ -30,6 +32,8 @@ export const DEFAULT_FREE_SUBSCRIPTION: Subscription = {
   created_at: new Date(0).toISOString(),
   updated_at: new Date(0).toISOString(),
 }
+
+import type { BillingPeriod } from '@/lib/subscription/plans'
 
 function isSubscriptionSchemaError(error: unknown): boolean {
   return isGraphqlSubscriptionMissingError(error)
@@ -66,6 +70,51 @@ export async function fetchMySubscription(
       return { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
     }
     throw error
+  }
+}
+
+function readSubscriptionFunctionResult(
+  rows: Subscription | Subscription[] | null | undefined,
+  errorMessage: string,
+): Subscription {
+  const subscription = Array.isArray(rows) ? rows[0] : rows
+  if (!subscription) {
+    throw new Error(errorMessage)
+  }
+
+  return subscription
+}
+
+export async function startMyPremiumTrial(
+  nhost: NhostClient,
+  billingPeriod: BillingPeriod,
+): Promise<Subscription> {
+  try {
+    const data = await graphqlRequest<{
+      start_my_premium_trial: Subscription | Subscription[]
+    }>(nhost, START_MY_PREMIUM_TRIAL, { billingPeriod })
+
+    return readSubscriptionFunctionResult(
+      data.start_my_premium_trial,
+      'Impossible de démarrer l’essai.',
+    )
+  } catch (error) {
+    throw toSubscriptionDeployError(error)
+  }
+}
+
+export async function cancelMySubscription(nhost: NhostClient): Promise<Subscription> {
+  try {
+    const data = await graphqlRequest<{
+      cancel_my_subscription: Subscription | Subscription[]
+    }>(nhost, CANCEL_MY_SUBSCRIPTION)
+
+    return readSubscriptionFunctionResult(
+      data.cancel_my_subscription,
+      'Impossible d’annuler l’abonnement.',
+    )
+  } catch (error) {
+    throw toSubscriptionDeployError(error)
   }
 }
 

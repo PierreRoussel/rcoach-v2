@@ -1,35 +1,64 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { addDays } from 'date-fns'
 import { useEffect, useRef } from 'react'
 
 import type {
   CancellationFeedbackInput,
   Subscription,
-  SubscriptionUpdateInput,
 } from '@/lib/graphql/operations'
 import {
+  cancelMySubscription,
   fetchMySubscription,
+  startMyPremiumTrial,
   submitCancellationFeedback,
-  updateMySubscription,
 } from '@/lib/graphql/subscription-request'
-import { isPremiumTier } from '@/lib/subscription/entitlements'
+import {
+  openSubscriptionManagement,
+  purchasePremium,
+  restorePremiumPurchases,
+} from '@/lib/billing/billing-service'
+import { isBillingAvailable } from '@/lib/billing/billing-channel'
 import type { PremiumFeature } from '@/lib/subscription/entitlements'
 import type { BillingPeriod } from '@/lib/subscription/plans'
-import { PREMIUM_PLAN } from '@/lib/subscription/plans'
 import {
   canStartPremiumTrial,
   canSubscribeToPremiumOffer,
-  hasConsumedPremiumTrial,
   isTrialAlreadyConsumedError,
 } from '@/lib/subscription/trial-eligibility'
 import {
-  buildTrialDowngradePatch,
   isSubscriptionPeriodActive,
   markTrialEndedPeriod,
   shouldExpireTrial,
 } from '@/lib/subscription/trial-lifecycle'
 import { cancelTrialReminderNotifications, scheduleTrialReminderNotifications } from '@/lib/notifications/trial-reminder-scheduler'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+
+function invalidateSubscriptionQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  userId: string | undefined,
+) {
+  if (!userId) {
+    return
+  }
+
+  void queryClient.invalidateQueries({ queryKey: ['subscription', 'me', userId] })
+  void queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
+  void queryClient.invalidateQueries({ queryKey: ['friendships'] })
+  void queryClient.invalidateQueries({ queryKey: ['friend-recap'] })
+  void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
+}
+
+function applySubscriptionCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  userId: string | undefined,
+  subscription: Subscription,
+) {
+  if (!userId) {
+    return
+  }
+
+  queryClient.setQueryData(['subscription', 'me', userId], subscription)
+  invalidateSubscriptionQueries(queryClient, userId)
+}
 
 export function useSubscription() {
   const { nhost, isAuthenticated, user } = useAuth()
@@ -55,11 +84,13 @@ export function useSubscriptionSummary() {
   const isPastDue = status === 'past_due'
   const billingPeriod = subscription?.billing_period ?? null
   const trialConsumedAt = subscription?.trial_consumed_at ?? null
-  const hasConsumedTrial = hasConsumedPremiumTrial(trialConsumedAt)
+  const hasConsumedTrial = trialConsumedAt != null
   const canStartTrial = canStartPremiumTrial({
     isPremium,
     trialConsumedAt,
   })
+  const provider = subscription?.provider ?? 'none'
+  const isBillingManaged = provider === 'play' || provider === 'stripe'
 
   return {
     ...query,
@@ -67,8 +98,10 @@ export function useSubscriptionSummary() {
     tier,
     status,
     billingPeriod,
+    provider,
     isPremium,
     isPastDue,
+    isBillingManaged,
     trialConsumedAt,
     hasConsumedTrial,
     canStartTrial,
@@ -82,8 +115,9 @@ export function useEntitlement(feature: PremiumFeature) {
 }
 
 export function useReconcileTrialExpiry() {
+  const { nhost, user } = useAuth()
   const { subscription, isLoading } = useSubscriptionSummary()
-  const updateSubscription = useUpdateSubscription()
+  const queryClient = useQueryClient()
   const reconcilingRef = useRef(false)
 
   useEffect(() => {
@@ -98,40 +132,19 @@ export function useReconcileTrialExpiry() {
     reconcilingRef.current = true
     const periodEnd = subscription.current_period_end
 
-  void (async () => {
+    void (async () => {
       try {
         if (periodEnd) {
           markTrialEndedPeriod(periodEnd)
         }
-        await updateSubscription.mutateAsync(buildTrialDowngradePatch())
+        await fetchMySubscription(nhost, user!.id)
+        invalidateSubscriptionQueries(queryClient, user?.id)
         await cancelTrialReminderNotifications()
       } finally {
         reconcilingRef.current = false
       }
     })()
-  }, [isLoading, subscription, updateSubscription])
-}
-
-export function useUpdateSubscription() {
-  const { nhost, user } = useAuth()
-  const queryClient = useQueryClient()
-  const userId = user?.id
-
-  return useMutation({
-    mutationFn: (changes: SubscriptionUpdateInput) => {
-      if (!userId) {
-        throw new Error('Utilisateur non connecté.')
-      }
-      return updateMySubscription(nhost, userId, changes)
-    },
-    onSuccess: (subscription: Subscription) => {
-      queryClient.setQueryData(['subscription', 'me', userId], subscription)
-      void queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
-      void queryClient.invalidateQueries({ queryKey: ['friendships'] })
-      void queryClient.invalidateQueries({ queryKey: ['friend-recap'] })
-      void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
-    },
-  })
+  }, [isLoading, nhost, queryClient, subscription, user])
 }
 
 export function useStartPremiumTrial() {
@@ -140,12 +153,7 @@ export function useStartPremiumTrial() {
   const userId = user?.id
 
   return useMutation({
-    mutationFn: async (input: {
-      billingPeriod: BillingPeriod
-      trialDays?: number
-      subscribeOffer?: boolean
-    }) => {
-      const { billingPeriod, trialDays, subscribeOffer = false } = input
+    mutationFn: async (input: { billingPeriod: BillingPeriod }) => {
       if (!userId) {
         throw new Error('Utilisateur non connecté.')
       }
@@ -153,11 +161,7 @@ export function useStartPremiumTrial() {
       const subscription = await fetchMySubscription(nhost, userId)
       const isPremium = isSubscriptionPeriodActive(subscription)
 
-      if (subscribeOffer) {
-        if (!canSubscribeToPremiumOffer({ isPremium })) {
-          throw new Error('Premium déjà actif.')
-        }
-      } else if (
+      if (
         !canStartPremiumTrial({
           isPremium,
           trialConsumedAt: subscription.trial_consumed_at,
@@ -166,19 +170,8 @@ export function useStartPremiumTrial() {
         throw new Error('Vous avez déjà utilisé votre essai gratuit.')
       }
 
-      const trialEnd = addDays(
-        new Date(),
-        trialDays ?? PREMIUM_PLAN.trialDays,
-      ).toISOString()
-
       try {
-        return await updateMySubscription(nhost, userId, {
-          tier: 'premium',
-          status: 'trialing',
-          billing_period: billingPeriod,
-          current_period_end: trialEnd,
-          provider: 'none',
-        })
+        return await startMyPremiumTrial(nhost, input.billingPeriod)
       } catch (error) {
         if (isTrialAlreadyConsumedError(error)) {
           throw new Error('Vous avez déjà utilisé votre essai gratuit.')
@@ -187,15 +180,7 @@ export function useStartPremiumTrial() {
       }
     },
     onSuccess: (subscription: Subscription) => {
-      if (!userId) {
-        return
-      }
-
-      queryClient.setQueryData(['subscription', 'me', userId], subscription)
-      void queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
-      void queryClient.invalidateQueries({ queryKey: ['friendships'] })
-      void queryClient.invalidateQueries({ queryKey: ['friend-recap'] })
-      void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
+      applySubscriptionCache(queryClient, userId, subscription)
       if (subscription.status === 'trialing' && subscription.current_period_end) {
         void scheduleTrialReminderNotifications({
           periodEnd: subscription.current_period_end,
@@ -206,19 +191,84 @@ export function useStartPremiumTrial() {
   })
 }
 
-export function useCancelSubscription() {
-  const updateSubscription = useUpdateSubscription()
+export function usePurchasePremium() {
+  const { nhost, user } = useAuth()
+  const queryClient = useQueryClient()
+  const userId = user?.id
 
   return useMutation({
-    mutationFn: async () =>
-      updateSubscription.mutateAsync({
-        tier: 'free',
-        status: 'canceled',
-        billing_period: null,
-        current_period_end: null,
-        provider: 'none',
-        provider_ref: null,
-      }),
+    mutationFn: async (input: { billingPeriod: BillingPeriod }) => {
+      if (!userId) {
+        throw new Error('Utilisateur non connecté.')
+      }
+
+      if (!isBillingAvailable()) {
+        throw new Error('Achat indisponible sur cette plateforme.')
+      }
+
+      const subscription = await fetchMySubscription(nhost, userId)
+      if (!canSubscribeToPremiumOffer({ isPremium: isSubscriptionPeriodActive(subscription) })) {
+        throw new Error('Premium déjà actif.')
+      }
+
+      await purchasePremium(nhost, input.billingPeriod)
+    },
+    onSuccess: () => {
+      invalidateSubscriptionQueries(queryClient, userId)
+    },
+  })
+}
+
+export function useRestorePremiumPurchases() {
+  const { nhost, user } = useAuth()
+  const queryClient = useQueryClient()
+  const userId = user?.id
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!userId) {
+        throw new Error('Utilisateur non connecté.')
+      }
+
+      if (!isBillingAvailable()) {
+        throw new Error('Restauration indisponible sur cette plateforme.')
+      }
+
+      await restorePremiumPurchases(nhost)
+    },
+    onSuccess: () => {
+      invalidateSubscriptionQueries(queryClient, userId)
+    },
+  })
+}
+
+export function useOpenSubscriptionManagement() {
+  const { nhost } = useAuth()
+
+  return useMutation({
+    mutationFn: async (provider: 'play' | 'stripe') => {
+      await openSubscriptionManagement(nhost, provider)
+    },
+  })
+}
+
+export function useCancelSubscription() {
+  const { nhost, user } = useAuth()
+  const queryClient = useQueryClient()
+  const userId = user?.id
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!userId) {
+        throw new Error('Utilisateur non connecté.')
+      }
+
+      return cancelMySubscription(nhost)
+    },
+    onSuccess: (subscription: Subscription) => {
+      applySubscriptionCache(queryClient, userId, subscription)
+      void cancelTrialReminderNotifications()
+    },
   })
 }
 

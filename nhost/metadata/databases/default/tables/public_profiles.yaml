@@ -127,6 +127,7 @@ update_permissions:
         - unit_system
         - rpe_enabled
         - exercise_locale
+        - onboarding_completed_at
       filter:
         id:
           _eq: X-Hasura-User-Id

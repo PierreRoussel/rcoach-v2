@@ -66,15 +66,16 @@ export async function createBillingPortalSession(input: {
   })
 }
 
-export async function retrieveSubscription(
-  subscriptionId: string,
-): Promise<{
+export type StripeSubscription = {
   id: string
   status: string
   current_period_end: number
+  customer?: string
   metadata?: Record<string, string>
   items?: { data?: Array<{ price?: { recurring?: { interval?: string } } }> }
-}> {
+}
+
+export async function retrieveSubscription(subscriptionId: string): Promise<StripeSubscription> {
   const secretKey = readStripeSecretKey()
   const response = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
     headers: {
@@ -82,19 +83,32 @@ export async function retrieveSubscription(
     },
   })
 
-  const payload = (await response.json()) as StripeResponse<{
-    id: string
-    status: string
-    current_period_end: number
-    metadata?: Record<string, string>
-    items?: { data?: Array<{ price?: { recurring?: { interval?: string } } }> }
-  }>
+  const payload = (await response.json()) as StripeResponse<StripeSubscription>
 
   if (!response.ok) {
     throw new Error(payload.error?.message ?? `Stripe subscription error (${response.status}).`)
   }
 
   return payload
+}
+
+export async function resolveStripeCustomerId(
+  providerRef: string | null | undefined,
+): Promise<string | null> {
+  if (!providerRef) {
+    return null
+  }
+
+  if (providerRef.startsWith('cus_')) {
+    return providerRef
+  }
+
+  if (providerRef.startsWith('sub_')) {
+    const subscription = await retrieveSubscription(providerRef)
+    return typeof subscription.customer === 'string' ? subscription.customer : null
+  }
+
+  return null
 }
 
 export function billingPeriodFromStripeInterval(

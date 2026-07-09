@@ -69,6 +69,8 @@ const SUBSCRIPTION_GRAPHQL_FIELDS = [
   'subscriptions_insert_input',
   'subscriptions_set_input',
   'reconcile_my_subscription',
+  'start_my_premium_trial',
+  'cancel_my_subscription',
 ] as const
 
 const SUBSCRIPTION_CANCELLATION_FEEDBACK_FIELDS = [
@@ -90,6 +92,29 @@ export function isGraphqlCancellationFeedbackMissingError(error: unknown): boole
   return SUBSCRIPTION_CANCELLATION_FEEDBACK_FIELDS.some((field) =>
     isGraphqlMissingFieldError(error, field),
   )
+}
+
+const ONBOARDING_GRAPHQL_FIELDS = [
+  'complete_my_onboarding',
+  'onboarding_completed_at',
+  'profiles_set_input',
+] as const
+
+export const ONBOARDING_NOT_DEPLOYED_MESSAGE =
+  'Impossible de finaliser l\'onboarding : déployez les metadata Nhost (complete_my_onboarding), puis réessayez dans quelques minutes.'
+
+export function isGraphqlOnboardingMissingError(error: unknown): boolean {
+  return ONBOARDING_GRAPHQL_FIELDS.some((field) =>
+    isGraphqlMissingFieldError(error, field),
+  )
+}
+
+export function toOnboardingDeployError(error: unknown): Error {
+  if (isGraphqlOnboardingMissingError(error)) {
+    return new Error(ONBOARDING_NOT_DEPLOYED_MESSAGE)
+  }
+
+  return error instanceof Error ? error : new Error(String(error))
 }
 
 export function toSubscriptionDeployError(error: unknown): Error {

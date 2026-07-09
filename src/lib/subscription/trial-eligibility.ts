@@ -17,6 +17,11 @@ export function canSubscribeToPremiumOffer(input: {
   return !input.isPremium
 }
 
+export function isManagedByBillingProviderError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+  return message.includes('managed_by_billing_provider')
+}
+
 export function isTrialAlreadyConsumedError(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
   return (

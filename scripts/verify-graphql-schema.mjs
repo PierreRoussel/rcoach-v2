@@ -46,6 +46,11 @@ const REQUIRED_QUERY_FIELDS = [
   'friend_motivations',
 ]
 
+const REQUIRED_FUNCTION_FIELDS = [
+  'ensure_user_profile',
+  'complete_my_onboarding',
+]
+
 const REQUIRED_MUTATION_FIELDS = [
   'insert_workouts_one',
   'insert_workout_templates_one',
@@ -98,6 +103,33 @@ async function main() {
   if (missingQueries.length > 0) {
     console.error(`FAIL: Missing GraphQL query fields: ${missingQueries.join(', ')}`)
     process.exit(1)
+  }
+
+  let queryFieldsToCheck = queryFields
+
+  if (adminSecret) {
+    const admin = await introspect({
+      'x-hasura-admin-secret': adminSecret,
+    })
+    queryFieldsToCheck = admin.queryFields
+  }
+
+  const missingFunctions = REQUIRED_FUNCTION_FIELDS.filter(
+    (field) => !queryFieldsToCheck.includes(field),
+  )
+
+  if (missingFunctions.length > 0) {
+    if (!adminSecret) {
+      console.warn(
+        `WARN: Could not verify SQL functions without CODEGEN_HASURA_ADMIN_SECRET: ${missingFunctions.join(', ')}`,
+      )
+    } else {
+      console.error(
+        `FAIL: Missing tracked SQL functions in Hasura metadata: ${missingFunctions.join(', ')}`,
+      )
+      console.error('Push nhost/metadata and redeploy (GitHub Action Deploy Nhost or nhost deploy).')
+      process.exit(1)
+    }
   }
 
   let mutationFieldsToCheck = mutationFields

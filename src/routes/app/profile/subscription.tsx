@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { addDays, format } from 'date-fns'
+import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { CancelSubscriptionFlow } from '@/components/subscription/CancelSubscriptionFlow'
@@ -14,25 +14,27 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { PageHeader, Pill } from '@/design-system'
 import {
   useCancelSubscription,
+  useOpenSubscriptionManagement,
+  usePurchasePremium,
+  useStartPremiumTrial,
+  useSubscription,
   useSubscriptionSummary,
-  useUpdateSubscription,
 } from '@/hooks/useSubscription'
+import { isBillingAvailable } from '@/lib/billing/billing-channel'
 import {
   billingPeriodLabel,
   subscriptionDisplayStatus,
 } from '@/lib/subscription/subscription-labels'
-import { buildTrialDowngradePatch, markTrialEndedPeriod } from '@/lib/subscription/trial-lifecycle'
 import type { BillingPeriod } from '@/lib/subscription/plans'
 
 const subscriptionSearchSchema = z.object({
   intent: z.enum(['upgrade']).optional(),
   billingPeriod: z.enum(['monthly', 'annual']).optional(),
+  checkout: z.enum(['success', 'canceled']).optional(),
 })
 
 export const Route = createFileRoute('/app/profile/subscription')({
@@ -41,19 +43,24 @@ export const Route = createFileRoute('/app/profile/subscription')({
 })
 
 function SubscriptionManagementPage() {
-  const { intent, billingPeriod: searchBillingPeriod } = Route.useSearch()
+  const { intent, billingPeriod: searchBillingPeriod, checkout } = Route.useSearch()
   const {
     subscription,
     status,
     billingPeriod,
+    provider,
     isPremium,
     isPastDue,
+    isBillingManaged,
     currentPeriodEnd,
   } = useSubscriptionSummary()
-  const updateSubscription = useUpdateSubscription()
+  const subscriptionQuery = useSubscription()
+  const purchasePremium = usePurchasePremium()
+  const startTrial = useStartPremiumTrial()
   const cancelSubscription = useCancelSubscription()
+  const openManagement = useOpenSubscriptionManagement()
   const [cancelOpen, setCancelOpen] = useState(false)
-  const [devMessage, setDevMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   const display = subscription
     ? subscriptionDisplayStatus(subscription)
@@ -72,108 +79,62 @@ function SubscriptionManagementPage() {
   const showUpgradeIntent = intent === 'upgrade' && isTrialing
   const selectedBillingPeriod: BillingPeriod =
     searchBillingPeriod ?? billingPeriod ?? 'annual'
+  const billingReady = isBillingAvailable()
+
+  useEffect(() => {
+    if (checkout === 'success') {
+      setMessage('Paiement confirmé. Votre abonnement Premium sera actif dans quelques instants.')
+      void subscriptionQuery.refetch()
+    }
+  }, [checkout, subscriptionQuery])
 
   async function handleConvertTrialToPaid() {
-    setDevMessage(null)
+    setMessage(null)
     try {
-      await updateSubscription.mutateAsync({
-        tier: 'premium',
-        status: 'active',
-        billing_period: selectedBillingPeriod,
-        current_period_end: addDays(new Date(), selectedBillingPeriod === 'annual' ? 365 : 30).toISOString(),
-        provider: 'none',
-      })
-      setDevMessage('Abonnement payant activé (simulation).')
+      await purchasePremium.mutateAsync({ billingPeriod: selectedBillingPeriod })
     } catch (error) {
-      setDevMessage(
+      setMessage(
         error instanceof Error ? error.message : 'Impossible d’activer l’abonnement.',
       )
     }
   }
 
   async function handleCancelTrial() {
-    setDevMessage(null)
+    setMessage(null)
     try {
       await cancelSubscription.mutateAsync()
-      setDevMessage('Essai annulé. Vous êtes repassé au plan Gratuit.')
+      setMessage('Essai annulé. Vous êtes repassé au plan Gratuit.')
     } catch (error) {
-      setDevMessage(
+      setMessage(
         error instanceof Error ? error.message : 'Impossible d’annuler l’essai.',
       )
     }
   }
 
-  async function handleDevSimulatePremium(checked: boolean) {
-    setDevMessage(null)
+  async function handleUpdatePayment() {
+    setMessage(null)
+    if (provider !== 'play' && provider !== 'stripe') {
+      setMessage('Aucun moyen de paiement associé à ce compte.')
+      return
+    }
+
     try {
-      await updateSubscription.mutateAsync(
-        checked
-          ? {
-              tier: 'premium',
-              status: 'active',
-              billing_period: 'annual',
-              current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          : {
-              tier: 'free',
-              status: 'active',
-              billing_period: null,
-              current_period_end: null,
-            },
-      )
-      setDevMessage(checked ? 'Premium simulé.' : 'Retour au plan Gratuit.')
+      await openManagement.mutateAsync(provider)
     } catch (error) {
-      setDevMessage(
-        error instanceof Error ? error.message : 'Impossible de mettre à jour l’abonnement.',
+      setMessage(
+        error instanceof Error ? error.message : 'Impossible d’ouvrir la gestion du paiement.',
       )
     }
   }
 
-  async function handleDevSimulatePastDue(checked: boolean) {
-    setDevMessage(null)
+  async function handleDevStartTrial() {
+    setMessage(null)
     try {
-      await updateSubscription.mutateAsync({
-        tier: 'premium',
-        status: checked ? 'past_due' : 'active',
-        billing_period: billingPeriod ?? 'monthly',
-      })
-      setDevMessage(checked ? 'Paiement en attente simulé.' : 'Paiement régularisé.')
+      await startTrial.mutateAsync({ billingPeriod: selectedBillingPeriod })
+      setMessage('Essai gratuit démarré.')
     } catch (error) {
-      setDevMessage(
-        error instanceof Error ? error.message : 'Impossible de mettre à jour le statut.',
-      )
-    }
-  }
-
-  async function handleDevSimulateTrialMilestone(daysLeft: number) {
-    setDevMessage(null)
-    try {
-      await updateSubscription.mutateAsync({
-        tier: 'premium',
-        status: 'trialing',
-        billing_period: billingPeriod ?? 'annual',
-        current_period_end: addDays(new Date(), daysLeft).toISOString(),
-        provider: 'none',
-      })
-      setDevMessage(`Essai simulé — fin dans ${daysLeft} jour(s).`)
-    } catch (error) {
-      setDevMessage(
-        error instanceof Error ? error.message : 'Impossible de simuler l’essai.',
-      )
-    }
-  }
-
-  async function handleDevSimulateTrialExpired() {
-    setDevMessage(null)
-    try {
-      if (currentPeriodEnd) {
-        markTrialEndedPeriod(currentPeriodEnd)
-      }
-      await updateSubscription.mutateAsync(buildTrialDowngradePatch())
-      setDevMessage('Fin d’essai simulée.')
-    } catch (error) {
-      setDevMessage(
-        error instanceof Error ? error.message : 'Impossible de simuler la fin d’essai.',
+      setMessage(
+        error instanceof Error ? error.message : 'Impossible de démarrer l’essai.',
       )
     }
   }
@@ -197,6 +158,8 @@ function SubscriptionManagementPage() {
         />
       </div>
 
+      {message ? <FeedbackMessage variant="success">{message}</FeedbackMessage> : null}
+
       {isPastDue ? (
         <Card className="rounded-2xl border-destructive/30 bg-destructive/5">
           <CardContent className="space-y-3 p-4">
@@ -205,8 +168,13 @@ function SubscriptionManagementPage() {
               Votre dernier paiement n’a pas abouti. Mettez à jour votre moyen de paiement pour
               conserver l’accès Premium.
             </p>
-            <Button variant="pill" className="w-full" disabled>
-              Mettre à jour le paiement (bientôt)
+            <Button
+              variant="pill"
+              className="w-full"
+              disabled={!isBillingManaged || openManagement.isPending}
+              onClick={() => void handleUpdatePayment()}
+            >
+              {openManagement.isPending ? 'Ouverture...' : 'Mettre à jour le paiement'}
             </Button>
           </CardContent>
         </Card>
@@ -228,10 +196,14 @@ function SubscriptionManagementPage() {
             <Button
               variant="pill"
               className="w-full"
-              disabled={updateSubscription.isPending}
+              disabled={!billingReady || purchasePremium.isPending}
               onClick={() => void handleConvertTrialToPaid()}
             >
-              Activer la facturation (simulation)
+              {purchasePremium.isPending
+                ? 'Redirection vers le paiement...'
+                : billingReady
+                  ? 'Activer la facturation'
+                  : 'Facturation indisponible sur cette plateforme'}
             </Button>
             <Button
               variant="outline"
@@ -257,6 +229,11 @@ function SubscriptionManagementPage() {
             {display.billingLabel ? (
               <Pill tone="purple">{display.billingLabel}</Pill>
             ) : null}
+            {provider !== 'none' ? (
+              <Pill tone="secondary">
+                {provider === 'play' ? 'Google Play' : provider === 'stripe' ? 'Stripe' : provider}
+              </Pill>
+            ) : null}
           </div>
           <p className="text-sm text-muted-foreground">
             {display.periodContext ??
@@ -270,16 +247,28 @@ function SubscriptionManagementPage() {
             </Button>
           ) : isTrialing ? null : (
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button variant="soft" className="flex-1" asChild>
-                <Link to="/app/premium">Changer d’offre</Link>
-              </Button>
+              {isBillingManaged ? (
+                <Button
+                  type="button"
+                  variant="soft"
+                  className="flex-1"
+                  disabled={openManagement.isPending}
+                  onClick={() => void handleUpdatePayment()}
+                >
+                  Gérer le paiement
+                </Button>
+              ) : (
+                <Button variant="soft" className="flex-1" asChild>
+                  <Link to="/app/premium">Changer d’offre</Link>
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
                 className="flex-1"
                 onClick={() => setCancelOpen(true)}
               >
-                Résilier
+                {isBillingManaged ? 'Résilier via le store' : 'Résilier'}
               </Button>
             </div>
           )}
@@ -290,51 +279,20 @@ function SubscriptionManagementPage() {
         <Card className="rounded-2xl border-dashed border-border">
           <CardHeader>
             <CardTitle className="font-display font-black">Outils développeur</CardTitle>
-            <CardDescription>Simulez un abonnement pour tester le gating Premium.</CardDescription>
+            <CardDescription>
+              Les abonnements payants passent par Google Play (Android) ou Stripe (PWA). Utilisez
+              l’essai gratuit pour tester le gating Premium.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <Label htmlFor="dev-premium">Simuler Premium</Label>
-              <Switch
-                id="dev-premium"
-                checked={isPremium && status !== 'past_due' && !isTrialing}
-                disabled={updateSubscription.isPending}
-                onCheckedChange={(checked) => void handleDevSimulatePremium(checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <Label htmlFor="dev-past-due">Simuler paiement en attente</Label>
-              <Switch
-                id="dev-past-due"
-                checked={isPastDue}
-                disabled={updateSubscription.isPending || !isPremium}
-                onCheckedChange={(checked) => void handleDevSimulatePastDue(checked)}
-              />
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void handleDevSimulateTrialMilestone(5)}
-              >
-                Simuler J-5
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void handleDevSimulateTrialMilestone(2)}
-              >
-                Simuler J-2
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void handleDevSimulateTrialExpired()}
-              >
-                Simuler fin d&apos;essai
-              </Button>
-            </div>
-            {devMessage ? <FeedbackMessage variant="success">{devMessage}</FeedbackMessage> : null}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={startTrial.isPending}
+              onClick={() => void handleDevStartTrial()}
+            >
+              Démarrer un essai gratuit (7 jours)
+            </Button>
             {subscription?.id ? (
               <p className="text-xs text-muted-foreground">ID abonnement : {subscription.id}</p>
             ) : null}

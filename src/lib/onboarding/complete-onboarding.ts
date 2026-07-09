@@ -3,10 +3,15 @@ import type { NhostClient } from '@nhost/nhost-js'
 import {
   COMPLETE_MY_ONBOARDING,
   INSERT_WEIGHT_ENTRY,
+  UPDATE_MY_PROFILE,
   UPSERT_USER_MEASUREMENTS,
   type UserMeasurementsInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import {
+  isGraphqlMissingFieldError,
+  ONBOARDING_NOT_DEPLOYED_MESSAGE,
+} from '@/lib/graphql/schema-errors'
 import { queryClient } from '@/lib/query-client'
 import { profileQueryKey } from '@/lib/auth/guard-profile'
 
@@ -18,18 +23,6 @@ import {
   type ProfileOnboardingFormData,
 } from './profile-form'
 
-function isCompleteMyOnboardingMissingError(error: unknown) {
-  if (!(error instanceof Error)) {
-    return false
-  }
-
-  const message = error.message.toLowerCase()
-  return (
-    message.includes('complete_my_onboarding') &&
-    (message.includes('query_root') || message.includes('not found'))
-  )
-}
-
 async function completeMyOnboardingViaRpc(nhost: NhostClient) {
   try {
     const data = await graphqlRequest<{ complete_my_onboarding: string }>(
@@ -38,8 +31,30 @@ async function completeMyOnboardingViaRpc(nhost: NhostClient) {
     )
     return data.complete_my_onboarding
   } catch (error) {
-    if (isCompleteMyOnboardingMissingError(error)) {
+    if (isGraphqlMissingFieldError(error, 'complete_my_onboarding')) {
       return null
+    }
+
+    throw error
+  }
+}
+
+async function completeMyOnboardingViaUpdate(
+  nhost: NhostClient,
+  profileId: string,
+) {
+  try {
+    await graphqlRequest(nhost, UPDATE_MY_PROFILE, {
+      id: profileId,
+      changes: { onboarding_completed_at: new Date().toISOString() },
+    })
+    return true
+  } catch (error) {
+    if (
+      isGraphqlMissingFieldError(error, 'onboarding_completed_at') ||
+      isGraphqlMissingFieldError(error, 'profiles_set_input')
+    ) {
+      return false
     }
 
     throw error
@@ -74,12 +89,17 @@ export async function completeAppOnboarding(
     }
   }
 
-  const completedAt = await completeMyOnboardingViaRpc(nhost)
-  if (!completedAt) {
-    throw new Error(
-      'Impossible de finaliser l\'onboarding : le déploiement backend est peut-être incomplet. Réessayez dans quelques minutes.',
-    )
+  const rpcCompletedAt = await completeMyOnboardingViaRpc(nhost)
+  if (rpcCompletedAt) {
+    void queryClient.invalidateQueries({ queryKey: profileQueryKey(ensuredProfileId) })
+    return
   }
 
-  void queryClient.invalidateQueries({ queryKey: profileQueryKey(ensuredProfileId) })
+  const updated = await completeMyOnboardingViaUpdate(nhost, ensuredProfileId)
+  if (updated) {
+    void queryClient.invalidateQueries({ queryKey: profileQueryKey(ensuredProfileId) })
+    return
+  }
+
+  throw new Error(ONBOARDING_NOT_DEPLOYED_MESSAGE)
 }
