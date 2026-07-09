@@ -83,7 +83,7 @@ export type WorkoutSummary = {
       name_fr?: string | null
       muscle_group: string | null
       equipment: string | null
-    }
+    } | null
     sets: Array<{
       set_index: number
       weight_kg: number | null
@@ -142,7 +142,7 @@ export type WorkoutDetail = Omit<WorkoutSummary, 'workout_exercises'> & {
       name_fr?: string | null
       muscle_group: string | null
       equipment: string | null
-    }
+    } | null
     sets: Array<{
       set_index: number
       weight_kg: number | null
@@ -255,6 +255,15 @@ export type FriendProfileDetail = {
   user_badges: UserBadge[]
   workouts: WorkoutSummary[]
   meal_log_entries: Array<{ logged_date: string; calories: number }>
+}
+
+export type FriendBadgesProfile = {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  is_premium?: boolean
+  user_badges: UserBadge[]
+  workouts: WorkoutSummary[]
 }
 
 export const GET_MY_AUTH_USER_LOCALE = `
@@ -2917,6 +2926,58 @@ export const INSERT_SUPPORT_REQUEST = `
   mutation InsertSupportRequest($object: support_requests_insert_input!) {
     insert_support_requests_one(object: $object) {
       id
+    }
+  }
+`
+
+export const GET_FRIEND_PROFILE_SUMMARY = `
+  query GetFriendProfileSummary(
+    $friendId: uuid!
+    $workoutLimit: Int!
+    $workoutSince: timestamptz!
+  ) {
+    profiles_by_pk(id: $friendId) {
+      id
+      display_name
+      avatar_url
+      is_premium
+      user_badges(order_by: { unlocked_at: desc }) {
+        id
+        user_id
+        badge_key
+        unlocked_at
+      }
+      workouts(
+        where: {
+          ended_at: { _is_null: false }
+          started_at: { _gte: $workoutSince }
+        }
+        order_by: { started_at: desc }
+        limit: $workoutLimit
+      ) {
+        id
+        title
+        started_at
+        ended_at
+        share_token
+        workout_exercises(order_by: { sort_order: asc }) {
+          id
+          exercise {
+            id
+            name
+            name_fr
+            muscle_group
+            equipment
+          }
+          sets(order_by: { set_index: asc }) {
+            set_index
+            weight_kg
+            reps
+            set_type
+            rpe
+          }
+        }
+      }
     }
   }
 `

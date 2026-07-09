@@ -5,6 +5,7 @@ import {
   COUNT_UNREAD_MOTIVATIONS,
   DELETE_FRIENDSHIP,
   GET_FRIEND_PROFILE,
+  GET_FRIEND_PROFILE_SUMMARY,
   INSERT_FRIEND_MOTIVATION,
   INSERT_FRIENDSHIP,
   LIST_ACCEPTED_FRIENDS_ACTIVITY,
@@ -22,6 +23,7 @@ import {
   type FriendMotivation,
   type Friendship,
   type FriendProfileDetail,
+  type FriendBadgesProfile,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { summarizeFriendActivity } from '@/lib/social/friend-activity'
@@ -62,6 +64,30 @@ export function useFriendProfile(friendId: string) {
           friendId,
           workoutLimit: 5,
           mealSince,
+          workoutSince,
+        },
+      )
+
+      return data.profiles_by_pk
+    },
+  })
+}
+
+export function useFriendProfileSummary(friendId: string | undefined, enabled = true) {
+  const { nhost, isAuthenticated } = useAuth()
+  const now = new Date()
+  const workoutSince = subWeeks(startOfDay(now), WORKOUT_STREAK_LOOKBACK_WEEKS).toISOString()
+
+  return useQuery({
+    queryKey: [...FRIENDS_QUERY_KEY, 'profile-summary', friendId, workoutSince],
+    enabled: enabled && isAuthenticated && Boolean(friendId),
+    queryFn: async () => {
+      const data = await graphqlRequest<{ profiles_by_pk: FriendBadgesProfile | null }>(
+        nhost,
+        GET_FRIEND_PROFILE_SUMMARY,
+        {
+          friendId: friendId!,
+          workoutLimit: 1,
           workoutSince,
         },
       )

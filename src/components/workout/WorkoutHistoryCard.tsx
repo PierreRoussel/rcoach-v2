@@ -29,6 +29,11 @@ function formatExerciseSummary(
   entry: WorkoutSummary['workout_exercises'][number],
 ) {
   const setCount = entry.sets.length
+
+  if (!entry.exercise) {
+    return { setCount, suffix: '', exercise: null as const }
+  }
+
   const equipment = entry.exercise.equipment
   const suffix = equipment ? ` (${equipment})` : ''
 
@@ -79,7 +84,11 @@ export function WorkoutHistoryCard({
                 </span>
                 <span className="truncate">
                   {summary.setCount} série{summary.setCount > 1 ? 's' : ''} de{' '}
-                  <DisplayExercise exercise={summary.exercise} />
+                  {summary.exercise ? (
+                    <DisplayExercise exercise={summary.exercise} />
+                  ) : (
+                    <span className="text-foreground/80">Exercice supprimé</span>
+                  )}
                   {summary.suffix}
                 </span>
               </li>

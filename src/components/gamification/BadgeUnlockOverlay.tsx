@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 
+import { BadgeArt } from '@/components/gamification/BadgeArt'
 import { Button } from '@/components/ui/button'
 import { BADGE_TIER_CLASSES } from '@/lib/gamification/badges'
 import type { BadgeDefinition } from '@/lib/gamification/badges'
+import { hasBadgeAsset } from '@/lib/gamification/badge-assets'
 import { cn } from '@/lib/utils'
 
 type BadgeUnlockOverlayProps = {
@@ -33,7 +35,7 @@ export function BadgeUnlockOverlay({ badges, open, onClose }: BadgeUnlockOverlay
   }
 
   const primary = badges[0]
-  const Icon = primary.icon
+  const usesCustomArt = hasBadgeAsset(primary.key)
 
   return (
     <div
@@ -61,11 +63,21 @@ export function BadgeUnlockOverlay({ badges, open, onClose }: BadgeUnlockOverlay
         <div
           className={cn(
             'mx-auto mt-5 flex max-w-xs flex-col items-center gap-2 rounded-2xl border p-4',
-            BADGE_TIER_CLASSES[primary.tier],
+            usesCustomArt ? 'border-border/70 bg-card text-foreground' : BADGE_TIER_CLASSES[primary.tier],
           )}
         >
-          <span className="flex size-14 items-center justify-center rounded-full border border-current/20 bg-white/50">
-            <Icon className="size-7" />
+          <span
+            className={cn(
+              'flex items-center justify-center',
+              usesCustomArt ? 'size-32' : 'size-14 rounded-full border border-current/20 bg-white/50',
+            )}
+          >
+            <BadgeArt
+              badgeKey={primary.key}
+              icon={primary.icon}
+              imageClassName="size-32"
+              iconClassName="size-7"
+            />
           </span>
           <p className="font-display text-lg font-black">{primary.label}</p>
           <p className="text-sm">{primary.description}</p>

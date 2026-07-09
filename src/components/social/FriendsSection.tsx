@@ -3,6 +3,8 @@ import { Link } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
 import { FriendRecapRow } from '@/components/social/FriendRecapRow'
+import { FriendProfileSummaryDrawer } from '@/components/social/FriendProfileSummaryDrawer'
+import type { FriendProfileSummaryTarget } from '@/components/social/FriendProfileSummaryDrawer'
 import { FriendRequestRow } from '@/components/social/FriendRequestRow'
 import { MotivationPickerDialog } from '@/components/social/MotivationPickerDialog'
 import { MotivationRevealOverlay } from '@/components/social/MotivationRevealOverlay'
@@ -28,6 +30,8 @@ export function FriendsSection() {
   const [activeNotification, setActiveNotification] = useState<MotivationNotification | null>(
     null,
   )
+  const [profileFriend, setProfileFriend] = useState<FriendProfileSummaryTarget | null>(null)
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false)
 
   async function handleRespond(friendshipId: string, accept: boolean) {
     setRespondingId(friendshipId)
@@ -37,6 +41,17 @@ export function FriendsSection() {
     } finally {
       setRespondingId(null)
     }
+  }
+
+  function openFriendProfile(item: (typeof items)[number]) {
+    setProfileFriend({
+      id: item.friend.id,
+      displayName: item.friend.display_name,
+      avatarUrl: item.friend.avatar_url,
+      isPremium: item.friend.is_premium ?? false,
+      activity: item.activity,
+    })
+    setProfileDrawerOpen(true)
   }
 
   if (isLoading || pendingLoading) {
@@ -108,6 +123,7 @@ export function FriendsSection() {
                   setActiveNotification(item.motivationNotification)
                 }
               }}
+              onOpenProfile={() => openFriendProfile(item)}
             />
           ))}
         </div>
@@ -127,6 +143,29 @@ export function FriendsSection() {
       <MotivationRevealOverlay
         notification={activeNotification}
         onClose={() => setActiveNotification(null)}
+      />
+
+      <FriendProfileSummaryDrawer
+        friend={profileFriend}
+        open={profileDrawerOpen}
+        onOpenChange={(open) => {
+          setProfileDrawerOpen(open)
+          if (!open) {
+            setProfileFriend(null)
+          }
+        }}
+        sentDisplay={
+          profileFriend
+            ? getSentMotivationDisplay(sentMotivations, profileFriend.id)
+            : null
+        }
+        onSendMotivation={() => {
+          if (!profileFriend) {
+            return
+          }
+
+          setPickerFriend({ id: profileFriend.id, name: profileFriend.displayName })
+        }}
       />
     </section>
   )

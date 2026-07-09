@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarCheck, Lock, Sparkles } from 'lucide-react'
 
+import { BadgeArt } from '@/components/gamification/BadgeArt'
 import {
   Drawer,
   DrawerContent,
@@ -17,6 +18,7 @@ import {
   getBadgeCategoryLabel,
   getBadgeTierLabel,
 } from '@/lib/gamification/badges'
+import { hasBadgeAsset } from '@/lib/gamification/badge-assets'
 import { cn } from '@/lib/utils'
 
 type BadgeDetailDrawerProps = {
@@ -30,7 +32,7 @@ export function BadgeDetailDrawer({ badge, open, onOpenChange }: BadgeDetailDraw
     return null
   }
 
-  const Icon = badge.icon
+  const usesCustomArt = hasBadgeAsset(badge.key)
   const unlockCondition = describeBadgeUnlockCondition(badge)
 
   return (
@@ -46,19 +48,28 @@ export function BadgeDetailDrawer({ badge, open, onOpenChange }: BadgeDetailDraw
             className={cn(
               'mx-auto flex max-w-xs flex-col items-center gap-3 rounded-3xl border p-6 text-center',
               badge.unlocked
-                ? BADGE_TIER_CLASSES[badge.tier]
+                ? usesCustomArt
+                  ? 'border-border/70 bg-card text-foreground'
+                  : BADGE_TIER_CLASSES[badge.tier]
                 : 'border-border bg-muted/30 text-muted-foreground',
             )}
           >
             <span
               className={cn(
-                'flex size-24 items-center justify-center rounded-full border',
-                badge.unlocked
-                  ? 'border-current/20 bg-white/50'
-                  : 'border-border bg-card opacity-70 grayscale',
+                'flex items-center justify-center',
+                usesCustomArt ? 'size-36' : 'size-24 rounded-full border',
+                !usesCustomArt &&
+                  (badge.unlocked
+                    ? 'border-current/20 bg-white/50'
+                    : 'border-border bg-card opacity-70 grayscale'),
               )}
             >
-              <Icon className="size-12" aria-hidden />
+              <BadgeArt
+                badgeKey={badge.key}
+                icon={badge.icon}
+                imageClassName="size-36"
+                iconClassName="size-12"
+              />
             </span>
             <div>
               <p className="font-display text-2xl font-black">{badge.label}</p>

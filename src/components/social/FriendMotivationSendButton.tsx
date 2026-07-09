@@ -12,6 +12,7 @@ type FriendMotivationSendButtonProps = {
   sentDisplay: SentMotivationDisplay | null
   onSend: () => void
   variant?: 'icon' | 'soft'
+  size?: 'default' | 'lg'
   className?: string
 }
 
@@ -36,24 +37,30 @@ export function FriendMotivationSendButton({
   sentDisplay,
   onSend,
   variant = 'icon',
+  size = 'default',
   className,
 }: FriendMotivationSendButtonProps) {
   const statusTitle = sentDisplay ? getSentMotivationStatusLabel(sentDisplay) : undefined
+  const isLarge = size === 'lg'
 
   if (variant === 'soft') {
     return (
       <Button
         type="button"
-        size="sm"
+        size={isLarge ? 'lg' : 'sm'}
         variant="soft"
-        className={cn('relative min-w-[3.5rem]', className)}
+        className={cn(
+          'relative',
+          isLarge ? 'min-h-12 min-w-12 rounded-2xl px-4 text-2xl' : 'min-w-[3.5rem]',
+          className,
+        )}
         title={statusTitle}
         aria-label={`Envoyer un emoji a ${friendName}`}
         onClick={onSend}
       >
         {sentDisplay ? (
           <span className="relative inline-flex items-center">
-            <span className="text-lg leading-none">{sentDisplay.motivation.emoji}</span>
+            <span className="leading-none">{sentDisplay.motivation.emoji}</span>
             <ReadStatusBadge isRead={sentDisplay.isRead} />
           </span>
         ) : (
@@ -68,18 +75,24 @@ export function FriendMotivationSendButton({
       type="button"
       variant="ghost"
       size="icon"
-      className={cn('relative shrink-0 rounded-full', className)}
+      className={cn(
+        'relative shrink-0 rounded-full',
+        isLarge ? 'size-12' : '',
+        className,
+      )}
       title={statusTitle}
       aria-label={`Envoyer un emoji a ${friendName}`}
       onClick={onSend}
     >
       {sentDisplay ? (
         <span className="relative inline-flex items-center justify-center">
-          <span className="text-xl leading-none">{sentDisplay.motivation.emoji}</span>
+          <span className={cn('leading-none', isLarge ? 'text-3xl' : 'text-xl')}>
+            {sentDisplay.motivation.emoji}
+          </span>
           <ReadStatusBadge isRead={sentDisplay.isRead} />
         </span>
       ) : (
-        <SmilePlus className="size-4" />
+        <SmilePlus className={cn(isLarge ? 'size-6' : 'size-4')} />
       )}
     </Button>
   )

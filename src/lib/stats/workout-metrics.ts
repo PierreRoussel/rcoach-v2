@@ -34,7 +34,16 @@ function scoreSet(weightKg: number | null, reps: number | null) {
 }
 
 function getExerciseKey(entry: WorkoutExercise) {
-  return entry.exercise.id ?? entry.exercise.name
+  return entry.exercise?.id ?? entry.exercise?.name ?? entry.id
+}
+
+function getExerciseMeta(entry: WorkoutExercise) {
+  return {
+    key: getExerciseKey(entry),
+    exerciseId: entry.exercise?.id ?? entry.id,
+    exerciseName: entry.exercise?.name ?? 'Exercice supprimé',
+    exerciseNameFr: entry.exercise?.name_fr ?? null,
+  }
 }
 
 export function computeDraftVolume(exercises: DraftExerciseInput[]): number {
@@ -339,7 +348,7 @@ export function detectWorkoutPersonalRecords(
   const hits: PersonalRecordHit[] = []
 
   for (const entry of targetWorkout.workout_exercises) {
-    const key = getExerciseKey(entry)
+    const { key, exerciseId, exerciseName, exerciseNameFr } = getExerciseMeta(entry)
 
     for (const set of entry.sets) {
       const previousBest = runningBests.get(key)
@@ -347,9 +356,9 @@ export function detectWorkoutPersonalRecords(
 
       if (kinds.length > 0 && set.weight_kg != null && set.reps != null) {
         hits.push({
-          exerciseId: entry.exercise.id,
-          exerciseName: entry.exercise.name,
-          exerciseNameFr: entry.exercise.name_fr ?? null,
+          exerciseId,
+          exerciseName,
+          exerciseNameFr,
           weightKg: set.weight_kg,
           reps: set.reps,
           kinds,

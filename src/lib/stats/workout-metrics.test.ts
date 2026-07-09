@@ -128,6 +128,23 @@ describe('detectWorkoutPersonalRecords', () => {
     expect(records[0]).toMatchObject({ weightKg: 100, reps: 5 })
     expect(countWorkoutPersonalRecords(workout, [])).toBe(2)
   })
+
+  it('ignores workout rows whose exercise relation was deleted', () => {
+    const workout = buildWorkout('w1', '2026-06-20T10:00:00.000Z', [
+      {
+        exerciseId: 'ex-1',
+        exerciseName: 'Squat',
+        sets: [{ weight: 100, reps: 5 }],
+      },
+    ])
+    workout.workout_exercises[0]!.exercise = null
+
+    expect(detectWorkoutPersonalRecords(workout, [])).toHaveLength(1)
+    expect(detectWorkoutPersonalRecords(workout, [])[0]?.exerciseName).toBe(
+      'Exercice supprimé',
+    )
+    expect(countWorkoutPersonalRecords(workout, [])).toBe(1)
+  })
 })
 
 describe('draftToWorkoutSummary', () => {
