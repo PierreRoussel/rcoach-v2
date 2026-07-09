@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
@@ -33,6 +33,12 @@ import {
 } from '@/lib/subscription/trial-lifecycle'
 
 type OverlayKind = 'expired' | 'j2' | 'j5' | null
+
+const SubscriptionOverlayContext = createContext<OverlayKind>(null)
+
+export function useSubscriptionOverlay(): OverlayKind {
+  return useContext(SubscriptionOverlayContext)
+}
 
 function readDismissed(key: string): boolean {
   if (typeof window === 'undefined') {
@@ -229,7 +235,7 @@ export function SubscriptionLifecycleProvider({
   }
 
   return (
-    <>
+    <SubscriptionOverlayContext.Provider value={overlay}>
       {children}
       {overlay === 'j5' && subscription?.current_period_end ? (
         <TrialReminderOverlay
@@ -257,6 +263,6 @@ export function SubscriptionLifecycleProvider({
           onDismiss={dismissOverlay}
         />
       ) : null}
-    </>
+    </SubscriptionOverlayContext.Provider>
   )
 }

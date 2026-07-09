@@ -87,6 +87,7 @@ select_permissions:
         - friend_code
         - onboarding_completed_at
         - is_premium
+        - goal_coaching_reminders_enabled
       filter:
         _or:
           - id:
@@ -128,6 +129,7 @@ update_permissions:
         - rpe_enabled
         - exercise_locale
         - onboarding_completed_at
+        - goal_coaching_reminders_enabled
       filter:
         id:
           _eq: X-Hasura-User-Id

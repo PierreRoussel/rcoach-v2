@@ -1,20 +1,27 @@
+import { MacroSplitRing } from '@/components/nutrition/MacroSplitRing'
+import type { MacroGrams } from '@/lib/nutrition/macro-visuals'
 import { cn } from '@/lib/utils'
 
 type CalorieRingGaugeProps = {
   consumed: number
   target: number
+  macros?: MacroGrams
   className?: string
 }
 
-export function CalorieRingGauge({ consumed, target, className }: CalorieRingGaugeProps) {
+export function CalorieRingGauge({
+  consumed,
+  target,
+  macros,
+  className,
+}: CalorieRingGaugeProps) {
   const isOverTarget = target > 0 && consumed > target
   const remaining = Math.max(0, target - consumed)
   const overBy = Math.max(0, consumed - target)
   const centerValue = Math.round(isOverTarget ? overBy : remaining)
   const progress = target > 0 ? Math.min(consumed / target, 1) : 0
   const radius = 54
-  const circumference = 2 * Math.PI * radius
-  const dashOffset = circumference * (1 - progress)
+  const size = 160
 
   return (
     <div
@@ -25,29 +32,15 @@ export function CalorieRingGauge({ consumed, target, className }: CalorieRingGau
           : `${centerValue} calories restantes`
       }
     >
-      <svg className="size-full -rotate-90" viewBox="0 0 128 128" aria-hidden>
-        <circle
-          cx="64"
-          cy="64"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          className="text-muted/40"
-        />
-        <circle
-          cx="64"
-          cy="64"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashOffset}
-          className="text-primary transition-[stroke-dashoffset] duration-500"
-        />
-      </svg>
+      <MacroSplitRing
+        progress={progress}
+        macros={macros}
+        radius={radius}
+        strokeWidth={10}
+        size={size}
+        isOverTarget={isOverTarget}
+        className="size-full"
+      />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <div className="font-display text-3xl font-black text-foreground">{centerValue}</div>
         <div

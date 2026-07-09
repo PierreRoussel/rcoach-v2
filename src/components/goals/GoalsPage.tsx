@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 import { Target } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { GoalCoachingDevTools } from '@/components/goals/GoalCoachingDevTools'
 import { GoalProjectionPremiumBlur } from '@/components/goals/GoalProjectionPremiumBlur'
 import { WaistAdjustTile } from '@/components/goals/WaistAdjustTile'
 import { WaistProgressChart } from '@/components/goals/WaistProgressChart'
@@ -167,6 +168,8 @@ export function GoalsPage({
         title="Objectif poids"
         description="Suivez votre évolution et projetez votre date d’arrivée."
       />
+
+      <GoalCoachingDevTools />
 
       {!goal ? (
         <Card className="rounded-2xl border-border">

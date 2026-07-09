@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
+import { MacroCalorieProgress } from '@/components/nutrition/MacroCalorieProgress'
 import { MacroProgressBars } from '@/components/nutrition/MacroProgressBars'
 import { MealEntryDetailDrawer } from '@/components/nutrition/MealEntryDetailDrawer'
 import { MealEntryRow } from '@/components/nutrition/MealEntryRow'
@@ -11,7 +12,6 @@ import { MealIconCalorieRing } from '@/components/nutrition/MealIconCalorieRing'
 import { PortionPickerSheet } from '@/components/nutrition/PortionPickerSheet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { SwipeToDeleteRow } from '@/components/ui/SwipeToDeleteRow'
 import { Toaster } from '@/components/ui/sonner'
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
@@ -135,6 +135,11 @@ function MealDetailPage() {
               mealType={mealType as MealType}
               consumedCalories={consumedCalories}
               targetCalories={targetCalories}
+              macros={{
+                carbsG: meal?.totals.carbsG ?? 0,
+                proteinG: meal?.totals.proteinG ?? 0,
+                fatG: meal?.totals.fatG ?? 0,
+              }}
               className="shrink-0 drop-shadow-sm"
             />
 
@@ -166,7 +171,14 @@ function MealDetailPage() {
                 {Math.round(calorieProgress)}%
               </span>
             </div>
-            <Progress value={calorieProgress} className="meal-detail-calorie-progress h-2.5" />
+            <MacroCalorieProgress
+              progress={calorieProgress}
+              macros={{
+                carbsG: meal?.totals.carbsG ?? 0,
+                proteinG: meal?.totals.proteinG ?? 0,
+                fatG: meal?.totals.fatG ?? 0,
+              }}
+            />
           </div>
 
           <MacroProgressBars

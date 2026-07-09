@@ -150,6 +150,11 @@ export function DietDayPanel({
           <CalorieRingGauge
             consumed={daySummary.totals.calories}
             target={daySummary.targets.calories}
+            macros={{
+              carbsG: daySummary.totals.carbsG,
+              proteinG: daySummary.totals.proteinG,
+              fatG: daySummary.totals.fatG,
+            }}
           />
           <CalorieSideStat
             className="absolute bottom-0 left-0"
@@ -161,7 +166,7 @@ export function DietDayPanel({
           <CalorieSideStat
             className="absolute bottom-0 right-0"
             icon={Target}
-            iconClassName="bg-soft-secondary text-soft-secondary-fg"
+            iconClassName="bg-soft-accent text-soft-accent-fg"
             value={Math.round(daySummary.targets.calories)}
             label="Objectif"
             to="/app/goals"

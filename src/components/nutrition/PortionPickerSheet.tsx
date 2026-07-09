@@ -186,13 +186,14 @@ export function PortionPickerSheet({
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <FoodMacroStat label="Glucides" value={preview.carbsG} />
+            <FoodMacroStat macro="carbs" label="Glucides" value={preview.carbsG} />
             <FoodMacroStat
+              macro="protein"
               label="Protéines"
               value={preview.proteinG}
               proteinPer100g={Number(food.protein_g)}
             />
-            <FoodMacroStat label="Lipides" value={preview.fatG} />
+            <FoodMacroStat macro="fat" label="Lipides" value={preview.fatG} />
           </div>
 
           <FoodNutrientBadges food={food} />

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { CancelSubscriptionFlow } from '@/components/subscription/CancelSubscriptionFlow'
+import { TrialUpgradeCard } from '@/components/subscription/TrialUpgradeCard'
 import { LegalLinksRow } from '@/components/legal/LegalLinksRow'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,10 +27,7 @@ import {
   useSubscriptionSummary,
 } from '@/hooks/useSubscription'
 import { isBillingAvailable } from '@/lib/billing/billing-channel'
-import {
-  billingPeriodLabel,
-  subscriptionDisplayStatus,
-} from '@/lib/subscription/subscription-labels'
+import { subscriptionDisplayStatus } from '@/lib/subscription/subscription-labels'
 import type { BillingPeriod } from '@/lib/subscription/plans'
 
 const subscriptionSearchSchema = z.object({
@@ -62,6 +60,9 @@ function SubscriptionManagementPage() {
   const openManagement = useOpenSubscriptionManagement()
   const [cancelOpen, setCancelOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [upgradeBillingPeriod, setUpgradeBillingPeriod] = useState<BillingPeriod>(
+    searchBillingPeriod ?? billingPeriod ?? 'annual',
+  )
 
   const display = subscription
     ? subscriptionDisplayStatus(subscription)
@@ -78,9 +79,13 @@ function SubscriptionManagementPage() {
 
   const isTrialing = status === 'trialing'
   const showUpgradeIntent = intent === 'upgrade' && isTrialing
-  const selectedBillingPeriod: BillingPeriod =
-    searchBillingPeriod ?? billingPeriod ?? 'annual'
   const billingReady = isBillingAvailable()
+
+  useEffect(() => {
+    if (searchBillingPeriod) {
+      setUpgradeBillingPeriod(searchBillingPeriod)
+    }
+  }, [searchBillingPeriod])
 
   useEffect(() => {
     if (checkout === 'success') {
@@ -92,7 +97,7 @@ function SubscriptionManagementPage() {
   async function handleConvertTrialToPaid() {
     setMessage(null)
     try {
-      await purchasePremium.mutateAsync({ billingPeriod: selectedBillingPeriod })
+      await purchasePremium.mutateAsync({ billingPeriod: upgradeBillingPeriod })
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : 'Impossible d’activer l’abonnement.',
@@ -131,7 +136,7 @@ function SubscriptionManagementPage() {
   async function handleDevStartTrial() {
     setMessage(null)
     try {
-      await startTrial.mutateAsync({ billingPeriod: selectedBillingPeriod })
+      await startTrial.mutateAsync({ billingPeriod: upgradeBillingPeriod })
       setMessage('Essai gratuit démarré.')
     } catch (error) {
       setMessage(
@@ -182,40 +187,18 @@ function SubscriptionManagementPage() {
       ) : null}
 
       {showUpgradeIntent || isTrialing ? (
-        <Card className="rounded-2xl border-amber-300/50 bg-amber-50/60">
-          <CardHeader>
-            <CardTitle className="font-display font-black">
-              Passer à l&apos;abonnement payant
-            </CardTitle>
-            <CardDescription>
-              Votre essai se termine le {renewalLabel}. Activez la facturation pour conserver vos
-              avantages.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Pill tone="purple">{billingPeriodLabel(selectedBillingPeriod)}</Pill>
-            <Button
-              variant="pill"
-              className="w-full"
-              disabled={!billingReady || purchasePremium.isPending}
-              onClick={() => void handleConvertTrialToPaid()}
-            >
-              {purchasePremium.isPending
-                ? 'Redirection vers le paiement...'
-                : billingReady
-                  ? 'Activer la facturation'
-                  : 'Facturation indisponible sur cette plateforme'}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={cancelSubscription.isPending}
-              onClick={() => void handleCancelTrial()}
-            >
-              Annuler l&apos;essai
-            </Button>
-          </CardContent>
-        </Card>
+        currentPeriodEnd ? (
+          <TrialUpgradeCard
+            periodEnd={currentPeriodEnd}
+            billingPeriod={upgradeBillingPeriod}
+            onBillingPeriodChange={setUpgradeBillingPeriod}
+            onSubscribe={() => void handleConvertTrialToPaid()}
+            onCancelTrial={() => void handleCancelTrial()}
+            isSubscribePending={purchasePremium.isPending}
+            isCancelPending={cancelSubscription.isPending}
+            billingReady={billingReady}
+          />
+        ) : null
       ) : null}
 
       <Card className="rounded-2xl border-border">

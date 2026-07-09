@@ -24,16 +24,15 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { HealthConnectProfileCard } from '@/components/health/HealthConnectProfileCard'
+import { ProfileSubscriptionHighlightCard } from '@/components/profile/ProfileSubscriptionHighlightCard'
 import { UserMeasurementsSection } from '@/components/profile/UserMeasurementsSection'
 import { FriendsSection } from '@/components/social/FriendsSection'
 import { GoalsSection } from '@/components/goals/GoalsSection'
-import { ThemePicker, ThemeSetting, Pill } from '@/design-system'
+import { ThemePicker, ThemeSetting } from '@/design-system'
 import { themeSupportsColorModePreference } from '@/design-system/themes'
 import { useTheme } from '@/design-system/theme-provider'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
-import { useSubscriptionSummary } from '@/hooks/useSubscription'
-import { subscriptionDisplayStatus, subscriptionTierLabel } from '@/lib/subscription/subscription-labels'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { Capacitor } from '@capacitor/core'
 
@@ -136,67 +135,6 @@ function LogoutSection() {
   )
 }
 
-function SubscriptionProfileCard() {
-  const {
-    subscription,
-    isPremium,
-    isPastDue,
-    isLoading,
-  } = useSubscriptionSummary()
-
-  const display = subscription
-    ? subscriptionDisplayStatus(subscription)
-    : null
-
-  return (
-    <Card className="rounded-2xl border-border">
-      <CardHeader>
-        <CardTitle className="font-display font-black">Mon abonnement</CardTitle>
-        <CardDescription>
-          Consultez votre offre, gérez votre facturation et découvrez Premium.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Chargement...</p>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Pill tone={isPremium ? 'solid-primary' : 'default'}>
-                {display?.tierLabel ?? subscriptionTierLabel('free')}
-              </Pill>
-              {display?.statusLabel ? (
-                <Pill tone={isPastDue ? 'accent' : 'secondary'}>{display.statusLabel}</Pill>
-              ) : null}
-              {display?.billingLabel ? (
-                <Pill tone="purple">{display.billingLabel}</Pill>
-              ) : null}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {display?.periodContext ??
-                (isPastDue
-                  ? 'Mettez à jour votre moyen de paiement pour conserver l’accès Premium.'
-                  : isPremium
-                    ? null
-                    : 'Passez en Premium pour débloquer toutes les fonctionnalités.')}
-            </p>
-          </div>
-        )}
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="soft" asChild>
-            <Link to="/app/profile/subscription">Gérer mon abonnement</Link>
-          </Button>
-          {!isPremium ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/premium">Voir les offres</Link>
-            </Button>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 function ProfilePage() {
   const { themeId } = useTheme()
   const showColorModeSetting = themeSupportsColorModePreference(themeId)
@@ -231,6 +169,8 @@ function ProfilePage() {
 
       <HealthConnectProfileCard />
 
+      <ProfileSubscriptionHighlightCard />
+
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="font-display font-black">Nutrition</CardTitle>
@@ -244,8 +184,6 @@ function ProfilePage() {
           </Button>
         </CardContent>
       </Card>
-
-      <SubscriptionProfileCard />
 
       <Card className="rounded-2xl border-border">
         <CardHeader>

@@ -2,12 +2,23 @@
  * Diet journal page — discrete visual polish (CSS only).
  */
 
+/* ---- Diet accent: green identity (scoped to diet routes + active nav tab) ---- */
+
+body:has(nav a[href='/app/diet'].bg-soft-primary),
+.diet-page {
+  --primary: var(--secondary);
+  --primary-foreground: var(--secondary-foreground);
+  --soft-primary: var(--soft-secondary);
+  --soft-primary-fg: var(--soft-secondary-fg);
+  --ring: color-mix(in srgb, var(--secondary) 55%, var(--border));
+}
+
 /* ---- Page atmosphere ---- */
 
 body:has(nav a[href='/app/diet'].bg-soft-primary) {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--soft-peach) 30%, var(--background)) 0%,
+    color-mix(in srgb, var(--soft-secondary) 38%, var(--background)) 0%,
     var(--background) 200px
   );
 }
@@ -15,7 +26,7 @@ body:has(nav a[href='/app/diet'].bg-soft-primary) {
 .dark body:has(nav a[href='/app/diet'].bg-soft-primary) {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--soft-peach) 12%, var(--background)) 0%,
+    color-mix(in srgb, var(--soft-secondary) 18%, var(--background)) 0%,
     var(--background) 180px
   );
 }
@@ -25,7 +36,7 @@ body:has(nav a[href='/app/diet'].bg-soft-primary) {
 .space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between {
   padding: 0.35rem 0.5rem;
   border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--soft-primary) 35%, var(--card));
+  background: color-mix(in srgb, var(--soft-secondary) 35%, var(--card));
   border: 1px solid var(--border);
 }
 
@@ -50,7 +61,7 @@ body:has(nav a[href='/app/diet'].bg-soft-primary) {
 
 .border-border\/70:has(.min-h-40 .size-40) {
   border-color: var(--border) !important;
-  background: color-mix(in srgb, var(--soft-primary) 28%, var(--card));
+  background: color-mix(in srgb, var(--soft-secondary) 28%, var(--card));
 }
 
 .dark .border-border\/70:has(.min-h-40 .size-40) {

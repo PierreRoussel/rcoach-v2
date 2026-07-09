@@ -11,6 +11,7 @@ export type Profile = {
   exercise_locale?: 'fr' | 'en'
   onboarding_completed_at?: string | null
   is_premium?: boolean
+  goal_coaching_reminders_enabled?: boolean
   created_at: string
 }
 
@@ -166,6 +167,7 @@ export type ProfileUpdateInput = {
   rpe_enabled?: boolean
   exercise_locale?: 'fr' | 'en'
   onboarding_completed_at?: string | null
+  goal_coaching_reminders_enabled?: boolean
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined'
@@ -246,6 +248,7 @@ export const UPDATE_MY_PROFILE = `
       rpe_enabled
       exercise_locale
       onboarding_completed_at
+      goal_coaching_reminders_enabled
       created_at
     }
   }
@@ -519,6 +522,7 @@ export const GET_MY_PROFILE = `
       friend_code
       is_premium
       onboarding_completed_at
+      goal_coaching_reminders_enabled
       created_at
     }
   }

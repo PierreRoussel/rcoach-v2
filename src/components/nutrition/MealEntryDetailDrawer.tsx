@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/drawer'
 import { useFoodPortionTypes } from '@/hooks/useFoodRenameAndPortions'
 import { formatNutrient } from '@/lib/nutrition/nutrient-math'
+import { macroStatTextStyle } from '@/lib/nutrition/macro-visuals'
 import { getMealEntryName, isQuickMealEntry, formatMealEntryQuantity } from '@/lib/nutrition/meal-entry-display'
 import type { MealLogEntry } from '@/lib/nutrition/types'
 
@@ -89,13 +90,14 @@ export function MealEntryDetailDrawer({
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <FoodMacroStat label="Glucides" value={macros.carbs} />
+            <FoodMacroStat macro="carbs" label="Glucides" value={macros.carbs} />
             <FoodMacroStat
+              macro="protein"
               label="Protéines"
               value={macros.protein}
               proteinPer100g={entry.food ? Number(entry.food.protein_g) : undefined}
             />
-            <FoodMacroStat label="Lipides" value={macros.fat} />
+            <FoodMacroStat macro="fat" label="Lipides" value={macros.fat} />
           </div>
 
           {entry.food ? <FoodNutrientBadges food={entry.food} /> : null}
@@ -128,19 +130,28 @@ export function MealEntryDetailDrawer({
                 </div>
                 <div>
                   <dt>Glucides</dt>
-                  <dd className="font-data font-semibold text-foreground">
+                  <dd
+                    className="font-data font-semibold"
+                    style={macroStatTextStyle('carbs')}
+                  >
                     {formatNutrient(Number(entry.food.carbs_g))} g
                   </dd>
                 </div>
                 <div>
                   <dt>Protéines</dt>
-                  <dd className="font-data font-semibold text-foreground">
+                  <dd
+                    className="font-data font-semibold"
+                    style={macroStatTextStyle('protein')}
+                  >
                     {formatNutrient(Number(entry.food.protein_g))} g
                   </dd>
                 </div>
                 <div>
                   <dt>Lipides</dt>
-                  <dd className="font-data font-semibold text-foreground">
+                  <dd
+                    className="font-data font-semibold"
+                    style={macroStatTextStyle('fat')}
+                  >
                     {formatNutrient(Number(entry.food.fat_g))} g
                   </dd>
                 </div>

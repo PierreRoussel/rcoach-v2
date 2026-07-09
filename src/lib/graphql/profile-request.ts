@@ -10,21 +10,8 @@ import {
   type Profile,
   type ProfileUpdateInput,
 } from '@/lib/graphql/operations'
-import { logCurrentRoleDebug } from '@/lib/auth/role-debug'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { DEFAULT_EXERCISE_LOCALE } from '@/lib/workout/exercise-locale'
-
-function finalizeProfile(
-  nhost: NhostClient,
-  userId: string,
-  profile: Profile | null,
-): Profile | null {
-  if (profile) {
-    logCurrentRoleDebug(nhost, profile.role, userId)
-  }
-
-  return profile
-}
 
 function isExerciseLocaleSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : ''
@@ -68,11 +55,7 @@ export async function fetchMyProfile(
       userId,
     })
     const profile = data.profiles[0]
-    return finalizeProfile(
-      nhost,
-      userId,
-      profile ? withDefaultExerciseLocale(profile) : null,
-    )
+    return profile ? withDefaultExerciseLocale(profile) : null
   } catch (error) {
     if (isOnboardingCompletedAtSchemaError(error)) {
       try {
@@ -80,13 +63,9 @@ export async function fetchMyProfile(
           profiles: Array<Omit<Profile, 'onboarding_completed_at'>>
         }>(nhost, GET_MY_PROFILE_ONBOARDING_LEGACY, { userId })
         const profile = data.profiles[0]
-        return finalizeProfile(
-          nhost,
-          userId,
-          profile
-            ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
-            : null,
-        )
+        return profile
+          ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
+          : null
       } catch (legacyError) {
         if (!isExerciseLocaleSchemaError(legacyError)) {
           throw legacyError
@@ -102,13 +81,9 @@ export async function fetchMyProfile(
       profiles: Array<Omit<Profile, 'exercise_locale' | 'onboarding_completed_at'>>
     }>(nhost, GET_MY_PROFILE_LEGACY, { userId })
     const profile = data.profiles[0]
-    return finalizeProfile(
-      nhost,
-      userId,
-      profile
-        ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
-        : null,
-    )
+    return profile
+      ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
+      : null
   }
 }
 

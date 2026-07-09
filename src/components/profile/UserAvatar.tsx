@@ -1,4 +1,4 @@
-import { Crown } from 'lucide-react'
+import { Crown, User } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { getProfileInitials } from '@/lib/stats/workout-metrics'
@@ -20,6 +20,18 @@ const badgeSizeClasses: Record<UserAvatarSize, string> = {
   xl: 'size-5',
 }
 
+const fallbackIconClasses: Record<UserAvatarSize, string> = {
+  sm: 'size-4',
+  md: 'size-4.5',
+  lg: 'size-5',
+  xl: 'size-7',
+}
+
+function resolveAvatarUrl(avatarUrl?: string | null): string | null {
+  const trimmed = avatarUrl?.trim()
+  return trimmed ? trimmed : null
+}
+
 type UserAvatarProps = {
   displayName: string
   avatarUrl?: string | null
@@ -35,17 +47,32 @@ export function UserAvatar({
   size = 'md',
   className,
 }: UserAvatarProps) {
+  const resolvedAvatarUrl = resolveAvatarUrl(avatarUrl)
+  const initials = getProfileInitials(displayName)
+
   return (
     <span className={cn('relative inline-flex shrink-0', className)}>
-      <Avatar className={cn(sizeClasses[size], 'border border-border')}>
-        <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
+      <Avatar
+        className={cn(
+          sizeClasses[size],
+          'border border-border bg-primary/15',
+        )}
+      >
+        {resolvedAvatarUrl ? (
+          <AvatarImage src={resolvedAvatarUrl} alt={displayName} />
+        ) : null}
         <AvatarFallback
+          delayMs={0}
           className={cn(
-            'bg-soft-primary font-bold text-primary',
+            'bg-primary/15 font-bold text-primary',
             size === 'xl' ? 'font-display text-lg font-black' : 'text-xs',
           )}
         >
-          {getProfileInitials(displayName)}
+          {initials ? (
+            initials
+          ) : (
+            <User className={fallbackIconClasses[size]} aria-hidden />
+          )}
         </AvatarFallback>
       </Avatar>
       {isPremium ? (
