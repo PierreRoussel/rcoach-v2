@@ -5,9 +5,5 @@ export const Route = createFileRoute('/app/diet')({
 })
 
 function DietLayout() {
-  return (
-    <div className="diet-page">
-      <Outlet />
-    </div>
-  )
+  return <Outlet />
 }

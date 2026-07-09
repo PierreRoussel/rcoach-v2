@@ -1,32 +1,43 @@
 /**
- * Diet journal page — discrete visual polish (CSS only).
+ * Diet journal page — green visual identity (CSS only).
+ *
+ * `.diet-section` is applied on the /app shell when pathname starts with /app/diet.
+ * It remaps primary tokens to chart-2 green so nutrition UI picks up the diet accent
+ * without touching macro-specific chart colors (carbs/protein/fat bars).
  */
 
-/* ---- Diet accent: green identity (scoped to diet routes + active nav tab) ---- */
+/* ---- Diet section theme (scoped primary → green) ---- */
 
-body:has(nav a[href='/app/diet'].bg-soft-primary),
-.diet-page {
-  --primary: var(--secondary);
+.diet-section {
+  --primary: var(--chart-2);
   --primary-foreground: var(--secondary-foreground);
   --soft-primary: var(--soft-secondary);
   --soft-primary-fg: var(--soft-secondary-fg);
-  --ring: color-mix(in srgb, var(--secondary) 55%, var(--border));
+  --ring: var(--chart-2);
+}
+
+.dark .diet-section {
+  --primary-foreground: var(--background);
+}
+
+.diet-section .shadow-soft-primary {
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--chart-2) 28%, transparent);
 }
 
 /* ---- Page atmosphere ---- */
 
-body:has(nav a[href='/app/diet'].bg-soft-primary) {
+body:has(.diet-section) {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--soft-secondary) 38%, var(--background)) 0%,
+    color-mix(in srgb, var(--soft-secondary) 42%, var(--background)) 0%,
     var(--background) 200px
   );
 }
 
-.dark body:has(nav a[href='/app/diet'].bg-soft-primary) {
+.dark body:has(.diet-section) {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--soft-secondary) 18%, var(--background)) 0%,
+    color-mix(in srgb, var(--soft-secondary) 22%, var(--background)) 0%,
     var(--background) 180px
   );
 }
@@ -141,9 +152,9 @@ div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hid
 }
 
 /* Sync pending banner */
-body:has(nav a[href='/app/diet'].bg-soft-primary) main > div.space-y-4 > .rounded-xl.bg-muted {
+body:has(.diet-section) main > div.space-y-4 > .rounded-xl.bg-muted {
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--soft-accent) 35%, var(--muted));
+  background: color-mix(in srgb, var(--soft-secondary) 40%, var(--muted));
 }
 
 /* ---- Meal detail page ---- */
