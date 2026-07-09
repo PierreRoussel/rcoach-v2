@@ -66,7 +66,7 @@ export function HomeSummaryTile({
 type HomeSummaryMetricProps = {
   value: string
   label: string
-  tone?: 'default' | 'accent' | 'danger'
+  tone?: 'default' | 'accent' | 'danger' | 'purple'
   className?: string
 }
 
@@ -83,6 +83,7 @@ export function HomeSummaryMetric({
           className={cn(
             'font-display text-[1.65rem] font-black tabular-nums tracking-tight',
             tone === 'accent' && 'text-emerald-800 dark:text-emerald-300',
+            tone === 'purple' && 'text-[#6b4fcc] dark:text-purple-300',
             tone === 'danger' && 'text-destructive',
             tone === 'default' && 'text-foreground',
           )}
@@ -131,10 +132,12 @@ export function HomeSummaryTileFooter({
   left,
   right,
   className,
+  rightClassName,
 }: {
   left: ReactNode
   right?: ReactNode
   className?: string
+  rightClassName?: string
 }) {
   return (
     <div
@@ -145,7 +148,12 @@ export function HomeSummaryTileFooter({
     >
       <span>{left}</span>
       {right ? (
-        <span className="shrink-0 text-right font-bold text-emerald-800 dark:text-emerald-300">
+        <span
+          className={cn(
+            'shrink-0 text-right font-bold text-emerald-800 dark:text-emerald-300',
+            rightClassName,
+          )}
+        >
           {right}
         </span>
       ) : null}

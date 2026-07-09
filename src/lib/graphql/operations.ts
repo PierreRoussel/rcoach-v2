@@ -2642,6 +2642,24 @@ export const REPLY_FRIEND_MOTIVATION = `
   }
 `
 
+export const RECONCILE_MY_SUBSCRIPTION = `
+  query ReconcileMySubscription {
+    reconcile_my_subscription {
+      id
+      user_id
+      tier
+      status
+      billing_period
+      current_period_end
+      provider
+      provider_ref
+      trial_consumed_at
+      created_at
+      updated_at
+    }
+  }
+`
+
 export const GET_MY_SUBSCRIPTION = `
   query GetMySubscription($userId: uuid!) {
     subscriptions(where: { user_id: { _eq: $userId } }, limit: 1) {

@@ -53,7 +53,8 @@ export function GoalsHomeSummaryTile() {
       ariaLabel="Ouvrir la page objectifs"
       icon={Target}
       title="Objectif poids"
-      iconClassName="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
+      className="border-0 bg-gradient-to-br from-soft-purple via-card to-soft-purple/50 shadow-sm active:scale-[0.99]"
+      iconClassName="bg-soft-purple text-[#6b4fcc] dark:text-purple-300"
     >
       {goalLoading ? (
         <HomeSummaryTileSkeleton />
@@ -71,7 +72,7 @@ export function GoalsHomeSummaryTile() {
             <HomeSummaryMetric
               value={formatWeightNumber(goal.target_weight_kg)}
               label="kg cible"
-              tone="accent"
+              tone="purple"
               className="text-right"
             />
           </HomeSummaryMetricsRow>
@@ -95,15 +96,19 @@ export function GoalsHomeSummaryTile() {
             <HomeSummaryMetric
               value={formatWeightNumber(goal.target_weight_kg)}
               label="kg cible"
-              tone="accent"
+              tone="purple"
               className="text-right"
             />
           </HomeSummaryMetricsRow>
 
-          <HomeSummaryProgress value={goalProgressPercent(goal)} />
+          <HomeSummaryProgress
+            value={goalProgressPercent(goal)}
+            className="[&_[data-slot=progress-indicator]]:bg-[#9b87d4] dark:[&_[data-slot=progress-indicator]]:bg-purple-400"
+          />
 
           <HomeSummaryTileFooter
             left={WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
+            rightClassName="text-[#6b4fcc] dark:text-purple-300"
             right={
               estimationLabel ? (
                 <GoalProjectionPremiumBlur entitled={hasGoalProjection} variant="inline">

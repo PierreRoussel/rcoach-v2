@@ -1,6 +1,4 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -36,11 +34,7 @@ import { useTheme } from '@/design-system/theme-provider'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useSubscriptionSummary } from '@/hooks/useSubscription'
-import {
-  billingPeriodLabel,
-  SUBSCRIPTION_STATUS_LABELS,
-  subscriptionTierLabel,
-} from '@/lib/subscription/subscription-labels'
+import { subscriptionDisplayStatus, subscriptionTierLabel } from '@/lib/subscription/subscription-labels'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { Capacitor } from '@capacitor/core'
 
@@ -145,17 +139,14 @@ function LogoutSection() {
 
 function SubscriptionProfileCard() {
   const {
-    tier,
-    status,
-    billingPeriod,
+    subscription,
     isPremium,
     isPastDue,
-    currentPeriodEnd,
     isLoading,
   } = useSubscriptionSummary()
 
-  const renewalLabel = currentPeriodEnd
-    ? format(new Date(currentPeriodEnd), 'd MMMM yyyy', { locale: fr })
+  const display = subscription
+    ? subscriptionDisplayStatus(subscription)
     : null
 
   return (
@@ -173,21 +164,22 @@ function SubscriptionProfileCard() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Pill tone={isPremium ? 'solid-primary' : 'default'}>
-                {subscriptionTierLabel(tier)}
+                {display?.tierLabel ?? subscriptionTierLabel('free')}
               </Pill>
-              <Pill tone={isPastDue ? 'accent' : 'secondary'}>
-                {SUBSCRIPTION_STATUS_LABELS[status]}
-              </Pill>
-              {billingPeriod ? (
-                <Pill tone="purple">{billingPeriodLabel(billingPeriod)}</Pill>
+              {display?.statusLabel ? (
+                <Pill tone={isPastDue ? 'accent' : 'secondary'}>{display.statusLabel}</Pill>
+              ) : null}
+              {display?.billingLabel ? (
+                <Pill tone="purple">{display.billingLabel}</Pill>
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">
-              {isPremium && renewalLabel
-                ? `Renouvellement prévu le ${renewalLabel}.`
-                : isPastDue
+              {display?.periodContext ??
+                (isPastDue
                   ? 'Mettez à jour votre moyen de paiement pour conserver l’accès Premium.'
-                  : 'Passez en Premium pour débloquer toutes les fonctionnalités.'}
+                  : isPremium
+                    ? null
+                    : 'Passez en Premium pour débloquer toutes les fonctionnalités.')}
             </p>
           </div>
         )}

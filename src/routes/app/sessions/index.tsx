@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/card'
 import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { TemplateLimitDialog } from '@/components/subscription/TemplateLimitDialog'
+import { TemplateFrozenDialog } from '@/components/subscription/TemplateFrozenDialog'
 import { UpgradePrompt } from '@/components/subscription/PremiumGate'
 import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
 import { TemplateCatalogList } from '@/components/workout/TemplateCatalogList'
@@ -41,6 +42,13 @@ import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrenc
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 import { FREE_HISTORY_WEEKS, FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
+import {
+  countActiveTemplates,
+  countTemplateUsageFromWorkouts,
+  rankTemplatesByUsage,
+  resolveFrozenTemplateIds,
+} from '@/lib/subscription/template-access'
+import { useMyWorkouts } from '@/hooks/useWorkouts'
 
 type SessionsSearch = {
   tab?: 'catalog' | 'history' | 'stats'
@@ -99,6 +107,7 @@ function CatalogTab() {
   const navigate = useNavigate()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [limitDialogOpen, setLimitDialogOpen] = useState(false)
+  const [frozenDialogOpen, setFrozenDialogOpen] = useState(false)
   const [conflictOpen, setConflictOpen] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<
     NonNullable<ReturnType<typeof useWorkoutTemplates>['data']>[number] | null
@@ -111,14 +120,27 @@ function CatalogTab() {
     (state) => state.startWorkoutFromTemplate,
   )
   const { data: templates, isLoading, error } = useWorkoutTemplates()
-  const { entitled: hasUnlimitedTemplates } = useEntitlement('unlimited_templates')
+  const { data: workouts = [] } = useMyWorkouts()
+  const { entitled: hasUnlimitedTemplates, isPremium } = useEntitlement('unlimited_templates')
   const { data: scheduledResult } = useScheduledSessions()
   const deleteTemplate = useDeleteWorkoutTemplate()
   const createEmpty = useCreateEmptyWorkoutTemplate()
 
-  const templateCount = templates?.length ?? 0
+  const frozenTemplateIds = useMemo(() => {
+    if (!templates) {
+      return new Set<string>()
+    }
+
+    const usage = countTemplateUsageFromWorkouts(workouts)
+    const ranked = rankTemplatesByUsage(templates, usage)
+    return resolveFrozenTemplateIds(ranked, isPremium)
+  }, [isPremium, templates, workouts])
+
+  const activeTemplateCount = templates
+    ? countActiveTemplates(templates, frozenTemplateIds)
+    : 0
   const atTemplateLimit =
-    !hasUnlimitedTemplates && templateCount >= FREE_WORKOUT_TEMPLATES
+    !hasUnlimitedTemplates && activeTemplateCount >= FREE_WORKOUT_TEMPLATES
 
   const nextOccurrenceByTemplateId = useMemo(
     () => buildNextOccurrenceByTemplateId(scheduledResult?.sessions ?? []),
@@ -151,6 +173,11 @@ function CatalogTab() {
   }
 
   function requestStart(template: NonNullable<typeof templates>[number]) {
+    if (frozenTemplateIds.has(template.id)) {
+      setFrozenDialogOpen(true)
+      return
+    }
+
     if (startedAt) {
       setPendingTemplate(template)
       setConflictOpen(true)
@@ -212,6 +239,7 @@ function CatalogTab() {
         isPending={isStartingTemplate}
       />
       <TemplateLimitDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} />
+      <TemplateFrozenDialog open={frozenDialogOpen} onOpenChange={setFrozenDialogOpen} />
       <SessionNameDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -219,7 +247,7 @@ function CatalogTab() {
         isPending={createEmpty.isPending}
         quotaRecap={
           !hasUnlimitedTemplates
-            ? { current: templateCount, max: FREE_WORKOUT_TEMPLATES }
+            ? { current: activeTemplateCount, max: FREE_WORKOUT_TEMPLATES }
             : undefined
         }
       />
@@ -251,7 +279,11 @@ function CatalogTab() {
                 {!hasUnlimitedTemplates ? (
                   <>
                     {' '}
-                    ({templateCount}/{FREE_WORKOUT_TEMPLATES})
+                    ({activeTemplateCount}/{FREE_WORKOUT_TEMPLATES}
+                    {frozenTemplateIds.size > 0
+                      ? `, ${frozenTemplateIds.size} gelé${frozenTemplateIds.size > 1 ? 's' : ''}`
+                      : ''}
+                    )
                   </>
                 ) : null}
               </CardDescription>
@@ -312,7 +344,9 @@ function CatalogTab() {
               templates={templates}
               scheduledSessions={scheduledResult?.sessions ?? []}
               nextOccurrenceByTemplateId={nextOccurrenceByTemplateId}
+              frozenTemplateIds={frozenTemplateIds}
               onStart={requestStart}
+              onFrozenTap={() => setFrozenDialogOpen(true)}
               onDelete={(templateId) => void deleteTemplate.mutateAsync(templateId)}
               isDeleting={deleteTemplate.isPending}
             />

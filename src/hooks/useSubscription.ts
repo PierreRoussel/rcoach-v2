@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addDays } from 'date-fns'
+import { useEffect, useRef } from 'react'
 
 import type {
   CancellationFeedbackInput,
@@ -20,6 +21,13 @@ import {
   hasConsumedPremiumTrial,
   isTrialAlreadyConsumedError,
 } from '@/lib/subscription/trial-eligibility'
+import {
+  buildTrialDowngradePatch,
+  isSubscriptionPeriodActive,
+  markTrialEndedPeriod,
+  shouldExpireTrial,
+} from '@/lib/subscription/trial-lifecycle'
+import { cancelTrialReminderNotifications, scheduleTrialReminderNotifications } from '@/lib/notifications/trial-reminder-scheduler'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useSubscription() {
@@ -40,8 +48,9 @@ export function useSubscriptionSummary() {
 
   const tier = subscription?.tier ?? 'free'
   const status = subscription?.status ?? 'active'
-  const isPremium =
-    isPremiumTier(tier) && (status === 'active' || status === 'trialing')
+  const isPremium = subscription
+    ? isSubscriptionPeriodActive(subscription)
+    : false
   const isPastDue = status === 'past_due'
   const billingPeriod = subscription?.billing_period ?? null
   const trialConsumedAt = subscription?.trial_consumed_at ?? null
@@ -69,6 +78,37 @@ export function useSubscriptionSummary() {
 export function useEntitlement(feature: PremiumFeature) {
   const { isPremium, isLoading } = useSubscriptionSummary()
   return { entitled: isPremium, isPremium, isLoading, feature }
+}
+
+export function useReconcileTrialExpiry() {
+  const { subscription, isLoading } = useSubscriptionSummary()
+  const updateSubscription = useUpdateSubscription()
+  const reconcilingRef = useRef(false)
+
+  useEffect(() => {
+    if (isLoading || !subscription?.id || reconcilingRef.current) {
+      return
+    }
+
+    if (!shouldExpireTrial(subscription)) {
+      return
+    }
+
+    reconcilingRef.current = true
+    const periodEnd = subscription.current_period_end
+
+  void (async () => {
+      try {
+        if (periodEnd) {
+          markTrialEndedPeriod(periodEnd)
+        }
+        await updateSubscription.mutateAsync(buildTrialDowngradePatch())
+        await cancelTrialReminderNotifications()
+      } finally {
+        reconcilingRef.current = false
+      }
+    })()
+  }, [isLoading, subscription, updateSubscription])
 }
 
 export function useUpdateSubscription() {
@@ -109,9 +149,7 @@ export function useStartPremiumTrial() {
       }
 
       const subscription = await fetchMySubscription(nhost, userId)
-      const isPremium =
-        isPremiumTier(subscription.tier) &&
-        (subscription.status === 'active' || subscription.status === 'trialing')
+      const isPremium = isSubscriptionPeriodActive(subscription)
 
       if (
         !canStartPremiumTrial({
@@ -152,6 +190,12 @@ export function useStartPremiumTrial() {
       void queryClient.invalidateQueries({ queryKey: ['friendships'] })
       void queryClient.invalidateQueries({ queryKey: ['friend-recap'] })
       void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
+      if (subscription.status === 'trialing' && subscription.current_period_end) {
+        void scheduleTrialReminderNotifications({
+          periodEnd: subscription.current_period_end,
+          billingPeriod: subscription.billing_period,
+        })
+      }
     },
   })
 }

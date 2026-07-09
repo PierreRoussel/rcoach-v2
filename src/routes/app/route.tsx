@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-r
 import { useEffect } from 'react'
 
 import { NutritionStreakGamificationProvider } from '@/components/nutrition/NutritionStreakGamificationProvider'
+import { SubscriptionLifecycleProvider } from '@/components/subscription/SubscriptionLifecycleProvider'
 import { AppWelcomeHeader } from '@/components/app/AppWelcomeHeader'
 import { ActiveWorkoutProgressBar } from '@/components/workout/ActiveWorkoutProgressBar'
 import { ActiveWorkoutResumeFab } from '@/components/workout/ActiveWorkoutResumeFab'
@@ -53,8 +54,9 @@ function AppLayout() {
   }
 
   return (
-    <NutritionStreakGamificationProvider>
-      <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">
+    <SubscriptionLifecycleProvider>
+      <NutritionStreakGamificationProvider>
+        <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">
         <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
           <div className="flex items-center justify-between gap-3 px-4 py-2.5">
             <AppWelcomeHeader displayName={resolveDisplayName(profile?.display_name, user) || null} />
@@ -74,6 +76,7 @@ function AppLayout() {
         <ActiveWorkoutResumeFab />
         <AppBottomNav />
       </div>
-    </NutritionStreakGamificationProvider>
+      </NutritionStreakGamificationProvider>
+    </SubscriptionLifecycleProvider>
   )
 }

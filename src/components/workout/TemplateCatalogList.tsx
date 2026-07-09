@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { CalendarDays, Dumbbell, Folder, Pencil, Play, Trash2 } from 'lucide-react'
+import { CalendarDays, Dumbbell, Folder, Lock, Pencil, Play, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
 
 import {
@@ -23,7 +23,9 @@ type TemplateCatalogListProps = {
   templates: WorkoutTemplate[]
   scheduledSessions: ScheduledSessionRecord[]
   nextOccurrenceByTemplateId: Map<string, string>
+  frozenTemplateIds?: Set<string>
   onStart: (template: WorkoutTemplate) => void
+  onFrozenTap?: (template: WorkoutTemplate) => void
   onDelete: (templateId: string) => void
   isDeleting?: boolean
 }
@@ -43,21 +45,45 @@ function GroupIcon({ kind }: { kind: TemplateCatalogGroup['kind'] }) {
 function TemplateCatalogRow({
   template,
   nextOccurrenceDate,
+  isFrozen = false,
   onStart,
+  onFrozenTap,
   onDelete,
   isDeleting,
 }: {
   template: WorkoutTemplate
   nextOccurrenceDate?: string
+  isFrozen?: boolean
   onStart: (template: WorkoutTemplate) => void
+  onFrozenTap?: (template: WorkoutTemplate) => void
   onDelete: (templateId: string) => void
   isDeleting?: boolean
 }) {
+  function handleStart() {
+    if (isFrozen) {
+      onFrozenTap?.(template)
+      return
+    }
+
+    onStart(template)
+  }
+
   return (
     <div className="relative w-full bg-card px-4 py-3 transition-colors hover:bg-muted/20">
-      <div className="flex w-full min-w-0 items-start justify-between gap-2">
+      {isFrozen ? (
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-background/35 backdrop-blur-[1px]" />
+      ) : null}
+      <div className="relative z-[2] flex w-full min-w-0 items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="font-display font-black">{template.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-display font-black">{template.name}</p>
+            {isFrozen ? (
+              <Pill tone="secondary" className="gap-1">
+                <Lock className="size-3" />
+                Gelé
+              </Pill>
+            ) : null}
+          </div>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <Dumbbell className="size-3 shrink-0" />
             {template.workout_template_exercises.length} exercices
@@ -70,27 +96,40 @@ function TemplateCatalogRow({
           </Pill>
         ) : null}
       </div>
-      <div className="mt-3 flex w-full min-w-0 gap-2">
+      <div className="relative z-[2] mt-3 flex w-full min-w-0 gap-2">
         <Button
           variant="pill"
           size="sm"
           className="min-w-0 flex-1"
-          onClick={() => onStart(template)}
+          onClick={handleStart}
         >
           <Play className="size-4" />
-          Démarrer
+          {isFrozen ? 'Gelé' : 'Démarrer'}
         </Button>
-        <Button variant="soft" size="sm" className="min-w-0 flex-1" asChild>
-          <Link to="/app/sessions/$templateId" params={{ templateId: template.id }}>
-            <Pencil className="size-4" />
-            Modifier
-          </Link>
+        <Button
+          variant="soft"
+          size="sm"
+          className="min-w-0 flex-1"
+          asChild={!isFrozen}
+          onClick={isFrozen ? () => onFrozenTap?.(template) : undefined}
+        >
+          {isFrozen ? (
+            <>
+              <Pencil className="size-4" />
+              Modifier
+            </>
+          ) : (
+            <Link to="/app/sessions/$templateId" params={{ templateId: template.id }}>
+              <Pencil className="size-4" />
+              Modifier
+            </Link>
+          )}
         </Button>
         <Button
           variant="ghost"
           size="icon"
           className="shrink-0"
-          onClick={() => onDelete(template.id)}
+          onClick={() => (isFrozen ? onFrozenTap?.(template) : onDelete(template.id))}
           disabled={isDeleting}
         >
           <Trash2 className="size-4" />
@@ -103,7 +142,9 @@ function TemplateCatalogRow({
 function TemplateGroupList({
   templates,
   nextOccurrenceByTemplateId,
+  frozenTemplateIds,
   onStart,
+  onFrozenTap,
   onDelete,
   isDeleting,
 }: Omit<TemplateCatalogListProps, 'scheduledSessions'>) {
@@ -114,7 +155,9 @@ function TemplateGroupList({
           <TemplateCatalogRow
             template={template}
             nextOccurrenceDate={nextOccurrenceByTemplateId.get(template.id)}
+            isFrozen={frozenTemplateIds?.has(template.id) ?? false}
             onStart={onStart}
+            onFrozenTap={onFrozenTap}
             onDelete={onDelete}
             isDeleting={isDeleting}
           />
@@ -128,7 +171,9 @@ export function TemplateCatalogList({
   templates,
   scheduledSessions,
   nextOccurrenceByTemplateId,
+  frozenTemplateIds,
   onStart,
+  onFrozenTap,
   onDelete,
   isDeleting,
 }: TemplateCatalogListProps) {
@@ -148,7 +193,9 @@ export function TemplateCatalogList({
         <TemplateGroupList
           templates={templates}
           nextOccurrenceByTemplateId={nextOccurrenceByTemplateId}
+          frozenTemplateIds={frozenTemplateIds}
           onStart={onStart}
+          onFrozenTap={onFrozenTap}
           onDelete={onDelete}
           isDeleting={isDeleting}
         />
@@ -182,7 +229,9 @@ export function TemplateCatalogList({
             <TemplateGroupList
               templates={group.templates}
               nextOccurrenceByTemplateId={nextOccurrenceByTemplateId}
+              frozenTemplateIds={frozenTemplateIds}
               onStart={onStart}
+              onFrozenTap={onFrozenTap}
               onDelete={onDelete}
               isDeleting={isDeleting}
             />

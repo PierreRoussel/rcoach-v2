@@ -28,7 +28,7 @@ function DietStreakBadge({
 
   return (
     <Pill
-      tone={isFrozen ? 'default' : 'solid-primary'}
+      tone={isFrozen ? 'default' : 'secondary'}
       className="h-6 shrink-0 gap-1 px-2 py-0 text-[11px] font-bold"
       title={
         isFrozen
@@ -73,17 +73,18 @@ export function NutritionHomeSummaryTile() {
       to="/app/diet"
       search={{ date: today }}
       className={cn(
-        'block rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-sm',
-        'transition-colors active:bg-muted/40',
+        'block rounded-2xl bg-gradient-to-br from-soft-secondary via-soft-secondary/80 to-card px-4 py-4',
+        'shadow-sm shadow-secondary/10',
+        'transition-transform active:scale-[0.99]',
       )}
       aria-label="Ouvrir le journal nutrition"
     >
       <div className="flex items-center gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-soft-primary text-primary">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary dark:text-emerald-300">
           <UtensilsCrossed className="size-[18px]" />
         </div>
 
-        <p className="min-w-0 flex-1 font-display text-sm font-bold text-foreground">
+        <p className="min-w-0 flex-1 font-display text-sm font-black text-foreground">
           Diète aujourd&apos;hui
         </p>
 
@@ -126,7 +127,7 @@ export function NutritionHomeSummaryTile() {
               <span
                 className={cn(
                   'font-display text-xl font-black tabular-nums',
-                  overTarget ? 'text-destructive' : 'text-primary',
+                  overTarget ? 'text-destructive' : 'text-secondary dark:text-emerald-300',
                 )}
               >
                 {overTarget ? `+${formatCalories(Math.abs(remaining))}` : formatCalories(remaining)}
@@ -137,13 +138,18 @@ export function NutritionHomeSummaryTile() {
             </span>
           </div>
 
-          <Progress value={progress} className="mt-3 h-2 bg-muted" />
+          <Progress
+            value={progress}
+            className="mt-3 h-2.5 bg-muted/40 [&_[data-slot=progress-indicator]]:bg-secondary"
+          />
 
           <div className="mt-2 flex items-center justify-between gap-3 text-xs">
             <span className="text-muted-foreground">
               Objectif {formatCalories(target)} kcal
             </span>
-            <span className="font-semibold text-primary">{progressLabel}% atteint</span>
+            <span className="font-bold text-secondary dark:text-emerald-300">
+              {progressLabel}% atteint
+            </span>
           </div>
         </>
       )}

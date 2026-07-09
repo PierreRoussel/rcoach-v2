@@ -4,6 +4,7 @@ import {
   GET_MY_SUBSCRIPTION,
   INSERT_CANCELLATION_FEEDBACK,
   INSERT_MY_SUBSCRIPTION,
+  RECONCILE_MY_SUBSCRIPTION,
   UPDATE_MY_SUBSCRIPTION,
   type CancellationFeedbackInput,
   type Subscription,
@@ -39,16 +40,37 @@ export async function fetchMySubscription(
   userId: string,
 ): Promise<Subscription> {
   try {
+    const reconciled = await graphqlRequest<{
+      reconcile_my_subscription: Subscription[]
+    }>(nhost, RECONCILE_MY_SUBSCRIPTION)
+    const subscription = reconciled.reconcile_my_subscription[0]
+    if (subscription) {
+      return subscription
+    }
+
     const data = await graphqlRequest<{ subscriptions: Subscription[] }>(
       nhost,
       GET_MY_SUBSCRIPTION,
       { userId },
     )
-    const subscription = data.subscriptions[0]
-    return subscription ?? { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
+    const fallback = data.subscriptions[0]
+    return fallback ?? { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
   } catch (error) {
     if (isSubscriptionSchemaError(error)) {
-      return { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
+      try {
+        const data = await graphqlRequest<{ subscriptions: Subscription[] }>(
+          nhost,
+          GET_MY_SUBSCRIPTION,
+          { userId },
+        )
+        const subscription = data.subscriptions[0]
+        return subscription ?? { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
+      } catch (fallbackError) {
+        if (isSubscriptionSchemaError(fallbackError)) {
+          return { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
+        }
+        throw fallbackError
+      }
     }
     throw error
   }
