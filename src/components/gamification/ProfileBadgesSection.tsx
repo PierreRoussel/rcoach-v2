@@ -2,24 +2,39 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { BadgeShelf } from '@/components/gamification/BadgeShelf'
 import { BadgeUnlockOverlay } from '@/components/gamification/BadgeUnlockOverlay'
-import { buildBadgeShelfItems, useMyBadges, useSyncMyBadges } from '@/hooks/useBadges'
-import { getBadgeDefinition } from '@/lib/gamification/badges'
+import { useBadgeCatalog } from '@/hooks/useBadgeCatalog'
+import {
+  buildBadgeShelfItems,
+  getUnlockedBadgeDefinitions,
+  useMyBadges,
+  useSyncMyBadges,
+} from '@/hooks/useBadges'
 
 export function ProfileBadgesSection() {
   const { data: badges = [], isLoading } = useMyBadges()
+  const { data: catalog = [] } = useBadgeCatalog()
   const syncBadges = useSyncMyBadges()
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [newBadges, setNewBadges] = useState(
-    () => [] as ReturnType<typeof getBadgeDefinition>[],
+    () => [] as ReturnType<typeof getUnlockedBadgeDefinitions>,
   )
 
-  const items = useMemo(() => buildBadgeShelfItems(badges), [badges])
+  const items = useMemo(
+    () => buildBadgeShelfItems(badges, catalog),
+    [badges, catalog],
+  )
 
   useEffect(() => {
     void syncBadges.mutateAsync().then((keys) => {
-      const unlocked = keys
-        .map((key) => getBadgeDefinition(key))
-        .filter((badge): badge is NonNullable<typeof badge> => badge != null)
+      const unlocked = getUnlockedBadgeDefinitions(
+        keys.map((key) => ({
+          id: `optimistic-${key}`,
+          user_id: '',
+          badge_key: key,
+          unlocked_at: new Date().toISOString(),
+        })),
+        catalog,
+      )
 
       if (unlocked.length > 0) {
         setNewBadges(unlocked)
@@ -40,7 +55,7 @@ export function ProfileBadgesSection() {
     <>
       <BadgeShelf items={items} />
       <BadgeUnlockOverlay
-        badges={newBadges.filter((badge): badge is NonNullable<typeof badge> => badge != null)}
+        badges={newBadges}
         open={overlayOpen}
         onClose={() => setOverlayOpen(false)}
       />

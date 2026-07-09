@@ -1,0 +1,113 @@
+table:
+  name: badge_definitions
+  schema: public
+array_relationships:
+  - name: user_badges
+    using:
+      manual_configuration:
+        column_mapping:
+          key: badge_key
+        insertion_order: null
+        remote_table:
+          name: user_badges
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - key
+        - label
+        - description
+        - category
+        - tier
+        - icon_name
+        - rule_type
+        - rule_threshold
+        - is_active
+        - sort_order
+        - created_at
+        - updated_at
+      filter:
+        _or:
+          - is_active:
+              _eq: true
+          - _exists:
+              _table:
+                name: profiles
+                schema: public
+              _where:
+                id:
+                  _eq: X-Hasura-User-Id
+                role:
+                  _eq: admin
+insert_permissions:
+  - role: user
+    permission:
+      check:
+        _exists:
+          _table:
+            name: profiles
+            schema: public
+          _where:
+            id:
+              _eq: X-Hasura-User-Id
+            role:
+              _eq: admin
+      columns:
+        - key
+        - label
+        - description
+        - category
+        - tier
+        - icon_name
+        - rule_type
+        - rule_threshold
+        - is_active
+        - sort_order
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - label
+        - description
+        - category
+        - tier
+        - icon_name
+        - rule_type
+        - rule_threshold
+        - is_active
+        - sort_order
+        - updated_at
+      filter:
+        _exists:
+          _table:
+            name: profiles
+            schema: public
+          _where:
+            id:
+              _eq: X-Hasura-User-Id
+            role:
+              _eq: admin
+      check:
+        _exists:
+          _table:
+            name: profiles
+            schema: public
+          _where:
+            id:
+              _eq: X-Hasura-User-Id
+            role:
+              _eq: admin
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        _exists:
+          _table:
+            name: profiles
+            schema: public
+          _where:
+            id:
+              _eq: X-Hasura-User-Id
+            role:
+              _eq: admin

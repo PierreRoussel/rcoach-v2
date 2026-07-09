@@ -1,18 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, subDays } from 'date-fns'
 
+import { useBadgeCatalog } from '@/hooks/useBadgeCatalog'
 import {
-  BADGE_CATALOG,
-  getBadgeDefinition,
-  type BadgeDefinition,
-  type BadgeKey,
-} from '@/lib/gamification/badges'
-import {
-  computeTotalVolumeKg,
-  countTotalPersonalRecords,
   evaluateEligibleBadges,
   findNewBadgeKeys,
+  computeTotalVolumeKg,
+  countTotalPersonalRecords,
 } from '@/lib/gamification/badge-evaluation'
+import {
+  getBadgeDefinitionFromCatalog,
+  mapBadgeRecordToDefinition,
+  type BadgeDefinition,
+  type BadgeDefinitionRecord,
+} from '@/lib/gamification/badges'
 import {
   INSERT_USER_BADGE,
   LIST_MY_BADGES,
@@ -23,9 +24,7 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { computeActiveStreak } from '@/lib/nutrition/streak-gamification'
 import { toDateKey } from '@/lib/nutrition/dates'
 import { computeWeeklyStreak } from '@/lib/schedule/weekly-streak'
-import {
-  NUTRITION_STREAK_LOOKBACK_DAYS,
-} from '@/lib/stats/streak-lookback'
+import { NUTRITION_STREAK_LOOKBACK_DAYS } from '@/lib/stats/streak-lookback'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useStatsWorkouts } from '@/hooks/useStatsWorkouts'
 import { useWorkoutStreakDates } from '@/hooks/useWorkouts'
@@ -59,16 +58,22 @@ export function useMyBadges() {
   })
 }
 
-export function buildBadgeShelfItems(unlockedBadges: UserBadge[]): BadgeShelfItem[] {
+export function buildBadgeShelfItems(
+  unlockedBadges: UserBadge[],
+  catalog: BadgeDefinitionRecord[],
+): BadgeShelfItem[] {
   const unlockedMap = new Map(
     unlockedBadges.map((badge) => [badge.badge_key, badge.unlocked_at]),
   )
 
-  return BADGE_CATALOG.map((badge) => ({
-    ...badge,
-    unlocked: unlockedMap.has(badge.key),
-    unlockedAt: unlockedMap.get(badge.key) ?? null,
-  }))
+  return catalog.map((record) => {
+    const definition = mapBadgeRecordToDefinition(record)
+    return {
+      ...definition,
+      unlocked: unlockedMap.has(record.key),
+      unlockedAt: unlockedMap.get(record.key) ?? null,
+    }
+  })
 }
 
 async function fetchNutritionStreak(userId: string, nhost: ReturnType<typeof useAuth>['nhost']) {
@@ -90,11 +95,12 @@ export function useSyncMyBadges() {
   const queryClient = useQueryClient()
   const { workouts } = useStatsWorkouts('all')
   const { data: streakWorkouts = [] } = useWorkoutStreakDates()
+  const { data: catalog = [] } = useBadgeCatalog()
 
   return useMutation({
     mutationFn: async () => {
       if (!userId) {
-        return [] as BadgeKey[]
+        return [] as string[]
       }
 
       let existingBadges: UserBadge[] = []
@@ -115,20 +121,23 @@ export function useSyncMyBadges() {
       const totalVolumeKg = computeTotalVolumeKg(workouts)
       const totalPrCount = countTotalPersonalRecords(workouts)
 
-      const eligible = evaluateEligibleBadges({
-        nutritionStreak,
-        workoutWeeklyStreak,
-        totalSessions,
-        totalVolumeKg,
-        totalPrCount,
-      })
+      const eligible = evaluateEligibleBadges(
+        {
+          nutritionStreak,
+          workoutWeeklyStreak,
+          totalSessions,
+          totalVolumeKg,
+          totalPrCount,
+        },
+        catalog,
+      )
 
       const newKeys = findNewBadgeKeys(
         eligible,
         existingBadges.map((badge) => badge.badge_key),
       )
 
-      const inserted: BadgeKey[] = []
+      const inserted: string[] = []
       for (const badgeKey of newKeys) {
         try {
           await graphqlRequest(nhost, INSERT_USER_BADGE, { badgeKey })
@@ -146,8 +155,11 @@ export function useSyncMyBadges() {
   })
 }
 
-export function getUnlockedBadgeDefinitions(badges: UserBadge[]): BadgeDefinition[] {
+export function getUnlockedBadgeDefinitions(
+  badges: UserBadge[],
+  catalog: BadgeDefinitionRecord[],
+): BadgeDefinition[] {
   return badges
-    .map((badge) => getBadgeDefinition(badge.badge_key))
+    .map((badge) => getBadgeDefinitionFromCatalog(badge.badge_key, catalog))
     .filter((badge): badge is BadgeDefinition => badge != null)
 }

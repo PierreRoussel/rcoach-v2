@@ -57,7 +57,8 @@ import {
 import { Capacitor } from '@capacitor/core'
 import { syncWorkoutDraft } from '@/lib/graphql/sync-queue'
 import { useSyncMyBadges } from '@/hooks/useBadges'
-import { getBadgeDefinition, type BadgeDefinition } from '@/lib/gamification/badges'
+import { useBadgeCatalog } from '@/hooks/useBadgeCatalog'
+import { getBadgeDefinitionFromCatalog, type BadgeDefinition } from '@/lib/gamification/badges'
 import { pushWorkoutSession } from '@/lib/health/push-workout-session'
 import { readHeartRateSummary } from '@/lib/health/read-heart-rate-summary'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -234,6 +235,7 @@ function ActiveWorkoutPage() {
   const [pendingBadgeUnlocks, setPendingBadgeUnlocks] = useState<BadgeDefinition[]>([])
   const [badgeOverlayOpen, setBadgeOverlayOpen] = useState(false)
   const syncBadges = useSyncMyBadges()
+  const { data: badgeCatalog = [] } = useBadgeCatalog()
 
   const exerciseIds = useMemo(
     () => activeExercises.map((exercise) => exercise.exerciseId),
@@ -489,7 +491,7 @@ function ActiveWorkoutPage() {
 
       const newBadgeKeys = await syncBadges.mutateAsync().catch(() => [] as const)
       const unlockedBadges = newBadgeKeys
-        .map((key) => getBadgeDefinition(key))
+        .map((key) => getBadgeDefinitionFromCatalog(key, badgeCatalog))
         .filter((badge): badge is BadgeDefinition => badge != null)
       setPendingBadgeUnlocks(unlockedBadges)
 

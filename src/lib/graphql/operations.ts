@@ -226,6 +226,27 @@ export type UserBadge = {
   unlocked_at: string
 }
 
+export type BadgeDefinitionRow = {
+  key: string
+  label: string
+  description: string
+  category: 'discipline' | 'records' | 'volume' | 'sessions'
+  tier: 'bronze' | 'silver' | 'gold'
+  icon_name: string
+  rule_type:
+    | 'nutrition_streak'
+    | 'workout_streak'
+    | 'sessions'
+    | 'pr_count'
+    | 'volume_kg'
+    | 'manual'
+  rule_threshold: number | null
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export type FriendProfileDetail = {
   id: string
   display_name: string
@@ -2900,37 +2921,6 @@ export const INSERT_SUPPORT_REQUEST = `
   }
 `
 
-export const LIST_MY_BADGES = `
-  query ListMyBadges($userId: uuid!) {
-    user_badges(
-      where: { user_id: { _eq: $userId } }
-      order_by: { unlocked_at: desc }
-    ) {
-      id
-      user_id
-      badge_key
-      unlocked_at
-    }
-  }
-`
-
-export const INSERT_USER_BADGE = `
-  mutation InsertUserBadge($badgeKey: String!) {
-    insert_user_badges_one(
-      object: { badge_key: $badgeKey }
-      on_conflict: {
-        constraint: user_badges_user_id_badge_key_key
-        update_columns: []
-      }
-    ) {
-      id
-      user_id
-      badge_key
-      unlocked_at
-    }
-  }
-`
-
 export const GET_FRIEND_PROFILE = `
   query GetFriendProfile(
     $friendId: uuid!
@@ -2987,6 +2977,127 @@ export const GET_FRIEND_PROFILE = `
         logged_date
         calories
       }
+    }
+  }
+`
+
+export const LIST_MY_BADGES = `
+  query ListMyBadges($userId: uuid!) {
+    user_badges(
+      where: { user_id: { _eq: $userId } }
+      order_by: { unlocked_at: desc } 
+    ) {
+      id
+      user_id
+      badge_key
+      unlocked_at
+    }
+  }
+`
+
+export const LIST_ACTIVE_BADGE_DEFINITIONS = `
+  query ListActiveBadgeDefinitions {
+    badge_definitions(
+      where: { is_active: { _eq: true } }
+      order_by: [{ sort_order: asc }, { key: asc }]
+    ) {
+      key
+      label
+      description
+      category
+      tier
+      icon_name
+      rule_type
+      rule_threshold
+      is_active
+      sort_order
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const LIST_ALL_BADGE_DEFINITIONS = `
+  query ListAllBadgeDefinitions {
+    badge_definitions(order_by: [{ sort_order: asc }, { key: asc }]) {
+      key
+      label
+      description
+      category
+      tier
+      icon_name
+      rule_type
+      rule_threshold
+      is_active
+      sort_order
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const INSERT_BADGE_DEFINITION = `
+  mutation InsertBadgeDefinition($object: badge_definitions_insert_input!) {
+    insert_badge_definitions_one(object: $object) {
+      key
+      label
+      description
+      category
+      tier
+      icon_name
+      rule_type
+      rule_threshold
+      is_active
+      sort_order
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const UPDATE_BADGE_DEFINITION = `
+  mutation UpdateBadgeDefinition(
+    $key: String!
+    $changes: badge_definitions_set_input!
+  ) {
+    update_badge_definitions_by_pk(pk_columns: { key: $key }, _set: $changes) {
+      key
+      label
+      description
+      category
+      tier
+      icon_name
+      rule_type
+      rule_threshold
+      is_active
+      sort_order
+      created_at
+      updated_at
+    }
+  }
+`
+
+export const DELETE_BADGE_DEFINITION = `
+  mutation DeleteBadgeDefinition($key: String!) {
+    delete_badge_definitions_by_pk(key: $key) {
+      key
+    }
+  }
+`
+
+export const INSERT_USER_BADGE = `
+  mutation InsertUserBadge($badgeKey: String!) {
+    insert_user_badges_one(
+      object: { badge_key: $badgeKey }
+      on_conflict: {
+        constraint: user_badges_user_id_badge_key_key
+        update_columns: []
+      }
+    ) {
+      id
+      user_id
+      badge_key
+      unlocked_at
     }
   }
 `

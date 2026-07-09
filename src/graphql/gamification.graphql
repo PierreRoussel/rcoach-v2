@@ -25,6 +25,86 @@ mutation InsertUserBadge($badgeKey: String!) {
   }
 }
 
+query ListActiveBadgeDefinitions {
+  badge_definitions(
+    where: { is_active: { _eq: true } }
+    order_by: [{ sort_order: asc }, { key: asc }]
+  ) {
+    key
+    label
+    description
+    category
+    tier
+    icon_name
+    rule_type
+    rule_threshold
+    is_active
+    sort_order
+    created_at
+    updated_at
+  }
+}
+
+query ListAllBadgeDefinitions {
+  badge_definitions(order_by: [{ sort_order: asc }, { key: asc }]) {
+    key
+    label
+    description
+    category
+    tier
+    icon_name
+    rule_type
+    rule_threshold
+    is_active
+    sort_order
+    created_at
+    updated_at
+  }
+}
+
+mutation InsertBadgeDefinition($object: badge_definitions_insert_input!) {
+  insert_badge_definitions_one(object: $object) {
+    key
+    label
+    description
+    category
+    tier
+    icon_name
+    rule_type
+    rule_threshold
+    is_active
+    sort_order
+    created_at
+    updated_at
+  }
+}
+
+mutation UpdateBadgeDefinition(
+  $key: String!
+  $changes: badge_definitions_set_input!
+) {
+  update_badge_definitions_by_pk(pk_columns: { key: $key }, _set: $changes) {
+    key
+    label
+    description
+    category
+    tier
+    icon_name
+    rule_type
+    rule_threshold
+    is_active
+    sort_order
+    created_at
+    updated_at
+  }
+}
+
+mutation DeleteBadgeDefinition($key: String!) {
+  delete_badge_definitions_by_pk(key: $key) {
+    key
+  }
+}
+
 query GetFriendProfile(
   $friendId: uuid!
   $workoutLimit: Int!

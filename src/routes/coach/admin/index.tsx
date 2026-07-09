@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { z } from 'zod'
 
 import { AdminAnalyticsTab } from '@/components/admin/AdminAnalyticsTab'
+import { AdminBadgesTab } from '@/components/admin/AdminBadgesTab'
 import { AdminOverviewTab } from '@/components/admin/AdminOverviewTab'
 import { AdminSubscriptionsTab } from '@/components/admin/AdminSubscriptionsTab'
 import { AdminSupportTab } from '@/components/admin/AdminSupportTab'
@@ -29,7 +30,7 @@ const RANGE_OPTIONS: Array<{ value: AdminMetricsRange; label: string }> = [
   { value: '12m', label: '12 mois' },
 ]
 
-const ADMIN_TABS = ['overview', 'analytics', 'users', 'subscriptions', 'support'] as const
+const ADMIN_TABS = ['overview', 'analytics', 'users', 'subscriptions', 'support', 'badges'] as const
 type AdminTab = (typeof ADMIN_TABS)[number]
 
 function parseAdminTab(value: unknown): AdminTab {
@@ -37,7 +38,8 @@ function parseAdminTab(value: unknown): AdminTab {
     value === 'analytics' ||
     value === 'users' ||
     value === 'subscriptions' ||
-    value === 'support'
+    value === 'support' ||
+    value === 'badges'
   ) {
     return value
   }
@@ -158,6 +160,9 @@ function AdminPlatformDashboardPage() {
           <TabsTrigger value="support" className="rounded-xl">
             Support
           </TabsTrigger>
+          <TabsTrigger value="badges" className="rounded-xl">
+            Badges
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -216,6 +221,10 @@ function AdminPlatformDashboardPage() {
             error={supportError}
             onRetry={() => void refetchSupport()}
           />
+        </TabsContent>
+
+        <TabsContent value="badges" className="mt-6">
+          <AdminBadgesTab />
         </TabsContent>
       </Tabs>
     </div>

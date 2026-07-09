@@ -12,6 +12,7 @@ import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { Button } from '@/components/ui/button'
 import { PageHeader, Pill } from '@/design-system'
 import { buildBadgeShelfItems } from '@/hooks/useBadges'
+import { useBadgeCatalog } from '@/hooks/useBadgeCatalog'
 import { useFriendProfile } from '@/hooks/useFriends'
 import { useSentMotivations } from '@/hooks/useFriends'
 import { requireAuth } from '@/lib/auth/guards'
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/app/friends/$friendId')({
 function FriendProfilePage() {
   const { friendId } = Route.useParams()
   const { data: friend, isLoading, error } = useFriendProfile(friendId)
+  const { data: catalog = [] } = useBadgeCatalog()
   const { data: sentMotivations = [] } = useSentMotivations()
   const [motivationOpen, setMotivationOpen] = useState(false)
 
@@ -38,8 +40,8 @@ function FriendProfilePage() {
   }, [friend])
 
   const badgeItems = useMemo(
-    () => buildBadgeShelfItems(friend?.user_badges ?? []),
-    [friend?.user_badges],
+    () => buildBadgeShelfItems(friend?.user_badges ?? [], catalog),
+    [friend?.user_badges, catalog],
   )
 
   if (isLoading) {
