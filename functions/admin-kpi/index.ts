@@ -3,6 +3,7 @@ import {
   readJsonBody,
   readUserIdFromAccessToken,
 } from '../_billing/auth.ts'
+import { handleFunctionCorsPreflight, applyFunctionCors } from '../_shared/cors.ts'
 import { graphqlAdminRequest, graphqlUserRequest } from '../_exercise/hasura.ts'
 
 type FunctionRequest = {
@@ -14,6 +15,10 @@ type FunctionRequest = {
 type FunctionResponse = {
   status: (code: number) => FunctionResponse
   json: (body: unknown) => void
+  set?: (header: string, value: string) => FunctionResponse
+  setHeader?: (header: string, value: string) => FunctionResponse
+  send?: (body?: string) => void
+  end?: () => void
 }
 
 type AdminKpiAction =
@@ -153,6 +158,12 @@ async function handleAction(action: AdminKpiAction): Promise<unknown> {
 }
 
 export default async function adminKpi(req: FunctionRequest, res: FunctionResponse) {
+  if (handleFunctionCorsPreflight(req, res)) {
+    return
+  }
+
+  applyFunctionCors(req, res)
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' })
     return
