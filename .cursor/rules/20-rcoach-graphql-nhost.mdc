@@ -27,7 +27,7 @@ const data = await graphqlRequest<{ profiles: Profile[] }>(nhost, GET_MY_PROFILE
 ## Nouveau champ / table
 
 1. Migration `nhost/migrations/default/<timestamp>_<name>/up.sql` (+ `down.sql`)
-2. Metadata Hasura si permissions nécessaires
+2. Metadata Hasura **dans le même commit** — voir règle `22-rcoach-hasura-migrations-metadata`
 3. Constante + type dans `operations.ts`
 4. Fallback legacy si déploiement décalé (voir `profile-request.ts`)
 5. `npm run verify:graphql`

@@ -1,0 +1,52 @@
+---
+description: Migrations Nhost/Hasura — garder metadata synchronisées avec le schéma SQL
+globs: nhost/**
+alwaysApply: false
+---
+
+# Migrations & metadata Hasura
+
+Toute PR qui touche `nhost/migrations/` **doit** inclure les metadata Hasura correspondantes dans `nhost/metadata/`. Ne jamais laisser le schéma SQL et les metadata diverger.
+
+## Avant de créer une migration
+
+1. Lister `nhost/migrations/default/` et choisir un timestamp **strictement unique** (`<epoch_ms>_<snake_name>`).
+2. Ne jamais réutiliser un préfixe existant (ex. deux dossiers `1741700000000_*` → conflit au déploiement).
+3. Si la migration modifie un enum Postgres **et** des tables, préférer **deux migrations** séparées (enum d'abord).
+
+## Checklist par type de changement
+
+| Changement SQL | Metadata obligatoire |
+|----------------|---------------------|
+| Nouvelle table `public.*` | `tables/public_<name>.yaml` + entrée dans `tables/tables.yaml` |
+| Colonne utilisée en GraphQL | Mettre à jour `select_permissions` / `insert_permissions` / `update_permissions` de la table |
+| Nouvelle fonction SQL exposée | `functions/public_<name>.yaml` + entrée dans `functions/functions.yaml` + `permissions` (rôle `user` ou `admin`) |
+| Relation FK trackée | `object_relationships` / `array_relationships` dans le yaml table |
+| Bucket storage | Permissions dans `storage_buckets.yaml` / `storage_files.yaml` si accès client |
+| Action Hasura | `actions.yaml` + handler si besoin |
+
+Copier le pattern d'une table/fonction voisine (ex. `public_profiles.yaml`, `public_ensure_user_profile.yaml`) plutôt que réinventer la structure.
+
+## Fichiers à ne pas oublier
+
+- `nhost/metadata/databases/default/tables/tables.yaml` — chaque nouvelle table
+- `nhost/metadata/databases/default/functions/functions.yaml` — chaque nouvelle fonction trackée
+- Permissions : filtre `user_id` / `created_by` → `x-hasura-User-Id` quand la ligne appartient à l'utilisateur
+
+## down.sql
+
+Chaque `up.sql` a un `down.sql` qui annule proprement (DROP colonne/table, revert enum si possible). Si irréversible, commenter pourquoi dans `down.sql`.
+
+## Avant de committer
+
+1. Relire le diff : migration **+** metadata dans le même commit/PR.
+2. `npm run verify:graphql` si le changement affecte des champs requis par l'app.
+3. Ne pas compter sur des changements faits uniquement dans la console Hasura — exporter vers `nhost/metadata/`.
+
+## Anti-patterns
+
+- Migration SQL seule sans yaml metadata
+- Timestamp de migration dupliqué
+- Fonction SQL créée en migration mais absente de `functions.yaml`
+- Nouvelle table absente de `tables.yaml` (Hasura ne la tracke pas)
+- Permissions copiées d'une autre table sans adapter les colonnes de filtre

@@ -46,7 +46,7 @@ describe('ensureUserProfile', () => {
   it('calls ensure_user_profile on the first miss', async () => {
     vi.mocked(fetchMyProfile).mockResolvedValueOnce(null)
     vi.mocked(graphqlRequest).mockResolvedValueOnce({
-      ensure_user_profile: 'user-2',
+      ensure_user_profile: { id: 'user-2' },
     })
 
     const id = await ensureUserProfile(mockNhost(), 'user-2')

@@ -18,7 +18,10 @@ function isRecordLegalConsentMissingError(error: unknown) {
 /** Records CGU + privacy acceptance timestamps (idempotent). */
 export async function recordLegalConsent(nhost: NhostClient) {
   try {
-    await graphqlRequest<{ record_legal_consent: string }>(nhost, RECORD_LEGAL_CONSENT)
+    await graphqlRequest<{ record_legal_consent: { value: string } }>(
+      nhost,
+      RECORD_LEGAL_CONSENT,
+    )
   } catch (error) {
     if (isRecordLegalConsentMissingError(error)) {
       return

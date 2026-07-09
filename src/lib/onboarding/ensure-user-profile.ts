@@ -45,11 +45,11 @@ async function tryFetchProfile(nhost: NhostClient, userId: string) {
 
 async function createUserProfileViaRpc(nhost: NhostClient) {
   try {
-    const data = await graphqlRequest<{ ensure_user_profile: string }>(
+    const data = await graphqlRequest<{ ensure_user_profile: { id: string } }>(
       nhost,
       ENSURE_USER_PROFILE,
     )
-    return data.ensure_user_profile
+    return data.ensure_user_profile.id
   } catch (error) {
     if (isEnsureUserProfileMissingError(error)) {
       return null

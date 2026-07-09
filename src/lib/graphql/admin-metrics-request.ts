@@ -23,18 +23,18 @@ export async function fetchAdminPlatformMetrics(
 ) {
   try {
     const data = await graphqlRequest<{
-      admin_platform_metrics: unknown
+      admin_platform_metrics: { value: unknown }
     }>(nhost, ADMIN_PLATFORM_METRICS, {
       from: input.from,
       to: input.to,
       cohortWeeks: input.cohortWeeks,
     })
 
-    return parseAdminPlatformMetrics(data.admin_platform_metrics)
+    return parseAdminPlatformMetrics(data.admin_platform_metrics.value)
   } catch (error) {
     if (isAdminPlatformMetricsMissingError(error)) {
       throw new Error(
-        'Le backend admin n’est pas déployé. Poussez les changements nhost/ sur main et lancez le workflow « Deploy Nhost » (migration 1743910000000_admin_platform_kpis).',
+        'Le backend admin n’est pas déployé ou les métadonnées Hasura sont incohérentes. Déployez nhost/ (migration 1744400000000_hasura_trackable_functions) puis relancez le workflow « Deploy Nhost ».',
       )
     }
 

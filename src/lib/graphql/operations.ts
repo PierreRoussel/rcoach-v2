@@ -533,26 +533,34 @@ export const GET_MY_AUTH_PROVIDERS = `
 `
 
 export const ENSURE_USER_PROFILE = `
-  query EnsureUserProfile {
-    ensure_user_profile
+  mutation EnsureUserProfile {
+    ensure_user_profile {
+      id
+    }
   }
 `
 
 export const RECORD_LEGAL_CONSENT = `
   mutation RecordLegalConsent {
-    record_legal_consent
+    record_legal_consent {
+      value
+    }
   }
 `
 
 export const DELETE_MY_ACCOUNT = `
   mutation DeleteMyAccount {
-    delete_my_account
+    delete_my_account {
+      value
+    }
   }
 `
 
 export const COMPLETE_MY_ONBOARDING = `
-  query CompleteMyOnboarding {
-    complete_my_onboarding
+  mutation CompleteMyOnboarding {
+    complete_my_onboarding {
+      value
+    }
   }
 `
 
@@ -2800,6 +2808,16 @@ export const ADMIN_PLATFORM_METRICS = `
   query AdminPlatformMetrics($from: date!, $to: date!, $cohortWeeks: Int!) {
     admin_platform_metrics(
       args: { p_from: $from, p_to: $to, p_cohort_weeks: $cohortWeeks }
-    )
+    ) {
+      value
+    }
+  }
+`
+
+export const ADMIN_PLATFORM_RECENT_LISTS = `
+  query AdminPlatformRecentLists($limit: Int!) {
+    admin_platform_recent_lists(args: { p_limit: $limit }) {
+      value
+    }
   }
 `

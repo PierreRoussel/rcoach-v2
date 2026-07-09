@@ -25,11 +25,11 @@ import {
 
 async function completeMyOnboardingViaRpc(nhost: NhostClient) {
   try {
-    const data = await graphqlRequest<{ complete_my_onboarding: string }>(
+    const data = await graphqlRequest<{ complete_my_onboarding: { value: string } }>(
       nhost,
       COMPLETE_MY_ONBOARDING,
     )
-    return data.complete_my_onboarding
+    return data.complete_my_onboarding.value
   } catch (error) {
     if (isGraphqlMissingFieldError(error, 'complete_my_onboarding')) {
       return null

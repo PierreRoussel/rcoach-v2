@@ -36,5 +36,8 @@
 - "!include public_waist_entries.yaml"
 - "!include public_subscriptions.yaml"
 - "!include public_subscription_cancellation_feedback.yaml"
+- "!include public_graphql_jsonb_result.yaml"
+- "!include public_graphql_timestamptz_result.yaml"
+- "!include public_graphql_uuid_result.yaml"
 - "!include storage_buckets.yaml"
 - "!include storage_files.yaml"

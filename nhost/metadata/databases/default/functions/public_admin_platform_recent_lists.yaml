@@ -1,0 +1,5 @@
+function:
+  name: admin_platform_recent_lists
+  schema: public
+permissions:
+  - role: admin

@@ -27,19 +27,6 @@ select_permissions:
       filter:
         proposed_by:
           _eq: X-Hasura-User-Id
-  - role: admin
-    permission:
-      columns:
-        - id
-        - food_id
-        - proposed_name
-        - proposed_by
-        - status
-        - reviewed_by
-        - reviewed_at
-        - created_at
-        - updated_at
-      filter: {}
 insert_permissions:
   - role: user
     permission:
@@ -52,20 +39,3 @@ insert_permissions:
       columns:
         - food_id
         - proposed_name
-update_permissions:
-  - role: admin
-    permission:
-      columns:
-        - status
-        - reviewed_by
-        - reviewed_at
-      filter:
-        status:
-          _eq: pending
-      check:
-        status:
-          _in:
-            - approved
-            - rejected
-      set:
-        reviewed_by: x-hasura-User-Id
