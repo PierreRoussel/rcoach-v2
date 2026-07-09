@@ -47,7 +47,7 @@ export function AppBottomNav() {
               isActive && item.to === '/app/diet'
                 ? DIET_NAV_ACTIVE
                 : isActive
-                  ? 'bg-soft-primary font-bold text-primary'
+                  ? 'bg-soft-primary font-bold text-soft-primary-fg'
                   : 'text-muted-foreground',
             )}
           >

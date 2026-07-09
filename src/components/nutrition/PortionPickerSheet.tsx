@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { FoodFavoriteButton } from '@/components/nutrition/FoodFavoriteButton'
 import { FoodMacroStat } from '@/components/nutrition/FoodMacroStat'
 import { FoodNutrientBadges } from '@/components/nutrition/FoodNutrientBadges'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { QuantityStepper } from '@/components/ui/quantity-stepper'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import {
   Drawer,
@@ -115,19 +116,28 @@ export function PortionPickerSheet({
 
   const portion = portionInputFromOption(selectedOption, Number(quantity) || 0, food)
   const preview = scaleNutrientsPer100g(food, portion)
+  const quantityLabel =
+    selectedOption.kind === 'grams'
+      ? 'Quantité (g)'
+      : `Nombre de ${selectedOption.label} (${formatNutrient(selectedOption.sizeG ?? 0)} g)`
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
-        <DrawerHeader>
-          <DrawerTitle>{food.name}</DrawerTitle>
-          <DrawerDescription>
-            {food.brand ? `${food.brand} · ` : ''}
-            Choisissez la quantité à ajouter.
-          </DrawerDescription>
+      <DrawerContent className="flex max-h-[85vh] flex-col overflow-hidden rounded-t-2xl">
+        <DrawerHeader className="shrink-0 px-4 text-left">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <DrawerTitle>{food.name}</DrawerTitle>
+              <DrawerDescription>
+                {food.brand ? `${food.brand} · ` : ''}
+                Choisissez la quantité à ajouter.
+              </DrawerDescription>
+            </div>
+            <FoodFavoriteButton foodId={food.id} />
+          </div>
         </DrawerHeader>
 
-        <div className="space-y-4 px-4 pb-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain px-4 pb-2">
           <ScrollArea className="w-full whitespace-nowrap">
             <ToggleGroup
               type="single"
@@ -154,29 +164,17 @@ export function PortionPickerSheet({
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          {selectedOption.kind === 'grams' ? (
-            <div className="space-y-2">
-              <Label htmlFor="portion-quantity">Quantité (g)</Label>
-              <Input
-                id="portion-quantity"
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-                inputMode="decimal"
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="portion-quantity">
-                Nombre de {selectedOption.label} ({formatNutrient(selectedOption.sizeG ?? 0)} g)
-              </Label>
-              <Input
-                id="portion-quantity"
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-                inputMode="decimal"
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="portion-quantity">{quantityLabel}</Label>
+            <QuantityStepper
+              id="portion-quantity"
+              value={quantity}
+              onChange={setQuantity}
+              step={selectedOption.kind === 'grams' ? 10 : 1}
+              decrementLabel="Diminuer la quantité"
+              incrementLabel="Augmenter la quantité"
+            />
+          </div>
 
           <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 text-center">
             <div className="font-display text-3xl font-black tabular-nums text-foreground">
@@ -199,7 +197,7 @@ export function PortionPickerSheet({
           <FoodNutrientBadges food={food} />
         </div>
 
-        <DrawerFooter className="px-4 pb-4">
+        <DrawerFooter className="shrink-0 border-t border-border/70 bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             className="w-full"

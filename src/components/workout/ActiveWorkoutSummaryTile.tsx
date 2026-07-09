@@ -173,7 +173,7 @@ export function ActiveWorkoutSummaryTile({
         </p>
         <p className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
           <span
-            className="flex size-5 shrink-0 items-center justify-center rounded-full bg-soft-secondary text-secondary"
+            className="flex size-5 shrink-0 items-center justify-center rounded-full bg-soft-secondary text-soft-secondary-fg"
             aria-hidden
           >
             <Check className="size-3" strokeWidth={2.5} />

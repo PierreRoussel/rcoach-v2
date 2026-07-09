@@ -1,4 +1,9 @@
-import { MEAL_ICONS, MEAL_ICON_TINT, MEAL_RING_COLOR } from '@/lib/nutrition/meal-visuals'
+import {
+  MEAL_COLOR,
+  MEAL_ICONS,
+  MEAL_ICON_TINT,
+  MEAL_RING_TRACK_COLOR,
+} from '@/lib/nutrition/meal-visuals'
 import type { MealType } from '@/lib/nutrition/types'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +17,7 @@ type MealIconCalorieRingProps = {
 const RING_SIZE = 56
 const STROKE_WIDTH = 3
 const RING_RADIUS = (RING_SIZE - STROKE_WIDTH) / 2
+const OVER_TARGET_COLOR = '#c97a10'
 
 export function MealIconCalorieRing({
   mealType,
@@ -26,10 +32,15 @@ export function MealIconCalorieRing({
   const circumference = 2 * Math.PI * RING_RADIUS
   const dashOffset = circumference * (1 - progress)
   const center = RING_SIZE / 2
+  const progressColor = isOverTarget ? OVER_TARGET_COLOR : MEAL_COLOR[mealType]
 
   return (
     <div
-      className={cn('relative grid size-14 shrink-0 place-items-center', className)}
+      className={cn(
+        'meal-calorie-ring relative grid size-14 shrink-0 place-items-center',
+        className,
+      )}
+      data-meal-ring={mealType}
       role="img"
       aria-label={`${Math.round(remaining)} calories restantes pour ce repas`}
     >
@@ -41,25 +52,26 @@ export function MealIconCalorieRing({
         aria-hidden
       >
         <circle
+          className="meal-calorie-ring__track"
           cx={center}
           cy={center}
           r={RING_RADIUS}
           fill="none"
-          stroke="currentColor"
+          stroke={MEAL_RING_TRACK_COLOR[mealType]}
           strokeWidth={STROKE_WIDTH}
-          className="text-muted/35"
         />
         <circle
+          className="meal-calorie-ring__progress"
           cx={center}
           cy={center}
           r={RING_RADIUS}
           fill="none"
-          stroke={isOverTarget ? 'var(--nutrient-warning-fg)' : MEAL_RING_COLOR[mealType]}
+          stroke={progressColor}
           strokeWidth={STROKE_WIDTH}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          className="transition-[stroke-dashoffset] duration-500"
+          style={{ transition: 'stroke-dashoffset 500ms ease' }}
         />
       </svg>
 
@@ -69,7 +81,7 @@ export function MealIconCalorieRing({
           MEAL_ICON_TINT[mealType],
         )}
       >
-        <Icon className="size-5" aria-hidden />
+        <Icon className="size-5" style={{ color: MEAL_COLOR[mealType] }} aria-hidden />
       </div>
     </div>
   )

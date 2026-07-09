@@ -10,12 +10,22 @@ import {
 } from '@/lib/nutrition/streak'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-export function useNutritionLogHistory(from: string, to: string, dailyTarget: number) {
+export function useNutritionLogHistory(
+  from: string,
+  to: string,
+  dailyTarget: number,
+  enabled = true,
+) {
   const { nhost, isAuthenticated, user } = useAuth()
 
   const query = useQuery({
     queryKey: ['nutrition-log-history', user?.id, from, to],
-    enabled: isAuthenticated && Boolean(user?.id) && Boolean(from) && Boolean(to),
+    enabled:
+      enabled &&
+      isAuthenticated &&
+      Boolean(user?.id) &&
+      Boolean(from) &&
+      Boolean(to),
     staleTime: 60_000,
     queryFn: async () => {
       const entries = await fetchNutritionHintRangeEntries(
@@ -28,6 +38,7 @@ export function useNutritionLogHistory(from: string, to: string, dailyTarget: nu
       return entries.map((entry) => ({
         logged_date: entry.logged_date,
         calories: Number(entry.calories),
+        meal_type: entry.meal_type,
       }))
     },
   })
@@ -67,9 +78,15 @@ export function useNutritionCalendarMonth(
   year: number,
   monthIndex: number,
   dailyTarget: number,
+  enabled = true,
 ) {
   const { from, to } = monthDateRange(year, monthIndex)
-  const { dayMap, isLoading, error } = useNutritionLogHistory(from, to, dailyTarget)
+  const { dayMap, isLoading, error } = useNutritionLogHistory(
+    from,
+    to,
+    dailyTarget,
+    enabled,
+  )
 
   return {
     dayMap,

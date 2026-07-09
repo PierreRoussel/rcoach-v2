@@ -130,7 +130,7 @@ export function DietDayPanel({
 
   const summaryCard = (
     <Card className="border-border/70 shadow-sm">
-      <CardContent className="relative space-y-5 p-4">
+      <CardContent className="relative p-4">
         <NutritionStreakBadge
           streak={streak}
           onStreakClick={() => {
@@ -142,12 +142,11 @@ export function DietDayPanel({
             setCalendarOpen(true)
           }}
           onCalendarClick={() => setCalendarOpen(true)}
-          className="absolute right-3 top-3 z-10"
           isFrozen={isFrozen}
           validatedToday={validatedToday}
         />
 
-        <div className="relative flex min-h-44 items-center justify-center px-12">
+        <div className="diet-calorie-hero relative flex min-h-56 items-center justify-center px-12">
           <CalorieRingGauge
             consumed={daySummary.totals.calories}
             target={daySummary.targets.calories}

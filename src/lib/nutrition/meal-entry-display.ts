@@ -39,15 +39,58 @@ export function formatMealEntryQuantityGrams(
   return grams != null ? `${formatNutrient(grams)} g` : null
 }
 
+const GRAM_SERVING_LABEL = /^\d+(\.\d+)?\s*g$/i
+
+function pluralizePortionLabel(label: string, count: number) {
+  if (count <= 1 || label.endsWith('s')) {
+    return label
+  }
+
+  return `${label}s`
+}
+
+export function formatMealEntryQuantityFields(
+  quantityG: number | null,
+  servings: number | null,
+  servingLabel: string,
+) {
+  if (servings != null) {
+    const count = Number(servings)
+    if (!Number.isFinite(count) || count <= 0) {
+      return null
+    }
+
+    const formatted = formatNutrient(count)
+    const label = servingLabel.trim()
+
+    if (!label || GRAM_SERVING_LABEL.test(label)) {
+      return count <= 1 ? `${formatted} portion` : `${formatted} portions`
+    }
+
+    return `${formatted} ${pluralizePortionLabel(label, count)}`
+  }
+
+  if (quantityG != null) {
+    const grams = Number(quantityG)
+    if (!Number.isFinite(grams) || grams <= 0) {
+      return null
+    }
+
+    return `${formatNutrient(grams)} g`
+  }
+
+  return null
+}
+
 export function formatMealEntryQuantity(entry: MealLogEntry) {
   if (!entry.food) {
     return null
   }
 
-  return formatMealEntryQuantityGrams(
+  return formatMealEntryQuantityFields(
     entry.quantity_g,
     entry.servings,
-    Number(entry.food.serving_size_g),
+    entry.food.serving_label,
   )
 }
 

@@ -1,7 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { formatMealEntryQuantityGrams } from '@/lib/nutrition/meal-entry-display'
+import { formatMealEntryQuantityFields } from '@/lib/nutrition/meal-entry-display'
 import { cn } from '@/lib/utils'
 
 type MealEntryRowProps = {
@@ -10,7 +10,7 @@ type MealEntryRowProps = {
   calories: number
   quantityG: number | null
   servings: number | null
-  servingSizeG: number
+  servingLabel: string
   onSelect?: () => void
   onEdit?: () => void
   onDelete?: () => void
@@ -23,13 +23,13 @@ export function MealEntryRow({
   calories,
   quantityG,
   servings,
-  servingSizeG,
+  servingLabel,
   onSelect,
   onEdit,
   onDelete,
   className,
 }: MealEntryRowProps) {
-  const quantityLabel = formatMealEntryQuantityGrams(quantityG, servings, servingSizeG)
+  const quantityLabel = formatMealEntryQuantityFields(quantityG, servings, servingLabel)
   const meta = [brand, quantityLabel].filter(Boolean).join(' · ')
 
   const mainContent = (

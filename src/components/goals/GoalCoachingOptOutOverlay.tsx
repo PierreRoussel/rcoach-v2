@@ -43,10 +43,10 @@ export function GoalCoachingOptOutOverlay({
           className="mx-auto flex w-full max-w-sm flex-col items-center text-center"
         >
           <BellOff className="mb-4 size-10 text-violet-500" aria-hidden />
-          <h2 className="font-display text-2xl font-black text-[#2c2545]">
+          <h2 className="font-display text-2xl font-black text-foreground">
             Comment souhaitez-vous continuer ?
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-[#5c5278]">
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Nous pouvons mettre les rappels en pause ou arrêter définitivement
             ces suggestions de coaching.
           </p>
@@ -66,7 +66,7 @@ export function GoalCoachingOptOutOverlay({
           <Button
             type="button"
             variant="outline"
-            className="w-full rounded-full border-violet-300/60 bg-white text-[#2c2545]"
+            className="w-full rounded-full border-violet-300/60 bg-white text-foreground"
             onClick={handleOptOut}
           >
             Ne plus me rappeler

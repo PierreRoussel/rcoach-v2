@@ -424,7 +424,7 @@ function SortableExerciseItem({
                 Terminé
               </Pill>
               {supersetBadge != null ? (
-                <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
+                <span className="shrink-0 rounded-full bg-soft-primary px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-soft-primary-fg">
                   S{supersetBadge}
                 </span>
               ) : null}
@@ -445,7 +445,7 @@ function SortableExerciseItem({
                   </Pill>
                 ) : null}
                 {supersetBadge != null ? (
-                  <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  <span className="shrink-0 rounded-full bg-soft-primary px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-soft-primary-fg">
                     S{supersetBadge}
                   </span>
                 ) : null}

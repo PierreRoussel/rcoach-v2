@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { CalendarDays, Flame, Snowflake } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 
+import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
 import { Button } from '@/components/ui/button'
-import { Pill } from '@/design-system'
 import { cn } from '@/lib/utils'
 
 type NutritionStreakBadgeProps = {
@@ -36,42 +36,34 @@ export function NutritionStreakBadge({
     previousStreakRef.current = streak
   }, [streak])
 
-  const label = isFrozen
+  const streakLabel = isFrozen
     ? `Série gelée : ${streak} jour${streak > 1 ? 's' : ''}`
     : `Série nutrition : ${streak} jour${streak > 1 ? 's' : ''}`
 
   return (
-    <div className={cn('inline-flex items-center gap-0.5', className)}>
+    <div className={cn('flex w-full items-center justify-between gap-3', className)}>
       <button
         type="button"
         onClick={onStreakClick}
         className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        aria-label={label}
+        aria-label={streakLabel}
       >
-        <Pill
-          tone={isFrozen ? 'default' : 'solid-secondary'}
+        <NutritionStreakPill
+          streak={streak}
+          isFrozen={isFrozen}
           className={cn(
-            'shrink-0 shadow-sm transition-transform',
+            'px-3 py-1.5 text-sm transition-transform',
             bump && 'animate-nutrition-streak-bump',
             !isFrozen && validatedToday && streak > 0 && 'animate-nutrition-streak-pulse',
           )}
-        >
-          {isFrozen ? (
-            <Snowflake className="size-3 text-sky-400" aria-hidden />
-          ) : (
-            <Flame className="size-3 fill-current" aria-hidden />
-          )}
-          {streak}
-          {isFrozen ? (
-            <span className="text-[10px] font-medium text-muted-foreground">gelé</span>
-          ) : null}
-        </Pill>
+        />
       </button>
+
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-8 shrink-0 rounded-full text-chart-2"
+        className="size-9 shrink-0 rounded-full bg-soft-secondary text-soft-secondary-fg hover:bg-soft-secondary/80"
         onClick={onCalendarClick}
         aria-label="Ouvrir le calendrier nutrition"
       >

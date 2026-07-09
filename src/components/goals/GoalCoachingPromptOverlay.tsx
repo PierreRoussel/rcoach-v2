@@ -49,10 +49,10 @@ export function GoalCoachingPromptOverlay({
           <Pill tone="solid-purple" className="gap-1">
             Coaching objectif
           </Pill>
-          <h2 className="mt-4 font-display text-2xl font-black text-[#2c2545]">
+          <h2 className="mt-4 font-display text-2xl font-black text-foreground">
             Votre progression stagne
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-[#5c5278]">
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Votre objectif de {goalLabel.toLowerCase()} n&apos;a pas évolué
             depuis 2 semaines. Souhaitez-vous des indications pour relancer la
             dynamique ?
@@ -72,7 +72,7 @@ export function GoalCoachingPromptOverlay({
           <Button
             type="button"
             variant="outline"
-            className="w-full rounded-full border-violet-300/60 bg-white text-[#2c2545]"
+            className="w-full rounded-full border-violet-300/60 bg-white text-foreground"
             onClick={handleDismiss}
           >
             Plus tard

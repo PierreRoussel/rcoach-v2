@@ -1,5 +1,6 @@
 import { Pencil, X } from 'lucide-react'
 
+import { FoodFavoriteButton } from '@/components/nutrition/FoodFavoriteButton'
 import { FoodItemDrawerMenu } from '@/components/nutrition/FoodItemDrawerMenu'
 import { FoodMacroStat } from '@/components/nutrition/FoodMacroStat'
 import { FoodNutrientBadges } from '@/components/nutrition/FoodNutrientBadges'
@@ -54,14 +55,15 @@ export function MealEntryDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-0">
-        <DrawerHeader className="space-y-0 px-4 text-left">
+      <DrawerContent className="flex max-h-[85vh] flex-col overflow-hidden rounded-t-2xl px-0">
+        <DrawerHeader className="shrink-0 space-y-0 px-4 text-left">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1 space-y-1.5">
               <DrawerTitle className="font-display font-black">{getMealEntryName(entry)}</DrawerTitle>
               {description ? <DrawerDescription>{description}</DrawerDescription> : null}
             </div>
             <div className="flex shrink-0 items-center gap-0.5">
+              {entry.food ? <FoodFavoriteButton foodId={entry.food.id} /> : null}
               {entry.food ? <FoodItemDrawerMenu food={entry.food} /> : null}
               <DrawerClose asChild>
                 <Button
@@ -78,7 +80,7 @@ export function MealEntryDetailDrawer({
           </div>
         </DrawerHeader>
 
-        <div className="space-y-4 px-4 pb-2">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain px-4 pb-2">
           <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 text-center">
             <div className="font-display text-4xl font-black tabular-nums text-foreground">
               {Math.round(Number(entry.calories))}
@@ -161,7 +163,7 @@ export function MealEntryDetailDrawer({
         </div>
 
         {onEdit && entry.food ? (
-          <DrawerFooter className="px-4 pb-6">
+          <DrawerFooter className="shrink-0 border-t border-border/70 bg-background px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <Button
               type="button"
               variant="outline"

@@ -50,7 +50,7 @@ function QuickAddButton({
       size="icon"
       className={cn(
         'size-8 shrink-0 rounded-full transition-colors',
-        rowStatus === 'success' && 'border-primary bg-soft-primary text-primary',
+        rowStatus === 'success' && 'border-primary bg-soft-primary text-soft-primary-fg',
       )}
       disabled={rowStatus === 'adding' || rowStatus === 'success'}
       onClick={() => onQuickAdd(result)}
@@ -108,13 +108,13 @@ export function FoodSearchList({
                 ) : null}
                 {result.usageBadge === 'frequent' ? (
                   <History
-                    className="size-3.5 shrink-0 text-primary/80"
+                    className="size-3.5 shrink-0 text-soft-primary-fg"
                     aria-label="Aliment fréquent"
                   />
                 ) : null}
                 {result.source === 'ciqual' ? (
                   <Leaf
-                    className="size-3.5 shrink-0 fill-primary/75 text-primary/75"
+                    className="size-3.5 shrink-0 fill-soft-primary-fg text-soft-primary-fg"
                     aria-label="Aliment CIQUAL"
                   />
                 ) : null}
@@ -161,15 +161,15 @@ export function FoodQuickActions({
     <div className="grid grid-cols-3 gap-2">
       <Button type="button" variant="outline" className="h-auto flex-col gap-1 py-3" onClick={onSearchFocus}>
         <Search className="size-4" />
-        <span className="text-xs">Rechercher</span>
+        <span className="text-xs font-semibold">Rechercher</span>
       </Button>
       <Button type="button" variant="outline" className="h-auto flex-col gap-1 py-3" onClick={onScan}>
         <Barcode className="size-4" />
-        <span className="text-xs">Code-barres</span>
+        <span className="text-xs font-semibold">Scanner</span>
       </Button>
       <Button type="button" variant="outline" className="h-auto flex-col gap-1 py-3" onClick={onCreate}>
         <Plus className="size-4" />
-        <span className="text-xs">Nouvel aliment</span>
+        <span className="text-xs font-semibold">Créer</span>
       </Button>
     </div>
   )

@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils'
 const RETENTION_HIGHLIGHTS = [
   'Historique et statistiques avancées sans limite',
   'Modèles de séance toujours actifs (pas de gel)',
+  'Coach dynamique anti-stagnation sur vos objectifs',
   'Conseils nutrition et charges illimités',
   'Thème Pro et badge sur votre avatar',
 ] as const

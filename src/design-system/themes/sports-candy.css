@@ -21,7 +21,7 @@
   --secondary: #85c9ae;
   --secondary-foreground: #1a3d30;
   --muted: #ede9f7;
-  --muted-foreground: #7a6fa0;
+  --muted-foreground: #5c5278;
   --accent: #e8b84b;
   --accent-foreground: #2c2545;
   --destructive: #d95f6e;
@@ -55,12 +55,16 @@
   --soft-accent: #fbf0d4;
   --soft-purple: #ede8f7;
   --soft-peach: #f8e8dc;
-  --soft-primary-fg: var(--primary);
+  --soft-primary-fg: color-mix(in srgb, var(--primary) 38%, var(--foreground));
   --soft-secondary-fg: var(--secondary-foreground);
   --soft-accent-fg: var(--accent-foreground);
+  --soft-purple-fg: color-mix(in srgb, #6b4fcc 32%, var(--foreground));
+  --soft-peach-fg: color-mix(in srgb, #b87848 38%, var(--foreground));
   --nutrient-warning-bg: color-mix(in srgb, var(--chart-3) 22%, var(--card));
   --nutrient-warning-border: color-mix(in srgb, var(--chart-3) 48%, var(--border));
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 38%, #5a4210);
+  --nutrition-streak: #fce8d6;
+  --nutrition-streak-foreground: #b86a18;
   --gradient-hero: linear-gradient(
     135deg,
     var(--soft-primary) 0%,
@@ -81,7 +85,7 @@
   --secondary: #2e4e42;
   --secondary-foreground: #85c9ae;
   --muted: #2a2455;
-  --muted-foreground: #9288c0;
+  --muted-foreground: #b0a8d0;
   --accent: #e8b84b;
   --accent-foreground: #18143a;
   --destructive: #c95568;
@@ -112,12 +116,16 @@
   --soft-accent: rgba(232, 184, 75, 0.14);
   --soft-purple: rgba(184, 168, 216, 0.16);
   --soft-peach: rgba(240, 200, 168, 0.14);
-  --soft-primary-fg: var(--primary);
+  --soft-primary-fg: color-mix(in srgb, var(--primary) 55%, var(--foreground));
   --soft-secondary-fg: var(--secondary-foreground);
   --soft-accent-fg: var(--accent-foreground);
+  --soft-purple-fg: color-mix(in srgb, #b8a8d8 50%, var(--foreground));
+  --soft-peach-fg: color-mix(in srgb, #f0c8a8 45%, var(--foreground));
   --nutrient-warning-bg: color-mix(in srgb, var(--chart-3) 20%, var(--card));
   --nutrient-warning-border: color-mix(in srgb, var(--chart-3) 52%, var(--border));
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 78%, var(--foreground));
+  --nutrition-streak: rgba(252, 232, 214, 0.2);
+  --nutrition-streak-foreground: #e8a04a;
   --gradient-hero: linear-gradient(
     135deg,
     rgba(212, 120, 154, 0.18) 0%,

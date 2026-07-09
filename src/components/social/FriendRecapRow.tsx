@@ -1,5 +1,6 @@
-import { Flame, Dumbbell } from 'lucide-react'
+import { Dumbbell } from 'lucide-react'
 
+import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
 import { UserAvatar } from '@/components/profile/UserAvatar'
 import { FriendMotivationSendButton } from '@/components/social/FriendMotivationSendButton'
 import { Pill } from '@/design-system'
@@ -56,10 +57,11 @@ export function FriendRecapRow({
               <Dumbbell className="size-3" />
               {activity.workoutStreak} sem.
             </Pill>
-            <Pill tone="solid-accent" className="gap-1 py-0.5 text-[10px]">
-              <Flame className="size-3 fill-current" />
-              {activity.nutritionStreak} j.
-            </Pill>
+            <NutritionStreakPill
+              streak={activity.nutritionStreak}
+              format="compact"
+              className="gap-1 py-0.5 text-[10px]"
+            />
           </div>
         </div>
 

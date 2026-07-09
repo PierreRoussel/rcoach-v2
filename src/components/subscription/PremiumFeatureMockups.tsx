@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   Lightbulb,
+  Sparkles,
   Target,
   TrendingUp,
 } from 'lucide-react'
@@ -12,12 +13,12 @@ import type { ReactNode } from 'react'
 import { Pill } from '@/design-system'
 import { cn } from '@/lib/utils'
 
-const MOCKUP_TITLE = 'text-[#2c2545]'
-const MOCKUP_BODY = 'text-[#5c5278]'
-const MOCKUP_PRIMARY = 'text-[#c45f84]'
-const MOCKUP_PRIMARY_BG = 'bg-[#f3e4eb]'
-const MOCKUP_SECONDARY_BG = 'bg-[#e3f4ed]'
-const MOCKUP_SECONDARY_TEXT = 'text-[#1a3d30]'
+const MOCKUP_TITLE = 'text-foreground'
+const MOCKUP_BODY = 'text-muted-foreground'
+const MOCKUP_PRIMARY = 'text-soft-primary-fg'
+const MOCKUP_PRIMARY_BG = 'bg-soft-primary'
+const MOCKUP_SECONDARY_BG = 'bg-soft-secondary'
+const MOCKUP_SECONDARY_TEXT = 'text-soft-secondary-fg'
 
 function MockupFrame({
   children,
@@ -127,6 +128,25 @@ export function GoalProjectionMockup({ className }: { className?: string }) {
         <div className="h-full w-[62%] rounded-full bg-gradient-to-r from-emerald-600 to-[#d4789a]" />
       </div>
       <p className={cn('text-center text-[10px]', MOCKUP_BODY)}>78,2 kg → 74,0 kg</p>
+    </MockupFrame>
+  )
+}
+
+export function GoalCoachingMockup({ className }: { className?: string }) {
+  return (
+    <MockupFrame className={cn('space-y-3', className)}>
+      <div className="flex items-center gap-2">
+        <Sparkles className="size-4 text-soft-purple-fg" aria-hidden />
+        <p className={cn('text-xs font-semibold', MOCKUP_TITLE)}>Coach anti-stagnation</p>
+      </div>
+      <p className={cn('text-[11px] leading-relaxed', MOCKUP_BODY)}>
+        Votre poids n&apos;a pas bougé depuis 2 semaines. Besoin d&apos;indications pour relancer
+        la dynamique ?
+      </p>
+      <div className="space-y-1.5 rounded-xl border border-[#6b4fcc]/20 bg-[#f5f3ff] px-3 py-2 text-[11px]">
+        <p className={cn('font-semibold', MOCKUP_TITLE)}>Diagnostic diète · 12/14 jours loggés</p>
+        <p className={MOCKUP_BODY}>Suggestion : 2 150 kcal/j (+150)</p>
+      </div>
     </MockupFrame>
   )
 }

@@ -35,67 +35,56 @@
 
 /* ---- Day carousel header ---- */
 
-.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between {
-  padding: 0.35rem 0.5rem;
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--soft-secondary) 35%, var(--card));
-  border: 1px solid var(--border);
-}
-
-.dark .space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between {
-  background: color-mix(in srgb, var(--muted) 50%, var(--card));
-}
-
-.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between .font-display.text-xl {
+.diet-day-carousel > .flex.items-center.justify-between .font-display.text-xl {
   color: var(--foreground);
 }
 
-.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between .size-9.rounded-full {
+.diet-day-carousel > .flex.items-center.justify-between .size-9.rounded-full {
   border-color: var(--border);
   background: var(--card);
 }
 
-.space-y-3:has(> .overflow-hidden .touch-pan-y) > .flex.items-center.justify-between .size-9.rounded-full:hover {
+.diet-day-carousel > .flex.items-center.justify-between .size-9.rounded-full:hover {
   background: var(--muted);
 }
 
 /* ---- Summary hero card ---- */
 
-.border-border\/70:has(.min-h-40 .size-40) {
+.border-border\/70:has(.diet-calorie-hero) {
   border-color: var(--border) !important;
   background: color-mix(in srgb, var(--soft-secondary) 28%, var(--card));
 }
 
-.dark .border-border\/70:has(.min-h-40 .size-40) {
+.dark .border-border\/70:has(.diet-calorie-hero) {
   background: color-mix(in srgb, var(--muted) 45%, var(--card));
 }
 
-.border-border\/70:has(.min-h-40 .size-40) .size-40 .font-display.text-3xl {
+.border-border\/70:has(.diet-calorie-hero) .size-56 .font-display.text-4xl {
   color: var(--foreground);
 }
 
 /* Macro bars — 3 columns, flat chart colors */
-.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(1) .macro-bar__progress {
+.border-border\/70:has(.diet-calorie-hero) .macro-progress-grid .macro-bar:nth-child(1) .macro-bar__progress {
   background: color-mix(in srgb, var(--chart-3) 22%, var(--muted));
 }
 
-.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(1) [data-slot='progress-indicator'] {
+.border-border\/70:has(.diet-calorie-hero) .macro-progress-grid .macro-bar:nth-child(1) [data-slot='progress-indicator'] {
   background: var(--chart-3);
 }
 
-.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(2) .macro-bar__progress {
+.border-border\/70:has(.diet-calorie-hero) .macro-progress-grid .macro-bar:nth-child(2) .macro-bar__progress {
   background: color-mix(in srgb, var(--chart-2) 22%, var(--muted));
 }
 
-.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(2) [data-slot='progress-indicator'] {
+.border-border\/70:has(.diet-calorie-hero) .macro-progress-grid .macro-bar:nth-child(2) [data-slot='progress-indicator'] {
   background: var(--chart-2);
 }
 
-.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(3) .macro-bar__progress {
+.border-border\/70:has(.diet-calorie-hero) .macro-progress-grid .macro-bar:nth-child(3) .macro-bar__progress {
   background: color-mix(in srgb, var(--chart-5) 25%, var(--muted));
 }
 
-.border-border\/70:has(.min-h-40 .size-40) .macro-progress-grid .macro-bar:nth-child(3) [data-slot='progress-indicator'] {
+.border-border\/70:has(.diet-calorie-hero) .macro-progress-grid .macro-bar:nth-child(3) [data-slot='progress-indicator'] {
   background: var(--chart-5);
 }
 
@@ -103,6 +92,38 @@
 
 div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
   border-color: var(--border) !important;
+}
+
+[data-meal-type='breakfast'] .meal-calorie-ring__track {
+  stroke: rgba(232, 184, 75, 0.28) !important;
+}
+
+[data-meal-type='breakfast'] .meal-calorie-ring__progress {
+  stroke: #e8b84b !important;
+}
+
+[data-meal-type='lunch'] .meal-calorie-ring__track {
+  stroke: rgba(26, 174, 138, 0.28) !important;
+}
+
+[data-meal-type='lunch'] .meal-calorie-ring__progress {
+  stroke: #1aae8a !important;
+}
+
+[data-meal-type='snack'] .meal-calorie-ring__track {
+  stroke: rgba(184, 120, 72, 0.28) !important;
+}
+
+[data-meal-type='snack'] .meal-calorie-ring__progress {
+  stroke: #b87848 !important;
+}
+
+[data-meal-type='dinner'] .meal-calorie-ring__track {
+  stroke: rgba(155, 120, 200, 0.28) !important;
+}
+
+[data-meal-type='dinner'] .meal-calorie-ring__progress {
+  stroke: #9b78c8 !important;
 }
 
 /* Sync pending banner */
@@ -141,12 +162,12 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
 
 .meal-detail-page[data-meal-type='breakfast'] {
   --meal-tint: var(--soft-accent);
-  --meal-accent: var(--accent);
+  --meal-accent: #e8b84b;
 }
 
 .meal-detail-page[data-meal-type='lunch'] {
   --meal-tint: var(--soft-secondary);
-  --meal-accent: var(--secondary);
+  --meal-accent: #1aae8a;
 }
 
 .meal-detail-page[data-meal-type='snack'] {
@@ -156,7 +177,7 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
 
 .meal-detail-page[data-meal-type='dinner'] {
   --meal-tint: var(--soft-purple);
-  --meal-accent: #6b4fcc;
+  --meal-accent: #9b78c8;
 }
 
 .meal-detail-eyebrow {
@@ -285,7 +306,7 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
   font-size: 0.75rem;
   font-weight: 500;
   gap: 0.375rem;
-  color: var(--chart-2);
+  color: var(--soft-secondary-fg);
   background: var(--soft-secondary);
   border: none;
 }

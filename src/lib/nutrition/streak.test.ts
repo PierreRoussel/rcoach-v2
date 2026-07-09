@@ -17,7 +17,21 @@ describe('aggregateNutritionDays', () => {
       calories: 400,
       hasLogs: true,
       status: 'on_target',
+      loggedMeals: [],
     })
+  })
+
+  it('tracks logged meal types per day', () => {
+    const map = aggregateNutritionDays(
+      [
+        { logged_date: '2026-06-25', calories: 300, meal_type: 'breakfast' },
+        { logged_date: '2026-06-25', calories: 500, meal_type: 'lunch' },
+        { logged_date: '2026-06-25', calories: 200, meal_type: 'breakfast' },
+      ],
+      2000,
+    )
+
+    expect(map.get('2026-06-25')?.loggedMeals).toEqual(['breakfast', 'lunch'])
   })
 
   it('marks days above target as over_target', () => {

@@ -245,7 +245,7 @@ export function ActiveWorkoutCircuit({
             className={cn(
               'flex size-7 shrink-0 items-center justify-center rounded-full font-data text-xs font-bold transition-colors',
               isCompleted
-                ? 'cursor-pointer bg-primary/15 text-primary hover:bg-primary/25'
+                ? 'cursor-pointer bg-soft-primary text-soft-primary-fg hover:bg-soft-primary/80'
                 : set.setType === 'warmup'
                   ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
                   : 'bg-muted text-foreground',

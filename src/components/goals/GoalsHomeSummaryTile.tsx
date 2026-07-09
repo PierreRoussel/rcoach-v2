@@ -54,12 +54,12 @@ export function GoalsHomeSummaryTile() {
       icon={Target}
       title="Objectif poids"
       className="border-0 bg-gradient-to-br from-soft-purple via-card to-soft-purple/50 shadow-sm active:scale-[0.99]"
-      iconClassName="bg-soft-purple text-[#6b4fcc] dark:text-purple-300"
+      iconClassName="bg-soft-purple text-soft-purple-fg"
     >
       {goalLoading ? (
         <HomeSummaryTileSkeleton />
       ) : !goal ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-foreground/70">
           Définissez votre objectif poids pour suivre votre progression.
         </p>
       ) : goal.goal_type === 'maintain' ? (
@@ -108,7 +108,7 @@ export function GoalsHomeSummaryTile() {
 
           <HomeSummaryTileFooter
             left={WEIGHT_GOAL_TYPE_LABELS[goal.goal_type]}
-            rightClassName="text-[#6b4fcc] dark:text-purple-300"
+            rightClassName="text-soft-purple-fg"
             right={
               estimationLabel ? (
                 <GoalProjectionPremiumBlur entitled={hasGoalProjection} variant="inline">

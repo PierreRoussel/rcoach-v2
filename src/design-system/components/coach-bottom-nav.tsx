@@ -36,7 +36,7 @@ export function CoachBottomNav({ showAdminNav = false }: CoachBottomNavProps) {
           className="rounded-xl px-1 py-2 text-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           activeProps={{
             className: cn(
-              'rounded-xl bg-soft-primary px-1 py-2 text-center font-bold text-primary',
+              'rounded-xl bg-soft-primary px-1 py-2 text-center font-bold text-soft-primary-fg',
             ),
           }}
         >

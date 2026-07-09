@@ -3,9 +3,11 @@ import { fr } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { createPlanningCalendarComponents } from '@/components/schedule/PlanningCalendarDay'
 import { Calendar } from '@/components/ui/calendar'
 import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
 import { Pill } from '@/design-system'
+import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
 import {
   getMarkerKind,
   type CalendarMarkers,
@@ -14,10 +16,12 @@ import {
 import { cn } from '@/lib/utils'
 
 const navButtonClass =
-  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-soft-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-soft-primary hover:text-soft-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
 export type WorkoutCalendarProps = {
   markers: CalendarMarkers
+  nutritionDays?: Map<string, NutritionDayAggregate>
+  showNutrition?: boolean
   mode?: 'compact' | 'full'
   selected?: Date
   onSelect?: (date: Date | undefined) => void
@@ -40,27 +44,56 @@ function markerDates(markers: CalendarMarkers, kinds: string[]): Date[] {
   return dates
 }
 
-function CalendarLegend() {
+function CalendarLegend({ showNutrition = false }: { showNutrition?: boolean }) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-      <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
-        <span className="size-2 rounded-full bg-primary shadow-sm shadow-primary/40" />
-        Réalisé
-      </Pill>
-      <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
-        <span className="size-2 rounded-full bg-secondary shadow-sm shadow-secondary/30" />
-        Planifié
-      </Pill>
-      <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
-        <span className="size-2 rounded-full bg-muted-foreground/45" />
-        Manque
-      </Pill>
+    <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/10 px-3 py-3">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+        Légende
+      </p>
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-foreground">Sport</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <span className="h-1 w-4 rounded-full bg-primary" />
+            Séance réalisée
+          </Pill>
+          <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <span className="h-1 w-4 rounded-full bg-secondary" />
+            Séance planifiée
+          </Pill>
+          <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <span className="h-1 w-4 rounded-full bg-muted-foreground/35" />
+            Séance manquée
+          </Pill>
+        </div>
+      </div>
+      {showNutrition ? (
+        <div className="space-y-2 border-t border-border/50 pt-3">
+          <p className="text-xs font-medium text-foreground">Diète</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+              <span className="flex size-6 items-center justify-center rounded-full bg-soft-secondary text-xs font-bold text-secondary-foreground ring-1 ring-secondary/25">
+                12
+              </span>
+              Objectif respecté
+            </Pill>
+            <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+              <span className="flex size-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--destructive)_16%,var(--card))] text-xs font-bold text-destructive ring-1 ring-destructive/20">
+                12
+              </span>
+              Objectif dépassé
+            </Pill>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
 
 export function WorkoutCalendar({
   markers,
+  nutritionDays,
+  showNutrition = false,
   mode = 'compact',
   selected,
   onSelect,
@@ -132,6 +165,17 @@ export function WorkoutCalendar({
     [markers],
   )
 
+  const planningComponents = useMemo(
+    () =>
+      createPlanningCalendarComponents({
+        markers,
+        nutritionDays,
+        showNutrition,
+        compact: mode === 'compact',
+      }),
+    [markers, nutritionDays, showNutrition, mode],
+  )
+
   function handleSelect(date: Date | undefined) {
     if (onSelect) {
       onSelect(date)
@@ -195,11 +239,12 @@ export function WorkoutCalendar({
           onSelect={handleSelect}
           locale={fr}
           modifiers={modifiers}
+          components={planningComponents}
           className="relative border-0 bg-transparent p-0 shadow-none"
         />
       </div>
 
-      {mode === 'full' ? <CalendarLegend /> : null}
+      {mode === 'full' ? <CalendarLegend showNutrition={showNutrition} /> : null}
     </div>
   )
 }

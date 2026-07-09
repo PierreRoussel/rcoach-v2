@@ -29,7 +29,7 @@
   --secondary: #5cbba0;
   --secondary-foreground: #0d1b2e;
   --muted: #1e3050;
-  --muted-foreground: #7a9ec0;
+  --muted-foreground: #9db8d4;
   --accent: #ffab2e;
   --accent-foreground: #0d1b2e;
   --destructive: #ff3b3b;
@@ -63,12 +63,16 @@
   --soft-accent: rgba(255, 171, 46, 0.12);
   --soft-purple: rgba(77, 143, 255, 0.14);
   --soft-peach: rgba(255, 59, 138, 0.12);
-  --soft-primary-fg: var(--primary);
-  --soft-secondary-fg: var(--secondary);
-  --soft-accent-fg: var(--accent);
+  --soft-primary-fg: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+  --soft-secondary-fg: color-mix(in srgb, var(--secondary) 55%, var(--foreground));
+  --soft-accent-fg: color-mix(in srgb, var(--accent) 70%, var(--foreground));
+  --soft-purple-fg: color-mix(in srgb, #4d8fff 65%, var(--foreground));
+  --soft-peach-fg: color-mix(in srgb, #ff3b8a 65%, var(--foreground));
   --nutrient-warning-bg: color-mix(in srgb, var(--chart-3) 18%, var(--card));
   --nutrient-warning-border: color-mix(in srgb, var(--chart-3) 42%, var(--border));
   --nutrient-warning-fg: color-mix(in srgb, var(--chart-3) 72%, var(--foreground));
+  --nutrition-streak: rgba(252, 232, 214, 0.14);
+  --nutrition-streak-foreground: #f0a050;
   --gradient-hero: linear-gradient(
     135deg,
     rgba(255, 77, 0, 0.22) 0%,

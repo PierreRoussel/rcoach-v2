@@ -1,4 +1,5 @@
 import { addDays, toDateKey } from '@/lib/nutrition/dates'
+import { MEAL_TYPES, type MealType } from '@/lib/nutrition/types'
 
 export type NutritionDayLogStatus = 'none' | 'on_target' | 'over_target'
 
@@ -6,29 +7,42 @@ export type NutritionDayAggregate = {
   calories: number
   hasLogs: boolean
   status: NutritionDayLogStatus
+  loggedMeals?: MealType[]
 }
 
 export function aggregateNutritionDays(
-  entries: Array<{ logged_date: string; calories: number }>,
+  entries: Array<{ logged_date: string; calories: number; meal_type?: MealType }>,
   dailyTarget: number,
 ): Map<string, NutritionDayAggregate> {
   const map = new Map<string, NutritionDayAggregate>()
+  const mealSets = new Map<string, Set<MealType>>()
 
   for (const entry of entries) {
     const current = map.get(entry.logged_date) ?? {
       calories: 0,
       hasLogs: false,
       status: 'none' as NutritionDayLogStatus,
+      loggedMeals: [] as MealType[],
     }
 
     current.calories += Number(entry.calories)
     current.hasLogs = true
     map.set(entry.logged_date, current)
+
+    if (entry.meal_type) {
+      const meals = mealSets.get(entry.logged_date) ?? new Set<MealType>()
+      meals.add(entry.meal_type)
+      mealSets.set(entry.logged_date, meals)
+    }
   }
 
-  for (const aggregate of map.values()) {
+  for (const [dateKey, aggregate] of map.entries()) {
     aggregate.status =
       aggregate.calories <= dailyTarget ? 'on_target' : 'over_target'
+    const meals = mealSets.get(dateKey)
+    aggregate.loggedMeals = meals
+      ? MEAL_TYPES.filter((mealType) => meals.has(mealType))
+      : []
   }
 
   return map

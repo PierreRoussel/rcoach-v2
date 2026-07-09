@@ -1,8 +1,9 @@
 import { addMonths, format, parseISO, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Flame, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
 import { Calendar } from '@/components/ui/calendar'
 import { Pill } from '@/design-system'
 import { useNutritionCalendarMonth } from '@/hooks/useNutritionStreak'
@@ -11,7 +12,7 @@ import { computeMonthOnTargetSummary } from '@/lib/nutrition/streak'
 import { cn } from '@/lib/utils'
 
 const navButtonClass =
-  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-chart-2/30 hover:bg-soft-secondary hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-chart-2/30 hover:bg-soft-secondary hover:text-soft-secondary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
 type NutritionCalendarProps = {
   dailyTarget: number
@@ -150,14 +151,13 @@ export function NutritionCalendar({
           </div>
 
           <div className="flex justify-end">
-            <Pill
-              tone={isFrozen ? 'default' : 'solid-secondary'}
+            <NutritionStreakPill
+              streak={streak}
+              isFrozen={isFrozen}
+              format="count"
               className="shrink-0"
               title={`${streak} jour${streak > 1 ? 's' : ''} de suite${isFrozen ? ' (gelé)' : ''}`}
-            >
-              <Flame className={cn('size-3', isFrozen ? '' : 'fill-current')} />
-              {streak}
-            </Pill>
+            />
           </div>
         </div>
 

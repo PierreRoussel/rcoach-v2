@@ -99,7 +99,7 @@ export function ExerciseLoadComparisonCard({
           <p className="font-display text-3xl font-black leading-none text-foreground">
             {comparison.currentLabel}
           </p>
-          <p className="text-xs font-medium text-primary/80">{caption}</p>
+          <p className="text-xs font-medium text-soft-primary-fg">{caption}</p>
         </div>
       </div>
     </div>

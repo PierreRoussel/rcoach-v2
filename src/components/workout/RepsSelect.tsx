@@ -113,7 +113,7 @@ export function RepsSelect({
                     className={cn(
                       'flex w-full snap-center items-center justify-center rounded-2xl py-3 font-display text-2xl font-black tabular-nums transition-colors',
                       isSelected
-                        ? 'bg-soft-primary text-primary'
+                        ? 'bg-soft-primary text-soft-primary-fg'
                         : 'text-foreground hover:bg-muted/50',
                     )}
                     onClick={() => handleSelect(reps)}

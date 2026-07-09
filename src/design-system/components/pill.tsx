@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 type PillProps = {
   children: React.ReactNode
   className?: string
-  tone?: 'default' | 'primary' | 'secondary' | 'accent' | 'purple' | 'solid-primary' | 'solid-secondary' | 'solid-accent' | 'solid-purple' | 'solid-gold'
+  tone?: 'default' | 'primary' | 'secondary' | 'accent' | 'purple' | 'streak' | 'solid-primary' | 'solid-secondary' | 'solid-accent' | 'solid-purple' | 'solid-gold'
   onClick?: () => void
 }
 
@@ -12,9 +12,10 @@ const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
   primary: 'bg-soft-primary text-soft-primary-fg',
   secondary: 'bg-soft-secondary text-soft-secondary-fg',
   accent: 'bg-soft-accent text-soft-accent-fg',
-  purple: 'bg-soft-purple text-[#6b4fcc]',
+  purple: 'bg-soft-purple text-soft-purple-fg',
+  streak: 'bg-nutrition-streak text-nutrition-streak-foreground shadow-sm',
   'solid-primary': 'bg-primary text-primary-foreground shadow-soft-primary',
-  'solid-secondary': 'bg-chart-2 text-secondary-foreground shadow-sm',
+  'solid-secondary': 'bg-secondary text-secondary-foreground shadow-sm',
   'solid-accent': 'bg-accent text-accent-foreground shadow-soft-accent',
   'solid-purple': 'bg-[#6b4fcc] text-white shadow-sm',
   'solid-gold':

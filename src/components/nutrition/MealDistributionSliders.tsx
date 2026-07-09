@@ -1,7 +1,12 @@
 import { Slider } from '@/components/ui/slider'
 import { mealCaloriesFromPercent } from '@/lib/nutrition/linked-percentages'
+import {
+  MEAL_SLIDER_RANGE,
+  MEAL_SLIDER_THUMB,
+} from '@/lib/nutrition/meal-visuals'
+import type { MealType } from '@/lib/nutrition/types'
 
-export type MealDistributionKey = 'breakfast' | 'lunch' | 'snack' | 'dinner'
+export type MealDistributionKey = MealType
 
 const MEAL_LABELS: Record<MealDistributionKey, string> = {
   breakfast: 'Petit déjeuner',
@@ -30,6 +35,7 @@ export function MealDistributionSliders({
       {MEAL_ORDER.map((key) => (
         <MealPctSlider
           key={key}
+          mealType={key}
           label={MEAL_LABELS[key]}
           value={values[key]}
           calories={mealCaloriesFromPercent(dailyCalories, values[key])}
@@ -42,11 +48,13 @@ export function MealDistributionSliders({
 }
 
 function MealPctSlider({
+  mealType,
   label,
   value,
   calories,
   onChange,
 }: {
+  mealType: MealType
   label: string
   value: number
   calories: number
@@ -62,7 +70,15 @@ function MealPctSlider({
           <span>{calories} kcal</span>
         </span>
       </div>
-      <Slider value={[value]} min={5} max={85} step={1} onValueChange={(next) => onChange(next[0] ?? value)} />
+      <Slider
+        value={[value]}
+        min={5}
+        max={85}
+        step={1}
+        rangeClassName={MEAL_SLIDER_RANGE[mealType]}
+        thumbClassName={MEAL_SLIDER_THUMB[mealType]}
+        onValueChange={(next) => onChange(next[0] ?? value)}
+      />
     </div>
   )
 }
