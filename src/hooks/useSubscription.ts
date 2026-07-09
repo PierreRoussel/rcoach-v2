@@ -38,8 +38,8 @@ export function useSubscription() {
   return useQuery({
     queryKey: ['subscription', 'me', userId],
     enabled: isAuthenticated && Boolean(userId),
+    staleTime: 5 * 60_000,
     queryFn: () => fetchMySubscription(nhost, userId!),
-    refetchOnMount: 'always',
   })
 }
 

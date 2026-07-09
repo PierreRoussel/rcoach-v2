@@ -92,17 +92,24 @@ export async function updateMyProfile(
   profileId: string,
   changes: ProfileUpdateInput,
 ): Promise<Profile | null> {
+  const { onboarding_completed_at: _ignoredOnboarding, role, ...safeChanges } = changes
+  const sanitizedChanges: ProfileUpdateInput = { ...safeChanges }
+
+  if (role && role !== 'admin') {
+    sanitizedChanges.role = role
+  }
+
   try {
     const data = await graphqlRequest<{ update_profiles_by_pk: Profile | null }>(
       nhost,
       UPDATE_MY_PROFILE,
-      { id: profileId, changes },
+      { id: profileId, changes: sanitizedChanges },
     )
     const profile = data.update_profiles_by_pk
     return profile ? withDefaultExerciseLocale(profile) : null
   } catch (error) {
     if (isOnboardingCompletedAtSchemaError(error)) {
-      const { onboarding_completed_at: _ignored, ...legacyChanges } = changes
+      const { onboarding_completed_at: _ignored, ...legacyChanges } = sanitizedChanges
 
       if (Object.keys(legacyChanges).length === 0) {
         return fetchMyProfile(nhost, profileId)
@@ -125,7 +132,7 @@ export async function updateMyProfile(
       throw error
     }
 
-    const { exercise_locale: _ignoredLocale, ...legacyChanges } = changes
+    const { exercise_locale: _ignoredLocale, ...legacyChanges } = sanitizedChanges
     const data = await graphqlRequest<{
       update_profiles_by_pk: Omit<Profile, 'exercise_locale'> | null
     }>(nhost, UPDATE_MY_PROFILE_LEGACY, { id: profileId, changes: legacyChanges })

@@ -60,8 +60,26 @@ export function SubscriptionLifecycleProvider({
   const navigate = useNavigate()
   const { subscription, isPremium, isLoading, billingPeriod } = useSubscriptionSummary()
   const { permission, requestPermission } = useNotificationPermissions()
-  const { data: templates } = useWorkoutTemplates()
-  const { data: workouts = [] } = useMyWorkouts()
+  const needsFrozenTemplateAudit = useMemo(() => {
+    if (isLoading || !subscription) {
+      return false
+    }
+
+    if (subscription.status === 'trialing') {
+      return true
+    }
+
+    const endedPeriod = readTrialEndedPeriod()
+    return Boolean(
+      endedPeriod && shouldShowTrialExpiredNotice(endedPeriod) && !isPremium,
+    )
+  }, [isLoading, isPremium, subscription])
+  const { data: templates } = useWorkoutTemplates({
+    enabled: needsFrozenTemplateAudit,
+  })
+  const { data: workouts = [] } = useMyWorkouts({
+    enabled: needsFrozenTemplateAudit,
+  })
   const [overlay, setOverlay] = useState<OverlayKind>(null)
   const [notificationPrompted, setNotificationPrompted] = useState(false)
 

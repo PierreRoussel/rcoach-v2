@@ -27,13 +27,14 @@ import { computeWeeklyStreak } from '@/lib/schedule/weekly-streak'
 import { WORKOUT_STREAK_LOOKBACK_WEEKS } from '@/lib/stats/streak-lookback'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
-export function useMyWorkouts() {
+export function useMyWorkouts(options?: { enabled?: boolean }) {
   const { nhost, isAuthenticated, user } = useAuth()
   const userId = user?.id
+  const queryEnabled = (options?.enabled ?? true) && isAuthenticated && Boolean(userId)
 
   return useQuery({
     queryKey: ['workouts', 'mine', userId],
-    enabled: isAuthenticated && Boolean(userId),
+    enabled: queryEnabled,
     queryFn: async () => {
       const data = await graphqlRequest<{ workouts: WorkoutSummary[] }>(
         nhost,

@@ -20,11 +20,12 @@ import { graphqlRequest } from '@/lib/graphql/request'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useCoachClients() {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
 
   return useQuery({
-    queryKey: ['coach', 'clients'],
-    enabled: isAuthenticated,
+    queryKey: ['coach', 'clients', userId],
+    enabled: isAuthenticated && Boolean(userId),
     queryFn: async () => {
       const data = await graphqlRequest<{ coach_clients: CoachClient[] }>(
         nhost,

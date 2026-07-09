@@ -50,12 +50,14 @@ export function isGraphqlTemplatesMissingError(error: unknown) {
   )
 }
 
-export function useWorkoutTemplates() {
-  const { nhost, isAuthenticated } = useAuth()
+export function useWorkoutTemplates(options?: { enabled?: boolean }) {
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
+  const queryEnabled = (options?.enabled ?? true) && isAuthenticated && Boolean(userId)
 
   return useQuery({
-    queryKey: ['workout-templates'],
-    enabled: isAuthenticated,
+    queryKey: ['workout-templates', userId],
+    enabled: queryEnabled,
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const data = await graphqlRequest<{

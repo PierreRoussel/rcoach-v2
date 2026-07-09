@@ -31,12 +31,13 @@ export type ScheduledSessionsResult = {
 }
 
 export function useScheduledSessions(options?: { includeInactive?: boolean }) {
-  const { nhost, isAuthenticated } = useAuth()
+  const { nhost, isAuthenticated, user } = useAuth()
+  const userId = user?.id
   const includeInactive = options?.includeInactive ?? false
 
   return useQuery({
-    queryKey: ['scheduled-sessions', includeInactive ? 'all' : 'active'],
-    enabled: isAuthenticated,
+    queryKey: ['scheduled-sessions', userId, includeInactive ? 'all' : 'active'],
+    enabled: isAuthenticated && Boolean(userId),
     staleTime: 2 * 60_000,
     queryFn: async (): Promise<ScheduledSessionsResult> => {
       try {

@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 
 import {
   AlertDialog,
@@ -201,12 +200,7 @@ function SubscriptionProfileCard() {
 function ProfilePage() {
   const { themeId } = useTheme()
   const showColorModeSetting = themeSupportsColorModePreference(themeId)
-  const queryClient = useQueryClient()
   const { data: profile } = useMyProfile()
-
-  useEffect(() => {
-    void queryClient.invalidateQueries({ queryKey: ['friend-motivations'] })
-  }, [queryClient])
 
   return (
     <div className="space-y-4">

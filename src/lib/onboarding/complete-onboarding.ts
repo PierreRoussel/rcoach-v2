@@ -3,6 +3,7 @@ import type { NhostClient } from '@nhost/nhost-js'
 import {
   COMPLETE_MY_ONBOARDING,
   INSERT_WEIGHT_ENTRY,
+  UPDATE_MY_PROFILE,
   UPSERT_USER_MEASUREMENTS,
   type UserMeasurementsInput,
 } from '@/lib/graphql/operations'
@@ -52,15 +53,10 @@ export async function completeAppOnboarding(
       COMPLETE_MY_ONBOARDING,
     )
   } catch {
-    // Legacy stack without complete_my_onboarding RPC: fall back handled by guards cache invalidation.
-    const { updateMyProfile } = await import('@/lib/graphql/profile-request')
-    const updated = await updateMyProfile(nhost, ensuredProfileId, {
-      onboarding_completed_at: new Date().toISOString(),
+    await graphqlRequest(nhost, UPDATE_MY_PROFILE, {
+      id: ensuredProfileId,
+      changes: { onboarding_completed_at: new Date().toISOString() },
     })
-
-    if (!updated) {
-      throw new Error('Impossible de finaliser l’onboarding.')
-    }
   }
 
   void queryClient.invalidateQueries({ queryKey: profileQueryKey(ensuredProfileId) })

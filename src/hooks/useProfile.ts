@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { PROFILE_QUERY_STALE_MS, profileQueryKey } from '@/lib/auth/guard-profile'
 import {
   LIST_PUBLIC_EXERCISES,
   type Exercise,
@@ -14,8 +15,9 @@ export function useMyProfile() {
   const userId = user?.id
 
   return useQuery({
-    queryKey: ['profile', 'me', userId],
+    queryKey: profileQueryKey(userId!),
     enabled: isAuthenticated && Boolean(userId),
+    staleTime: PROFILE_QUERY_STALE_MS,
     queryFn: () => fetchMyProfile(nhost, userId!),
   })
 }
