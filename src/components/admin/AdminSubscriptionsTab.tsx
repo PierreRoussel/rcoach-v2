@@ -16,19 +16,24 @@ import {
 import { Pill } from '@/design-system'
 import type { AdminPlatformMetrics } from '@/lib/admin/platform-metrics'
 import type { AdminRecentLists } from '@/lib/admin/recent-lists'
+import { displayRevenueCents, revenueDisplaySuffix } from '@/lib/admin/revenue-urssaf'
 import { formatCentsToEuros } from '@/lib/admin/metrics-range'
 
 type AdminSubscriptionsTabProps = {
   data: AdminPlatformMetrics
   recentLists: AdminRecentLists | undefined
   listsLoading: boolean
+  showNetAfterUrssaf: boolean
 }
 
 export function AdminSubscriptionsTab({
   data,
   recentLists,
   listsLoading,
+  showNetAfterUrssaf,
 }: AdminSubscriptionsTabProps) {
+  const revenueSuffix = revenueDisplaySuffix(showNetAfterUrssaf)
+  const mrrCents = displayRevenueCents(data.revenue.mrrCents, showNetAfterUrssaf)
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -52,9 +57,9 @@ export function AdminSubscriptionsTab({
         </Card>
         <Card className="rounded-2xl border-border">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">MRR estimé</p>
+            <p className="text-xs text-muted-foreground">MRR estimé ({revenueSuffix})</p>
             <p className="font-display text-2xl font-black">
-              {formatCentsToEuros(data.revenue.mrrCents)}
+              {formatCentsToEuros(mrrCents)}
             </p>
           </CardContent>
         </Card>

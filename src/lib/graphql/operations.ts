@@ -2821,3 +2821,19 @@ export const ADMIN_PLATFORM_RECENT_LISTS = `
     }
   }
 `
+
+export const ADMIN_SUPPORT_REQUESTS = `
+  query AdminSupportRequests($limit: Int!) {
+    admin_support_requests(args: { p_limit: $limit }) {
+      value
+    }
+  }
+`
+
+export const INSERT_SUPPORT_REQUEST = `
+  mutation InsertSupportRequest($object: support_requests_insert_input!) {
+    insert_support_requests_one(object: $object) {
+      id
+    }
+  }
+`

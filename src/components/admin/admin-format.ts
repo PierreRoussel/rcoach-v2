@@ -67,3 +67,14 @@ export function formatBillingPeriod(period: string | null): string {
 export function formatPlanTier(tier: string): string {
   return formatSubscriptionTier(tier)
 }
+
+const SUPPORT_REQUEST_STATUS_LABELS: Record<string, string> = {
+  open: 'Ouvert',
+  in_progress: 'En cours',
+  resolved: 'Résolu',
+  closed: 'Fermé',
+}
+
+export function formatSupportRequestStatus(status: string): string {
+  return SUPPORT_REQUEST_STATUS_LABELS[status] ?? status
+}

@@ -2,4 +2,6 @@ function:
   name: admin_platform_recent_lists
   schema: public
 permissions:
+  # Same as admin_platform_metrics: JWT default role is `user`; SQL enforces admin.
+  - role: user
   - role: admin

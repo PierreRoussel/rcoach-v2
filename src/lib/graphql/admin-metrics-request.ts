@@ -1,9 +1,9 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
+import { toAdminKpiAccessError } from '@/lib/graphql/admin-access-errors'
 import { parseAdminPlatformMetrics } from '@/lib/admin/platform-metrics'
 import { ADMIN_PLATFORM_METRICS } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
-import { isGraphqlDatabaseError } from '@/lib/graphql/schema-errors'
 
 function isAdminPlatformMetricsMissingError(error: unknown) {
   if (!(error instanceof Error)) {
@@ -39,18 +39,6 @@ export async function fetchAdminPlatformMetrics(
       )
     }
 
-    if (error instanceof Error && error.message.toLowerCase().includes('forbidden')) {
-      throw new Error(
-        'Accès refusé : votre compte doit avoir le rôle admin (scripts/admin-promote-leo.sql).',
-      )
-    }
-
-    if (isGraphqlDatabaseError(error)) {
-      throw new Error(
-        `${error.message} — Déployez la migration 1744500000000_fix_admin_kpi_functions (fonctions admin KPI).`,
-      )
-    }
-
-    throw error
+    throw toAdminKpiAccessError(error)
   }
 }

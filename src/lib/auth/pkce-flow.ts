@@ -9,27 +9,32 @@ import {
   type UserLocale,
 } from '@/lib/i18n/user-locale'
 
-export const PKCE_VERIFIER_KEY = 'nhost_pkce_verifier'
+import { consumePkceVerifier, persistPkceVerifier } from './pkce-verifier-store'
+
+export { PKCE_VERIFIER_KEY } from './pkce-verifier-store'
 
 export async function storePkceChallenge(): Promise<string> {
   const { verifier, challenge } = await generatePKCEPair()
-  localStorage.setItem(PKCE_VERIFIER_KEY, verifier)
+  await persistPkceVerifier(verifier)
   return challenge
 }
 
-export function consumePkceVerifier(): string | null {
-  const verifier = localStorage.getItem(PKCE_VERIFIER_KEY)
-  localStorage.removeItem(PKCE_VERIFIER_KEY)
-  return verifier
-}
-
 export function resolveOAuthRedirectOrigin() {
-  const override = import.meta.env.VITE_OAUTH_REDIRECT_ORIGIN?.trim()
-  if (override) {
-    return override.replace(/\/$/, '')
+  const currentOrigin = window.location.origin
+  const override = import.meta.env.VITE_OAUTH_REDIRECT_ORIGIN?.trim().replace(/\/$/, '')
+
+  if (!override || override === currentOrigin) {
+    return currentOrigin
   }
 
-  return window.location.origin
+  // PKCE verifier is stored on the current origin — callback must land here too.
+  if (import.meta.env.DEV) {
+    console.warn(
+      `[OAuth] VITE_OAUTH_REDIRECT_ORIGIN (${override}) differs from current origin (${currentOrigin}). Using current origin so PKCE can be verified.`,
+    )
+  }
+
+  return currentOrigin
 }
 
 export function buildOAuthRedirectUrl() {
@@ -63,11 +68,11 @@ export async function redirectToGoogleSignIn(nhost: NhostClient) {
 }
 
 export async function exchangeAuthCode(nhost: NhostClient, code: string) {
-  const codeVerifier = consumePkceVerifier()
+  const codeVerifier = await consumePkceVerifier()
 
   if (!codeVerifier) {
     throw new Error(
-      'Session de vérification introuvable. Relancez la procédure depuis le même navigateur.',
+      'Session de vérification introuvable. Relancez Google depuis le même navigateur (évitez de mélanger localhost et 127.0.0.1). Sur l’app Android, mettez à jour l’APK si le problème persiste.',
     )
   }
 
@@ -95,11 +100,11 @@ export async function requestPasswordResetEmail(
     codeChallenge,
     options: {
       locale: resolvedLocale,
-      redirectTo: `${window.location.origin}/auth/verify?flow=reset`,
+      redirectTo: `${resolveOAuthRedirectOrigin()}/auth/verify?flow=reset`,
     },
   })
 }
 
 export function buildEmailVerificationRedirectUrl(flow: 'signup' = 'signup') {
-  return `${window.location.origin}/auth/verify?flow=${flow}`
+  return `${resolveOAuthRedirectOrigin()}/auth/verify?flow=${flow}`
 }

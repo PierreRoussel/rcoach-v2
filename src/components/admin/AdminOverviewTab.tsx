@@ -7,6 +7,7 @@ import {
   Users,
 } from 'lucide-react'
 
+import { AdminRevenueUrssafSwitch } from '@/components/admin/AdminRevenueUrssafSwitch'
 import { AdminDataTable } from '@/components/admin/AdminDataTable'
 import {
   formatAdminDate,
@@ -23,13 +24,23 @@ import {
 } from '@/components/ui/card'
 import { Pill, StatCard } from '@/design-system'
 import type { AdminPlatformMetrics } from '@/lib/admin/platform-metrics'
+import { displayRevenueCents, revenueDisplaySuffix } from '@/lib/admin/revenue-urssaf'
 import { formatCentsToEuros, funnelStepRate } from '@/lib/admin/metrics-range'
 
 type AdminOverviewTabProps = {
   data: AdminPlatformMetrics
+  showNetAfterUrssaf: boolean
+  onShowNetAfterUrssafChange: (value: boolean) => void
 }
 
-export function AdminOverviewTab({ data }: AdminOverviewTabProps) {
+export function AdminOverviewTab({
+  data,
+  showNetAfterUrssaf,
+  onShowNetAfterUrssafChange,
+}: AdminOverviewTabProps) {
+  const revenueSuffix = revenueDisplaySuffix(showNetAfterUrssaf)
+  const mrrCents = displayRevenueCents(data.revenue.mrrCents, showNetAfterUrssaf)
+  const arrCents = displayRevenueCents(data.revenue.arrCents, showNetAfterUrssaf)
   const funnelRows = [
     { step: 'Inscrits', value: data.funnel.registered },
     { step: 'Onboarding terminé', value: data.funnel.onboardingCompleted },
@@ -78,8 +89,8 @@ export function AdminOverviewTab({ data }: AdminOverviewTabProps) {
         />
         <StatCard
           icon={<CreditCard className="size-4" />}
-          label="MRR estimé"
-          value={formatCentsToEuros(data.revenue.mrrCents)}
+          label={`MRR estimé (${revenueSuffix})`}
+          value={formatCentsToEuros(mrrCents)}
           tone="accent"
         />
       </section>
@@ -195,18 +206,26 @@ export function AdminOverviewTab({ data }: AdminOverviewTabProps) {
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="font-display font-black">Revenus estimés</CardTitle>
+          <CardDescription>
+            Basé sur les abonnements actifs (9,99 €/mois · 49,99 €/an).
+          </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <CardContent className="space-y-4">
+          <AdminRevenueUrssafSwitch
+            showNetAfterUrssaf={showNetAfterUrssaf}
+            onShowNetAfterUrssafChange={onShowNetAfterUrssafChange}
+          />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon={<CreditCard className="size-4" />}
-            label="MRR"
-            value={formatCentsToEuros(data.revenue.mrrCents)}
+            label={`MRR (${revenueSuffix})`}
+            value={formatCentsToEuros(mrrCents)}
             tone="primary"
           />
           <StatCard
             icon={<LineChartIcon className="size-4" />}
-            label="ARR"
-            value={formatCentsToEuros(data.revenue.arrCents)}
+            label={`ARR (${revenueSuffix})`}
+            value={formatCentsToEuros(arrCents)}
             tone="secondary"
           />
           <StatCard
@@ -221,6 +240,10 @@ export function AdminOverviewTab({ data }: AdminOverviewTabProps) {
             value={String(data.revenue.annualSubscribers)}
             tone="accent"
           />
+          </div>
+          {data.revenue.isEstimate ? (
+            <Pill tone="accent">Estimation — paiement non connecté</Pill>
+          ) : null}
         </CardContent>
       </Card>
     </div>

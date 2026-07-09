@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { z } from 'zod'
 
 import { AdminAnalyticsTab } from '@/components/admin/AdminAnalyticsTab'
 import { AdminOverviewTab } from '@/components/admin/AdminOverviewTab'
 import { AdminSubscriptionsTab } from '@/components/admin/AdminSubscriptionsTab'
+import { AdminSupportTab } from '@/components/admin/AdminSupportTab'
 import { AdminUsersTab } from '@/components/admin/AdminUsersTab'
 import {
   Card,
@@ -16,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader, Pill } from '@/design-system'
 import { useAdminPlatformMetrics } from '@/hooks/useAdminPlatformMetrics'
 import { useAdminRecentLists } from '@/hooks/useAdminRecentLists'
+import { useAdminSupportRequests } from '@/hooks/useAdminSupportRequests'
 import type { AdminMetricsRange } from '@/lib/admin/metrics-range'
 import { requireAdmin } from '@/lib/auth/guards'
 
@@ -26,11 +29,16 @@ const RANGE_OPTIONS: Array<{ value: AdminMetricsRange; label: string }> = [
   { value: '12m', label: '12 mois' },
 ]
 
-const ADMIN_TABS = ['overview', 'analytics', 'users', 'subscriptions'] as const
+const ADMIN_TABS = ['overview', 'analytics', 'users', 'subscriptions', 'support'] as const
 type AdminTab = (typeof ADMIN_TABS)[number]
 
 function parseAdminTab(value: unknown): AdminTab {
-  if (value === 'analytics' || value === 'users' || value === 'subscriptions') {
+  if (
+    value === 'analytics' ||
+    value === 'users' ||
+    value === 'subscriptions' ||
+    value === 'support'
+  ) {
     return value
   }
 
@@ -51,12 +59,19 @@ function AdminPlatformDashboardPage() {
   const search = Route.useSearch()
   const range = search.range ?? '30d'
   const tab = parseAdminTab(search.tab)
+  const [showNetAfterUrssaf, setShowNetAfterUrssaf] = useState(false)
   const { data, isLoading, error, refetch, isFetching } = useAdminPlatformMetrics(range)
   const {
     data: recentLists,
     isLoading: listsLoading,
     error: listsError,
   } = useAdminRecentLists(25)
+  const {
+    data: supportRequests,
+    isLoading: supportLoading,
+    error: supportError,
+    refetch: refetchSupport,
+  } = useAdminSupportRequests(50)
 
   function setRange(nextRange: AdminMetricsRange) {
     void navigate({
@@ -141,13 +156,20 @@ function AdminPlatformDashboardPage() {
           <TabsTrigger value="subscriptions" className="rounded-xl">
             Abonnements
           </TabsTrigger>
+          <TabsTrigger value="support" className="rounded-xl">
+            Support
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Chargement des métriques...</p>
           ) : data ? (
-            <AdminOverviewTab data={data} />
+            <AdminOverviewTab
+              data={data}
+              showNetAfterUrssaf={showNetAfterUrssaf}
+              onShowNetAfterUrssafChange={setShowNetAfterUrssaf}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">Aucune métrique disponible.</p>
           )}
@@ -181,10 +203,20 @@ function AdminPlatformDashboardPage() {
               data={data}
               recentLists={recentLists}
               listsLoading={listsLoading}
+              showNetAfterUrssaf={showNetAfterUrssaf}
             />
           ) : (
             <p className="text-sm text-muted-foreground">Métriques abonnements indisponibles.</p>
           )}
+        </TabsContent>
+
+        <TabsContent value="support" className="mt-6">
+          <AdminSupportTab
+            requests={supportRequests?.requests}
+            isLoading={supportLoading}
+            error={supportError}
+            onRetry={() => void refetchSupport()}
+          />
         </TabsContent>
       </Tabs>
     </div>
