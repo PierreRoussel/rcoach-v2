@@ -23,34 +23,3 @@ select_permissions:
       filter:
         user_id:
           _eq: X-Hasura-User-Id
-update_permissions:
-  - role: user
-    permission:
-      columns:
-        - tier
-        - status
-        - billing_period
-        - current_period_end
-        - provider
-        - provider_ref
-      filter:
-        user_id:
-          _eq: X-Hasura-User-Id
-      check:
-        user_id:
-          _eq: X-Hasura-User-Id
-insert_permissions:
-  - role: user
-    permission:
-      check:
-        user_id:
-          _eq: X-Hasura-User-Id
-      set:
-        user_id: x-hasura-User-Id
-      columns:
-        - tier
-        - status
-        - billing_period
-        - current_period_end
-        - provider
-        - provider_ref

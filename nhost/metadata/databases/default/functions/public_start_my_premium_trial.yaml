@@ -1,0 +1,5 @@
+function:
+  name: start_my_premium_trial
+  schema: public
+permissions:
+  - role: user

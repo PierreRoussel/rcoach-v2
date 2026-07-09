@@ -3,7 +3,6 @@ import type { NhostClient } from '@nhost/nhost-js'
 import {
   COMPLETE_MY_ONBOARDING,
   INSERT_WEIGHT_ENTRY,
-  UPDATE_MY_PROFILE,
   UPSERT_USER_MEASUREMENTS,
   type UserMeasurementsInput,
 } from '@/lib/graphql/operations'
@@ -18,6 +17,34 @@ import {
   parseOnboardingWeightKg,
   type ProfileOnboardingFormData,
 } from './profile-form'
+
+function isCompleteMyOnboardingMissingError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
+  return (
+    message.includes('complete_my_onboarding') &&
+    (message.includes('query_root') || message.includes('not found'))
+  )
+}
+
+async function completeMyOnboardingViaRpc(nhost: NhostClient) {
+  try {
+    const data = await graphqlRequest<{ complete_my_onboarding: string }>(
+      nhost,
+      COMPLETE_MY_ONBOARDING,
+    )
+    return data.complete_my_onboarding
+  } catch (error) {
+    if (isCompleteMyOnboardingMissingError(error)) {
+      return null
+    }
+
+    throw error
+  }
+}
 
 export async function completeAppOnboarding(
   nhost: NhostClient,
@@ -47,16 +74,11 @@ export async function completeAppOnboarding(
     }
   }
 
-  try {
-    await graphqlRequest<{ complete_my_onboarding: string }>(
-      nhost,
-      COMPLETE_MY_ONBOARDING,
+  const completedAt = await completeMyOnboardingViaRpc(nhost)
+  if (!completedAt) {
+    throw new Error(
+      'Impossible de finaliser l\'onboarding : le déploiement backend est peut-être incomplet. Réessayez dans quelques minutes.',
     )
-  } catch {
-    await graphqlRequest(nhost, UPDATE_MY_PROFILE, {
-      id: ensuredProfileId,
-      changes: { onboarding_completed_at: new Date().toISOString() },
-    })
   }
 
   void queryClient.invalidateQueries({ queryKey: profileQueryKey(ensuredProfileId) })

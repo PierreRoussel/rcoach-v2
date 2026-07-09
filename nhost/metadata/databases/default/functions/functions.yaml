@@ -1,4 +1,7 @@
 - "!include public_ensure_user_profile.yaml"
 - "!include public_complete_my_onboarding.yaml"
 - "!include public_reconcile_my_subscription.yaml"
+- "!include public_start_my_premium_trial.yaml"
+- "!include public_cancel_my_subscription.yaml"
+- "!include public_apply_billing_subscription.yaml"
 - "!include public_admin_platform_metrics.yaml"

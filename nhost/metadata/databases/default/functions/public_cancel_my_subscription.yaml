@@ -1,0 +1,5 @@
+function:
+  name: cancel_my_subscription
+  schema: public
+permissions:
+  - role: user

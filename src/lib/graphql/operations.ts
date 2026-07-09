@@ -539,7 +539,7 @@ export const ENSURE_USER_PROFILE = `
 `
 
 export const COMPLETE_MY_ONBOARDING = `
-  mutation CompleteMyOnboarding {
+  query CompleteMyOnboarding {
     complete_my_onboarding
   }
 `
