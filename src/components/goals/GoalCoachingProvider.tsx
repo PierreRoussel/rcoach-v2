@@ -26,6 +26,7 @@ import {
   incrementGoalCoachingRefusalCount,
   markGoalCoachingCheckedToday,
   readGoalCoachingCheckedToday,
+  readGoalCoachingRemindersDisabled,
   readGoalCoachingStorage,
   resetGoalCoachingDevState,
   resetGoalCoachingRefusalCount,
@@ -89,7 +90,8 @@ export function GoalCoachingProvider({
     measurementsLoading ||
     historyLoading
 
-  const remindersEnabled = profile?.goal_coaching_reminders_enabled ?? true
+  const remindersEnabled =
+    profile?.goal_coaching_reminders_enabled ?? !readGoalCoachingRemindersDisabled()
 
   const dietAdherence = useMemo(
     () => resolveDietAdherence14d(dayMap),

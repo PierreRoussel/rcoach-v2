@@ -1,10 +1,16 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
 import {
+  readGoalCoachingRemindersDisabled,
+  setGoalCoachingRemindersDisabled,
+} from '@/lib/goals/goal-coaching-storage'
+import {
   GET_MY_PROFILE,
+  GET_MY_PROFILE_GOAL_COACHING_LEGACY,
   GET_MY_PROFILE_LEGACY,
   GET_MY_PROFILE_ONBOARDING_LEGACY,
   UPDATE_MY_PROFILE,
+  UPDATE_MY_PROFILE_GOAL_COACHING_LEGACY,
   UPDATE_MY_PROFILE_LEGACY,
   UPDATE_MY_PROFILE_ONBOARDING_LEGACY,
   type Profile,
@@ -21,6 +27,11 @@ function isExerciseLocaleSchemaError(error: unknown): boolean {
 function isOnboardingCompletedAtSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : ''
   return message.includes('onboarding_completed_at')
+}
+
+function isGoalCoachingRemindersSchemaError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  return message.includes('goal_coaching_reminders_enabled')
 }
 
 function withDefaultExerciseLocale(
@@ -46,6 +57,31 @@ function withOnboardingFallback(
   }
 }
 
+function withGoalCoachingFallback(
+  profile: Omit<Profile, 'goal_coaching_reminders_enabled'> & {
+    goal_coaching_reminders_enabled?: Profile['goal_coaching_reminders_enabled']
+  },
+): Profile {
+  return {
+    ...profile,
+    goal_coaching_reminders_enabled:
+      profile.goal_coaching_reminders_enabled ?? !readGoalCoachingRemindersDisabled(),
+  }
+}
+
+async function fetchMyProfileWithoutGoalCoachingField(
+  nhost: NhostClient,
+  userId: string,
+): Promise<Profile | null> {
+  const data = await graphqlRequest<{
+    profiles: Array<Omit<Profile, 'goal_coaching_reminders_enabled'>>
+  }>(nhost, GET_MY_PROFILE_GOAL_COACHING_LEGACY, { userId })
+  const profile = data.profiles[0]
+  return profile
+    ? withGoalCoachingFallback(withDefaultExerciseLocale(profile))
+    : null
+}
+
 export async function fetchMyProfile(
   nhost: NhostClient,
   userId: string,
@@ -57,6 +93,10 @@ export async function fetchMyProfile(
     const profile = data.profiles[0]
     return profile ? withDefaultExerciseLocale(profile) : null
   } catch (error) {
+    if (isGoalCoachingRemindersSchemaError(error)) {
+      return fetchMyProfileWithoutGoalCoachingField(nhost, userId)
+    }
+
     if (isOnboardingCompletedAtSchemaError(error)) {
       try {
         const data = await graphqlRequest<{
@@ -64,9 +104,15 @@ export async function fetchMyProfile(
         }>(nhost, GET_MY_PROFILE_ONBOARDING_LEGACY, { userId })
         const profile = data.profiles[0]
         return profile
-          ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
+          ? withGoalCoachingFallback(
+              withOnboardingFallback(withDefaultExerciseLocale(profile), true),
+            )
           : null
       } catch (legacyError) {
+        if (isGoalCoachingRemindersSchemaError(legacyError)) {
+          return fetchMyProfileWithoutGoalCoachingField(nhost, userId)
+        }
+
         if (!isExerciseLocaleSchemaError(legacyError)) {
           throw legacyError
         }
@@ -82,7 +128,9 @@ export async function fetchMyProfile(
     }>(nhost, GET_MY_PROFILE_LEGACY, { userId })
     const profile = data.profiles[0]
     return profile
-      ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
+      ? withGoalCoachingFallback(
+          withOnboardingFallback(withDefaultExerciseLocale(profile), true),
+        )
       : null
   }
 }
@@ -108,6 +156,35 @@ export async function updateMyProfile(
     const profile = data.update_profiles_by_pk
     return profile ? withDefaultExerciseLocale(profile) : null
   } catch (error) {
+    if (isGoalCoachingRemindersSchemaError(error)) {
+      const {
+        goal_coaching_reminders_enabled: remindersEnabled,
+        ...legacyChanges
+      } = sanitizedChanges
+
+      if (remindersEnabled === false) {
+        setGoalCoachingRemindersDisabled(true)
+      } else if (remindersEnabled === true) {
+        setGoalCoachingRemindersDisabled(false)
+      }
+
+      if (Object.keys(legacyChanges).length === 0) {
+        return fetchMyProfile(nhost, profileId)
+      }
+
+      const data = await graphqlRequest<{
+        update_profiles_by_pk: Omit<Profile, 'goal_coaching_reminders_enabled'> | null
+      }>(nhost, UPDATE_MY_PROFILE_GOAL_COACHING_LEGACY, {
+        id: profileId,
+        changes: legacyChanges,
+      })
+
+      const profile = data.update_profiles_by_pk
+      return profile
+        ? withGoalCoachingFallback(withDefaultExerciseLocale(profile))
+        : null
+    }
+
     if (isOnboardingCompletedAtSchemaError(error)) {
       const { onboarding_completed_at: _ignored, ...legacyChanges } = sanitizedChanges
 
@@ -124,7 +201,9 @@ export async function updateMyProfile(
 
       const profile = data.update_profiles_by_pk
       return profile
-        ? withOnboardingFallback(withDefaultExerciseLocale(profile), true)
+        ? withGoalCoachingFallback(
+            withOnboardingFallback(withDefaultExerciseLocale(profile), true),
+          )
         : null
     }
 
@@ -138,6 +217,8 @@ export async function updateMyProfile(
     }>(nhost, UPDATE_MY_PROFILE_LEGACY, { id: profileId, changes: legacyChanges })
 
     const profile = data.update_profiles_by_pk
-    return profile ? withDefaultExerciseLocale(profile) : null
+    return profile
+      ? withGoalCoachingFallback(withDefaultExerciseLocale(profile))
+      : null
   }
 }

@@ -11,9 +11,11 @@ import {
   isGoalCoachingSnoozeActive,
   markGoalCoachingCheckedToday,
   readGoalCoachingCheckedToday,
+  readGoalCoachingRemindersDisabled,
   readGoalCoachingStorage,
   resetGoalCoachingDevState,
   resetGoalCoachingRefusalCount,
+  setGoalCoachingRemindersDisabled,
   writeGoalCoachingSnooze,
 } from './goal-coaching-storage'
 
@@ -97,10 +99,18 @@ describe('goal-coaching-storage', () => {
     markGoalCoachingCheckedToday(now)
     writeGoalCoachingSnooze(5, now)
     incrementGoalCoachingRefusalCount()
+    setGoalCoachingRemindersDisabled(true)
     resetGoalCoachingDevState()
 
     expect(readGoalCoachingCheckedToday(now)).toBe(false)
     expect(localStorage.getItem(GOAL_COACHING_SNOOZE_UNTIL_KEY)).toBeNull()
     expect(localStorage.getItem(GOAL_COACHING_REFUSAL_COUNT_KEY)).toBeNull()
+    expect(readGoalCoachingRemindersDisabled()).toBe(false)
+  })
+
+  it('stores reminders opt-out locally before migration deploy', () => {
+    expect(readGoalCoachingRemindersDisabled()).toBe(false)
+    setGoalCoachingRemindersDisabled(true)
+    expect(readGoalCoachingRemindersDisabled()).toBe(true)
   })
 })

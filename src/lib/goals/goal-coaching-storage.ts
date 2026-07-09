@@ -3,6 +3,7 @@ import { toDateKey } from '@/lib/nutrition/dates'
 export const GOAL_COACHING_CHECKED_PREFIX = 'goal-coaching-checked:'
 export const GOAL_COACHING_SNOOZE_UNTIL_KEY = 'goal-coaching-snooze-until'
 export const GOAL_COACHING_REFUSAL_COUNT_KEY = 'goal-coaching-refusal-count'
+export const GOAL_COACHING_REMINDERS_DISABLED_KEY = 'goal-coaching-reminders-disabled'
 export const GOAL_COACHING_SNOOZE_DAYS_SHORT = 5
 export const GOAL_COACHING_SNOOZE_DAYS_LONG = 30
 
@@ -91,6 +92,27 @@ export function resetGoalCoachingRefusalCount(): void {
   }
 }
 
+export function readGoalCoachingRemindersDisabled(): boolean {
+  if (typeof localStorage === 'undefined') {
+    return false
+  }
+
+  return localStorage.getItem(GOAL_COACHING_REMINDERS_DISABLED_KEY) === '1'
+}
+
+export function setGoalCoachingRemindersDisabled(disabled: boolean): void {
+  if (typeof localStorage === 'undefined') {
+    return
+  }
+
+  if (disabled) {
+    localStorage.setItem(GOAL_COACHING_REMINDERS_DISABLED_KEY, '1')
+    return
+  }
+
+  localStorage.removeItem(GOAL_COACHING_REMINDERS_DISABLED_KEY)
+}
+
 export function clearGoalCoachingSnooze(): void {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(GOAL_COACHING_SNOOZE_UNTIL_KEY)
@@ -100,6 +122,7 @@ export function clearGoalCoachingSnooze(): void {
 export function resetGoalCoachingDevState(): void {
   clearGoalCoachingSnooze()
   resetGoalCoachingRefusalCount()
+  setGoalCoachingRemindersDisabled(false)
 
   if (typeof sessionStorage === 'undefined') {
     return

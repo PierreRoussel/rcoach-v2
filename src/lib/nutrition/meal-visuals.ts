@@ -23,6 +23,14 @@ export const MEAL_RING_STROKE: Record<MealType, string> = {
   dinner: 'text-[#6b4fcc]',
 }
 
+/** SVG stroke colors — immune to inherited primary / diet theme overrides. */
+export const MEAL_RING_COLOR: Record<MealType, string> = {
+  breakfast: 'var(--accent)',
+  lunch: 'var(--secondary)',
+  snack: '#b87848',
+  dinner: '#6b4fcc',
+}
+
 export const MEAL_CARD_TINT: Record<MealType, string> = {
   breakfast: 'bg-soft-accent/40',
   lunch: 'bg-soft-secondary/40',

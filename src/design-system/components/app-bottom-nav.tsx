@@ -2,6 +2,7 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { Activity, List, UtensilsCrossed, UserRound } from 'lucide-react'
 
 import { useProfileNavBadgeCount } from '@/hooks/useFriends'
+import { DIET_NAV_ACTIVE } from '@/lib/nutrition/diet-theme'
 import { cn } from '@/lib/utils'
 
 const items = [
@@ -43,9 +44,11 @@ export function AppBottomNav() {
             to={item.to}
             className={cn(
               'rounded-xl px-2 py-2 text-center transition-colors hover:bg-muted hover:text-foreground',
-              isActive
-                ? 'bg-soft-primary font-bold text-primary'
-                : 'text-muted-foreground',
+              isActive && item.to === '/app/diet'
+                ? DIET_NAV_ACTIVE
+                : isActive
+                  ? 'bg-soft-primary font-bold text-primary'
+                  : 'text-muted-foreground',
             )}
           >
             <span className="relative mx-auto mb-1 flex w-fit justify-center">

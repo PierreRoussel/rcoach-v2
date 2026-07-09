@@ -254,6 +254,23 @@ export const UPDATE_MY_PROFILE = `
   }
 `
 
+/** Fallback when goal_coaching_reminders_enabled migration is not deployed yet. */
+export const UPDATE_MY_PROFILE_GOAL_COACHING_LEGACY = `
+  mutation UpdateMyProfileGoalCoachingLegacy($id: uuid!, $changes: profiles_set_input!) {
+    update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      rpe_enabled
+      exercise_locale
+      onboarding_completed_at
+      created_at
+    }
+  }
+`
+
 /** Fallback when onboarding_completed_at migration is not deployed yet. */
 export const UPDATE_MY_PROFILE_ONBOARDING_LEGACY = `
   mutation UpdateMyProfileOnboardingLegacy($id: uuid!, $changes: profiles_set_input!) {
@@ -523,6 +540,25 @@ export const GET_MY_PROFILE = `
       is_premium
       onboarding_completed_at
       goal_coaching_reminders_enabled
+      created_at
+    }
+  }
+`
+
+/** Fallback when goal_coaching_reminders_enabled migration is not deployed yet. */
+export const GET_MY_PROFILE_GOAL_COACHING_LEGACY = `
+  query GetMyProfileGoalCoachingLegacy($userId: uuid!) {
+    profiles(where: { id: { _eq: $userId } }, limit: 1) {
+      id
+      display_name
+      avatar_url
+      role
+      unit_system
+      rpe_enabled
+      exercise_locale
+      friend_code
+      is_premium
+      onboarding_completed_at
       created_at
     }
   }

@@ -1,4 +1,4 @@
-import { MEAL_ICONS, MEAL_ICON_TINT, MEAL_RING_STROKE } from '@/lib/nutrition/meal-visuals'
+import { MEAL_ICONS, MEAL_ICON_TINT, MEAL_RING_COLOR } from '@/lib/nutrition/meal-visuals'
 import type { MealType } from '@/lib/nutrition/types'
 import { cn } from '@/lib/utils'
 
@@ -54,15 +54,12 @@ export function MealIconCalorieRing({
           cy={center}
           r={RING_RADIUS}
           fill="none"
-          stroke="currentColor"
+          stroke={isOverTarget ? 'var(--nutrient-warning-fg)' : MEAL_RING_COLOR[mealType]}
           strokeWidth={STROKE_WIDTH}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          className={cn(
-            'transition-[stroke-dashoffset] duration-500',
-            isOverTarget ? 'text-[var(--nutrient-warning-fg)]' : MEAL_RING_STROKE[mealType],
-          )}
+          className="transition-[stroke-dashoffset] duration-500"
         />
       </svg>
 

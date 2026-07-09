@@ -73,7 +73,7 @@ export function NutritionHomeSummaryTile() {
       to="/app/diet"
       search={{ date: today }}
       className={cn(
-        'block rounded-2xl bg-gradient-to-br from-soft-secondary via-soft-secondary/80 to-card px-4 py-4',
+        'block rounded-2xl bg-soft-secondary px-4 py-4',
         'shadow-sm shadow-secondary/10',
         'transition-transform active:scale-[0.99]',
       )}

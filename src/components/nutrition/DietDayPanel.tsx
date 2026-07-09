@@ -11,6 +11,7 @@ import { useNutritionStreakGamificationActions } from '@/components/nutrition/Nu
 import { Card, CardContent } from '@/components/ui/card'
 import { AnimateIn, Pill, StaggerGroup } from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
+import { DIET_ACCENT_SOFT } from '@/lib/nutrition/diet-theme'
 import { getMealEntryName } from '@/lib/nutrition/meal-entry-display'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { NutritionSettings } from '@/lib/nutrition/types'
@@ -154,7 +155,7 @@ export function DietDayPanel({
           <CalorieSideStat
             className="absolute bottom-0 left-0"
             icon={UtensilsCrossed}
-            iconClassName="bg-soft-primary text-primary"
+            iconClassName={DIET_ACCENT_SOFT}
             value={Math.round(daySummary.totals.calories)}
             label="Cons."
           />

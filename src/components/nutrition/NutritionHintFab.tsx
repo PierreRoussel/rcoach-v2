@@ -143,7 +143,7 @@ export function NutritionHintFab({ anchorDate, settings, hidden = false }: Nutri
         className={cn(
           'fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom)+0.75rem)] right-4 z-30 size-14 rounded-full shadow-lg',
           hasAiAdvice && open && 'ring-2 ring-amber-400/60',
-          !hasAiAdvice && 'border border-primary/30 bg-soft-primary/40',
+          !hasAiAdvice && 'border border-chart-2/30 bg-soft-secondary/40',
         )}
         aria-label={
           hasAiAdvice
@@ -161,7 +161,7 @@ export function NutritionHintFab({ anchorDate, settings, hidden = false }: Nutri
           <span className="relative">
             <Lightbulb className="size-6 opacity-70" aria-hidden />
             <Lock
-              className="absolute -bottom-1 -right-1 size-3.5 rounded-full bg-background text-primary"
+              className="absolute -bottom-1 -right-1 size-3.5 rounded-full bg-background text-chart-2"
               aria-hidden
             />
           </span>

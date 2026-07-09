@@ -20,7 +20,6 @@ import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useNutritionSync } from '@/hooks/useNutritionSync'
 import { useProfileNavBadgeCount } from '@/hooks/useFriends'
-import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/app')({
   beforeLoad: async ({ location }) => {
@@ -42,9 +41,6 @@ function AppLayout() {
   const isOnboarding = useRouterState({
     select: (state) => state.location.pathname === '/app/onboarding',
   })
-  const isDietSection = useRouterState({
-    select: (state) => state.location.pathname.startsWith('/app/diet'),
-  })
 
   useNutritionSync()
   useProfileNavBadgeCount()
@@ -65,12 +61,7 @@ function AppLayout() {
     <SubscriptionLifecycleProvider>
       <GoalCoachingProvider>
       <NutritionStreakGamificationProvider>
-        <div
-          className={cn(
-            'mx-auto flex min-h-svh max-w-lg flex-col bg-background',
-            isDietSection && 'diet-section',
-          )}
-        >
+        <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">
         <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
           <div className="flex items-center justify-between gap-3 px-4 py-2.5">
             <AppWelcomeHeader

@@ -11,7 +11,7 @@ import { computeMonthOnTargetSummary } from '@/lib/nutrition/streak'
 import { cn } from '@/lib/utils'
 
 const navButtonClass =
-  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-soft-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+  'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-chart-2/30 hover:bg-soft-secondary hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
 type NutritionCalendarProps = {
   dailyTarget: number
@@ -121,7 +121,7 @@ export function NutritionCalendar({
         )}
       >
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-primary/25 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-secondary/25 to-transparent"
           aria-hidden
         />
 
@@ -151,7 +151,7 @@ export function NutritionCalendar({
 
           <div className="flex justify-end">
             <Pill
-              tone={isFrozen ? 'default' : 'solid-primary'}
+              tone={isFrozen ? 'default' : 'solid-secondary'}
               className="shrink-0"
               title={`${streak} jour${streak > 1 ? 's' : ''} de suite${isFrozen ? ' (gelé)' : ''}`}
             >

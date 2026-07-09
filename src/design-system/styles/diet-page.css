@@ -1,44 +1,35 @@
 /**
  * Diet journal page — green visual identity (CSS only).
  *
- * `.diet-section` is applied on the /app shell when pathname starts with /app/diet.
- * It remaps primary tokens to chart-2 green so nutrition UI picks up the diet accent
- * without touching macro-specific chart colors (carbs/protein/fat bars).
+ * Scoped to `.diet-page` inside the diet route layout (main content only).
+ * Accent colors use explicit chart-2 tokens — no shell-level --primary remapping.
  */
 
-/* ---- Diet section theme (scoped primary → green) ---- */
+/* ---- Diet page atmosphere ---- */
 
-.diet-section {
-  --primary: var(--chart-2);
-  --primary-foreground: var(--secondary-foreground);
-  --soft-primary: var(--soft-secondary);
-  --soft-primary-fg: var(--soft-secondary-fg);
-  --ring: var(--chart-2);
+.diet-page {
+  position: relative;
 }
 
-.dark .diet-section {
-  --primary-foreground: var(--background);
-}
-
-.diet-section .shadow-soft-primary {
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--chart-2) 28%, transparent);
-}
-
-/* ---- Page atmosphere ---- */
-
-body:has(.diet-section) {
+.diet-page::before {
+  content: '';
+  position: absolute;
+  inset: -1rem -1rem auto;
+  z-index: -1;
+  height: 11rem;
+  pointer-events: none;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--soft-secondary) 42%, var(--background)) 0%,
-    var(--background) 200px
+    transparent 100%
   );
 }
 
-.dark body:has(.diet-section) {
+.dark .diet-page::before {
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--soft-secondary) 22%, var(--background)) 0%,
-    var(--background) 180px
+    transparent 100%
   );
 }
 
@@ -108,51 +99,14 @@ body:has(.diet-section) {
   background: var(--chart-5);
 }
 
-/* ---- Meal cards ---- */
+/* ---- Meal cards (tile tint applied in MealSummaryCard) ---- */
 
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70 {
+div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
   border-color: var(--border) !important;
-  background: var(--card);
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(1) {
-  background: color-mix(in srgb, var(--soft-accent) 40%, var(--card));
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(1) .rounded-full.bg-soft-accent {
-  background: var(--soft-accent);
-  color: var(--accent);
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(2) {
-  background: color-mix(in srgb, var(--soft-secondary) 40%, var(--card));
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(2) .rounded-full.bg-soft-secondary {
-  background: var(--soft-secondary);
-  color: var(--secondary);
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(3) {
-  background: color-mix(in srgb, var(--soft-peach) 40%, var(--card));
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(3) .rounded-full.bg-soft-peach {
-  background: var(--soft-peach);
-  color: #b87848;
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(4) {
-  background: color-mix(in srgb, var(--soft-purple) 40%, var(--card));
-}
-
-div.space-y-3:has(> .overflow-hidden.border-border\/70 .size-11) > .overflow-hidden.border-border\/70:nth-child(4) .rounded-full.bg-soft-purple {
-  background: var(--soft-purple);
-  color: #6b4fcc;
 }
 
 /* Sync pending banner */
-body:has(.diet-section) main > div.space-y-4 > .rounded-xl.bg-muted {
+.diet-page > .space-y-4 > .rounded-xl.bg-muted {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--soft-secondary) 40%, var(--muted));
 }
@@ -331,12 +285,12 @@ body:has(.diet-section) main > div.space-y-4 > .rounded-xl.bg-muted {
   font-size: 0.75rem;
   font-weight: 500;
   gap: 0.375rem;
-  color: var(--primary);
-  background: var(--soft-primary);
+  color: var(--chart-2);
+  background: var(--soft-secondary);
   border: none;
 }
 
 .meal-detail-toaster [data-sonner-toast] [data-button][data-action]:hover {
-  color: var(--primary-foreground);
-  background: var(--primary);
+  color: var(--secondary-foreground);
+  background: var(--chart-2);
 }

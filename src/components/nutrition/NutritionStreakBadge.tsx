@@ -49,7 +49,7 @@ export function NutritionStreakBadge({
         aria-label={label}
       >
         <Pill
-          tone={isFrozen ? 'default' : 'solid-primary'}
+          tone={isFrozen ? 'default' : 'solid-secondary'}
           className={cn(
             'shrink-0 shadow-sm transition-transform',
             bump && 'animate-nutrition-streak-bump',
@@ -71,7 +71,7 @@ export function NutritionStreakBadge({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-8 shrink-0 rounded-full text-primary"
+        className="size-8 shrink-0 rounded-full text-chart-2"
         onClick={onCalendarClick}
         aria-label="Ouvrir le calendrier nutrition"
       >

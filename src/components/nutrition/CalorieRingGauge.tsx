@@ -1,4 +1,5 @@
 import { MacroSplitRing } from '@/components/nutrition/MacroSplitRing'
+import { DIET_ACCENT_RING } from '@/lib/nutrition/diet-theme'
 import { cn } from '@/lib/utils'
 
 type CalorieRingGaugeProps = {
@@ -35,7 +36,7 @@ export function CalorieRingGauge({
         strokeWidth={10}
         size={size}
         isOverTarget={isOverTarget}
-        accentClassName="text-primary"
+        accentClassName={DIET_ACCENT_RING}
         className="size-full"
       />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">

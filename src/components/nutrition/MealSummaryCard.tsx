@@ -4,7 +4,9 @@ import { ChevronRight } from 'lucide-react'
 import { MealIconCalorieRing } from '@/components/nutrition/MealIconCalorieRing'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { MEAL_CARD_TINT } from '@/lib/nutrition/meal-visuals'
 import { MEAL_LABELS, type MealType } from '@/lib/nutrition/types'
+import { cn } from '@/lib/utils'
 
 type MealSummaryCardProps = {
   date: string
@@ -22,7 +24,10 @@ export function MealSummaryCard({
   previewLabel,
 }: MealSummaryCardProps) {
   return (
-    <Card className="gap-0 overflow-hidden border-border/70 shadow-sm">
+    <Card
+      data-meal-type={mealType}
+      className={cn('gap-0 overflow-hidden border-border/70 shadow-sm', MEAL_CARD_TINT[mealType])}
+    >
       <div className="flex items-center gap-3 p-4">
           <MealIconCalorieRing
             mealType={mealType}
