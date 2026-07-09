@@ -3,7 +3,7 @@ import type { NhostClient } from '@nhost/nhost-js'
 import { toAdminKpiAccessError } from '@/lib/graphql/admin-access-errors'
 import { parseAdminPlatformMetrics } from '@/lib/admin/platform-metrics'
 import { ADMIN_PLATFORM_METRICS } from '@/lib/graphql/operations'
-import { graphqlRequest } from '@/lib/graphql/request'
+import { graphqlAdminKpiRequest } from '@/lib/graphql/request'
 
 function isAdminPlatformMetricsMissingError(error: unknown) {
   if (!(error instanceof Error)) {
@@ -23,7 +23,7 @@ export async function fetchAdminPlatformMetrics(
   input: { from: string; to: string; cohortWeeks: number },
 ) {
   try {
-    const data = await graphqlRequest<{
+    const data = await graphqlAdminKpiRequest<{
       admin_platform_metrics: { value: unknown }
     }>(nhost, ADMIN_PLATFORM_METRICS, {
       from: input.from,

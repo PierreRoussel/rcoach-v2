@@ -2,7 +2,7 @@ function:
   name: admin_platform_metrics
   schema: public
 permissions:
-  # Exposed to `user` too: SQL enforces is_request_admin() via profiles.role.
+  # Exposed to `user` too: SQL enforces is_request_admin() via profiles.role (174472).
   # Without this, JWT default role `user` yields "field not found" on query_root.
   - role: user
   - role: admin

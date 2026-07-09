@@ -43,8 +43,16 @@ Chaque `up.sql` a un `down.sql` qui annule proprement (DROP colonne/table, rever
 2. `npm run verify:graphql` si le changement affecte des champs requis par l'app.
 3. Ne pas compter sur des changements faits uniquement dans la console Hasura — exporter vers `nhost/metadata/`.
 
+## Déploiement Nhost — pas de SQL manuel
+
+Sur ce projet, **il est impossible d'exécuter du SQL à la main** sur Nhost (pas de SQL Editor Hasura, pas de hotfix collé dans la console).
+
+- Tout changement schéma / fonction / données seed → **migration** dans `nhost/migrations/` puis **déploiement Nhost** (CI ou `nhost deploy`).
+- Promotion admin ou correctif données : **migration dédiée** + deploy (voir `23-rcoach-nhost-no-manual-sql.mdc`).
+
 ## Anti-patterns
 
+- Proposer un hotfix SQL manuel sur Nhost
 - Migration SQL seule sans yaml metadata
 - Timestamp de migration dupliqué
 - Fonction SQL créée en migration mais absente de `functions.yaml`

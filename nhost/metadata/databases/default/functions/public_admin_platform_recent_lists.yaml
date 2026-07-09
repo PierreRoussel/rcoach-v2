@@ -2,6 +2,7 @@ function:
   name: admin_platform_recent_lists
   schema: public
 permissions:
-  # Same as admin_platform_metrics: JWT default role is `user`; SQL enforces admin.
+  # JWT default role is `user`; SQL enforces is_request_admin() (migration 174472).
+  # Keep `user` or Hasura returns "field not found" on query_root.
   - role: user
   - role: admin
