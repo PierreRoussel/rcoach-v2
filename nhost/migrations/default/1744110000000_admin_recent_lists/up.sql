@@ -1,10 +1,21 @@
+-- Idempotent: skip when 174440 already renamed the jsonb implementation.
+DO $migration$
+BEGIN
+  IF to_regprocedure('public.admin_platform_recent_lists_jsonb(integer)') IS NOT NULL THEN
+    RAISE NOTICE '174411_admin_recent_lists: jsonb implementation already exists, skipping';
+    RETURN;
+  END IF;
+
+  DROP FUNCTION IF EXISTS public.admin_platform_recent_lists(integer);
+
+  EXECUTE $create$
 CREATE OR REPLACE FUNCTION public.admin_platform_recent_lists(p_limit integer DEFAULT 25)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $body$
 DECLARE
   v_limit integer;
   v_recent_users jsonb;
@@ -69,4 +80,7 @@ BEGIN
     'limit', v_limit
   );
 END;
-$$;
+$body$;
+$create$;
+END;
+$migration$;
