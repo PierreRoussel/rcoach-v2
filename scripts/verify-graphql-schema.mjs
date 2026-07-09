@@ -49,6 +49,7 @@ const REQUIRED_QUERY_FIELDS = [
 const REQUIRED_FUNCTION_FIELDS = [
   'ensure_user_profile',
   'complete_my_onboarding',
+  'admin_platform_metrics',
 ]
 
 const REQUIRED_MUTATION_FIELDS = [
