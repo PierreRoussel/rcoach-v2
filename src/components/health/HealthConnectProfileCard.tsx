@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { Capacitor } from '@capacitor/core'
 import { Activity, ExternalLink, Link2, Unlink } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -21,6 +22,7 @@ import {
   openHealthConnectSettings,
   requestHealthConnectPermissions,
 } from '@/lib/health/health-connect-bridge'
+import { LEGAL_PATHS } from '@/lib/legal/config'
 import {
   isHealthConnectSyncEnabled,
   setHealthConnectSyncEnabled,
@@ -249,6 +251,13 @@ export function HealthConnectProfileCard() {
             {statusDescription(connectionState)}
           </p>
         )}
+
+        <p className="text-xs text-muted-foreground">
+          <Link to={LEGAL_PATHS.privacy} className="text-primary underline-offset-2 hover:underline">
+            Politique de confidentialité
+          </Link>{' '}
+          — données santé traitées uniquement si vous activez la synchronisation.
+        </p>
 
         {message ? (
           <FeedbackMessage variant={messageVariant}>{message}</FeedbackMessage>

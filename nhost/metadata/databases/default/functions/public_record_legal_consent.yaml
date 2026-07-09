@@ -1,0 +1,5 @@
+function:
+  name: record_legal_consent
+  schema: public
+permissions:
+  - role: user

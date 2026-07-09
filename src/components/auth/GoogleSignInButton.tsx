@@ -37,9 +37,14 @@ function GoogleIcon({ className }: { className?: string }) {
 type GoogleSignInButtonProps = {
   className?: string
   compact?: boolean
+  disabled?: boolean
 }
 
-export function GoogleSignInButton({ className, compact = false }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({
+  className,
+  compact = false,
+  disabled = false,
+}: GoogleSignInButtonProps) {
   const { nhost } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -65,7 +70,7 @@ export function GoogleSignInButton({ className, compact = false }: GoogleSignInB
           'w-full rounded-full border-border/80 bg-card text-foreground hover:bg-accent',
           compact ? 'h-11' : 'h-12',
         )}
-        disabled={isSubmitting}
+        disabled={isSubmitting || disabled}
         onClick={() => void handleClick()}
       >
         <GoogleIcon />

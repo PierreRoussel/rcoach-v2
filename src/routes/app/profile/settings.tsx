@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 
 import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
+import { AccountLegalSupportSection } from '@/components/profile/AccountLegalSupportSection'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
 import { Button } from '@/components/ui/button'
 import {
@@ -93,6 +94,18 @@ function AccountSettingsPage() {
           <Button variant="soft" asChild>
             <Link to="/app/import">Aller a l&apos;import Hevy</Link>
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <CardTitle className="font-display font-black">Aide & légal</CardTitle>
+          <CardDescription>
+            Support, documents légaux et suppression de compte.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AccountLegalSupportSection />
         </CardContent>
       </Card>
     </div>

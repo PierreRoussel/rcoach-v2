@@ -538,6 +538,18 @@ export const ENSURE_USER_PROFILE = `
   }
 `
 
+export const RECORD_LEGAL_CONSENT = `
+  mutation RecordLegalConsent {
+    record_legal_consent
+  }
+`
+
+export const DELETE_MY_ACCOUNT = `
+  mutation DeleteMyAccount {
+    delete_my_account
+  }
+`
+
 export const COMPLETE_MY_ONBOARDING = `
   query CompleteMyOnboarding {
     complete_my_onboarding

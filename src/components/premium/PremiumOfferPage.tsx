@@ -3,6 +3,7 @@ import { ArrowLeft, Crown, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { PremiumCelebrationOverlay } from '@/components/subscription/PremiumCelebrationOverlay'
+import { LegalLinksRow } from '@/components/legal/LegalLinksRow'
 import { SubscriptionCompareTable } from '@/components/subscription/SubscriptionCompareTable'
 import { Button } from '@/components/ui/button'
 import {
@@ -224,22 +225,15 @@ export function PremiumOfferPage() {
                   ? 'L’essai gratuit n’est disponible qu’une seule fois par compte.'
                   : 'Sans engagement · Annulable à tout moment'}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-              <button
-                type="button"
-                className="underline-offset-2 hover:underline disabled:opacity-50"
-                disabled={!billingReady || restorePurchases.isPending}
-                onClick={() => void handleRestorePurchases()}
-              >
-                {restorePurchases.isPending ? 'Restauration...' : 'Restaurer mes achats'}
-              </button>
-              <Link to="/app/profile/settings" className="underline-offset-2 hover:underline">
-                CGU
-              </Link>
-              <Link to="/app/profile/settings" className="underline-offset-2 hover:underline">
-                Confidentialité
-              </Link>
-            </div>
+            <button
+              type="button"
+              className="mx-auto block text-xs text-muted-foreground underline-offset-2 hover:underline disabled:opacity-50"
+              disabled={!billingReady || restorePurchases.isPending}
+              onClick={() => void handleRestorePurchases()}
+            >
+              {restorePurchases.isPending ? 'Restauration...' : 'Restaurer mes achats'}
+            </button>
+            <LegalLinksRow includeCgv />
           </CardContent>
         </Card>
 

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
+import { RegisterLegalConsentField } from '@/components/auth/RegisterLegalConsentField'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { PasswordRequirementsList } from '@/components/auth/PasswordRequirementsList'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ import { clearAuthSession } from '@/lib/auth/clear-auth-session'
 import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath, ensureAuthenticatedProfile } from '@/lib/auth/guards'
 import { validateNewPassword } from '@/lib/auth/password-policy'
 import { detectUserLocale, storePreferredUserLocale } from '@/lib/i18n/user-locale'
+import { recordLegalConsent } from '@/lib/legal/record-legal-consent'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/register')({
@@ -35,9 +37,11 @@ function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [legalConsent, setLegalConsent] = useState(false)
 
   const validation = useMemo(() => validateNewPassword(password), [password])
-  const canSubmit = validation.isValid && !isSubmitting && success == null
+  const canSubmit =
+    validation.isValid && legalConsent && !isSubmitting && success == null
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -46,6 +50,11 @@ function RegisterPage() {
 
     if (!validation.isValid) {
       setError('Le mot de passe ne respecte pas les critères requis.')
+      return
+    }
+
+    if (!legalConsent) {
+      setError('Vous devez accepter les CGU et la politique de confidentialité.')
       return
     }
 
@@ -80,6 +89,7 @@ function RegisterPage() {
 
       if (response.body.session != null) {
         await ensureAuthenticatedProfile()
+        await recordLegalConsent(nhost)
         const destination = await resolveDefaultAuthenticatedPath()
         await navigate({ to: destination })
         return
@@ -111,7 +121,8 @@ function RegisterPage() {
         </p>
       }
     >
-      <GoogleSignInButton className="space-y-3" compact />
+      <RegisterLegalConsentField checked={legalConsent} onCheckedChange={setLegalConsent} />
+      <GoogleSignInButton className="space-y-3" compact disabled={!legalConsent} />
       <form className="space-y-3" onSubmit={handleSubmit}>
         <FormField>
           <Label htmlFor="displayName">Nom affiché</Label>

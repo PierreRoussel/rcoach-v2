@@ -316,6 +316,18 @@ function ProfilePage() {
       </Card>
 
       <LogoutSection />
+
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <CardTitle className="font-display font-black">Aide & support</CardTitle>
+          <CardDescription>Questions, documents légaux et contact.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="soft" asChild>
+            <Link to="/help">Ouvrir le centre d&apos;aide</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

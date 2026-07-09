@@ -1,0 +1,5 @@
+function:
+  name: delete_my_account
+  schema: public
+permissions:
+  - role: user

@@ -6,6 +6,7 @@ import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
 import { ensureAuthenticatedProfile, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
 import { exchangeAuthCode } from '@/lib/auth/pkce-flow'
 import { syncOAuthProfile } from '@/lib/auth/sync-oauth-profile'
+import { recordLegalConsent } from '@/lib/legal/record-legal-consent'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/verify')({
@@ -52,6 +53,7 @@ function VerifyPage() {
 
         if (userId) {
           await ensureAuthenticatedProfile()
+          await recordLegalConsent(nhost)
           if (session.user) {
             await syncOAuthProfile(nhost, session.user)
           }

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { CancelSubscriptionFlow } from '@/components/subscription/CancelSubscriptionFlow'
+import { LegalLinksRow } from '@/components/legal/LegalLinksRow'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -299,6 +300,8 @@ function SubscriptionManagementPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <LegalLinksRow includeCgv className="justify-start px-1" />
 
       <CancelSubscriptionFlow open={cancelOpen} onOpenChange={setCancelOpen} />
     </div>

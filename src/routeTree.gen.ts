@@ -9,11 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as CguRouteImport } from './routes/cgu'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as CoachRouteRouteImport } from './routes/coach/route'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoachIndexRouteImport } from './routes/coach/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as LegalTermsRouteImport } from './routes/legal/terms'
+import { Route as LegalPrivacyRouteImport } from './routes/legal/privacy'
+import { Route as LegalMentionsLegalesRouteImport } from './routes/legal/mentions-legales'
+import { Route as LegalCgvRouteImport } from './routes/legal/cgv'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
@@ -51,6 +59,26 @@ import { Route as AppStatsExercisesExerciseIdRouteImport } from './routes/app/st
 import { Route as AppDietMealsMealTypeRouteImport } from './routes/app/diet/meals/$mealType'
 import { Route as AppDietFoodsNewRouteImport } from './routes/app/diet/foods/new'
 
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CguRoute = CguRouteImport.update({
+  id: '/cgu',
+  path: '/cgu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CoachRouteRoute = CoachRouteRouteImport.update({
   id: '/coach',
   path: '/coach',
@@ -75,6 +103,26 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalMentionsLegalesRoute = LegalMentionsLegalesRouteImport.update({
+  id: '/legal/mentions-legales',
+  path: '/legal/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalCgvRoute = LegalCgvRouteImport.update({
+  id: '/legal/cgv',
+  path: '/legal/cgv',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/auth/verify',
@@ -263,6 +311,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
+  '/about': typeof AboutRoute
+  '/cgu': typeof CguRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/help': typeof HelpRoute
   '/app/profile': typeof AppProfileRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -272,6 +324,10 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/legal/cgv': typeof LegalCgvRoute
+  '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
@@ -304,6 +360,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/cgu': typeof CguRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/help': typeof HelpRoute
   '/app/import': typeof AppImportRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
@@ -312,6 +372,10 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/legal/cgv': typeof LegalCgvRoute
+  '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/app': typeof AppIndexRoute
   '/coach': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
@@ -347,6 +411,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
+  '/about': typeof AboutRoute
+  '/cgu': typeof CguRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/help': typeof HelpRoute
   '/app/profile': typeof AppProfileRouteRouteWithChildren
   '/app/import': typeof AppImportRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -356,6 +424,10 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/legal/cgv': typeof LegalCgvRoute
+  '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
   '/app/diet/add': typeof AppDietAddRoute
@@ -392,6 +464,10 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/coach'
+    | '/about'
+    | '/cgu'
+    | '/confidentialite'
+    | '/help'
     | '/app/profile'
     | '/app/import'
     | '/app/onboarding'
@@ -401,6 +477,10 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/auth/verify'
+    | '/legal/cgv'
+    | '/legal/mentions-legales'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/app/'
     | '/coach/'
     | '/app/diet/add'
@@ -433,6 +513,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/cgu'
+    | '/confidentialite'
+    | '/help'
     | '/app/import'
     | '/app/onboarding'
     | '/app/stats'
@@ -441,6 +525,10 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/auth/verify'
+    | '/legal/cgv'
+    | '/legal/mentions-legales'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/app'
     | '/coach'
     | '/app/diet/add'
@@ -475,6 +563,10 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/coach'
+    | '/about'
+    | '/cgu'
+    | '/confidentialite'
+    | '/help'
     | '/app/profile'
     | '/app/import'
     | '/app/onboarding'
@@ -484,6 +576,10 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/auth/verify'
+    | '/legal/cgv'
+    | '/legal/mentions-legales'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/app/'
     | '/coach/'
     | '/app/diet/add'
@@ -519,16 +615,52 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   CoachRouteRoute: typeof CoachRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
+  CguRoute: typeof CguRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  HelpRoute: typeof HelpRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  LegalCgvRoute: typeof LegalCgvRoute
+  LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
   ShareWorkoutShareTokenRoute: typeof ShareWorkoutShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cgu': {
+      id: '/cgu'
+      path: '/cgu'
+      fullPath: '/cgu'
+      preLoaderRoute: typeof CguRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/coach': {
       id: '/coach'
       path: '/coach'
@@ -563,6 +695,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/mentions-legales': {
+      id: '/legal/mentions-legales'
+      path: '/legal/mentions-legales'
+      fullPath: '/legal/mentions-legales'
+      preLoaderRoute: typeof LegalMentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/cgv': {
+      id: '/legal/cgv'
+      path: '/legal/cgv'
+      fullPath: '/legal/cgv'
+      preLoaderRoute: typeof LegalCgvRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/verify': {
       id: '/auth/verify'
@@ -927,11 +1087,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   CoachRouteRoute: CoachRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
+  CguRoute: CguRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  HelpRoute: HelpRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  LegalCgvRoute: LegalCgvRoute,
+  LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
   ShareWorkoutShareTokenRoute: ShareWorkoutShareTokenRoute,
 }
 export const routeTree = rootRouteImport
