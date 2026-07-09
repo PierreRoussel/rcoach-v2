@@ -9,7 +9,7 @@ import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import {
   redirectIfAppOnboardingComplete,
-  requireAuth,
+  requireAuthenticatedUser,
 } from '@/lib/auth/guards'
 import { completeAppOnboarding } from '@/lib/onboarding/complete-onboarding'
 import {
@@ -25,7 +25,7 @@ import { useMyProfile } from '@/hooks/useProfile'
 
 export const Route = createFileRoute('/app/onboarding')({
   beforeLoad: async () => {
-    requireAuth()
+    await requireAuthenticatedUser()
     await redirectIfAppOnboardingComplete()
   },
   component: OnboardingPage,

@@ -34,7 +34,7 @@ async function createUserProfileViaRpc(nhost: NhostClient, userId: string) {
   }
 }
 
-/** Waits for signup trigger, then creates the profile row if still missing (idempotent). */
+/** Waits briefly, then provisions the profile row on first authenticated session (idempotent). */
 export async function ensureUserProfile(
   nhost: NhostClient,
   userId: string,

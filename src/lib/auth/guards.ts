@@ -1,12 +1,29 @@
 import { redirect } from '@tanstack/react-router'
 
 import { fetchMyProfile } from '@/lib/graphql/profile-request'
+import { ensureUserProfile } from '@/lib/onboarding/ensure-user-profile'
+import { isAdminProfile } from '@/lib/profile/roles'
 import { nhost } from '@/lib/nhost/AuthProvider'
 
 export function requireAuth() {
   if (!nhost.getUserSession()) {
     throw redirect({ to: '/auth/login' })
   }
+}
+
+/** Creates public.profiles on first authenticated session (idempotent). */
+export async function ensureAuthenticatedProfile() {
+  const userId = nhost.getUserSession()?.user?.id
+  if (!userId) {
+    return
+  }
+
+  await ensureUserProfile(nhost, userId)
+}
+
+export async function requireAuthenticatedUser() {
+  requireAuth()
+  await ensureAuthenticatedProfile()
 }
 
 export function redirectIfAuthenticated() {
@@ -90,3 +107,28 @@ export async function redirectIfAppOnboardingComplete() {
     // GraphQL unavailable or profile missing — stay on onboarding instead of blocking auth.
   }
 }
+
+export async function requireAdmin() {
+  const session = nhost.getUserSession()
+  const userId = session?.user?.id
+
+  if (!userId) {
+    throw redirect({ to: '/auth/login' })
+  }
+
+  try {
+    const profile = await fetchMyProfile(nhost, userId)
+
+    if (!isAdminProfile(profile)) {
+      throw redirect({ to: '/coach' })
+    }
+  } catch (error) {
+    if (isRouterRedirect(error)) {
+      throw error
+    }
+
+    throw redirect({ to: '/coach' })
+  }
+}
+
+export { isAdminProfile } from '@/lib/profile/roles'

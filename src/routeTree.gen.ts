@@ -27,6 +27,7 @@ import { Route as CoachValidateProductRenamesIndexRouteImport } from './routes/c
 import { Route as CoachProgramsIndexRouteImport } from './routes/coach/programs/index'
 import { Route as CoachClientsIndexRouteImport } from './routes/coach/clients/index'
 import { Route as CoachAnalyticsIndexRouteImport } from './routes/coach/analytics/index'
+import { Route as CoachAdminIndexRouteImport } from './routes/coach/admin/index'
 import { Route as AppWorkoutsIndexRouteImport } from './routes/app/workouts/index'
 import { Route as AppSessionsIndexRouteImport } from './routes/app/sessions/index'
 import { Route as AppProfileIndexRouteImport } from './routes/app/profile/index'
@@ -139,6 +140,11 @@ const CoachClientsIndexRoute = CoachClientsIndexRouteImport.update({
 const CoachAnalyticsIndexRoute = CoachAnalyticsIndexRouteImport.update({
   id: '/analytics/',
   path: '/analytics/',
+  getParentRoute: () => CoachRouteRoute,
+} as any)
+const CoachAdminIndexRoute = CoachAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => CoachRouteRoute,
 } as any)
 const AppWorkoutsIndexRoute = AppWorkoutsIndexRouteImport.update({
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/app/profile/': typeof AppProfileIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
+  '/coach/admin/': typeof CoachAdminIndexRoute
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AppProfileIndexRoute
   '/app/sessions': typeof AppSessionsIndexRoute
   '/app/workouts': typeof AppWorkoutsIndexRoute
+  '/coach/admin': typeof CoachAdminIndexRoute
   '/coach/analytics': typeof CoachAnalyticsIndexRoute
   '/coach/clients': typeof CoachClientsIndexRoute
   '/coach/programs': typeof CoachProgramsIndexRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/app/profile/': typeof AppProfileIndexRoute
   '/app/sessions/': typeof AppSessionsIndexRoute
   '/app/workouts/': typeof AppWorkoutsIndexRoute
+  '/coach/admin/': typeof CoachAdminIndexRoute
   '/coach/analytics/': typeof CoachAnalyticsIndexRoute
   '/coach/clients/': typeof CoachClientsIndexRoute
   '/coach/programs/': typeof CoachProgramsIndexRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/app/profile/'
     | '/app/sessions/'
     | '/app/workouts/'
+    | '/coach/admin/'
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
@@ -452,6 +462,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/sessions'
     | '/app/workouts'
+    | '/coach/admin'
     | '/coach/analytics'
     | '/coach/clients'
     | '/coach/programs'
@@ -494,6 +505,7 @@ export interface FileRouteTypes {
     | '/app/profile/'
     | '/app/sessions/'
     | '/app/workouts/'
+    | '/coach/admin/'
     | '/coach/analytics/'
     | '/coach/clients/'
     | '/coach/programs/'
@@ -641,6 +653,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/coach/analytics/'
       preLoaderRoute: typeof CoachAnalyticsIndexRouteImport
+      parentRoute: typeof CoachRouteRoute
+    }
+    '/coach/admin/': {
+      id: '/coach/admin/'
+      path: '/admin'
+      fullPath: '/coach/admin/'
+      preLoaderRoute: typeof CoachAdminIndexRouteImport
       parentRoute: typeof CoachRouteRoute
     }
     '/app/workouts/': {
@@ -883,6 +902,7 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 interface CoachRouteRouteChildren {
   CoachIndexRoute: typeof CoachIndexRoute
   CoachProgramsProgramIdRoute: typeof CoachProgramsProgramIdRoute
+  CoachAdminIndexRoute: typeof CoachAdminIndexRoute
   CoachAnalyticsIndexRoute: typeof CoachAnalyticsIndexRoute
   CoachClientsIndexRoute: typeof CoachClientsIndexRoute
   CoachProgramsIndexRoute: typeof CoachProgramsIndexRoute
@@ -892,6 +912,7 @@ interface CoachRouteRouteChildren {
 const CoachRouteRouteChildren: CoachRouteRouteChildren = {
   CoachIndexRoute: CoachIndexRoute,
   CoachProgramsProgramIdRoute: CoachProgramsProgramIdRoute,
+  CoachAdminIndexRoute: CoachAdminIndexRoute,
   CoachAnalyticsIndexRoute: CoachAnalyticsIndexRoute,
   CoachClientsIndexRoute: CoachClientsIndexRoute,
   CoachProgramsIndexRoute: CoachProgramsIndexRoute,

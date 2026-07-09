@@ -1,0 +1,5 @@
+function:
+  name: admin_platform_metrics
+  schema: public
+permissions:
+  - role: admin

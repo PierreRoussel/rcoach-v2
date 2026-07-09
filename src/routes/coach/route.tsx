@@ -2,12 +2,13 @@ import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-rout
 
 import { Button } from '@/components/ui/button'
 import { BrandLogo, CoachBottomNav, ThemeToggle } from '@/design-system'
-import { requireAuth } from '@/lib/auth/guards'
+import { requireAuthenticatedUser } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import { isAdminProfile, isCoachProfile } from '@/lib/profile/roles'
 import { useMyProfile } from '@/hooks/useProfile'
 
 export const Route = createFileRoute('/coach')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthenticatedUser,
   component: CoachLayout,
 })
 
@@ -24,7 +25,8 @@ function CoachLayout() {
     await navigate({ to: '/auth/login' })
   }
 
-  const isCoach = profile?.role === 'coach' || profile?.role === 'both'
+  const isCoach = isCoachProfile(profile)
+  const showAdminNav = isAdminProfile(profile)
 
   return (
     <div className="min-h-svh bg-background md:grid md:grid-cols-[260px_1fr]">
@@ -75,6 +77,18 @@ function CoachLayout() {
           >
             Analytics
           </Link>
+          {showAdminNav ? (
+            <Link
+              to="/coach/admin"
+              className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"
+              activeProps={{
+                className:
+                  'block rounded-xl bg-sidebar-accent px-3 py-2 font-semibold text-sidebar-primary',
+              }}
+            >
+              Dashboard admin
+            </Link>
+          ) : null}
           <Link
             to="/coach/validate-product-renames"
             className="block rounded-xl px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent"

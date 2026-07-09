@@ -15,7 +15,8 @@ import {
   storePkceChallenge,
 } from '@/lib/auth/pkce-flow'
 import { mapAuthError } from '@/lib/auth/auth-errors'
-import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
+import { clearAuthSession } from '@/lib/auth/clear-auth-session'
+import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath, ensureAuthenticatedProfile } from '@/lib/auth/guards'
 import { validateNewPassword } from '@/lib/auth/password-policy'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -50,6 +51,7 @@ function RegisterPage() {
     setIsSubmitting(true)
 
     try {
+      await clearAuthSession(nhost)
       const codeChallenge = await storePkceChallenge()
       const response = await nhost.auth.signUpEmailPassword({
         email,
@@ -62,6 +64,7 @@ function RegisterPage() {
       })
 
       if (response.status !== 200) {
+        await clearAuthSession(nhost)
         setError(
           mapAuthError(
             response.body,
@@ -72,6 +75,7 @@ function RegisterPage() {
       }
 
       if (response.body.session != null) {
+        await ensureAuthenticatedProfile()
         const destination = await resolveDefaultAuthenticatedPath()
         await navigate({ to: destination })
         return
@@ -79,6 +83,7 @@ function RegisterPage() {
 
       setSuccess('Compte créé — vérifiez votre email pour confirmer.')
     } catch (error) {
+      await clearAuthSession(nhost)
       setError(
         mapAuthError(error, 'Inscription impossible. Réessayez plus tard.'),
       )

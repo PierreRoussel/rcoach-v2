@@ -32,7 +32,7 @@ export function mapAuthError(error: unknown, fallback: string): string {
         return 'Ce compte est désactivé. Réactivez-le dans Nhost (Auth → Users) ou utilisez un autre email.'
       case 'email-already-in-use':
       case 'user-already-exists':
-        return 'Cet email est déjà utilisé. Connectez-vous ou réinitialisez votre mot de passe.'
+        return 'Cet email est déjà enregistré. Connectez-vous, réinitialisez votre mot de passe, ou demandez la suppression complète du compte (Auth → Users ou purge SQL admin).'
       case 'invalid-email-password':
         return 'Email ou mot de passe incorrect.'
       case 'email-not-verified':

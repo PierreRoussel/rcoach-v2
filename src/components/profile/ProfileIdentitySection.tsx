@@ -15,6 +15,10 @@ import { Label } from '@/components/ui/label'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSubscriptionSummary } from '@/hooks/useSubscription'
 import type { Profile } from '@/lib/graphql/operations'
+import {
+  canEditProfileRole,
+  type EditableProfileRole,
+} from '@/lib/profile/roles'
 
 type ProfileIdentitySectionProps = {
   profile: Profile
@@ -25,7 +29,9 @@ function ProfileEditor({ profile }: { profile: Profile }) {
   const [displayName, setDisplayName] = useState(profile.display_name)
   const [unitSystem, setUnitSystem] = useState(profile.unit_system)
   const [exerciseLocale, setExerciseLocale] = useState(profile.exercise_locale ?? 'fr')
-  const [role, setRole] = useState(profile.role)
+  const [role, setRole] = useState<EditableProfileRole>(
+    profile.role === 'admin' ? 'athlete' : profile.role,
+  )
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,7 +46,7 @@ function ProfileEditor({ profile }: { profile: Profile }) {
           display_name: displayName,
           unit_system: unitSystem,
           exercise_locale: exerciseLocale,
-          role,
+          ...(canEditProfileRole(profile) ? { role } : {}),
         },
       })
       setSuccessMessage('Profil mis à jour.')
@@ -89,16 +95,22 @@ function ProfileEditor({ profile }: { profile: Profile }) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="role">Role</Label>
-        <select
-          id="role"
-          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
-          value={role}
-          onChange={(event) => setRole(event.target.value as 'athlete' | 'coach' | 'both')}
-        >
-          <option value="athlete">Athlète</option>
-          <option value="coach">Coach</option>
-          <option value="both">Athlète + Coach</option>
-        </select>
+        {canEditProfileRole(profile) ? (
+          <select
+            id="role"
+            className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+            value={role}
+            onChange={(event) => setRole(event.target.value as EditableProfileRole)}
+          >
+            <option value="athlete">Athlète</option>
+            <option value="coach">Coach</option>
+            <option value="both">Athlète + Coach</option>
+          </select>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Administrateur plateforme (rôle géré en base de données).
+          </p>
+        )}
       </div>
       <p className="font-data text-xs text-muted-foreground">
         Cree le {new Date(profile.created_at).toLocaleDateString('fr-FR')}

@@ -3,10 +3,9 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
-import { resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
+import { ensureAuthenticatedProfile, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
 import { exchangeAuthCode } from '@/lib/auth/pkce-flow'
 import { syncOAuthProfile } from '@/lib/auth/sync-oauth-profile'
-import { ensureUserProfile } from '@/lib/onboarding/ensure-user-profile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/verify')({
@@ -52,7 +51,7 @@ function VerifyPage() {
         const userId = session.user?.id
 
         if (userId) {
-          await ensureUserProfile(nhost, userId)
+          await ensureAuthenticatedProfile()
           if (session.user) {
             await syncOAuthProfile(nhost, session.user)
           }

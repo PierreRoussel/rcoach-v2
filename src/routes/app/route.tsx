@@ -8,7 +8,10 @@ import { ActiveWorkoutProgressBar } from '@/components/workout/ActiveWorkoutProg
 import { ActiveWorkoutResumeFab } from '@/components/workout/ActiveWorkoutResumeFab'
 import { Button } from '@/components/ui/button'
 import { AppBottomNav } from '@/design-system'
-import { requireAppOnboardingComplete, requireAuth } from '@/lib/auth/guards'
+import {
+  requireAppOnboardingComplete,
+  requireAuthenticatedUser,
+} from '@/lib/auth/guards'
 import { resolveDisplayName } from '@/lib/profile/resolve-display-name'
 import { flushSyncQueue } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
@@ -19,7 +22,7 @@ import { useProfileNavBadgeCount } from '@/hooks/useFriends'
 
 export const Route = createFileRoute('/app')({
   beforeLoad: async ({ location }) => {
-    requireAuth()
+    await requireAuthenticatedUser()
 
     if (location.pathname === '/app/onboarding') {
       return

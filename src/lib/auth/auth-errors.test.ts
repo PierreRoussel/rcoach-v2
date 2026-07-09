@@ -12,7 +12,7 @@ describe('mapAuthError', () => {
   it('maps email already used on signup', () => {
     expect(
       mapAuthError({ body: { error: 'email-already-in-use' } }, 'fallback'),
-    ).toContain('déjà utilisé')
+    ).toContain('déjà enregistré')
   })
 
   it('falls back when error is unknown', () => {

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { FormField, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath } from '@/lib/auth/guards'
+import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath, ensureAuthenticatedProfile } from '@/lib/auth/guards'
 import { mapAuthError } from '@/lib/auth/auth-errors'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -48,6 +48,7 @@ function LoginPage() {
         return
       }
 
+      await ensureAuthenticatedProfile()
       const destination = await resolveDefaultAuthenticatedPath()
       await navigate({ to: destination })
     } catch (error) {

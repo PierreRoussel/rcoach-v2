@@ -1,9 +1,11 @@
+export type ProfileRole = 'athlete' | 'coach' | 'both' | 'admin'
+
 export type Profile = {
   id: string
   display_name: string
   avatar_url: string | null
   friend_code?: string | null
-  role: 'athlete' | 'coach' | 'both'
+  role: ProfileRole
   unit_system: 'kg' | 'lb'
   rpe_enabled: boolean
   exercise_locale?: 'fr' | 'en'
@@ -160,7 +162,7 @@ export type ProfileUpdateInput = {
   display_name?: string
   avatar_url?: string | null
   unit_system?: 'kg' | 'lb'
-  role?: 'athlete' | 'coach' | 'both'
+  role?: Exclude<ProfileRole, 'admin'>
   rpe_enabled?: boolean
   exercise_locale?: 'fr' | 'en'
   onboarding_completed_at?: string | null
@@ -2719,5 +2721,13 @@ export const INSERT_CANCELLATION_FEEDBACK = `
     insert_subscription_cancellation_feedback_one(object: $object) {
       id
     }
+  }
+`
+
+export const ADMIN_PLATFORM_METRICS = `
+  query AdminPlatformMetrics($from: date!, $to: date!, $cohortWeeks: Int!) {
+    admin_platform_metrics(
+      args: { p_from: $from, p_to: $to, p_cohort_weeks: $cohortWeeks }
+    )
   }
 `
