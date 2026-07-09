@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 
+import { useNutritionCalendarMonth } from '@/hooks/useNutritionStreak'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useMyWorkoutsInRange, useWorkoutStreakDates } from '@/hooks/useWorkouts'
+import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
 import {
   buildCalendarMarkers,
   monthCalendarRange,
@@ -14,11 +16,14 @@ import { computeWeeklyStreak } from '@/lib/schedule/weekly-streak'
 export type CalendarDataOptions = {
   now?: Date
   visibleMonth?: Date
+  nutritionDailyTarget?: number | null
 }
 
 export function useCalendarData(options?: CalendarDataOptions) {
   const now = options?.now ?? new Date()
   const visibleMonth = options?.visibleMonth ?? now
+  const nutritionEnabled =
+    options?.nutritionDailyTarget != null && options.nutritionDailyTarget > 0
   const monthRange = useMemo(
     () => monthCalendarRange(visibleMonth),
     [visibleMonth.getFullYear(), visibleMonth.getMonth()],
@@ -39,6 +44,16 @@ export function useCalendarData(options?: CalendarDataOptions) {
     isLoading: sessionsLoading,
     error: sessionsError,
   } = useScheduledSessions()
+  const {
+    dayMap: nutritionDays,
+    isLoading: nutritionLoading,
+    error: nutritionError,
+  } = useNutritionCalendarMonth(
+    visibleMonth.getFullYear(),
+    visibleMonth.getMonth(),
+    options?.nutritionDailyTarget ?? 2000,
+    nutritionEnabled,
+  )
 
   const sessions = sessionsResult?.sessions ?? []
   const scheduleDeployed = sessionsResult?.deployed ?? true
@@ -65,15 +80,30 @@ export function useCalendarData(options?: CalendarDataOptions) {
     [sessions, now],
   )
 
+  const emptyNutritionDays = useMemo(
+    () => new Map<string, NutritionDayAggregate>(),
+    [],
+  )
+
   return {
     workouts: monthWorkouts ?? [],
     sessions: sessions as ScheduledSession[],
     markers,
+    nutritionDays: nutritionEnabled ? nutritionDays : emptyNutritionDays,
+    nutritionEnabled,
     range: monthRange,
     weeklyStreak,
     todayReminders,
-    isLoading: monthWorkoutsLoading || streakLoading || sessionsLoading,
-    error: monthWorkoutsError ?? streakError ?? sessionsError,
+    isLoading:
+      monthWorkoutsLoading ||
+      streakLoading ||
+      sessionsLoading ||
+      (nutritionEnabled && nutritionLoading),
+    error:
+      monthWorkoutsError ??
+      streakError ??
+      sessionsError ??
+      (nutritionEnabled ? nutritionError : null),
     scheduleAvailable: scheduleDeployed,
     scheduleMissing: !scheduleDeployed,
   }

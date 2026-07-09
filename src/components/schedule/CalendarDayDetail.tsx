@@ -9,6 +9,7 @@ import {
   History,
   Play,
   Plus,
+  UtensilsCrossed,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCalendarData } from '@/hooks/useCalendarData'
 import { useCreateSimpleWorkout } from '@/hooks/useWorkouts'
+import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import {
   formatDayMarkerTitle,
   getDayMarker,
@@ -23,6 +25,11 @@ import {
   type WorkoutCalendarProps,
 } from '@/components/schedule/WorkoutCalendar'
 import { Pill } from '@/design-system'
+import { MEAL_ICONS, MEAL_ICON_TINT } from '@/lib/nutrition/meal-visuals'
+import { toDateKey } from '@/lib/nutrition/dates'
+import { isNutritionConfigured } from '@/lib/nutrition/onboarding'
+import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
+import { MEAL_LABELS, MEAL_TYPES } from '@/lib/nutrition/types'
 import {
   canStartPlannedOccurrence,
   isPastCalendarDay,
@@ -34,6 +41,9 @@ import { cn } from '@/lib/utils'
 type CalendarDayDetailProps = {
   markers: CalendarMarkers
   date: Date
+  nutritionDay?: NutritionDayAggregate
+  dailyTarget?: number
+  showNutrition?: boolean
   onStartPlanned?: (occurrence: ScheduleOccurrence) => void
   onPlanDate?: (date: Date) => void
   isStarting?: boolean
@@ -101,6 +111,9 @@ function SimplePastActivityForm({ date }: { date: Date }) {
 export function CalendarDayDetail({
   markers,
   date,
+  nutritionDay,
+  dailyTarget,
+  showNutrition = false,
   onStartPlanned,
   onPlanDate,
   isStarting = false,
@@ -109,7 +122,10 @@ export function CalendarDayDetail({
   const isPastDay = isPastCalendarDay(date)
   const canStartPlanned = canStartPlannedOccurrence(date, marker)
   const recordedWorkout = marker?.workouts[0]
-  const hasContent = Boolean(marker?.workouts.length || marker?.planned.length)
+  const hasSportContent = Boolean(marker?.workouts.length || marker?.planned.length)
+  const hasNutritionContent = Boolean(showNutrition && nutritionDay?.hasLogs)
+  const hasContent = hasSportContent || hasNutritionContent
+  const dateKey = toDateKey(date)
 
   return (
     <div
@@ -127,8 +143,8 @@ export function CalendarDayDetail({
             {hasContent
               ? 'Détail de la journée sélectionnée'
               : isPastDay
-                ? 'Aucune séance enregistrée pour ce jour'
-                : 'Aucune séance pour ce jour'}
+                ? 'Aucune activité enregistrée pour ce jour'
+                : 'Rien de prévu pour ce jour'}
           </p>
         </div>
         <Pill tone="purple" className="shrink-0 py-1">
@@ -236,6 +252,68 @@ export function CalendarDayDetail({
         </section>
       ) : null}
 
+      {showNutrition ? (
+        <section className="space-y-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+            Nutrition
+          </p>
+          {hasNutritionContent && dailyTarget ? (
+            <div className="space-y-2 rounded-xl border border-border/60 bg-muted/10 px-3 py-2.5">
+              <p className="font-display font-bold text-foreground">
+                {Math.round(nutritionDay!.calories)} / {dailyTarget} kcal
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {nutritionDay!.status === 'on_target'
+                  ? 'Objectif calorique respecté'
+                  : 'Objectif calorique dépassé'}
+              </p>
+              {nutritionDay!.loggedMeals && nutritionDay!.loggedMeals.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {MEAL_TYPES.filter((mealType) =>
+                    nutritionDay!.loggedMeals?.includes(mealType),
+                  ).map((mealType) => {
+                    const Icon = MEAL_ICONS[mealType]
+                    return (
+                      <Pill
+                        key={mealType}
+                        tone="default"
+                        className={cn('gap-1 py-1', MEAL_ICON_TINT[mealType])}
+                      >
+                        <Icon className="size-3" />
+                        {MEAL_LABELS[mealType]}
+                      </Pill>
+                    )
+                  })}
+                </div>
+              ) : null}
+              <Button
+                asChild
+                variant="soft"
+                size="sm"
+                className="w-full rounded-full"
+              >
+                <Link to="/app/diet" search={{ date: dateKey }}>
+                  <UtensilsCrossed className="size-4" />
+                  Voir le journal alimentaire
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-4 text-center">
+              <UtensilsCrossed className="size-7 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
+                Aucun aliment enregistré ce jour-là.
+              </p>
+              <Button asChild variant="soft" size="sm" className="rounded-full">
+                <Link to="/app/diet" search={{ date: dateKey }}>
+                  Ouvrir la diète
+                </Link>
+              </Button>
+            </div>
+          )}
+        </section>
+      ) : null}
+
       {!hasContent ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center">
           <Dumbbell className="size-8 text-muted-foreground/40" />
@@ -289,8 +367,12 @@ export function WorkoutCalendarPanel({
   const [visibleMonth, setVisibleMonth] = useState(
     () => startOfMonth(selected ?? new Date()),
   )
-  const { markers, weeklyStreak, isLoading, error } = useCalendarData({
+  const { data: nutritionSettings } = useNutritionSettings()
+  const nutritionConfigured = isNutritionConfigured(nutritionSettings)
+  const dailyTarget = nutritionSettings?.daily_calorie_target
+  const { markers, nutritionDays, weeklyStreak, isLoading, error } = useCalendarData({
     visibleMonth,
+    nutritionDailyTarget: nutritionConfigured ? dailyTarget : null,
   })
 
   if (isLoading) {
@@ -305,11 +387,17 @@ export function WorkoutCalendarPanel({
     )
   }
 
+  const selectedNutritionDay = selected
+    ? nutritionDays.get(toDateKey(selected))
+    : undefined
+
   return (
     <div className={cn('space-y-4', className)}>
       <WorkoutCalendar
         {...calendarProps}
         markers={markers}
+        nutritionDays={nutritionDays}
+        showNutrition={nutritionConfigured}
         mode={mode}
         streak={weeklyStreak}
         month={visibleMonth}
@@ -321,6 +409,9 @@ export function WorkoutCalendarPanel({
         <CalendarDayDetail
           markers={markers}
           date={selected}
+          nutritionDay={selectedNutritionDay}
+          dailyTarget={dailyTarget}
+          showNutrition={nutritionConfigured}
           onStartPlanned={onStartPlanned}
           onPlanDate={onPlanDate}
           isStarting={isStarting}

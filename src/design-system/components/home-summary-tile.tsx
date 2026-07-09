@@ -81,7 +81,7 @@ export function HomeSummaryMetric({
       <p className={cn('leading-none', className)}>
         <span
           className={cn(
-            'font-display text-[1.65rem] font-black tabular-nums tracking-tight',
+            'font-display text-[1.65rem] font-medium tabular-nums tracking-tight',
             tone === 'accent' && 'text-emerald-800 dark:text-emerald-300',
             tone === 'purple' && 'text-[#6b4fcc] dark:text-purple-300',
             tone === 'danger' && 'text-destructive',
@@ -124,7 +124,7 @@ export function HomeSummaryMetricsRow({
   className?: string
 }) {
   return (
-    <div className={cn('flex items-end justify-between gap-2', className)}>{children}</div>
+    <div className={cn('flex items-end gap-5', className)}>{children}</div>
   )
 }
 
@@ -142,7 +142,7 @@ export function HomeSummaryTileFooter({
   return (
     <div
       className={cn(
-        'mt-2.5 flex items-center justify-between gap-3 text-xs text-muted-foreground',
+        'mt-2.5 flex items-center justify-between gap-3 text-sm text-muted-foreground',
         className,
       )}
     >

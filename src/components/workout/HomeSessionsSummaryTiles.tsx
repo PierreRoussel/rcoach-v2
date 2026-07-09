@@ -109,7 +109,7 @@ function SessionSummaryTile({
           >
             <Icon className="size-3.5" />
           </div>
-          <p className="font-display text-xs font-bold text-foreground">{title}</p>
+          <p className="font-display text-sm font-bold text-foreground">{title}</p>
         </div>
         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
       </div>
@@ -172,7 +172,7 @@ function LastSessionTile({
         <p className="text-sm text-muted-foreground">
           Aucune séance terminée pour le moment.
         </p>
-        <p className="mt-2 text-xs font-medium text-primary">Démarrer une séance</p>
+        <p className="mt-2 text-sm font-medium text-primary">Démarrer une séance</p>
       </SessionSummaryTile>
     )
   }
@@ -193,10 +193,10 @@ function LastSessionTile({
       <p className="truncate font-display text-sm font-black text-foreground">
         {workout.title}
       </p>
-      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+      <p className="mt-0.5 truncate text-sm text-muted-foreground">
         {formatWorkoutDateTime(workout.started_at)}
       </p>
-      <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+      <p className="mt-2 text-sm tabular-nums text-muted-foreground">
         {duration ?? '—'} · {volume}
       </p>
       {preview.entries.length > 0 ? (
@@ -204,7 +204,7 @@ function LastSessionTile({
           {preview.entries.map((entry) => (
             <li
               key={entry.exercise.id}
-              className="flex items-center gap-1 truncate text-[11px] text-muted-foreground"
+              className="flex items-center gap-1 truncate text-sm text-muted-foreground"
             >
               <Dumbbell className="size-3 shrink-0 text-primary/70" />
               <span className="truncate">
@@ -214,7 +214,7 @@ function LastSessionTile({
             </li>
           ))}
           {preview.hiddenCount > 0 ? (
-            <li className="pl-4 text-[10px] text-muted-foreground">
+            <li className="pl-4 text-xs text-muted-foreground">
               +{preview.hiddenCount} exercice{preview.hiddenCount > 1 ? 's' : ''}
             </li>
           ) : null}
@@ -260,7 +260,7 @@ function NextSessionTile({
         ariaLabel="Planifier une séance"
       >
         <p className="text-sm text-muted-foreground">Aucune séance planifiée.</p>
-        <p className="mt-2 text-xs font-medium text-secondary-foreground">
+        <p className="mt-2 text-sm font-medium text-secondary-foreground">
           Ajouter au planning
         </p>
       </SessionSummaryTile>
@@ -298,19 +298,19 @@ function NextSessionTile({
         <p className="truncate font-display text-sm font-black text-foreground">
           {nextOccurrence.title}
         </p>
-        <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+        <p className="mt-0.5 inline-flex items-center gap-1 truncate text-sm text-muted-foreground">
           <Clock className="size-3 shrink-0" />
           {scheduleLabel}
         </p>
         {nextOccurrence.workoutTemplateName ? (
-          <p className="mt-2 truncate text-xs text-muted-foreground">
+          <p className="mt-2 truncate text-sm text-muted-foreground">
             {nextOccurrence.workoutTemplateName}
           </p>
         ) : (
-          <p className="mt-2 text-xs text-muted-foreground">Séance libre</p>
+          <p className="mt-2 text-sm text-muted-foreground">Séance libre</p>
         )}
         {isToday ? (
-          <p className="mt-2 text-xs font-medium text-primary">Commencer la séance</p>
+          <p className="mt-2 text-sm font-medium text-primary">Commencer la séance</p>
         ) : null}
       </SessionSummaryTile>
 
@@ -363,7 +363,7 @@ export function HomeSessionsSummaryTiles() {
         <Link
           to="/app/sessions"
           search={{ tab: 'history' }}
-          className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+          className="text-sm font-medium text-primary underline-offset-2 hover:underline"
         >
           Voir tout
         </Link>

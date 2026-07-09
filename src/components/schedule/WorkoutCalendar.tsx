@@ -1,11 +1,15 @@
 import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Dumbbell, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { createPlanningCalendarComponents } from '@/components/schedule/PlanningCalendarDay'
 import { Calendar } from '@/components/ui/calendar'
 import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
 import { Pill } from '@/design-system'
+import { MEAL_ICONS, MEAL_ICON_TINT } from '@/lib/nutrition/meal-visuals'
+import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
+import { MEAL_TYPES } from '@/lib/nutrition/types'
 import {
   getMarkerKind,
   type CalendarMarkers,
@@ -18,6 +22,8 @@ const navButtonClass =
 
 export type WorkoutCalendarProps = {
   markers: CalendarMarkers
+  nutritionDays?: Map<string, NutritionDayAggregate>
+  showNutrition?: boolean
   mode?: 'compact' | 'full'
   selected?: Date
   onSelect?: (date: Date | undefined) => void
@@ -40,27 +46,65 @@ function markerDates(markers: CalendarMarkers, kinds: string[]): Date[] {
   return dates
 }
 
-function CalendarLegend() {
+function CalendarLegend({ showNutrition = false }: { showNutrition?: boolean }) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-      <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
-        <span className="size-2 rounded-full bg-primary shadow-sm shadow-primary/40" />
-        Réalisé
-      </Pill>
-      <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
-        <span className="size-2 rounded-full bg-secondary shadow-sm shadow-secondary/30" />
-        Planifié
-      </Pill>
-      <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
-        <span className="size-2 rounded-full bg-muted-foreground/45" />
-        Manque
-      </Pill>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+        <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
+          <Dumbbell className="size-3" />
+          <span className="h-1 w-4 rounded-full bg-primary" />
+          Réalisé
+        </Pill>
+        <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
+          <Dumbbell className="size-3" />
+          <span className="h-1 w-4 rounded-full border border-dashed border-secondary bg-secondary/35" />
+          Planifié
+        </Pill>
+        <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+          <Dumbbell className="size-3 text-muted-foreground" />
+          <span className="h-1 w-4 rounded-full bg-muted-foreground/45" />
+          Manqué
+        </Pill>
+      </div>
+      {showNutrition ? (
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+          <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <span className="flex items-center gap-0.5">
+              {MEAL_TYPES.map((mealType) => {
+                const Icon = MEAL_ICONS[mealType]
+                return (
+                  <span
+                    key={mealType}
+                    className={cn(
+                      'flex size-4 items-center justify-center rounded-full',
+                      MEAL_ICON_TINT[mealType],
+                    )}
+                  >
+                    <Icon className="size-2.5" />
+                  </span>
+                )
+              })}
+            </span>
+            Repas enregistrés
+          </Pill>
+          <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <Check className="size-3 text-emerald-500" />
+            Objectif respecté
+          </Pill>
+          <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <X className="size-3 text-destructive" />
+            Objectif dépassé
+          </Pill>
+        </div>
+      ) : null}
     </div>
   )
 }
 
 export function WorkoutCalendar({
   markers,
+  nutritionDays,
+  showNutrition = false,
   mode = 'compact',
   selected,
   onSelect,
@@ -132,6 +176,17 @@ export function WorkoutCalendar({
     [markers],
   )
 
+  const planningComponents = useMemo(
+    () =>
+      createPlanningCalendarComponents({
+        markers,
+        nutritionDays,
+        showNutrition,
+        compact: mode === 'compact',
+      }),
+    [markers, nutritionDays, showNutrition, mode],
+  )
+
   function handleSelect(date: Date | undefined) {
     if (onSelect) {
       onSelect(date)
@@ -195,11 +250,12 @@ export function WorkoutCalendar({
           onSelect={handleSelect}
           locale={fr}
           modifiers={modifiers}
+          components={planningComponents}
           className="relative border-0 bg-transparent p-0 shadow-none"
         />
       </div>
 
-      {mode === 'full' ? <CalendarLegend /> : null}
+      {mode === 'full' ? <CalendarLegend showNutrition={showNutrition} /> : null}
     </div>
   )
 }

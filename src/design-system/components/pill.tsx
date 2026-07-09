@@ -14,7 +14,7 @@ const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
   accent: 'bg-soft-accent text-soft-accent-fg',
   purple: 'bg-soft-purple text-[#6b4fcc]',
   'solid-primary': 'bg-primary text-primary-foreground shadow-soft-primary',
-  'solid-secondary': 'bg-chart-2 text-secondary-foreground shadow-sm',
+  'solid-secondary': 'bg-secondary text-secondary-foreground shadow-sm',
   'solid-accent': 'bg-accent text-accent-foreground shadow-soft-accent',
   'solid-purple': 'bg-[#6b4fcc] text-white shadow-sm',
   'solid-gold':

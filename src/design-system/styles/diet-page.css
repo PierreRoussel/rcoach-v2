@@ -105,6 +105,38 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
   border-color: var(--border) !important;
 }
 
+[data-meal-type='breakfast'] .meal-calorie-ring__track {
+  stroke: rgba(232, 184, 75, 0.28) !important;
+}
+
+[data-meal-type='breakfast'] .meal-calorie-ring__progress {
+  stroke: #e8b84b !important;
+}
+
+[data-meal-type='lunch'] .meal-calorie-ring__track {
+  stroke: rgba(26, 174, 138, 0.28) !important;
+}
+
+[data-meal-type='lunch'] .meal-calorie-ring__progress {
+  stroke: #1aae8a !important;
+}
+
+[data-meal-type='snack'] .meal-calorie-ring__track {
+  stroke: rgba(184, 120, 72, 0.28) !important;
+}
+
+[data-meal-type='snack'] .meal-calorie-ring__progress {
+  stroke: #b87848 !important;
+}
+
+[data-meal-type='dinner'] .meal-calorie-ring__track {
+  stroke: rgba(155, 120, 200, 0.28) !important;
+}
+
+[data-meal-type='dinner'] .meal-calorie-ring__progress {
+  stroke: #9b78c8 !important;
+}
+
 /* Sync pending banner */
 .diet-page > .space-y-4 > .rounded-xl.bg-muted {
   border: 1px solid var(--border);
@@ -141,12 +173,12 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
 
 .meal-detail-page[data-meal-type='breakfast'] {
   --meal-tint: var(--soft-accent);
-  --meal-accent: var(--accent);
+  --meal-accent: #e8b84b;
 }
 
 .meal-detail-page[data-meal-type='lunch'] {
   --meal-tint: var(--soft-secondary);
-  --meal-accent: var(--secondary);
+  --meal-accent: #1aae8a;
 }
 
 .meal-detail-page[data-meal-type='snack'] {
@@ -156,7 +188,7 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
 
 .meal-detail-page[data-meal-type='dinner'] {
   --meal-tint: var(--soft-purple);
-  --meal-accent: #6b4fcc;
+  --meal-accent: #9b78c8;
 }
 
 .meal-detail-eyebrow {

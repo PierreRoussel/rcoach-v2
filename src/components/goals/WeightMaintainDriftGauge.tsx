@@ -24,7 +24,7 @@ export function WeightMaintainDriftGauge({
   return (
     <div className={cn('space-y-2', className)}>
       {!compact ? (
-        <div className="flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center justify-between gap-2 text-sm">
           <span
             className={cn(
               'font-medium',
@@ -100,9 +100,9 @@ export function WeightMaintainDriftGauge({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>Perte</span>
-        <span className="font-display text-xs font-bold tabular-nums text-foreground">
+        <span className="font-display text-sm font-bold tabular-nums text-foreground">
           {formatWeightKg(goal.target_weight_kg)}
         </span>
         <span>Prise</span>

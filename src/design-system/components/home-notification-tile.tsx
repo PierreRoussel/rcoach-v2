@@ -12,17 +12,17 @@ const toneStyles = {
     container: cn(warningSurfaceClass, 'shadow-sm active:opacity-95'),
     iconWrap:
       'bg-[color-mix(in_srgb,var(--soft-peach)_82%,var(--nutrient-warning-bg))] text-[var(--nutrient-warning-fg)]',
-    eyebrow: 'font-body text-[11px] font-semibold uppercase tracking-wide text-[var(--nutrient-warning-fg)]',
+    eyebrow: 'font-body text-xs font-semibold uppercase tracking-wide text-[var(--nutrient-warning-fg)]',
     title: 'font-body text-sm font-bold leading-snug text-foreground',
-    action: 'font-body text-xs font-medium text-[var(--nutrient-warning-fg)]',
+    action: 'font-body text-sm font-medium text-[var(--nutrient-warning-fg)]',
   },
   primary: {
     container:
       'border border-primary/35 bg-gradient-to-br from-soft-primary via-card to-soft-accent shadow-sm active:scale-[0.99]',
     iconWrap: 'bg-primary/15 text-primary',
-    eyebrow: 'font-body text-[11px] font-bold uppercase tracking-wide text-primary',
+    eyebrow: 'font-body text-xs font-bold uppercase tracking-wide text-primary',
     title: 'font-display text-sm font-black leading-snug text-foreground',
-    action: 'font-body text-xs font-semibold text-primary',
+    action: 'font-body text-sm font-semibold text-primary',
   },
 } as const
 

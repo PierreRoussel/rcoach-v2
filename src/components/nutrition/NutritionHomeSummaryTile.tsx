@@ -1,13 +1,18 @@
-import { Link } from '@tanstack/react-router'
-import { ChevronRight, Flame, Snowflake, UtensilsCrossed } from 'lucide-react'
+import { Flame, Snowflake, UtensilsCrossed } from 'lucide-react'
 
-import { Progress } from '@/components/ui/progress'
-import { Pill } from '@/design-system'
+import {
+  HomeSummaryMetric,
+  HomeSummaryMetricsRow,
+  HomeSummaryProgress,
+  HomeSummaryTile,
+  HomeSummaryTileFooter,
+  HomeSummaryTileSkeleton,
+  Pill,
+} from '@/design-system'
 import { useNutritionDay } from '@/hooks/useNutritionDay'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { toDateKey } from '@/lib/nutrition/dates'
-import { cn } from '@/lib/utils'
 
 function formatCalories(value: number) {
   return Math.round(value).toLocaleString('fr-FR')
@@ -29,7 +34,7 @@ function DietStreakBadge({
   return (
     <Pill
       tone={isFrozen ? 'default' : 'secondary'}
-      className="h-6 shrink-0 gap-1 px-2 py-0 text-[11px] font-bold"
+      className="h-7 shrink-0 gap-1 px-2.5 py-0 text-xs font-bold"
       title={
         isFrozen
           ? `Série gelée : ${streak} jour${streak > 1 ? 's' : ''}${recoveryProgress != null ? ` — recovery ${recoveryProgress}/2` : ''}`
@@ -37,9 +42,9 @@ function DietStreakBadge({
       }
     >
       {isFrozen ? (
-        <Snowflake className="size-3 text-sky-500" aria-hidden />
+        <Snowflake className="size-3.5 text-sky-500" aria-hidden />
       ) : (
-        <Flame className="size-3 fill-current" aria-hidden />
+        <Flame className="size-3.5 fill-current" aria-hidden />
       )}
       {streak}
       {isFrozen ? <span className="font-medium text-muted-foreground">gelé</span> : null}
@@ -65,94 +70,60 @@ export function NutritionHomeSummaryTile() {
   const remaining = Math.round(daySummary?.remainingCalories ?? target)
   const overTarget = isOnboarded && remaining < 0
   const progress = target > 0 ? Math.min((consumed / target) * 100, 100) : 0
-  const progressLabel =
-    target > 0 ? Math.round((consumed / target) * 100) : 0
+  const progressLabel = target > 0 ? Math.round((consumed / target) * 100) : 0
 
   return (
-    <Link
+    <HomeSummaryTile
       to="/app/diet"
       search={{ date: today }}
-      className={cn(
-        'block rounded-2xl bg-soft-secondary px-4 py-4',
-        'shadow-sm shadow-secondary/10',
-        'transition-transform active:scale-[0.99]',
-      )}
-      aria-label="Ouvrir le journal nutrition"
+      ariaLabel="Ouvrir le journal nutrition"
+      icon={UtensilsCrossed}
+      title="Diète aujourd'hui"
+      iconClassName="bg-secondary/20 text-secondary dark:text-emerald-300"
+      headerAddon={
+        !streakLoading && isOnboarded ? (
+          <DietStreakBadge
+            streak={streak}
+            isFrozen={isFrozen}
+            recoveryProgress={recoveryProgress}
+          />
+        ) : null
+      }
     >
-      <div className="flex items-center gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary dark:text-emerald-300">
-          <UtensilsCrossed className="size-[18px]" />
-        </div>
-
-        <p className="min-w-0 flex-1 font-display text-sm font-black text-foreground">
-          Diète aujourd&apos;hui
-        </p>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          {!streakLoading && isOnboarded ? (
-            <DietStreakBadge
-              streak={streak}
-              isFrozen={isFrozen}
-              recoveryProgress={recoveryProgress}
-            />
-          ) : null}
-          <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-        </div>
-      </div>
-
       {isLoading ? (
-        <div className="mt-4 space-y-3">
-          <div className="h-7 w-56 animate-pulse rounded bg-muted" />
-          <div className="h-2 animate-pulse rounded-full bg-muted" />
-          <div className="flex justify-between">
-            <div className="h-3 w-28 animate-pulse rounded bg-muted" />
-            <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-          </div>
-        </div>
+        <HomeSummaryTileSkeleton />
       ) : !isOnboarded ? (
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Configurez vos objectifs pour suivre vos calories.
         </p>
       ) : (
         <>
-          <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="inline-flex items-baseline gap-1.5">
-              <span className="font-display text-xl font-black tabular-nums text-foreground">
-                {formatCalories(consumed)}
-              </span>
-              <span className="text-sm text-muted-foreground">cons.</span>
-            </span>
-            <span className="text-muted-foreground/40">·</span>
-            <span className="inline-flex items-baseline gap-1.5">
-              <span
-                className={cn(
-                  'font-display text-xl font-black tabular-nums',
-                  overTarget ? 'text-destructive' : 'text-secondary dark:text-emerald-300',
-                )}
-              >
-                {overTarget ? `+${formatCalories(Math.abs(remaining))}` : formatCalories(remaining)}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {overTarget ? 'dep.' : 'rest.'}
-              </span>
-            </span>
-          </div>
+          <HomeSummaryMetricsRow>
+            <HomeSummaryMetric value={formatCalories(consumed)} label="cons." />
+            <HomeSummaryMetric
+              value={
+                overTarget
+                  ? `+${formatCalories(Math.abs(remaining))}`
+                  : formatCalories(remaining)
+              }
+              label={overTarget ? 'dep.' : 'rest.'}
+              tone={overTarget ? 'danger' : 'accent'}
+              className="text-right"
+            />
+          </HomeSummaryMetricsRow>
 
-          <Progress
+          <HomeSummaryProgress
             value={progress}
-            className="mt-3 h-2.5 bg-muted/40 [&_[data-slot=progress-indicator]]:bg-secondary"
+            className="[&_[data-slot=progress-indicator]]:bg-secondary"
           />
 
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-            <span className="text-muted-foreground">
-              Objectif {formatCalories(target)} kcal
-            </span>
-            <span className="font-bold text-secondary dark:text-emerald-300">
-              {progressLabel}% atteint
-            </span>
-          </div>
+          <HomeSummaryTileFooter
+            left={`Objectif ${formatCalories(target)} kcal`}
+            right={`${progressLabel}% atteint`}
+            rightClassName="text-secondary dark:text-emerald-300"
+          />
         </>
       )}
-    </Link>
+    </HomeSummaryTile>
   )
 }
