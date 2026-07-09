@@ -203,46 +203,41 @@ function PlanningPage() {
         </p>
       ) : null}
 
-      <Card className="rounded-2xl border-border">
-        <CardHeader>
-          <CardTitle className="font-display font-black">Vue du mois</CardTitle>
-          <CardDescription>
-            Touchez un jour pour voir sport et nutrition. Les pastilles vertes indiquent
-            l&apos;objectif calorique.
-          </CardDescription>
-          <CardAction>
-            <Button
-              type="button"
-              variant="pill"
-              size="sm"
-              className="shrink-0 rounded-full"
-              onClick={() => {
-                setEditing(null)
-                setFormDate(undefined)
-                setShowForm(true)
-              }}
-            >
-              <CalendarPlus className="size-4" />
-              Planifier
-            </Button>
-          </CardAction>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <WorkoutCalendarPanel
-            mode="full"
-            hideCalendarStreak
-            belowCalendar={
-              <PlanningStreakBar
-                activePlanningCount={sessionsLoading ? undefined : activeCount}
-                onPlanningClick={scrollToPlanningRules}
-              />
-            }
-            onStartPlanned={(occurrence) => void startPlannedSession(occurrence)}
-            onPlanDate={openPlanForm}
-            isStarting={isStarting}
-          />
-        </CardContent>
-      </Card>
+      <section className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <h2 className="font-display text-lg font-black text-foreground">Vue du mois</h2>
+          </div>
+          <Button
+            type="button"
+            variant="pill"
+            size="sm"
+            className="shrink-0 rounded-full"
+            onClick={() => {
+              setEditing(null)
+              setFormDate(undefined)
+              setShowForm(true)
+            }}
+          >
+            <CalendarPlus className="size-4" />
+            Planifier
+          </Button>
+        </div>
+
+        <WorkoutCalendarPanel
+          mode="full"
+          hideCalendarStreak
+          belowCalendar={
+            <PlanningStreakBar
+              activePlanningCount={sessionsLoading ? undefined : activeCount}
+              onPlanningClick={scrollToPlanningRules}
+            />
+          }
+          onStartPlanned={(occurrence) => void startPlannedSession(occurrence)}
+          onPlanDate={openPlanForm}
+          isStarting={isStarting}
+        />
+      </section>
 
       <Dialog
         open={showForm}

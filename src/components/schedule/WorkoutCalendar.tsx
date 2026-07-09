@@ -195,15 +195,11 @@ export function WorkoutCalendar({
     <div className={cn('w-full', !embedded && 'space-y-3', className)}>
       <div
         className={cn(
-          'relative w-full overflow-hidden',
-          embedded
-            ? 'px-0 py-0'
-            : mode === 'compact'
-              ? 'rounded-3xl border border-border/70 bg-gradient-to-b from-card via-card to-soft-purple/20 px-2 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:px-3'
-              : 'rounded-2xl border border-border/60 bg-muted/15 px-3 py-4 sm:px-4',
+          'relative w-full overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-b from-card via-card to-soft-purple/20 px-2 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:px-3',
+          embedded && 'rounded-none border-0 bg-transparent px-0 py-0 shadow-none',
         )}
       >
-        {mode === 'compact' && !embedded ? (
+        {!embedded ? (
           <div
             className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-primary/25 to-transparent"
             aria-hidden
@@ -213,7 +209,8 @@ export function WorkoutCalendar({
         <div className="relative mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
           <div aria-hidden />
 
-          <div className="flex items-center gap-1">            <button
+          <div className="flex items-center gap-1">
+            <button
               type="button"
               className={navButtonClass}
               aria-label="Mois precedent"
@@ -250,7 +247,8 @@ export function WorkoutCalendar({
             {streak != null ? (
               <WeeklyStreakIndicator streak={streak} />
             ) : null}
-          </div>        </div>
+          </div>
+        </div>
 
         <Calendar
           mode="single"

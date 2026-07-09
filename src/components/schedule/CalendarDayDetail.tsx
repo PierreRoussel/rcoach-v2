@@ -429,34 +429,20 @@ export function WorkoutCalendarPanel({
     : undefined
 
   return (
-    <div
-      className={cn(
-        mode === 'full'
-          ? 'overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-card via-card to-muted/15 shadow-sm'
-          : 'space-y-4',
-        className,
-      )}
-    >
-      <div className={mode === 'full' ? 'p-3 sm:p-4' : undefined}>
-        <WorkoutCalendar
-          {...calendarProps}
-          markers={markers}
-          nutritionDays={nutritionDays}
-          showNutrition={nutritionConfigured}
-          mode={mode}
-          embedded={mode === 'full'}
-          streak={hideCalendarStreak ? undefined : weeklyStreak}
-          month={visibleMonth}
-          onMonthChange={setVisibleMonth}
-          selected={selected}
-          onSelect={setSelected}
-        />
-      </div>
-      {belowCalendar && mode === 'full' ? (
-        <div className="border-t border-border/50 px-3 py-3 sm:px-4">{belowCalendar}</div>
-      ) : belowCalendar ? (
-        <div className="mt-3">{belowCalendar}</div>
-      ) : null}
+    <div className={cn('w-full space-y-4', className)}>
+      <WorkoutCalendar
+        {...calendarProps}
+        markers={markers}
+        nutritionDays={nutritionDays}
+        showNutrition={nutritionConfigured}
+        mode={mode}
+        streak={hideCalendarStreak ? undefined : weeklyStreak}
+        month={visibleMonth}
+        onMonthChange={setVisibleMonth}
+        selected={selected}
+        onSelect={setSelected}
+      />
+      {belowCalendar ? <div>{belowCalendar}</div> : null}
       {selected && mode === 'full' ? (
         <>
           <PlanningDayConnector date={selected} />
