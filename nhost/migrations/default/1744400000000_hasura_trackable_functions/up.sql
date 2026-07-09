@@ -25,7 +25,16 @@ $$;
 DO $$
 BEGIN
   IF to_regprocedure('public.admin_platform_recent_lists(integer)') IS NOT NULL
-     AND to_regprocedure('public.admin_platform_recent_lists_jsonb(integer)') IS NULL THEN
+     AND to_regprocedure('public.admin_platform_recent_lists_jsonb(integer)') IS NULL
+     AND (
+       SELECT format_type(p.prorettype, NULL) = 'jsonb'
+       FROM pg_proc AS p
+       INNER JOIN pg_namespace AS n ON n.oid = p.pronamespace
+       WHERE n.nspname = 'public'
+         AND p.proname = 'admin_platform_recent_lists'
+         AND pg_get_function_identity_arguments(p.oid) = 'p_limit integer'
+       LIMIT 1
+     ) THEN
     ALTER FUNCTION public.admin_platform_recent_lists(integer)
       RENAME TO admin_platform_recent_lists_jsonb;
   END IF;

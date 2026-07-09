@@ -53,15 +53,15 @@ async function hasuraMetadata(type, args, env) {
   return JSON.parse(text)
 }
 
+async function applyMigrationFile(client, relativePath, label) {
+  const migrationSql = readFileSync(resolve(process.cwd(), relativePath), 'utf8')
+  console.log(`Applying migration ${label}...`)
+  await client.query(migrationSql)
+  console.log(`Migration ${label} applied.`)
+}
+
 async function main() {
   const env = loadEnv()
-  const migrationSql = readFileSync(
-    resolve(
-      process.cwd(),
-      'nhost/migrations/default/1744400000000_hasura_trackable_functions/up.sql',
-    ),
-    'utf8',
-  )
 
   const client = new pg.Client({
     host: env.PGHOST,
@@ -74,9 +74,17 @@ async function main() {
 
   console.log('Applying migration 1744400000000_hasura_trackable_functions...')
   await client.connect()
-  await client.query(migrationSql)
+  await applyMigrationFile(
+    client,
+    'nhost/migrations/default/1744400000000_hasura_trackable_functions/up.sql',
+    '1744400000000_hasura_trackable_functions',
+  )
+  await applyMigrationFile(
+    client,
+    'nhost/migrations/default/1744500000000_fix_admin_kpi_functions/up.sql',
+    '1744500000000_fix_admin_kpi_functions',
+  )
   await client.end()
-  console.log('Migration applied.')
 
   for (const table of [
     'graphql_jsonb_result',
