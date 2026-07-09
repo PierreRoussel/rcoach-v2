@@ -120,3 +120,24 @@ array_relationships:
         table:
           name: user_providers
           schema: auth
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - locale
+      filter:
+        id:
+          _eq: X-Hasura-User-Id
+      limit: 1
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - locale
+      filter:
+        id:
+          _eq: X-Hasura-User-Id
+      check:
+        id:
+          _eq: X-Hasura-User-Id

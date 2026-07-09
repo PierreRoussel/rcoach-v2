@@ -3,6 +3,12 @@ import type { NhostClient } from '@nhost/nhost-js'
 import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 
+import {
+  detectUserLocale,
+  resolveLocaleForAuthEmails,
+  type UserLocale,
+} from '@/lib/i18n/user-locale'
+
 export const PKCE_VERIFIER_KEY = 'nhost_pkce_verifier'
 
 export async function storePkceChallenge(): Promise<string> {
@@ -74,14 +80,21 @@ export async function exchangeAuthCode(nhost: NhostClient, code: string) {
   return response.body.session
 }
 
-export async function requestPasswordResetEmail(nhost: NhostClient, email: string) {
+export async function requestPasswordResetEmail(
+  nhost: NhostClient,
+  email: string,
+  locale?: UserLocale,
+) {
   const codeChallenge = await storePkceChallenge()
+  const sessionLocale = nhost.getUserSession()?.user?.locale
+  const resolvedLocale =
+    locale ?? resolveLocaleForAuthEmails(sessionLocale)
 
   return nhost.auth.sendPasswordResetEmail({
     email,
     codeChallenge,
     options: {
-      locale: 'fr',
+      locale: resolvedLocale,
       redirectTo: `${window.location.origin}/auth/verify?flow=reset`,
     },
   })

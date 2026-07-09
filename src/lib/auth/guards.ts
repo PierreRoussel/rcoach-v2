@@ -1,5 +1,6 @@
 import { redirect } from '@tanstack/react-router'
 
+import { bootstrapAuthUserLocaleIfNeeded } from '@/lib/auth/auth-user-locale'
 import { fetchMyProfile } from '@/lib/graphql/profile-request'
 import { ensureUserProfile } from '@/lib/onboarding/ensure-user-profile'
 import { isAdminProfile } from '@/lib/profile/roles'
@@ -19,6 +20,7 @@ export async function ensureAuthenticatedProfile() {
   }
 
   await ensureUserProfile(nhost, userId)
+  await bootstrapAuthUserLocaleIfNeeded(nhost, userId)
 }
 
 export async function requireAuthenticatedUser() {

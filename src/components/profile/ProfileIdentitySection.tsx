@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { AvatarEditor } from '@/components/social/AvatarEditor'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,9 @@ import {
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuthUserLocale } from '@/hooks/useAuthUserLocale'
 import { useUpdateProfile } from '@/hooks/useProfile'
+import type { UserLocale } from '@/lib/i18n/user-locale'
 import { useSubscriptionSummary } from '@/hooks/useSubscription'
 import type { Profile } from '@/lib/graphql/operations'
 import {
@@ -26,8 +28,15 @@ type ProfileIdentitySectionProps = {
 
 function ProfileEditor({ profile }: { profile: Profile }) {
   const updateProfile = useUpdateProfile()
+  const {
+    locale: accountLocale,
+    isLoading: isAccountLocaleLoading,
+    updateLocale,
+    isUpdating: isAccountLocaleUpdating,
+  } = useAuthUserLocale()
   const [displayName, setDisplayName] = useState(profile.display_name)
   const [unitSystem, setUnitSystem] = useState(profile.unit_system)
+  const [accountLanguage, setAccountLanguage] = useState<UserLocale>(accountLocale)
   const [exerciseLocale, setExerciseLocale] = useState(profile.exercise_locale ?? 'fr')
   const [role, setRole] = useState<EditableProfileRole>(
     profile.role === 'admin' ? 'athlete' : profile.role,
@@ -35,12 +44,18 @@ function ProfileEditor({ profile }: { profile: Profile }) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!isAccountLocaleLoading) {
+      setAccountLanguage(accountLocale)
+    }
+  }, [accountLocale, isAccountLocaleLoading])
+
   async function handleSave() {
     setSuccessMessage(null)
     setError(null)
 
     try {
-      await updateProfile.mutateAsync({
+      const profilePromise = updateProfile.mutateAsync({
         profileId: profile.id,
         changes: {
           display_name: displayName,
@@ -49,6 +64,12 @@ function ProfileEditor({ profile }: { profile: Profile }) {
           ...(canEditProfileRole(profile) ? { role } : {}),
         },
       })
+      const localePromise =
+        accountLanguage !== accountLocale
+          ? updateLocale(accountLanguage)
+          : Promise.resolve(accountLocale)
+
+      await Promise.all([profilePromise, localePromise])
       setSuccessMessage('Profil mis à jour.')
     } catch (saveError) {
       setError(
@@ -80,6 +101,24 @@ function ProfileEditor({ profile }: { profile: Profile }) {
           <option value="kg">Kilogrammes (kg)</option>
           <option value="lb">Livres (lb)</option>
         </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="accountLanguage">Langue du compte</Label>
+        <select
+          id="accountLanguage"
+          className="flex h-9 w-full rounded-xl border border-border bg-input-background px-3 text-sm"
+          value={accountLanguage}
+          disabled={isAccountLocaleLoading}
+          onChange={(event) =>
+            setAccountLanguage(event.target.value as UserLocale)
+          }
+        >
+          <option value="fr">Francais</option>
+          <option value="en">Anglais</option>
+        </select>
+        <p className="text-xs text-muted-foreground">
+          Utilisee pour les e-mails du compte (verification, mot de passe).
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="exerciseLocale">Langue des exercices</Label>
@@ -119,9 +158,13 @@ function ProfileEditor({ profile }: { profile: Profile }) {
         type="button"
         variant="pill"
         onClick={() => void handleSave()}
-        disabled={updateProfile.isPending}
+        disabled={
+          updateProfile.isPending || isAccountLocaleUpdating || isAccountLocaleLoading
+        }
       >
-        {updateProfile.isPending ? 'Enregistrement...' : 'Enregistrer'}
+        {updateProfile.isPending || isAccountLocaleUpdating
+          ? 'Enregistrement...'
+          : 'Enregistrer'}
       </Button>
       {successMessage ? (
         <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>

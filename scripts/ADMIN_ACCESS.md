@@ -2,7 +2,7 @@
 
 ## 1. Appliquer les migrations Nhost
 
-Déployer les migrations `1743900000000_profile_admin_role` et `1743910000000_admin_platform_kpis`, puis les metadata Hasura (fonction `admin_platform_metrics`).
+Déployer les migrations `1743900000001_profile_admin_role` et `1743910000000_admin_platform_kpis`, puis les metadata Hasura (fonction `admin_platform_metrics`).
 
 ## 2. Promouvoir un compte admin
 

@@ -18,6 +18,7 @@ import { mapAuthError } from '@/lib/auth/auth-errors'
 import { clearAuthSession } from '@/lib/auth/clear-auth-session'
 import { redirectIfAuthenticated, resolveDefaultAuthenticatedPath, ensureAuthenticatedProfile } from '@/lib/auth/guards'
 import { validateNewPassword } from '@/lib/auth/password-policy'
+import { detectUserLocale, storePreferredUserLocale } from '@/lib/i18n/user-locale'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export const Route = createFileRoute('/auth/register')({
@@ -51,6 +52,8 @@ function RegisterPage() {
     setIsSubmitting(true)
 
     try {
+      const signupLocale = detectUserLocale()
+      storePreferredUserLocale(signupLocale)
       await clearAuthSession(nhost)
       const codeChallenge = await storePkceChallenge()
       const response = await nhost.auth.signUpEmailPassword({
@@ -59,7 +62,7 @@ function RegisterPage() {
         codeChallenge,
         options: {
           displayName: displayName || email.split('@')[0],
-          locale: 'fr',
+          locale: signupLocale,
           redirectTo: buildEmailVerificationRedirectUrl('signup'),
         },
       })

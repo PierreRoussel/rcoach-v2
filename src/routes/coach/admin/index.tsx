@@ -433,15 +433,17 @@ function AdminPlatformDashboardPage() {
                     <XAxis type="number" tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="step" width={110} tick={{ fontSize: 11 }} />
                     <Tooltip
-                      formatter={(value: number, _name, item) => {
+                      formatter={(value, _name, item) => {
+                        const numeric =
+                          typeof value === 'number' ? value : Number(value ?? 0)
                         const index = funnelChart.findIndex(
                           (row) => row.step === item.payload.step,
                         )
                         const previous =
-                          index > 0 ? (funnelChart[index - 1]?.value ?? 0) : value
-                        const rate = funnelStepRate(value, previous)
+                          index > 0 ? (funnelChart[index - 1]?.value ?? 0) : numeric
+                        const rate = funnelStepRate(numeric, previous)
                         return [
-                          `${value}${index > 0 ? ` (${rate}% vs étape préc.)` : ''}`,
+                          `${numeric}${index > 0 ? ` (${rate}% vs étape préc.)` : ''}`,
                           'Utilisateurs',
                         ]
                       }}

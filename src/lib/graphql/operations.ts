@@ -217,6 +217,24 @@ export type FriendMotivation = {
   } | null
 }
 
+export const GET_MY_AUTH_USER_LOCALE = `
+  query GetMyAuthUserLocale($id: uuid!) {
+    user(id: $id) {
+      id
+      locale
+    }
+  }
+`
+
+export const UPDATE_MY_AUTH_USER_LOCALE = `
+  mutation UpdateMyAuthUserLocale($id: uuid!, $locale: String!) {
+    updateUser(pk_columns: { id: $id }, _set: { locale: $locale }) {
+      id
+      locale
+    }
+  }
+`
+
 export const UPDATE_MY_PROFILE = `
   mutation UpdateMyProfile($id: uuid!, $changes: profiles_set_input!) {
     update_profiles_by_pk(pk_columns: { id: $id }, _set: $changes) {
