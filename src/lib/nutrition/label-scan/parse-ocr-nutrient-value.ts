@@ -9,7 +9,7 @@ export function clampMacro(value: number): number | null {
     return null
   }
 
-  return Math.round(value * 100) / 100
+  return Math.trunc(value * 10) / 10
 }
 
 export function clampKcal(value: number): number | null {

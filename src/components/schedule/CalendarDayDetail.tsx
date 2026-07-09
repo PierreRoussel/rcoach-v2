@@ -130,8 +130,8 @@ export function CalendarDayDetail({
   return (
     <div
       className={cn(
-        'animate-in fade-in slide-in-from-top-2 space-y-4 rounded-2xl border border-border/70',
-        'bg-gradient-to-b from-card to-soft-purple/10 p-4 shadow-sm duration-300',
+        'animate-in fade-in slide-in-from-top-2 space-y-4 rounded-xl border border-border/60',
+        'bg-muted/10 p-4 duration-300',
       )}
     >
       <div className="flex items-start justify-between gap-3">

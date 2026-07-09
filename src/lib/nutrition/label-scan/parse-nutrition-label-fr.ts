@@ -261,9 +261,6 @@ export function formatParsedNutrientForInput(value: number | null): string {
     return ''
   }
 
-  if (Number.isInteger(value)) {
-    return String(value)
-  }
-
-  return String(value)
+  const truncated = Math.trunc(value * 10) / 10
+  return Number.isInteger(truncated) ? String(truncated) : truncated.toFixed(1)
 }

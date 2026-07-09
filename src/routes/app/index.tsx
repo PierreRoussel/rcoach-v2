@@ -47,7 +47,7 @@ function AppHomePage() {
               Objectif
             </Link>
           </Button>
-          <Button variant="outline" className="rounded-full" asChild>
+          <Button variant="soft" className="rounded-full hover:scale-[1.02]" asChild>
             <Link to="/app/planning">
               <CalendarDays className="size-4" />
               Mon calendrier

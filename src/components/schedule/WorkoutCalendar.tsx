@@ -1,10 +1,18 @@
 import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CircleHelp } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { createPlanningCalendarComponents } from '@/components/schedule/PlanningCalendarDay'
 import { Calendar } from '@/components/ui/calendar'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
 import { Pill } from '@/design-system'
 import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
@@ -46,14 +54,10 @@ function markerDates(markers: CalendarMarkers, kinds: string[]): Date[] {
 
 function CalendarLegend({ showNutrition = false }: { showNutrition?: boolean }) {
   return (
-    <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/10 px-3 py-3">
-      <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-        Légende
-      </p>
+    <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-xs font-medium text-foreground">Sport</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
+        <div className="flex flex-wrap items-center gap-2">          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
             <span className="h-1 w-4 rounded-full bg-primary" />
             Séance réalisée
           </Pill>
@@ -113,7 +117,7 @@ export function WorkoutCalendar({
   )
   const displayMonth = controlledMonth ?? internalMonth
   const previousSelectedRef = useRef<Date | undefined>(currentSelected)
-
+  const [legendOpen, setLegendOpen] = useState(false)
   function setDisplayMonth(monthOrUpdater: Date | ((month: Date) => Date)) {
     const nextMonth =
       typeof monthOrUpdater === 'function'
@@ -189,21 +193,23 @@ export function WorkoutCalendar({
     <div className={cn('w-full space-y-3', className)}>
       <div
         className={cn(
-          'relative w-full overflow-hidden rounded-3xl border border-border/70',
-          'bg-gradient-to-b from-card via-card to-soft-purple/20',
-          'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]',
-          mode === 'compact' ? 'px-2 py-3 sm:px-3' : 'px-3 py-4 sm:px-4',
+          'relative w-full overflow-hidden',
+          mode === 'compact'
+            ? 'rounded-3xl border border-border/70 bg-gradient-to-b from-card via-card to-soft-purple/20 px-2 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:px-3'
+            : 'rounded-2xl border border-border/60 bg-muted/15 px-3 py-4 sm:px-4',
         )}
       >
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-primary/25 to-transparent"
-          aria-hidden
-        />
+        {mode === 'compact' ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-soft-primary/25 to-transparent"
+            aria-hidden
+          />
+        ) : null}
 
         <div className="relative mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
           <div aria-hidden />
-          <div className="flex items-center gap-1">
-            <button
+
+          <div className="flex items-center gap-1">            <button
               type="button"
               className={navButtonClass}
               aria-label="Mois precedent"
@@ -224,12 +230,23 @@ export function WorkoutCalendar({
             </button>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-1.5">
+            {mode === 'full' ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 shrink-0 rounded-full text-muted-foreground hover:bg-soft-primary hover:text-soft-primary-fg"
+                aria-label="Légende du calendrier"
+                onClick={() => setLegendOpen(true)}
+              >
+                <CircleHelp className="size-4" />
+              </Button>
+            ) : null}
             {streak != null ? (
               <WeeklyStreakIndicator streak={streak} />
             ) : null}
-          </div>
-        </div>
+          </div>        </div>
 
         <Calendar
           mode="single"
@@ -244,11 +261,26 @@ export function WorkoutCalendar({
         />
       </div>
 
-      {mode === 'full' ? <CalendarLegend showNutrition={showNutrition} /> : null}
+      {mode === 'full' ? (
+        <Drawer open={legendOpen} onOpenChange={setLegendOpen}>
+          <DrawerContent className="max-h-[85vh] rounded-t-3xl">
+            <DrawerHeader className="text-left">
+              <DrawerTitle className="font-display font-black">
+                Légende du calendrier
+              </DrawerTitle>
+              <DrawerDescription>
+                Couleurs des jours (diète) et pastilles sous les dates (sport).
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-6">
+              <CalendarLegend showNutrition={showNutrition} />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : null}
     </div>
   )
 }
-
 export function formatDayMarkerTitle(_marker: DayMarker | undefined, date: Date) {
   return format(date, "EEEE d MMMM", { locale: fr })
 }

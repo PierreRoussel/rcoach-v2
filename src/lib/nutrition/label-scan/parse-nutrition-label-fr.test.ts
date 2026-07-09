@@ -56,7 +56,7 @@ describe('referenceColumnTail', () => {
 
 describe('parseOcrMacroValue', () => {
   it('repairs a missing decimal separator', () => {
-    expect(parseOcrMacroValue('1069')).toBe(10.69)
+    expect(parseOcrMacroValue('1069')).toBe(10.6)
   })
 
   it('reads leading-zero decimals from OCR tokens', () => {
@@ -157,8 +157,8 @@ Sel 0,9 g
     expect(parsed.nutrients.calories).toBe(42)
     expect(parsed.nutrients.fatG).toBe(0.9)
     expect(parsed.nutrients.saturatedFatG).toBe(0)
-    expect(parsed.nutrients.carbsG).toBe(10.69)
-    expect(parsed.nutrients.sugarG).toBe(10.69)
+    expect(parsed.nutrients.carbsG).toBe(10.6)
+    expect(parsed.nutrients.sugarG).toBe(10.6)
     expect(parsed.nutrients.proteinG).toBe(0)
     expect(parsed.nutrients.saltG).toBe(0)
   })
@@ -245,5 +245,10 @@ describe('formatParsedNutrientForInput', () => {
 
   it('keeps decimal values', () => {
     expect(formatParsedNutrientForInput(3.5)).toBe('3.5')
+  })
+
+  it('rounds to one decimal place', () => {
+    expect(formatParsedNutrientForInput(5.28)).toBe('5.2')
+    expect(formatParsedNutrientForInput(5.29)).toBe('5.2')
   })
 })

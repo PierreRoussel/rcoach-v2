@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { parseISO } from 'date-fns'
-import { ArrowLeft, CalendarDays, CalendarPlus, ListChecks } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CalendarPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
@@ -13,13 +13,21 @@ import {
 } from '@/components/schedule/ScheduleSessionForm'
 import { Button } from '@/components/ui/button'
 import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PageHeader, Pill } from '@/design-system'
+import { PageHeader } from '@/design-system'
 import { useEntitlement } from '@/hooks/useSubscription'
 import {
   useCreateScheduledSession,
@@ -162,7 +170,7 @@ function PlanningPage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-8">
       <Button variant="ghost" size="sm" className="-ml-2 rounded-full" asChild>
         <Link to="/app">
           <ArrowLeft className="size-4" />
@@ -170,23 +178,16 @@ function PlanningPage() {
         </Link>
       </Button>
 
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-soft-purple/35 via-card to-soft-secondary/20 px-5 py-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full bg-secondary/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 size-28 rounded-full bg-soft-purple/40 blur-2xl" />
-        <PageHeader
-          eyebrow="Planning"
-          title="Mon calendrier"
-          description="Séances, nutrition et régularité — tout au même endroit."
-          className="relative"
-        />
-        <PlanningStreakBar className="relative mt-4" />
-        <div className="relative mt-3 flex flex-wrap gap-2">
-          <Pill tone="secondary" onClick={scrollToPlanningRules}>
-            <ListChecks className="size-3" />
-            {activeCount} planification{activeCount > 1 ? 's' : ''} active{activeCount > 1 ? 's' : ''}
-          </Pill>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Planning"
+        title="Mon calendrier"
+        description="Séances, nutrition et régularité — tout au même endroit."
+      />
+
+      <PlanningStreakBar
+        activePlanningCount={sessionsLoading ? undefined : activeCount}
+        onPlanningClick={scrollToPlanningRules}
+      />
 
       {scheduleMissing ? <ScheduleDeployNotice /> : null}
 
@@ -207,38 +208,40 @@ function PlanningPage() {
         </p>
       ) : null}
 
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3 px-1">
-          <div>
-            <h2 className="font-display text-lg font-black">Vue du mois</h2>
-            <p className="text-xs text-muted-foreground">
-              Touchez un jour pour voir sport et nutrition. Les pastilles vertes indiquent l&apos;objectif calorique.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="pill"
-            size="sm"
-            className="shrink-0 rounded-full"
-            onClick={() => {
-              setEditing(null)
-              setFormDate(undefined)
-              setShowForm(true)
-            }}
-          >
-            <CalendarPlus className="size-4" />
-            Planifier
-          </Button>
-        </div>
-
-        <WorkoutCalendarPanel
-          mode="full"
-          hideCalendarStreak
-          onStartPlanned={(occurrence) => void startPlannedSession(occurrence)}
-          onPlanDate={openPlanForm}
-          isStarting={isStarting}
-        />
-      </section>
+      <Card className="rounded-2xl border-border">
+        <CardHeader>
+          <CardTitle className="font-display font-black">Vue du mois</CardTitle>
+          <CardDescription>
+            Touchez un jour pour voir sport et nutrition. Les pastilles vertes indiquent
+            l&apos;objectif calorique.
+          </CardDescription>
+          <CardAction>
+            <Button
+              type="button"
+              variant="pill"
+              size="sm"
+              className="shrink-0 rounded-full"
+              onClick={() => {
+                setEditing(null)
+                setFormDate(undefined)
+                setShowForm(true)
+              }}
+            >
+              <CalendarPlus className="size-4" />
+              Planifier
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <WorkoutCalendarPanel
+            mode="full"
+            hideCalendarStreak
+            onStartPlanned={(occurrence) => void startPlannedSession(occurrence)}
+            onPlanDate={openPlanForm}
+            isStarting={isStarting}
+          />
+        </CardContent>
+      </Card>
 
       <Dialog
         open={showForm}
@@ -276,73 +279,76 @@ function PlanningPage() {
         </DialogContent>
       </Dialog>
 
-      <section ref={rulesSectionRef} className="scroll-mt-20 space-y-3">
-        <div className="flex items-start justify-between gap-3 px-1">
-          <div>
-            <h2 className="font-display text-lg font-black">Planifications sport</h2>
-            <p className="text-xs text-muted-foreground">
+      <section ref={rulesSectionRef} className="scroll-mt-20">
+        <Card className="rounded-2xl border-border">
+          <CardHeader>
+            <CardTitle className="font-display font-black">Planifications sport</CardTitle>
+            <CardDescription>
               Règles récurrentes ou séances ponctuelles — actives ou en pause.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0 rounded-full"
-            onClick={() => {
-              setEditing(null)
-              setFormDate(undefined)
-              setShowForm(true)
-            }}
-          >
-            <CalendarPlus className="size-4" />
-            Ajouter
-          </Button>
-        </div>
-
-        {sessions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/15 px-4 py-8 text-center">
-            <CalendarDays className="mx-auto mb-2 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              Aucune séance planifiée. Créez une règle ou choisissez un jour dans le calendrier.
-            </p>
-            <Button
-              type="button"
-              variant="soft"
-              size="sm"
-              className="mt-3 rounded-full"
-              onClick={() => {
-                setEditing(null)
-                setFormDate(undefined)
-                setShowForm(true)
-              }}
-            >
-              <CalendarPlus className="size-4" />
-              Créer une planification
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {sessions.map((session) => (
-              <ScheduledSessionRow
-                key={session.id}
-                session={session}
-                onEdit={() => {
-                  setEditing(session)
+            </CardDescription>
+            <CardAction>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 rounded-full"
+                onClick={() => {
+                  setEditing(null)
                   setFormDate(undefined)
                   setShowForm(true)
                 }}
-                onToggleActive={(active) =>
-                  void updateSession.mutateAsync({
-                    id: session.id,
-                    changes: { is_active: active },
-                  })
-                }
-                onDelete={() => void deleteSession.mutateAsync(session.id)}
-              />
-            ))}
-          </div>
-        )}
+              >
+                <CalendarPlus className="size-4" />
+                Ajouter
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            {sessions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/15 px-4 py-8 text-center">
+                <CalendarDays className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">
+                  Aucune séance planifiée. Créez une règle ou choisissez un jour dans le calendrier.
+                </p>
+                <Button
+                  type="button"
+                  variant="soft"
+                  size="sm"
+                  className="mt-3 rounded-full"
+                  onClick={() => {
+                    setEditing(null)
+                    setFormDate(undefined)
+                    setShowForm(true)
+                  }}
+                >
+                  <CalendarPlus className="size-4" />
+                  Créer une planification
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {sessions.map((session) => (
+                  <ScheduledSessionRow
+                    key={session.id}
+                    session={session}
+                    onEdit={() => {
+                      setEditing(session)
+                      setFormDate(undefined)
+                      setShowForm(true)
+                    }}
+                    onToggleActive={(active) =>
+                      void updateSession.mutateAsync({
+                        id: session.id,
+                        changes: { is_active: active },
+                      })
+                    }
+                    onDelete={() => void deleteSession.mutateAsync(session.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
     </div>
   )

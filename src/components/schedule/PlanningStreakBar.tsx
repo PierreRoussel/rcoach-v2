@@ -1,5 +1,8 @@
+import { Dumbbell, Flame, ListChecks } from 'lucide-react'
+
 import { NutritionStreakPill } from '@/components/nutrition/NutritionStreakPill'
 import { WorkoutStreakPill } from '@/components/schedule/WorkoutStreakPill'
+import { Pill, StatCard } from '@/design-system'
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useNutritionStreak } from '@/hooks/useNutritionStreak'
 import { useWorkoutWeeklyStreak } from '@/hooks/useWorkouts'
@@ -7,10 +10,15 @@ import { cn } from '@/lib/utils'
 
 type PlanningStreakBarProps = {
   className?: string
+  activePlanningCount?: number
+  onPlanningClick?: () => void
 }
 
-export function PlanningStreakBar({ className }: PlanningStreakBarProps) {
-  const { streak: weeklyStreak } = useWorkoutWeeklyStreak()
+export function PlanningStreakBar({
+  className,
+  activePlanningCount,
+  onPlanningClick,
+}: PlanningStreakBarProps) {  const { streak: weeklyStreak } = useWorkoutWeeklyStreak()
   const { data: settings } = useNutritionSettings()
   const dailyTarget = settings?.daily_calorie_target ?? 0
   const {
@@ -24,34 +32,65 @@ export function PlanningStreakBar({ className }: PlanningStreakBarProps) {
     : `Série nutrition : ${nutritionStreak} jour${nutritionStreak > 1 ? 's' : ''}`
 
   return (
-    <div className={cn('grid grid-cols-2 gap-3', className)}>
-      <div className="rounded-2xl border border-[color-mix(in_srgb,var(--chart-4)_28%,var(--border))] bg-gradient-to-br from-soft-purple/55 via-card to-card px-3 py-3 shadow-sm">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-soft-purple-fg">
-          Sport
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Semaines avec séance</p>
-        <div className="mt-2">
+    <div className={cn('space-y-3', className)}>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <StatCard
+            icon={<Dumbbell className="size-4" />}
+            value={String(weeklyStreak)}
+            label="Sport"
+            sub="Semaines avec séance"
+            tone="purple"
+          />
           <WorkoutStreakPill streak={weeklyStreak} format="full" />
         </div>
-      </div>
 
-      <div className="rounded-2xl border border-[color-mix(in_srgb,var(--nutrition-streak-foreground)_22%,var(--border))] bg-gradient-to-br from-nutrition-streak/80 via-card to-card px-3 py-3 shadow-sm">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-nutrition-streak-foreground">
-          Diète
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Jours objectif validés</p>
-        <div className="mt-2">
+        <div className="space-y-2">
           {nutritionStreakLoading ? (
-            <div className="h-7 w-24 animate-pulse rounded-full bg-muted" />
+            <div className="h-[8.5rem] animate-pulse rounded-2xl bg-muted" />
           ) : (
-            <NutritionStreakPill
-              streak={nutritionStreak}
-              isFrozen={isFrozen}
-              title={nutritionTitle}
-            />
+            <>
+              <StatCard
+                icon={<Flame className="size-4 fill-current text-nutrition-streak-foreground" />}
+                value={String(nutritionStreak)}
+                label="Diète"
+                sub="Jours objectif validés"
+                className="border border-[color-mix(in_srgb,var(--nutrition-streak-foreground)_22%,var(--border))] bg-nutrition-streak"
+              />
+              <NutritionStreakPill
+                streak={nutritionStreak}
+                isFrozen={isFrozen}
+                title={nutritionTitle}
+              />
+            </>
           )}
         </div>
       </div>
+
+      {activePlanningCount != null && onPlanningClick ? (
+        <button
+          type="button"
+          onClick={onPlanningClick}
+          className="flex w-full items-center justify-between rounded-2xl border border-secondary/20 bg-soft-secondary px-4 py-3 text-left transition-colors hover:bg-soft-secondary/80 active:scale-[0.99]"
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/60">
+              <ListChecks className="size-4 text-secondary-foreground" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-display text-sm font-black text-foreground">
+                Planifications actives
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Voir les règles et séances programmées
+              </p>
+            </div>
+          </div>
+          <Pill tone="secondary" className="shrink-0 tabular-nums">
+            {activePlanningCount}
+          </Pill>
+        </button>
+      ) : null}
     </div>
   )
 }
