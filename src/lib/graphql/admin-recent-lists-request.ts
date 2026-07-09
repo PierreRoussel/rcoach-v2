@@ -1,17 +1,17 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
-import { toAdminKpiAccessError } from '@/lib/graphql/admin-access-errors'
+import { requestAdminKpi } from '@/lib/admin/admin-kpi-api'
 import { parseAdminRecentLists } from '@/lib/admin/recent-lists'
-import { ADMIN_PLATFORM_RECENT_LISTS } from '@/lib/graphql/operations'
-import { graphqlAdminKpiRequest } from '@/lib/graphql/request'
+import { toAdminKpiAccessError } from '@/lib/graphql/admin-access-errors'
 
 export async function fetchAdminRecentLists(nhost: NhostClient, limit = 25) {
   try {
-    const data = await graphqlAdminKpiRequest<{
-      admin_platform_recent_lists: { value: unknown }
-    }>(nhost, ADMIN_PLATFORM_RECENT_LISTS, { limit })
+    const value = await requestAdminKpi<unknown>(nhost, {
+      action: 'recent_lists',
+      limit,
+    })
 
-    return parseAdminRecentLists(data.admin_platform_recent_lists.value)
+    return parseAdminRecentLists(value)
   } catch (error) {
     throw toAdminKpiAccessError(error)
   }

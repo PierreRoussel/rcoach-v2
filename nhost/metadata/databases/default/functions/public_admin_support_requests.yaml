@@ -1,6 +1,4 @@
 function:
   name: admin_support_requests
   schema: public
-permissions:
-  - role: user
-  - role: admin
+# No client role permissions — only callable via admin secret (Nhost function admin-kpi).

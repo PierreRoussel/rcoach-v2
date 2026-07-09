@@ -17,7 +17,7 @@ Sur ce projet, **il est impossible d'exécuter du SQL à la main sur Nhost** (pa
 
 | Besoin | Solution |
 |--------|----------|
-| Corriger `forbidden` admin KPI | Migration `1744720000000_fix_admin_jwt_security_invoker` + deploy |
+| Corriger accès dashboard admin | Migration `1744740000000_admin_kpi_via_function` + function `admin-kpi` + deploy |
 | Promouvoir un compte admin | Nouvelle migration `UPDATE profiles SET role = 'admin' WHERE id = ...` + deploy |
 | Seed / données ponctuelles | Migration idempotente (`WHERE` / `ON CONFLICT`) + deploy |
 

@@ -120,9 +120,8 @@ function AdminPlatformDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              Vérifiez que les migrations Nhost sont déployées (
-              <code className="text-xs">admin_platform_metrics</code>,{' '}
-              <code className="text-xs">admin_platform_recent_lists</code>).
+              Vérifiez que la migration <code className="text-xs">174474</code> et la function Nhost{' '}
+              <code className="text-xs">admin-kpi</code> sont déployées.
             </p>
             <button
               type="button"

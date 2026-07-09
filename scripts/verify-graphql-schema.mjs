@@ -66,7 +66,7 @@ const REQUIRED_QUERY_FIELDS = [
   'friend_motivations',
 ]
 
-const REQUIRED_FUNCTION_FIELDS = ['admin_platform_metrics', 'admin_support_requests']
+const REQUIRED_FUNCTION_FIELDS = []
 
 const REQUIRED_MUTATION_FIELDS = [
   'insert_workouts_one',

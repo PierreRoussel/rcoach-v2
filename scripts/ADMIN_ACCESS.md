@@ -1,75 +1,44 @@
 # Accès admin plateforme
 
-> **Contrainte Nhost :** aucun SQL manuel (pas de SQL Editor Hasura). Tout changement base passe par `nhost/migrations/` puis **déploiement Nhost** (git push / CI).
+> **Contrainte Nhost :** aucun SQL manuel. Tout passe par migrations + **Deploy Nhost**.
 
-## 1. Déployer les migrations
+## Principe
 
-Pousser la branche et lancer le workflow **Deploy Nhost** (ou `nhost deploy` en local si configuré).
+| Étape | Vérification |
+|-------|----------------|
+| Accès page `/coach/admin` | `profiles.role = 'admin'` (GraphQL client) |
+| Données KPI (métriques, listes, support) | Nhost function **`admin-kpi`** : lit `profiles.role` avec le JWT utilisateur, puis appelle le SQL via **admin secret** |
 
-Migrations requises pour le dashboard admin :
+Plus de lecture JWT fragile dans Postgres. Plus de header `x-hasura-role: admin` côté client.
 
-| Migration | Rôle |
-|-----------|------|
-| `1743900000001_profile_admin_role` | Colonne `profiles.role` |
-| `1743910000000_admin_platform_kpis` | Fonctions KPI admin |
-| `1744500000000_fix_admin_kpi_functions` | Correctifs KPI |
-| `1744600000000_support_requests` | Table support |
-| `1744700000000_fix_hasura_jwt_user_id` | Lecture JWT user id |
-| `1744710000000_enhance_request_hasura_user_id` | Repli JWT |
-| **`1744720000000_fix_admin_jwt_security_invoker`** | **Correctif `forbidden`** (SECURITY INVOKER + regex) |
-| **`1744730000000_promote_pierre_admin`** | Promotion admin Pierre Roussel |
+## Déploiement
 
-Metadata Hasura associées : fonctions `admin_platform_metrics`, `admin_platform_recent_lists`, `admin_support_requests`.
+1. Push + workflow **Deploy Nhost** (migrations + metadata + functions).
+2. Migrations clés :
+   - `1744730000000_promote_pierre_admin` — promotion admin
+   - **`1744740000000_admin_kpi_via_function`** — auth KPI via function Nhost
+3. Se reconnecter dans l’app.
+4. Ouvrir `/coach/admin`.
 
-Après deploy : **se déconnecter / reconnecter** dans l’app (nouveau JWT).
+## Promouvoir un admin
 
-## 2. Promouvoir un autre compte admin
-
-Créer une migration dédiée (copier le modèle de `1744730000000_promote_pierre_admin`) :
+Nouvelle migration :
 
 ```sql
-UPDATE public.profiles
-SET role = 'admin'
-WHERE id = '<uuid-du-compte>';
+UPDATE public.profiles SET role = 'admin' WHERE id = '<uuid>';
 ```
 
-Commit, push, deploy Nhost. Pas d’alternative SQL manuelle.
+Commit → push → Deploy Nhost.
 
-## 3. Erreur `forbidden` sur les KPI admin
+## Dépannage
 
-**Cause :** les migrations `174470`–`174472` ne sont pas encore déployées sur l’environnement distant, ou le compte n’a pas `profiles.role = 'admin'`.
+| Symptôme | Cause probable |
+|----------|----------------|
+| Redirection `/coach` | `profiles.role` ≠ `admin` ou migration promotion non déployée |
+| « Accès admin requis » | Même chose — le profil chargé n’est pas admin |
+| « Configuration Nhost Functions indisponible » | Variables `VITE_NHOST_SUBDOMAIN` / `VITE_NHOST_REGION` manquantes |
+| Erreur 500 sur admin-kpi | Function non déployée ou `CODEGEN_HASURA_ADMIN_SECRET` absent côté Nhost |
 
-**Solution (deploy uniquement) :**
+## Revenus affichés
 
-1. Vérifier que la branche contient `174472` et `174473` (si promotion admin nécessaire).
-2. Lancer **Deploy Nhost** et attendre la fin du job.
-3. Se reconnecter dans l’app.
-4. Retester `/coach/admin`.
-
-La migration **174472** corrige la lecture JWT dans `request_hasura_user_id()` / `is_request_admin()` (GUC `hasura.user`, repli regex, rôle JWT `admin` en secours).
-
-## 4. Hook JWT Nhost (recommandé, pas obligatoire)
-
-1. **Settings → Auth → Hooks → Custom access token**
-2. Pointer vers `auth-access-token` (`functions/auth-access-token/index.ts`)
-3. Redéployer les functions Nhost
-4. Se reconnecter
-
-Sans hook : `is_request_admin()` vérifie `profiles.role = 'admin'` via `x-hasura-user-id` dans le JWT.
-
-Avec hook : le JWT inclut `x-hasura-allowed-roles: [user, admin]` ; l’app envoie `x-hasura-role: admin` sur les requêtes KPI.
-
-## 5. Metadata Hasura (rôle `user` sur les fonctions admin)
-
-Les fonctions admin restent exposées aux rôles **`user`** et **`admin`**. La protection réelle est **`is_request_admin()`** dans chaque fonction SQL.
-
-## 6. Vérifications après deploy
-
-- Compte non-admin : `/coach/admin` redirige vers `/coach`
-- Compte admin : bouton **Dashboard admin** sur `/coach`
-- GraphQL `admin_platform_metrics` retourne des agrégats
-- Onglet **Support** liste les demandes `support_requests`
-
-## 7. Revenus affichés
-
-MRR/ARR **estimés** à partir des abonnements actifs (`provider: 'none'` tant que Stripe/Play ne sont pas branchés).
+MRR/ARR estimés (`provider: 'none'` tant que Stripe/Play ne sont pas branchés).

@@ -1,0 +1,1 @@
+-- Irreversible: admin KPI auth model moved to Nhost function admin-kpi.
