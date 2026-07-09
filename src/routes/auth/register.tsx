@@ -59,6 +59,7 @@ function RegisterPage() {
         codeChallenge,
         options: {
           displayName: displayName || email.split('@')[0],
+          locale: 'fr',
           redirectTo: buildEmailVerificationRedirectUrl('signup'),
         },
       })

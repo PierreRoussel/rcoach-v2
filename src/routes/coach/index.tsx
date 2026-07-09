@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Activity, CalendarDays, Mail, Users } from 'lucide-react'
+import { Activity, CalendarDays, LayoutDashboard, Mail, Users } from 'lucide-react'
 
 import { CoachClientActivityList } from '@/components/coach/CoachClientActivityList'
 import { CoachRecentSessions } from '@/components/coach/CoachRecentSessions'
@@ -14,6 +14,7 @@ import {
 import { PageHeader, Pill, StatCard } from '@/design-system'
 import { useCoachDashboard } from '@/hooks/useCoachDashboard'
 import { useMyProfile } from '@/hooks/useProfile'
+import { isAdminProfile } from '@/lib/profile/roles'
 
 export const Route = createFileRoute('/coach/')({
   component: CoachHomePage,
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/coach/')({
 
 function CoachHomePage() {
   const { data: profile } = useMyProfile()
+  const isAdmin = isAdminProfile(profile)
   const {
     stats,
     clientRows,
@@ -37,6 +39,15 @@ function CoachHomePage() {
         title="Dashboard"
         description="Suivez l'activité de vos clients et vos invitations en attente."
       />
+
+      {isAdmin ? (
+        <Button variant="outline" className="rounded-full" asChild>
+          <Link to="/coach/admin">
+            <LayoutDashboard className="mr-2 size-4" />
+            Dashboard admin
+          </Link>
+        </Button>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

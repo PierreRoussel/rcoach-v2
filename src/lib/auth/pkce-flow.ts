@@ -81,6 +81,7 @@ export async function requestPasswordResetEmail(nhost: NhostClient, email: strin
     email,
     codeChallenge,
     options: {
+      locale: 'fr',
       redirectTo: `${window.location.origin}/auth/verify?flow=reset`,
     },
   })

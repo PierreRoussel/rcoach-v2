@@ -1,4 +1,4 @@
-import { graphqlAdminRequest } from '../_exercise/hasura'
+import { graphqlAdminRequest } from '../_exercise/hasura.ts'
 
 type AuthAccessTokenRequest = {
   body?: {
