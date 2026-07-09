@@ -15,6 +15,18 @@ function isRecordLegalConsentMissingError(error: unknown) {
   )
 }
 
+function isRecordLegalConsentAuthError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
+  return (
+    message.includes('not authenticated') ||
+    message.includes('database query error')
+  )
+}
+
 /** Records CGU + privacy acceptance timestamps (idempotent). */
 export async function recordLegalConsent(nhost: NhostClient) {
   try {
@@ -24,6 +36,17 @@ export async function recordLegalConsent(nhost: NhostClient) {
     )
   } catch (error) {
     if (isRecordLegalConsentMissingError(error)) {
+      return
+    }
+
+    // Backend not migrated yet (request_hasura_user_id) — do not block login.
+    if (isRecordLegalConsentAuthError(error)) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          '[legal] record_legal_consent failed — deploy migration 1744700000000_fix_hasura_jwt_user_id',
+          error,
+        )
+      }
       return
     }
 

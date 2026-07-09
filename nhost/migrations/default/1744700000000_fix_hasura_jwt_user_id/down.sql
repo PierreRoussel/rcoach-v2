@@ -1,0 +1,1 @@
+-- Irreversible: prior JWT parsing inlined in each function.

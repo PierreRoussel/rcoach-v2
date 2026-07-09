@@ -8,7 +8,26 @@ Déployer les migrations `1743900000001_profile_admin_role`, `1743910000000_admi
 
 Exécuter [`admin-promote-leo.sql`](./admin-promote-leo.sql) dans le SQL Editor Nhost / Hasura (adapter l’UUID si besoin).
 
-## 3. Hook JWT Nhost (recommandé)
+Vérifier :
+
+```sql
+SELECT id, display_name, role FROM public.profiles WHERE role = 'admin';
+```
+
+## 2b. Migrations JWT obligatoires pour le dashboard admin
+
+Sans ces migrations, `is_request_admin()` ne lit pas l’id utilisateur dans le JWT Nhost → `forbidden` même si `profiles.role = admin` :
+
+- `1744500000000_fix_admin_kpi_functions`
+- `1744700000000_fix_hasura_jwt_user_id`
+
+Contrôle des migrations appliquées (Hasura → Data → SQL) :
+
+```sql
+SELECT version FROM hdb_catalog.schema_migrations ORDER BY version DESC LIMIT 10;
+```
+
+## 3. Hook JWT Nhost (optionnel)
 
 Dans le dashboard Nhost :
 
