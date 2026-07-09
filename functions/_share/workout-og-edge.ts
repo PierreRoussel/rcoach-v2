@@ -1,3 +1,15 @@
+/**
+ * OG meta injection for /share/workout/:token (crawler link previews).
+ *
+ * NOT deployed as a Nhost function:
+ * - Nhost maps ./functions/* to Lambda endpoints (Express handlers only).
+ * - Paths with [brackets] break AWS Lambda tag validation on deploy.
+ * - This uses Cloudflare Pages middleware (`onRequest` + `context.next()`).
+ *
+ * Host this at the frontend CDN layer (Vercel Edge / Netlify Edge) with a rewrite
+ * on /share/workout/:token for bot user-agents. See README or hosting docs.
+ */
+
 const CRAWLER_PATTERN =
   /bot|crawler|spider|facebookexternalhit|facebot|twitterbot|linkedinbot|whatsapp|telegram|slack|discord/i
 
