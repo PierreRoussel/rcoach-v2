@@ -1,8 +1,14 @@
 import useEmblaCarousel from 'embla-carousel-react'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+
+const TabPanelActiveContext = createContext(true)
+
+export function useTabPanelActive() {
+  return useContext(TabPanelActiveContext)
+}
 
 function expandMountedIndices(indices: Set<number>, centerIndex: number, slideCount: number) {
   const next = new Set(indices)
@@ -128,6 +134,10 @@ export function SwipeableTabPanels<T extends string>({
     api.scrollTo(resolvedIndex, !prefersReducedMotion)
   }, [api, prefersReducedMotion, resolvedIndex])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [value])
+
   function handleTabChange(next: string) {
     if (next === activeTabId) {
       return
@@ -165,8 +175,14 @@ export function SwipeableTabPanels<T extends string>({
       <div ref={carouselRef} className="overflow-hidden touch-pan-y">
         <div className="flex">
           {tabs.map((tab, index) => (
-            <div key={tab.id} className="min-w-0 shrink-0 grow-0 basis-full">
-              {mountedIndices.has(index) ? tab.panel : null}
+            <div
+              key={tab.id}
+              className="min-w-0 shrink-0 grow-0 basis-full"
+              aria-hidden={tab.id !== value}
+            >
+              <TabPanelActiveContext.Provider value={tab.id === value}>
+                {mountedIndices.has(index) ? tab.panel : null}
+              </TabPanelActiveContext.Provider>
             </div>
           ))}
         </div>

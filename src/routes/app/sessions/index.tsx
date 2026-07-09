@@ -3,7 +3,7 @@ import { subWeeks } from 'date-fns'
 import { CalendarDays, Play, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { SwipeableTabPanels } from '@/components/sessions/SwipeableTabPanels'
+import { SwipeableTabPanels, useTabPanelActive } from '@/components/sessions/SwipeableTabPanels'
 import { StatsDashboard } from '@/components/stats/StatsDashboard'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -425,6 +425,7 @@ function CatalogTab() {
 }
 
 function HistoryTab() {
+  const isActive = useTabPanelActive()
   const {
     data,
     isLoading,
@@ -439,7 +440,7 @@ function HistoryTab() {
   const { data: profile } = useMyProfile()
   const { entitled: hasUnlimitedHistory } = useEntitlement('unlimited_history')
   const { targetRef, isIntersecting } = useIntersectionObserver({
-    enabled: Boolean(hasNextPage) && !isFetchingNextPage,
+    enabled: isActive && Boolean(hasNextPage) && !isFetchingNextPage,
   })
 
   const workouts = useMemo(() => {
@@ -457,10 +458,12 @@ function HistoryTab() {
     (data?.pages.flatMap((page) => page.workouts) ?? []).length > workouts.length
 
   useEffect(() => {
-    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      void fetchNextPage()
+    if (!isActive || !isIntersecting || !hasNextPage || isFetchingNextPage) {
+      return
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isIntersecting])
+
+    void fetchNextPage()
+  }, [fetchNextPage, hasNextPage, isActive, isFetchingNextPage, isIntersecting])
 
   return (
     <Card className="gap-0 overflow-hidden rounded-2xl border-border">

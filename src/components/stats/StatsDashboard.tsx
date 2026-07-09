@@ -29,6 +29,7 @@ import {
   scrollElementIntoViewWhenReady,
 } from '@/lib/stats/scroll-to-featured'
 import { cn } from '@/lib/utils'
+import { useTabPanelActive } from '@/components/sessions/SwipeableTabPanels'
 
 type StatsDashboardProps = {
   className?: string
@@ -36,6 +37,7 @@ type StatsDashboardProps = {
 
 export function StatsDashboard({ className }: StatsDashboardProps) {
   const featuredSectionRef = useRef<HTMLElement>(null)
+  const isTabActive = useTabPanelActive()
   const [period, setPeriod] = useState<StatsWorkoutPeriod>('3m')
   const { entitled: hasAdvancedStats } = useEntitlement('advanced_stats')
   const {
@@ -59,12 +61,12 @@ export function StatsDashboard({ className }: StatsDashboardProps) {
   const hasData = workouts.length > 0
 
   useEffect(() => {
-    if (!hasData || !consumeStatsScrollToFeatured()) {
+    if (!isTabActive || !hasData || !consumeStatsScrollToFeatured()) {
       return
     }
 
     return scrollElementIntoViewWhenReady(() => featuredSectionRef.current)
-  }, [hasData])
+  }, [hasData, isTabActive])
 
   return (
     <div className={cn('space-y-4', className)}>
