@@ -1,7 +1,9 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { Capacitor } from '@capacitor/core'
+import { createRootRoute, Outlet, redirect } from '@tanstack/react-router'
 
 import { AndroidBackNavigation } from '@/components/app/AndroidBackNavigation'
 import { OAuthCallbackListener } from '@/components/auth/OAuthCallbackListener'
+import { RootNotFoundRedirect } from '@/lib/router/section-not-found-redirect'
 
 function RootLayout() {
   return (
@@ -14,5 +16,14 @@ function RootLayout() {
 }
 
 export const Route = createRootRoute({
+  beforeLoad: ({ location }) => {
+    if (
+      Capacitor.isNativePlatform() &&
+      (location.pathname === '/' || location.pathname === '/index.html')
+    ) {
+      throw redirect({ to: '/app', replace: true })
+    }
+  },
   component: RootLayout,
+  notFoundComponent: RootNotFoundRedirect,
 })

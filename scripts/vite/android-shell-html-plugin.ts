@@ -14,7 +14,7 @@ export function androidShellHtmlPlugin(): Plugin {
     name: 'rcoach-android-shell-html',
     transformIndexHtml(html) {
       const script = `<script>${ANDROID_SHELL_ENTRY_SCRIPT}</script>`
-      return html.replace('</head>', `    ${script}\n  </head>`)
+      return html.replace('<head>', `<head>\n    ${script}`)
     },
   }
 }

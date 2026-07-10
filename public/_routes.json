@@ -1,5 +1,23 @@
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": ["/assets/*"]
+  "exclude": [
+    "/assets/*",
+    "/sitemap.xml",
+    "/robots.txt",
+    "/favicon-16x16.png",
+    "/favicon-32x32.png",
+    "/apple-touch-icon.png",
+    "/logo.png",
+    "/pwa-192.png",
+    "/pwa-512.png",
+    "/icons.svg",
+    "/og-share-default.svg",
+    "/badges/*",
+    "/onboarding/*",
+    "/exercise-fallbacks/*",
+    "/manifest.webmanifest",
+    "/sw.js",
+    "/workbox-*.js"
+  ]
 }

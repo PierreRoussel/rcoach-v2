@@ -6,10 +6,12 @@ import { requireAuthenticatedUser } from '@/lib/auth/guards'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { isAdminProfile, isCoachProfile } from '@/lib/profile/roles'
 import { useMyProfile } from '@/hooks/useProfile'
+import { createSectionNotFoundRedirect } from '@/lib/router/section-not-found-redirect'
 
 export const Route = createFileRoute('/coach')({
   beforeLoad: requireAuthenticatedUser,
   component: CoachLayout,
+  notFoundComponent: createSectionNotFoundRedirect('/coach'),
 })
 
 function CoachLayout() {

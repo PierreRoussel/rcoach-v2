@@ -13,8 +13,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:web": "vite build && node scripts/generate-sitemap.mjs && node scripts/prerender-public-routes.mjs",
+    "build": "vite build && node scripts/generate-sitemap.mjs",
+    "build:web": "npm run build && node scripts/prerender-public-routes.mjs",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -36,7 +36,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:android": "vite build --mode android && npx cap sync android && node scripts/patch-android-agp.mjs",
-    "cap:sync": "npx cap sync android && node scripts/patch-android-agp.mjs",
+    "cap:sync": "node scripts/verify-android-shell-dist.mjs && npx cap sync android && node scripts/patch-android-agp.mjs",
     "cap:open:android": "npx cap open android",
     "postinstall": "node scripts/patch-android-agp.mjs",
     "generate:brand-assets": "python scripts/generate-brand-assets.py"

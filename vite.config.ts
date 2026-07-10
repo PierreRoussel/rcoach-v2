@@ -8,6 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 import { ANDROID_SHELL_ROUTE_IGNORE_PATTERN } from './scripts/vite/android-shell-constants'
 import { androidShellHtmlPlugin } from './scripts/vite/android-shell-html-plugin'
+import { seoDevServerPlugin } from './scripts/vite/seo-dev-server-plugin'
 
 export default defineConfig(({ mode }) => {
   const isAndroidShell = mode === 'android'
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => {
     { enforce: 'pre', ...mdx() },
     react({ include: /\.(mdx|js|jsx|ts|tsx)$/ }),
     tailwindcss(),
+    ...(isAndroidShell ? [] : [seoDevServerPlugin()]),
     ...(isAndroidShell ? [androidShellHtmlPlugin()] : []),
     ...(isAndroidShell ? [] : [VitePWA({
       registerType: 'autoUpdate',
@@ -72,6 +74,7 @@ export default defineConfig(({ mode }) => {
         // Main bundle exceeds Workbox default precache limit (2 MiB).
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.graphql\..*\.nhost\.run\/v1$/,
@@ -86,6 +89,7 @@ export default defineConfig(({ mode }) => {
     })]),
   ],
   resolve: {
+    dedupe: ['@capacitor/core'],
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@rcoach/capacitor-health-connect': path.resolve(
