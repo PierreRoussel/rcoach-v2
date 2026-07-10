@@ -1,5 +1,14 @@
 /// <reference types="vite/client" />
 
+declare module '*.mdx' {
+  import type { ComponentType } from 'react'
+  import type { BlogPostMeta } from '@/lib/seo/blog'
+
+  export const meta: BlogPostMeta
+  const MDXComponent: ComponentType
+  export default MDXComponent
+}
+
 interface ImportMetaEnv {
   readonly VITE_NHOST_SUBDOMAIN: string
   readonly VITE_NHOST_REGION: string

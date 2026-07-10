@@ -15,9 +15,10 @@ import { Route as CguRouteImport } from './routes/cgu'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as CoachRouteRouteImport } from './routes/coach/route'
 import { Route as AppRouteRouteImport } from './routes/app/route'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as MarketingRouteRouteImport } from './routes/_marketing/route'
 import { Route as CoachIndexRouteImport } from './routes/coach/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as LegalTermsRouteImport } from './routes/legal/terms'
 import { Route as LegalPrivacyRouteImport } from './routes/legal/privacy'
 import { Route as LegalMentionsLegalesRouteImport } from './routes/legal/mentions-legales'
@@ -30,6 +31,11 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AppStatsRouteImport } from './routes/app/stats'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 import { Route as AppImportRouteImport } from './routes/app/import'
+import { Route as MarketingTarifsRouteImport } from './routes/_marketing/tarifs'
+import { Route as MarketingPourLesCoachsRouteImport } from './routes/_marketing/pour-les-coachs'
+import { Route as MarketingFonctionnalitesRouteImport } from './routes/_marketing/fonctionnalites'
+import { Route as MarketingApplicationNutritionRouteImport } from './routes/_marketing/application-nutrition'
+import { Route as MarketingApplicationMusculationRouteImport } from './routes/_marketing/application-musculation'
 import { Route as AppProfileRouteRouteImport } from './routes/app/profile/route'
 import { Route as AppDietRouteRouteImport } from './routes/app/diet/route'
 import { Route as CoachValidateProductRenamesIndexRouteImport } from './routes/coach/validate-product-renames/index'
@@ -46,6 +52,7 @@ import { Route as AppGoalsIndexRouteImport } from './routes/app/goals/index'
 import { Route as AppFriendsIndexRouteImport } from './routes/app/friends/index'
 import { Route as AppExercisesIndexRouteImport } from './routes/app/exercises/index'
 import { Route as AppDietIndexRouteImport } from './routes/app/diet/index'
+import { Route as MarketingBlogIndexRouteImport } from './routes/_marketing/blog/index'
 import { Route as ShareWorkoutShareTokenRouteImport } from './routes/share/workout/$shareToken'
 import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach/programs/$programId'
 import { Route as AppWorkoutsWorkoutIdRouteImport } from './routes/app/workouts/$workoutId'
@@ -57,6 +64,7 @@ import { Route as AppProfileSettingsRouteImport } from './routes/app/profile/set
 import { Route as AppFriendsFriendIdRouteImport } from './routes/app/friends/$friendId'
 import { Route as AppDietSettingsRouteImport } from './routes/app/diet/settings'
 import { Route as AppDietAddRouteImport } from './routes/app/diet/add'
+import { Route as MarketingBlogSlugRouteImport } from './routes/_marketing/blog/$slug'
 import { Route as AppStatsExercisesExerciseIdRouteImport } from './routes/app/stats/exercises/$exerciseId'
 import { Route as AppDietMealsMealTypeRouteImport } from './routes/app/diet/meals/$mealType'
 import { Route as AppDietFoodsNewRouteImport } from './routes/app/diet/foods/new'
@@ -91,9 +99,8 @@ const AppRouteRoute = AppRouteRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const MarketingRouteRoute = MarketingRouteRouteImport.update({
+  id: '/_marketing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoachIndexRoute = CoachIndexRouteImport.update({
@@ -105,6 +112,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const MarketingIndexRoute = MarketingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MarketingRouteRoute,
 } as any)
 const LegalTermsRoute = LegalTermsRouteImport.update({
   id: '/legal/terms',
@@ -166,6 +178,34 @@ const AppImportRoute = AppImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const MarketingTarifsRoute = MarketingTarifsRouteImport.update({
+  id: '/tarifs',
+  path: '/tarifs',
+  getParentRoute: () => MarketingRouteRoute,
+} as any)
+const MarketingPourLesCoachsRoute = MarketingPourLesCoachsRouteImport.update({
+  id: '/pour-les-coachs',
+  path: '/pour-les-coachs',
+  getParentRoute: () => MarketingRouteRoute,
+} as any)
+const MarketingFonctionnalitesRoute =
+  MarketingFonctionnalitesRouteImport.update({
+    id: '/fonctionnalites',
+    path: '/fonctionnalites',
+    getParentRoute: () => MarketingRouteRoute,
+  } as any)
+const MarketingApplicationNutritionRoute =
+  MarketingApplicationNutritionRouteImport.update({
+    id: '/application-nutrition',
+    path: '/application-nutrition',
+    getParentRoute: () => MarketingRouteRoute,
+  } as any)
+const MarketingApplicationMusculationRoute =
+  MarketingApplicationMusculationRouteImport.update({
+    id: '/application-musculation',
+    path: '/application-musculation',
+    getParentRoute: () => MarketingRouteRoute,
+  } as any)
 const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -247,6 +287,11 @@ const AppDietIndexRoute = AppDietIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppDietRouteRoute,
 } as any)
+const MarketingBlogIndexRoute = MarketingBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => MarketingRouteRoute,
+} as any)
 const ShareWorkoutShareTokenRoute = ShareWorkoutShareTokenRouteImport.update({
   id: '/share/workout/$shareToken',
   path: '/share/workout/$shareToken',
@@ -302,6 +347,11 @@ const AppDietAddRoute = AppDietAddRouteImport.update({
   path: '/add',
   getParentRoute: () => AppDietRouteRoute,
 } as any)
+const MarketingBlogSlugRoute = MarketingBlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => MarketingRouteRoute,
+} as any)
 const AppStatsExercisesExerciseIdRoute =
   AppStatsExercisesExerciseIdRouteImport.update({
     id: '/exercises/$exerciseId',
@@ -320,7 +370,7 @@ const AppDietFoodsNewRoute = AppDietFoodsNewRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof MarketingIndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
   '/about': typeof AboutRoute
@@ -329,6 +379,11 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/app/diet': typeof AppDietRouteRouteWithChildren
   '/app/profile': typeof AppProfileRouteRouteWithChildren
+  '/application-musculation': typeof MarketingApplicationMusculationRoute
+  '/application-nutrition': typeof MarketingApplicationNutritionRoute
+  '/fonctionnalites': typeof MarketingFonctionnalitesRoute
+  '/pour-les-coachs': typeof MarketingPourLesCoachsRoute
+  '/tarifs': typeof MarketingTarifsRoute
   '/app/import': typeof AppImportRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
@@ -343,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/legal/terms': typeof LegalTermsRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
+  '/blog/$slug': typeof MarketingBlogSlugRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/friends/$friendId': typeof AppFriendsFriendIdRoute
@@ -354,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/app/workouts/$workoutId': typeof AppWorkoutsWorkoutIdRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
+  '/blog/': typeof MarketingBlogIndexRoute
   '/app/diet/': typeof AppDietIndexRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/friends/': typeof AppFriendsIndexRoute
@@ -373,11 +430,15 @@ export interface FileRoutesByFullPath {
   '/app/stats/exercises/$exerciseId': typeof AppStatsExercisesExerciseIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/cgu': typeof CguRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/help': typeof HelpRoute
+  '/application-musculation': typeof MarketingApplicationMusculationRoute
+  '/application-nutrition': typeof MarketingApplicationNutritionRoute
+  '/fonctionnalites': typeof MarketingFonctionnalitesRoute
+  '/pour-les-coachs': typeof MarketingPourLesCoachsRoute
+  '/tarifs': typeof MarketingTarifsRoute
   '/app/import': typeof AppImportRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
@@ -390,8 +451,10 @@ export interface FileRoutesByTo {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/': typeof MarketingIndexRoute
   '/app': typeof AppIndexRoute
   '/coach': typeof CoachIndexRoute
+  '/blog/$slug': typeof MarketingBlogSlugRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/friends/$friendId': typeof AppFriendsFriendIdRoute
@@ -403,6 +466,7 @@ export interface FileRoutesByTo {
   '/app/workouts/$workoutId': typeof AppWorkoutsWorkoutIdRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
+  '/blog': typeof MarketingBlogIndexRoute
   '/app/diet': typeof AppDietIndexRoute
   '/app/exercises': typeof AppExercisesIndexRoute
   '/app/friends': typeof AppFriendsIndexRoute
@@ -423,7 +487,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_marketing': typeof MarketingRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/coach': typeof CoachRouteRouteWithChildren
   '/about': typeof AboutRoute
@@ -432,6 +496,11 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/app/diet': typeof AppDietRouteRouteWithChildren
   '/app/profile': typeof AppProfileRouteRouteWithChildren
+  '/_marketing/application-musculation': typeof MarketingApplicationMusculationRoute
+  '/_marketing/application-nutrition': typeof MarketingApplicationNutritionRoute
+  '/_marketing/fonctionnalites': typeof MarketingFonctionnalitesRoute
+  '/_marketing/pour-les-coachs': typeof MarketingPourLesCoachsRoute
+  '/_marketing/tarifs': typeof MarketingTarifsRoute
   '/app/import': typeof AppImportRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/stats': typeof AppStatsRouteWithChildren
@@ -444,8 +513,10 @@ export interface FileRoutesById {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/_marketing/': typeof MarketingIndexRoute
   '/app/': typeof AppIndexRoute
   '/coach/': typeof CoachIndexRoute
+  '/_marketing/blog/$slug': typeof MarketingBlogSlugRoute
   '/app/diet/add': typeof AppDietAddRoute
   '/app/diet/settings': typeof AppDietSettingsRoute
   '/app/friends/$friendId': typeof AppFriendsFriendIdRoute
@@ -457,6 +528,7 @@ export interface FileRoutesById {
   '/app/workouts/$workoutId': typeof AppWorkoutsWorkoutIdRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRoute
   '/share/workout/$shareToken': typeof ShareWorkoutShareTokenRoute
+  '/_marketing/blog/': typeof MarketingBlogIndexRoute
   '/app/diet/': typeof AppDietIndexRoute
   '/app/exercises/': typeof AppExercisesIndexRoute
   '/app/friends/': typeof AppFriendsIndexRoute
@@ -487,6 +559,11 @@ export interface FileRouteTypes {
     | '/help'
     | '/app/diet'
     | '/app/profile'
+    | '/application-musculation'
+    | '/application-nutrition'
+    | '/fonctionnalites'
+    | '/pour-les-coachs'
+    | '/tarifs'
     | '/app/import'
     | '/app/onboarding'
     | '/app/stats'
@@ -501,6 +578,7 @@ export interface FileRouteTypes {
     | '/legal/terms'
     | '/app/'
     | '/coach/'
+    | '/blog/$slug'
     | '/app/diet/add'
     | '/app/diet/settings'
     | '/app/friends/$friendId'
@@ -512,6 +590,7 @@ export interface FileRouteTypes {
     | '/app/workouts/$workoutId'
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
+    | '/blog/'
     | '/app/diet/'
     | '/app/exercises/'
     | '/app/friends/'
@@ -531,11 +610,15 @@ export interface FileRouteTypes {
     | '/app/stats/exercises/$exerciseId'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/about'
     | '/cgu'
     | '/confidentialite'
     | '/help'
+    | '/application-musculation'
+    | '/application-nutrition'
+    | '/fonctionnalites'
+    | '/pour-les-coachs'
+    | '/tarifs'
     | '/app/import'
     | '/app/onboarding'
     | '/app/stats'
@@ -548,8 +631,10 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/'
     | '/app'
     | '/coach'
+    | '/blog/$slug'
     | '/app/diet/add'
     | '/app/diet/settings'
     | '/app/friends/$friendId'
@@ -561,6 +646,7 @@ export interface FileRouteTypes {
     | '/app/workouts/$workoutId'
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
+    | '/blog'
     | '/app/diet'
     | '/app/exercises'
     | '/app/friends'
@@ -580,7 +666,7 @@ export interface FileRouteTypes {
     | '/app/stats/exercises/$exerciseId'
   id:
     | '__root__'
-    | '/'
+    | '/_marketing'
     | '/app'
     | '/coach'
     | '/about'
@@ -589,6 +675,11 @@ export interface FileRouteTypes {
     | '/help'
     | '/app/diet'
     | '/app/profile'
+    | '/_marketing/application-musculation'
+    | '/_marketing/application-nutrition'
+    | '/_marketing/fonctionnalites'
+    | '/_marketing/pour-les-coachs'
+    | '/_marketing/tarifs'
     | '/app/import'
     | '/app/onboarding'
     | '/app/stats'
@@ -601,8 +692,10 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/_marketing/'
     | '/app/'
     | '/coach/'
+    | '/_marketing/blog/$slug'
     | '/app/diet/add'
     | '/app/diet/settings'
     | '/app/friends/$friendId'
@@ -614,6 +707,7 @@ export interface FileRouteTypes {
     | '/app/workouts/$workoutId'
     | '/coach/programs/$programId'
     | '/share/workout/$shareToken'
+    | '/_marketing/blog/'
     | '/app/diet/'
     | '/app/exercises/'
     | '/app/friends/'
@@ -634,7 +728,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  MarketingRouteRoute: typeof MarketingRouteRouteWithChildren
   AppRouteRoute: typeof AppRouteRouteWithChildren
   CoachRouteRoute: typeof CoachRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
@@ -697,11 +791,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
+    '/_marketing': {
+      id: '/_marketing'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof MarketingRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coach/': {
@@ -717,6 +811,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/_marketing/': {
+      id: '/_marketing/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof MarketingIndexRouteImport
+      parentRoute: typeof MarketingRouteRoute
     }
     '/legal/terms': {
       id: '/legal/terms'
@@ -801,6 +902,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/import'
       preLoaderRoute: typeof AppImportRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/_marketing/tarifs': {
+      id: '/_marketing/tarifs'
+      path: '/tarifs'
+      fullPath: '/tarifs'
+      preLoaderRoute: typeof MarketingTarifsRouteImport
+      parentRoute: typeof MarketingRouteRoute
+    }
+    '/_marketing/pour-les-coachs': {
+      id: '/_marketing/pour-les-coachs'
+      path: '/pour-les-coachs'
+      fullPath: '/pour-les-coachs'
+      preLoaderRoute: typeof MarketingPourLesCoachsRouteImport
+      parentRoute: typeof MarketingRouteRoute
+    }
+    '/_marketing/fonctionnalites': {
+      id: '/_marketing/fonctionnalites'
+      path: '/fonctionnalites'
+      fullPath: '/fonctionnalites'
+      preLoaderRoute: typeof MarketingFonctionnalitesRouteImport
+      parentRoute: typeof MarketingRouteRoute
+    }
+    '/_marketing/application-nutrition': {
+      id: '/_marketing/application-nutrition'
+      path: '/application-nutrition'
+      fullPath: '/application-nutrition'
+      preLoaderRoute: typeof MarketingApplicationNutritionRouteImport
+      parentRoute: typeof MarketingRouteRoute
+    }
+    '/_marketing/application-musculation': {
+      id: '/_marketing/application-musculation'
+      path: '/application-musculation'
+      fullPath: '/application-musculation'
+      preLoaderRoute: typeof MarketingApplicationMusculationRouteImport
+      parentRoute: typeof MarketingRouteRoute
     }
     '/app/profile': {
       id: '/app/profile'
@@ -914,6 +1050,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDietIndexRouteImport
       parentRoute: typeof AppDietRouteRoute
     }
+    '/_marketing/blog/': {
+      id: '/_marketing/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof MarketingBlogIndexRouteImport
+      parentRoute: typeof MarketingRouteRoute
+    }
     '/share/workout/$shareToken': {
       id: '/share/workout/$shareToken'
       path: '/share/workout/$shareToken'
@@ -991,6 +1134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDietAddRouteImport
       parentRoute: typeof AppDietRouteRoute
     }
+    '/_marketing/blog/$slug': {
+      id: '/_marketing/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof MarketingBlogSlugRouteImport
+      parentRoute: typeof MarketingRouteRoute
+    }
     '/app/stats/exercises/$exerciseId': {
       id: '/app/stats/exercises/$exerciseId'
       path: '/exercises/$exerciseId'
@@ -1014,6 +1164,32 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface MarketingRouteRouteChildren {
+  MarketingApplicationMusculationRoute: typeof MarketingApplicationMusculationRoute
+  MarketingApplicationNutritionRoute: typeof MarketingApplicationNutritionRoute
+  MarketingFonctionnalitesRoute: typeof MarketingFonctionnalitesRoute
+  MarketingPourLesCoachsRoute: typeof MarketingPourLesCoachsRoute
+  MarketingTarifsRoute: typeof MarketingTarifsRoute
+  MarketingIndexRoute: typeof MarketingIndexRoute
+  MarketingBlogSlugRoute: typeof MarketingBlogSlugRoute
+  MarketingBlogIndexRoute: typeof MarketingBlogIndexRoute
+}
+
+const MarketingRouteRouteChildren: MarketingRouteRouteChildren = {
+  MarketingApplicationMusculationRoute: MarketingApplicationMusculationRoute,
+  MarketingApplicationNutritionRoute: MarketingApplicationNutritionRoute,
+  MarketingFonctionnalitesRoute: MarketingFonctionnalitesRoute,
+  MarketingPourLesCoachsRoute: MarketingPourLesCoachsRoute,
+  MarketingTarifsRoute: MarketingTarifsRoute,
+  MarketingIndexRoute: MarketingIndexRoute,
+  MarketingBlogSlugRoute: MarketingBlogSlugRoute,
+  MarketingBlogIndexRoute: MarketingBlogIndexRoute,
+}
+
+const MarketingRouteRouteWithChildren = MarketingRouteRoute._addFileChildren(
+  MarketingRouteRouteChildren,
+)
 
 interface AppDietRouteRouteChildren {
   AppDietAddRoute: typeof AppDietAddRoute
@@ -1134,7 +1310,7 @@ const CoachRouteRouteWithChildren = CoachRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  MarketingRouteRoute: MarketingRouteRouteWithChildren,
   AppRouteRoute: AppRouteRouteWithChildren,
   CoachRouteRoute: CoachRouteRouteWithChildren,
   AboutRoute: AboutRoute,

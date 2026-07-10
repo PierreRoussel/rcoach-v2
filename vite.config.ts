@@ -1,4 +1,5 @@
 import path from 'node:path'
+import mdx from '@mdx-js/rollup'
 import tailwindcss from '@tailwindcss/vite'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
@@ -8,7 +9,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     TanStackRouterVite({ routesDirectory: './src/routes' }),
-    react(),
+    { enforce: 'pre', ...mdx() },
+    react({ include: /\.(mdx|js|jsx|ts|tsx)$/ }),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',

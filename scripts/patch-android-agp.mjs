@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Aligns Capacitor-generated Gradle files with android/build.gradle (AGP 8.2.2 / JDK 17).
+ * Aligns Capacitor-generated Gradle files with android/build.gradle (AGP 8.9.1 / JDK 17).
  * Re-run after `npm install` or `cap sync android`.
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs'
@@ -8,7 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const targetAgp = '8.2.2'
+const targetAgp = '8.9.1'
 
 function collectGradleFiles(dir, files = []) {
   if (!existsSync(dir)) {
@@ -35,6 +35,7 @@ function collectGradleFiles(dir, files = []) {
 function getGradleFiles() {
   const files = new Set([
     ...collectGradleFiles(path.join(root, 'node_modules/@capacitor')),
+    ...collectGradleFiles(path.join(root, 'node_modules/@capacitor-mlkit')),
     path.join(root, 'android/capacitor-cordova-android-plugins/build.gradle'),
     path.join(root, 'android/app/capacitor.build.gradle'),
   ])
@@ -63,6 +64,8 @@ function patchJavaVersion(file) {
   const patched = content
     .replace(/JavaVersion\.VERSION_21/g, 'JavaVersion.VERSION_17')
     .replace(/jvmTarget = '21'/g, "jvmTarget = '17'")
+    .replace(/sourceCompatibility JavaVersion\.VERSION_21/g, 'sourceCompatibility JavaVersion.VERSION_17')
+    .replace(/targetCompatibility JavaVersion\.VERSION_21/g, 'targetCompatibility JavaVersion.VERSION_17')
 
   if (patched === content) {
     return false

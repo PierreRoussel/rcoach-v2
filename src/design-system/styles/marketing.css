@@ -1,0 +1,9 @@
+/* Marketing landing polish — reuses motion tokens from motion.css */
+
+.marketing-gradient-band {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary) 8%, transparent),
+    color-mix(in oklab, var(--secondary) 10%, transparent)
+  );
+}
