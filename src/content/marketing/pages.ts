@@ -77,7 +77,12 @@ export const HOME_PAGE: MarketingPageContent = {
     {
       question: 'RCoach est-il gratuit ?',
       answer:
-        'Oui, l’essentiel est gratuit : séances, nutrition et suivi de base. Premium débloque stats avancées, historique illimité et coaching nutrition.',
+        'Oui, l’essentiel est gratuit : séances, nutrition, streaks, médailles et suivi de base. Premium débloque stats avancées, historique illimité et coaching nutrition.',
+    },
+    {
+      question: 'Quelle différence entre gratuit et Premium ?',
+      answer:
+        'Le gratuit couvre le suivi quotidien avec quelques limites (historique 4 semaines, 6 modèles, 1 programme). Premium lève ces plafonds et ajoute stats, projection objectif et conseils nutrition.',
     },
     {
       question: 'RCoach convient-il aux débutants ?',
@@ -100,9 +105,29 @@ export const FEATURES_PAGE: MarketingPageContent = {
   eyebrow: 'Tout-en-un',
   headline: 'Une app complète pour votre progression',
   description:
-    'De la salle à l’assiette, RCoach centralise ce dont vous avez besoin pour performer et rester régulier.',
-  features: HOME_PAGE.features,
-  faq: HOME_PAGE.faq,
+    'De la salle à l’assiette, RCoach centralise ce dont vous avez besoin pour performer et rester régulier — en gratuit ou en Premium.',
+  faq: [
+    {
+      question: 'Quelles fonctionnalités sont gratuites ?',
+      answer:
+        'Séances, journal nutrition, macros, scan code-barres, streaks, médailles, amis, 6 modèles de séance, 1 programme actif, historique 4 semaines et 1 suggestion de charge par jour.',
+    },
+    {
+      question: 'Que débloque Premium ?',
+      answer:
+        'Historique illimité, stats avancées, modèles et programmes sans limite, suggestions de charge illimitées, projection objectif poids, coach anti-stagnation, conseils nutrition et thème Pro.',
+    },
+    {
+      question: 'RCoach convient-il aux débutants ?',
+      answer:
+        'Oui. L’interface guide vos séances et votre alimentation sans jargon inutile, avec des objectifs progressifs.',
+    },
+    {
+      question: 'Puis-je utiliser RCoach sur Android ?',
+      answer:
+        'Oui, RCoach est une PWA installable sur Android et accessible depuis le navigateur sur ordinateur.',
+    },
+  ],
 }
 
 export const MUSCULATION_PAGE: MarketingPageContent = {
@@ -144,6 +169,14 @@ export const MUSCULATION_PAGE: MarketingPageContent = {
     {
       question: 'RCoach gère-t-il les supersets et circuits ?',
       answer: 'Oui, les séances actives supportent les enchaînements et le repos entre séries.',
+    },
+    {
+      question: 'Combien de modèles de séance en gratuit ?',
+      answer: 'La formule gratuite inclut 6 modèles actifs. Premium permet d’en créer sans limite.',
+    },
+    {
+      question: 'Les stats avancées sont-elles incluses ?',
+      answer: 'Les graphiques détaillés par exercice et le volume long terme sont réservés à Premium.',
     },
   ],
 }
@@ -190,6 +223,15 @@ export const NUTRITION_PAGE: MarketingPageContent = {
       answer:
         'RCoach s’appuie sur Open Food Facts et permet d’ajouter vos aliments personnalisés.',
     },
+    {
+      question: 'Les conseils nutrition sont-ils inclus ?',
+      answer:
+        'Le journal et les macros sont gratuits. Les conseils nutrition personnalisés illimités sont une fonctionnalité Premium.',
+    },
+    {
+      question: 'Puis-je scanner des produits du commerce ?',
+      answer: 'Oui, le scan code-barres est inclus dans l’offre gratuite via Open Food Facts.',
+    },
   ],
 }
 
@@ -225,6 +267,16 @@ export const COACH_PAGE: MarketingPageContent = {
       answer:
         'Créez un compte puis contactez le support pour activer le rôle coach sur votre profil.',
     },
+    {
+      question: 'Puis-je suivre la nutrition de mes clients ?',
+      answer:
+        'Vous consultez l’activité et les séances de vos athlètes. Le détail nutrition dépend des données qu’ils renseignent dans leur app.',
+    },
+    {
+      question: 'L’espace coach est-il payant ?',
+      answer:
+        'Contactez le support pour connaître les conditions d’accès à l’ERP coach selon votre activité.',
+    },
   ],
 }
 
@@ -245,6 +297,16 @@ export const PRICING_PAGE: MarketingPageContent = {
     {
       question: 'Puis-je annuler à tout moment ?',
       answer: 'Oui, la gestion de l’abonnement se fait depuis votre profil ou la plateforme de paiement.',
+    },
+    {
+      question: 'Que garde-t-on en restant gratuit ?',
+      answer:
+        'Séances, journal nutrition, macros, scan, streaks, médailles, amis — seules les limites (historique, modèles, programmes, conseils) restent en place.',
+    },
+    {
+      question: 'Premium vaut-il le coup si je débute ?',
+      answer:
+        'Commencez gratuitement. Premium devient pertinent quand vous voulez un historique long, des stats détaillées et un accompagnement nutrition.',
     },
   ],
 }

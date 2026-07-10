@@ -1,10 +1,5 @@
 apply plugin: 'com.android.application'
-
-def keystorePropertiesFile = rootProject.file('keystore.properties')
-def keystoreProperties = new Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
+apply from: rootProject.file('signing.gradle')
 
 android {
     namespace = "com.rcoach.app"
@@ -24,11 +19,11 @@ android {
     }
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile rootProject.file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
+            if (rcoachKeystorePropertiesFile.exists()) {
+                storeFile rootProject.file(rcoachKeystoreProperties['storeFile'])
+                storePassword rcoachKeystoreProperties['storePassword']
+                keyAlias rcoachKeystoreProperties['keyAlias']
+                keyPassword rcoachKeystoreProperties['keyPassword']
             }
         }
     }
@@ -36,7 +31,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (keystorePropertiesFile.exists()) {
+            if (rcoachKeystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             }
         }
@@ -59,6 +54,7 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    wearApp project(':wear')
 }
 
 apply from: 'capacitor.build.gradle'

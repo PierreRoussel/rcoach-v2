@@ -1,26 +1,50 @@
 # Wear OS — guide de test RCoach
 
-## Prérequis
+## Distribution (production)
 
-- Android Studio (SDK 35+)
+Le module `:wear` est embarqué dans l'AAB phone via `wearApp project(':wear')`.
+Les deux modules partagent `applicationId` `com.rcoach.app` et la même signature release.
+
+- **Play Store** : un seul upload (`:app:bundleRelease`) — Google installe la partie montre sur la Wear OS appairée.
+- **Companion** : `standalone = false` — la montre nécessite l'app téléphone pour les séances.
+
+Configurer le form factor **Wear OS** dans la Play Console (captures montre + mention dans la fiche).
+
+## Prérequis (dev local)
+
+- Android Studio (SDK 36+)
 - JDK 17
-- **Deux APK** installes : `com.rcoach.app` (telephone) et `com.rcoach.app.wear` (montre)
-- Montre Wear OS appairee via l app Google **Wear OS** (Bluetooth actif)
-- Les deux apps signees avec la meme cle (debug OK si build local)
+- Montre Wear OS appairée via l'app Google **Wear OS** (Bluetooth actif), ou émulateur montre appairé au téléphone
 
-Emulateur : telephone API 34+ + emulateur Wear OS Large Round API 34 appaires.
-Build phone : `npm run build:android` puis Run module `app`.
-Build watch : Run module `wear` sur l emulateur ou la montre physique.
+### Build release (phone + montre embarquée)
 
-## Scenarios manuels
+```bash
+npm run build:android
+cd android && ./gradlew :app:bundleRelease
+```
 
-1. Demarrer une seance depuis un modele sur le telephone.
-2. Verifier que la montre affiche le premier exercice.
-3. Valider une serie depuis la montre (poids/reps).
-4. Verifier la serie sur le telephone et le timer de repos des deux cotes.
+### Itération rapide sur la montre
+
+Android Studio → Run module `wear` sur l'émulateur ou la montre physique (debug).
+Le téléphone doit avoir l'app `com.rcoach.app` installée et appairée.
+
+### Itération sur le téléphone
+
+```bash
+npm run build:android
+```
+
+Puis Run module `app` sur le téléphone / émulateur phone.
+
+## Scénarios manuels
+
+1. Démarrer une séance depuis un modèle sur le téléphone.
+2. Vérifier que la montre affiche le premier exercice.
+3. Valider une série depuis la montre (poids/reps).
+4. Vérifier la série sur le téléphone et le timer de repos des deux côtés.
 5. Passer le repos depuis la montre.
-6. Changer d exercice sur le telephone et verifier la mise a jour montre.
-7. Terminer la seance sur le telephone : la montre revient a l ecran Idle.
+6. Changer d'exercice sur le téléphone et vérifier la mise à jour montre.
+7. Terminer la séance sur le téléphone : la montre revient à l'écran Idle.
 8. Couper le Bluetooth 10 s pendant le repos : le timer montre continue.
 
 ## Tests automatiques
@@ -33,6 +57,6 @@ Couvre le protocole JSON phone/watch (`src/lib/wear/workout-sync-protocol.test.t
 
 ## Limites v1
 
-- Sync disponible uniquement via l APK Android Capacitor, pas via la PWA navigateur.
-- La montre ne demarre/termine pas la seance seule.
-- Pas de sync cloud directe montre -> Nhost.
+- Sync disponible uniquement via l'APK Android Capacitor, pas via la PWA navigateur.
+- La montre ne démarre/termine pas la séance seule.
+- Pas de sync cloud directe montre → Nhost.

@@ -4,12 +4,15 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose' version '2.0.21'
 }
 
+apply from: rootProject.file('signing.gradle')
+
 android {
     namespace 'com.rcoach.app.wear'
     compileSdk rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId 'com.rcoach.app.wear'
+        // Même applicationId que le module phone : requis pour l'embarquement Play Store.
+        applicationId 'com.rcoach.app'
         minSdk 30
         targetSdk rootProject.ext.targetSdkVersion
         versionCode 1
@@ -18,6 +21,26 @@ android {
 
     buildFeatures {
         compose true
+    }
+
+    signingConfigs {
+        release {
+            if (rcoachKeystorePropertiesFile.exists()) {
+                storeFile rootProject.file(rcoachKeystoreProperties['storeFile'])
+                storePassword rcoachKeystoreProperties['storePassword']
+                keyAlias rcoachKeystoreProperties['keyAlias']
+                keyPassword rcoachKeystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (rcoachKeystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
     }
 
     kotlinOptions {

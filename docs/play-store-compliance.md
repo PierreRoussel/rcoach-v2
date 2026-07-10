@@ -100,9 +100,11 @@ cp android/keystore.properties.example android/keystore.properties
 
 Éditez `android/keystore.properties` avec vos vrais mots de passe. Ce fichier est ignoré par git.
 
-`android/app/build.gradle` charge déjà `signingConfigs.release` si `keystore.properties` existe.
+`android/app/build.gradle` et `android/wear/build.gradle` chargent `signingConfigs.release` via `android/signing.gradle` si `keystore.properties` existe.
 
 ### 3. Builder l’AAB release
+
+L’AAB embarque le module Wear OS (`wearApp project(':wear')`). Même `applicationId` et signature sur phone et montre.
 
 ```bash
 npm run build:web
@@ -110,14 +112,15 @@ npx cap sync android
 cd android && ./gradlew :app:bundleRelease
 ```
 
-L’AAB se trouve dans `android/app/build/outputs/bundle/release/app-release.aab`.
+L’AAB se trouve dans `android/app/build/outputs/bundle/release/app-release.aab` (phone + montre).
 
 ### 4. Première upload Play Console
 
 1. Créer l’application dans la Play Console (`com.rcoach.app`).
-2. **Production** ou **Tests internes** → **Créer une version** → uploader `app-release.aab`.
-3. Accepter **Play App Signing** quand Google le propose.
-4. Télécharger et archiver l’**empreinte SHA-1/SHA-256** de la clé d’upload (utile pour OAuth, Firebase, etc.) :
+2. **Configuration avancée** → **Facteurs de forme** → ajouter **Wear OS** (captures montre + mention « Wear OS » dans la fiche).
+3. **Production** ou **Tests internes** → **Créer une version** → uploader `app-release.aab`.
+4. Accepter **Play App Signing** quand Google le propose.
+5. Télécharger et archiver l’**empreinte SHA-1/SHA-256** de la clé d’upload (utile pour OAuth, Firebase, etc.) :
 
 ```bash
 keytool -list -v -keystore android/app/upload-keystore.jks -alias upload
