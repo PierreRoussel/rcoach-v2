@@ -1,0 +1,2 @@
+com.rcoach.healthconnect
+string health_connect_privacy_policy_url

@@ -1,0 +1,26 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.rcoach.healthconnect" >
+4
+5    <uses-sdk android:minSdkVersion="26" />
+6
+7    <application>
+7-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:2:5-11:19
+8        <activity
+8-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:3:9-10:20
+9            android:name="com.rcoach.healthconnect.HealthConnectPermissionsRationaleActivity"
+9-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:4:13-70
+10            android:exported="true"
+10-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:5:13-36
+11            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+11-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:6:13-72
+12            <intent-filter>
+12-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:7:13-9:29
+13                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+13-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:8:17-92
+13-->C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android\src\main\AndroidManifest.xml:8:25-89
+14            </intent-filter>
+15        </activity>
+16    </application>
+17
+18</manifest>

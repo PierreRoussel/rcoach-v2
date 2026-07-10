@@ -1,0 +1,1 @@
+int string health_connect_privacy_policy_url 0x0

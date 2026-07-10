@@ -1,0 +1,18 @@
+<lint-module
+    format="1"
+    dir="C:\Users\leobr\Documents\dev\rcoach-v2\packages\capacitor-health-connect\android"
+    name=":rcoach-capacitor-health-connect"
+    type="LIBRARY"
+    maven="android:rcoach-capacitor-health-connect:unspecified"
+    agpVersion="8.9.1"
+    buildFolder="build"
+    bootClassPath="C:\Users\leobr\AppData\Local\Android\Sdk\platforms\android-36\android.jar;C:\Users\leobr\AppData\Local\Android\Sdk\build-tools\35.0.0\core-lambda-stubs.jar"
+    javaSourceLevel="17"
+    compileTarget="android-36"
+    neverShrinking="true">
+  <lintOptions
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="release"/>
+</lint-module>

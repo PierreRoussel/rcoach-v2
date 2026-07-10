@@ -67,9 +67,75 @@ VITE_SUPPORT_EMAIL=support@rcoach.fr
 
 Les valeurs ci-dessus sont aussi définies par défaut dans `src/lib/legal/config.ts` (surchargeables via `.env` en production).
 
+## Signature release Android
+
+### Principe (Play App Signing)
+
+Google Play gère deux clés :
+
+1. **Clé d’upload** (keystore local) — sert uniquement à signer l’AAB que vous uploadez.
+2. **Clé de signature d’application** (Google) — signe l’APK distribué aux utilisateurs. Google peut la réinitialiser si la clé d’upload est perdue (avec conditions).
+
+Activez **Play App Signing** lors de la première soumission d’un AAB dans la [Play Console](https://play.google.com/console) → votre app → **Configuration** → **Intégrité de l’application** → **Signature d’application**.
+
+### 1. Créer le keystore d’upload (une seule fois)
+
+Depuis la racine du dépôt, avec Java/keytool installé :
+
+```bash
+keytool -genkeypair -v \
+  -keystore android/app/upload-keystore.jks \
+  -alias upload \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -storetype JKS
+```
+
+Répondez aux questions (nom, organisation, etc.). **Conservez le fichier `.jks` et les mots de passe** dans un coffre (1Password, Bitwarden, etc.) — une perte sans Play App Signing est irréversible.
+
+### 2. Configurer Gradle
+
+```bash
+cp android/keystore.properties.example android/keystore.properties
+```
+
+Éditez `android/keystore.properties` avec vos vrais mots de passe. Ce fichier est ignoré par git.
+
+`android/app/build.gradle` charge déjà `signingConfigs.release` si `keystore.properties` existe.
+
+### 3. Builder l’AAB release
+
+```bash
+npm run build:web
+npx cap sync android
+cd android && ./gradlew :app:bundleRelease
+```
+
+L’AAB se trouve dans `android/app/build/outputs/bundle/release/app-release.aab`.
+
+### 4. Première upload Play Console
+
+1. Créer l’application dans la Play Console (`com.rcoach.app`).
+2. **Production** ou **Tests internes** → **Créer une version** → uploader `app-release.aab`.
+3. Accepter **Play App Signing** quand Google le propose.
+4. Télécharger et archiver l’**empreinte SHA-1/SHA-256** de la clé d’upload (utile pour OAuth, Firebase, etc.) :
+
+```bash
+keytool -list -v -keystore android/app/upload-keystore.jks -alias upload
+```
+
+### CI (optionnel)
+
+En pipeline, ne pas committer le keystore : injecter `keystore.properties` et le fichier `.jks` via secrets (base64), ou utiliser les variables d’environnement Gradle :
+
+```properties
+storePassword=${UPLOAD_STORE_PASSWORD}
+keyPassword=${UPLOAD_KEY_PASSWORD}
+```
+
+(Gradle résout `${…}` depuis l’environnement si configuré.)
+
 ## Hors scope dépôt (manuel)
 
-- Keystore release + `signingConfig` Gradle
 - Fiche store (titre, descriptions FR, screenshots, feature graphic)
 - Questionnaire classification du contenu
 - Data Safety : validation finale dans la console

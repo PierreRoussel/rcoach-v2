@@ -15,7 +15,7 @@ alwaysApply: false
 ## Capacitor 8
 
 - `androidScheme: 'https'` → origine app `https://localhost`
-- Build : `npm run build:android` (= vite build + cap sync + patch AGP)
+- Build : `npm run build:android` (= vite build + cap sync + patch AGP 8.9.1)
 
 ## Guards plateforme
 
