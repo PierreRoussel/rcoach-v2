@@ -1,4 +1,4 @@
-import { useCallback, useRef, type PointerEvent } from 'react'
+import { useCallback, useRef, useState, type PointerEvent } from 'react'
 
 import {
   HORIZONTAL_SWIPE_DIRECTION_LOCK_PX,
@@ -6,11 +6,21 @@ import {
   resolveHorizontalSwipe,
 } from '@/lib/ui/horizontal-swipe'
 
+const HORIZONTAL_SWIPE_DRAG_DAMPING = 0.65
+const HORIZONTAL_SWIPE_MAX_DRAG_PX = 120
+
 type UseHorizontalSwipeOptions = {
   onSwipeLeft?: () => void
   onSwipeRight?: () => void
   threshold?: number
   disabled?: boolean
+}
+
+function clampDragOffset(offset: number) {
+  return Math.max(
+    -HORIZONTAL_SWIPE_MAX_DRAG_PX,
+    Math.min(HORIZONTAL_SWIPE_MAX_DRAG_PX, offset),
+  )
 }
 
 export function useHorizontalSwipe({
@@ -21,10 +31,14 @@ export function useHorizontalSwipe({
 }: UseHorizontalSwipeOptions) {
   const originRef = useRef<{ x: number; y: number } | null>(null)
   const lockedRef = useRef<'horizontal' | 'vertical' | null>(null)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
 
   const reset = useCallback(() => {
     originRef.current = null
     lockedRef.current = null
+    setIsDraggingHorizontal(false)
+    setDragOffset(0)
   }, [])
 
   const onPointerDown = useCallback(
@@ -35,28 +49,39 @@ export function useHorizontalSwipe({
 
       originRef.current = { x: event.clientX, y: event.clientY }
       lockedRef.current = null
+      setIsDraggingHorizontal(false)
+      setDragOffset(0)
     },
     [disabled],
   )
 
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
-      if (!originRef.current || disabled || lockedRef.current) {
+      if (!originRef.current || disabled) {
         return
       }
 
       const deltaX = event.clientX - originRef.current.x
       const deltaY = event.clientY - originRef.current.y
 
-      if (
-        Math.abs(deltaX) < HORIZONTAL_SWIPE_DIRECTION_LOCK_PX &&
-        Math.abs(deltaY) < HORIZONTAL_SWIPE_DIRECTION_LOCK_PX
-      ) {
+      if (!lockedRef.current) {
+        if (
+          Math.abs(deltaX) < HORIZONTAL_SWIPE_DIRECTION_LOCK_PX &&
+          Math.abs(deltaY) < HORIZONTAL_SWIPE_DIRECTION_LOCK_PX
+        ) {
+          return
+        }
+
+        lockedRef.current =
+          Math.abs(deltaX) >= Math.abs(deltaY) ? 'horizontal' : 'vertical'
+      }
+
+      if (lockedRef.current !== 'horizontal') {
         return
       }
 
-      lockedRef.current =
-        Math.abs(deltaX) >= Math.abs(deltaY) ? 'horizontal' : 'vertical'
+      setIsDraggingHorizontal(true)
+      setDragOffset(clampDragOffset(deltaX * HORIZONTAL_SWIPE_DRAG_DAMPING))
     },
     [disabled],
   )
@@ -89,6 +114,8 @@ export function useHorizontalSwipe({
   )
 
   return {
+    dragOffset,
+    isDraggingHorizontal,
     swipeProps: {
       onPointerDown,
       onPointerMove,

@@ -25,6 +25,41 @@ import {
 } from '@/lib/schedule/calendar-markers'
 import { cn } from '@/lib/utils'
 
+type MonthTransition = 'forward' | 'backward'
+
+function getMonthEnterClass(
+  transition: MonthTransition | null,
+  prefersReducedMotion: boolean,
+) {
+  if (prefersReducedMotion || !transition) {
+    return ''
+  }
+
+  return transition === 'forward'
+    ? 'animate-in fade-in slide-in-from-right-8 duration-300 fill-mode-both'
+    : 'animate-in fade-in slide-in-from-left-8 duration-300 fill-mode-both'
+}
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  })
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const onChange = () => setPrefersReducedMotion(mediaQuery.matches)
+
+    mediaQuery.addEventListener('change', onChange)
+    return () => mediaQuery.removeEventListener('change', onChange)
+  }, [])
+
+  return prefersReducedMotion
+}
+
 const navButtonClass =
   'inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-soft-primary hover:text-soft-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
@@ -60,7 +95,8 @@ function CalendarLegend({ showNutrition = false }: { showNutrition?: boolean }) 
     <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-xs font-medium text-foreground">Sport</p>
-        <div className="flex flex-wrap items-center gap-2">          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
             <span className="h-1 w-4 rounded-full bg-primary" />
             Séance réalisée
           </Pill>
@@ -122,13 +158,22 @@ export function WorkoutCalendar({
   const displayMonth = controlledMonth ?? internalMonth
   const previousSelectedRef = useRef<Date | undefined>(currentSelected)
   const [legendOpen, setLegendOpen] = useState(false)
-  const setDisplayMonth = useCallback(
-    (monthOrUpdater: Date | ((month: Date) => Date)) => {
+  const [monthTransition, setMonthTransition] = useState<MonthTransition | null>(null)
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const monthKey = format(startOfMonth(displayMonth), 'yyyy-MM')
+  const monthEnterClass = getMonthEnterClass(monthTransition, prefersReducedMotion)
+
+  const changeMonth = useCallback(
+    (target: Date | ((current: Date) => Date)) => {
       const activeMonth = controlledMonth ?? internalMonth
       const nextMonth =
-        typeof monthOrUpdater === 'function'
-          ? monthOrUpdater(activeMonth)
-          : monthOrUpdater
+        typeof target === 'function' ? target(activeMonth) : target
+      const from = startOfMonth(activeMonth)
+      const to = startOfMonth(nextMonth)
+
+      if (from.getTime() !== to.getTime()) {
+        setMonthTransition(to > from ? 'forward' : 'backward')
+      }
 
       if (controlledMonth === undefined) {
         setInternalMonth(nextMonth)
@@ -160,12 +205,17 @@ export function WorkoutCalendar({
     }
 
     if (controlledMonth !== undefined) {
+      const from = startOfMonth(displayMonth)
+      const to = startOfMonth(selectedMonth)
+      if (from.getTime() !== to.getTime()) {
+        setMonthTransition(to > from ? 'forward' : 'backward')
+      }
       onMonthChange?.(selectedMonth)
       return
     }
 
-    setInternalMonth(selectedMonth)
-  }, [controlledMonth, currentSelected, displayMonth, onMonthChange])
+    changeMonth(selectedMonth)
+  }, [changeMonth, controlledMonth, currentSelected, displayMonth, onMonthChange])
 
   const modifiers = useMemo(
     () => ({
@@ -198,14 +248,14 @@ export function WorkoutCalendar({
   }
 
   const goToPreviousMonth = useCallback(() => {
-    setDisplayMonth((month) => subMonths(month, 1))
-  }, [setDisplayMonth])
+    changeMonth((month) => subMonths(month, 1))
+  }, [changeMonth])
 
   const goToNextMonth = useCallback(() => {
-    setDisplayMonth((month) => addMonths(month, 1))
-  }, [setDisplayMonth])
+    changeMonth((month) => addMonths(month, 1))
+  }, [changeMonth])
 
-  const { swipeProps } = useHorizontalSwipe({
+  const { dragOffset, isDraggingHorizontal, swipeProps } = useHorizontalSwipe({
     onSwipeLeft: goToNextMonth,
     onSwipeRight: goToPreviousMonth,
   })
@@ -237,7 +287,13 @@ export function WorkoutCalendar({
             >
               <ChevronLeft className="size-4" />
             </button>
-            <p className="min-w-[7.5rem] truncate px-1 text-center font-display text-lg font-black capitalize tracking-tight text-foreground sm:min-w-[8.5rem]">
+            <p
+              key={monthKey}
+              className={cn(
+                'min-w-[7.5rem] truncate px-1 text-center font-display text-lg font-black capitalize tracking-tight text-foreground sm:min-w-[8.5rem]',
+                monthEnterClass,
+              )}
+            >
               {format(displayMonth, 'MMMM yyyy', { locale: fr })}
             </p>
             <button
@@ -271,20 +327,33 @@ export function WorkoutCalendar({
 
         <div
           {...swipeProps}
-          className="touch-pan-y select-none"
+          className="touch-pan-y overflow-hidden select-none"
           aria-label="Glisser horizontalement pour changer de mois"
         >
-          <Calendar
-            mode="single"
-            month={displayMonth}
-            onMonthChange={setDisplayMonth}
-            selected={currentSelected}
-            onSelect={handleSelect}
-            locale={fr}
-            modifiers={modifiers}
-            components={planningComponents}
-            className="relative border-0 bg-transparent p-0 shadow-none"
-          />
+          <div
+            key={monthKey}
+            className={cn(
+              monthEnterClass,
+              !isDraggingHorizontal && 'transition-transform duration-300 ease-out',
+            )}
+            style={
+              dragOffset !== 0
+                ? { transform: `translateX(${dragOffset}px)` }
+                : undefined
+            }
+          >
+            <Calendar
+              mode="single"
+              month={displayMonth}
+              onMonthChange={changeMonth}
+              selected={currentSelected}
+              onSelect={handleSelect}
+              locale={fr}
+              modifiers={modifiers}
+              components={planningComponents}
+              className="relative border-0 bg-transparent p-0 shadow-none"
+            />
+          </div>
         </div>
       </div>
 
