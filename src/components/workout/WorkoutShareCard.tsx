@@ -60,7 +60,7 @@ export const WorkoutShareCard = forwardRef<HTMLDivElement, WorkoutShareCardProps
 
         <div className="relative flex flex-1 flex-col p-5">
           <div className="flex items-center justify-between gap-2">
-            <BrandLogo compact className="[&_div]:text-white [&_svg]:text-white" />
+            <BrandLogo compact className="[&_div]:text-white" />
             {weeklyStreak > 0 ? (
               <Pill tone="solid-purple" className="gap-1 py-0.5 text-[10px]">
                 <Flame className="size-3 fill-current" />

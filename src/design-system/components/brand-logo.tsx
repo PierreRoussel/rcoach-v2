@@ -1,25 +1,30 @@
-import { Zap } from 'lucide-react'
-
 import { cn } from '@/lib/utils'
+
+const LOGO_SRC = '/logo.png'
 
 type BrandLogoProps = {
   compact?: boolean
   className?: string
+  imageClassName?: string
 }
 
-export function BrandLogo({ compact = false, className }: BrandLogoProps) {
+export function BrandLogo({ compact = false, className, imageClassName }: BrandLogoProps) {
   return (
     <div className={cn('flex items-center gap-2.5', className)}>
-      <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-        <Zap className="size-4 fill-white text-white" />
-      </div>
+      <img
+        src={LOGO_SRC}
+        alt="RCoach"
+        width={32}
+        height={32}
+        className={cn('size-8 shrink-0 rounded-xl object-cover', imageClassName)}
+      />
       {!compact ? (
         <div>
           <div className="font-display text-base leading-none font-black text-foreground">
             RCoach
           </div>
           <div className="font-data text-[10px] tracking-widest text-muted-foreground uppercase">
-            Sport PWA
+            Sport & nutrition
           </div>
         </div>
       ) : null}

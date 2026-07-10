@@ -15,7 +15,10 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import {
   isGraphqlCancellationFeedbackMissingError,
+  isGraphqlReconcileMissingError,
+  isGraphqlStartTrialMissingError,
   isGraphqlSubscriptionMissingError,
+  START_TRIAL_NOT_DEPLOYED_MESSAGE,
   toSubscriptionDeployError,
 } from '@/lib/graphql/schema-errors'
 
@@ -35,14 +38,26 @@ export const DEFAULT_FREE_SUBSCRIPTION: Subscription = {
 
 import type { BillingPeriod } from '@/lib/subscription/plans'
 
-function isSubscriptionSchemaError(error: unknown): boolean {
-  return isGraphqlSubscriptionMissingError(error)
-}
-
 export async function fetchMySubscription(
   nhost: NhostClient,
   userId: string,
 ): Promise<Subscription> {
+  let queryResult: Subscription | undefined
+
+  try {
+    const data = await graphqlRequest<{ subscriptions: Subscription[] }>(
+      nhost,
+      GET_MY_SUBSCRIPTION,
+      { userId },
+    )
+    queryResult = data.subscriptions[0]
+  } catch (error) {
+    if (isGraphqlSubscriptionMissingError(error)) {
+      return { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
+    }
+    throw error
+  }
+
   try {
     const reconciled = await graphqlRequest<{
       reconcile_my_subscription: Subscription[]
@@ -52,25 +67,12 @@ export async function fetchMySubscription(
       return subscription
     }
   } catch (error) {
-    if (!isSubscriptionSchemaError(error)) {
+    if (!isGraphqlReconcileMissingError(error)) {
       throw error
     }
   }
 
-  try {
-    const data = await graphqlRequest<{ subscriptions: Subscription[] }>(
-      nhost,
-      GET_MY_SUBSCRIPTION,
-      { userId },
-    )
-    const subscription = data.subscriptions[0]
-    return subscription ?? { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
-  } catch (error) {
-    if (isSubscriptionSchemaError(error)) {
-      return { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
-    }
-    throw error
-  }
+  return queryResult ?? { ...DEFAULT_FREE_SUBSCRIPTION, user_id: userId }
 }
 
 function readSubscriptionFunctionResult(
@@ -99,6 +101,10 @@ export async function startMyPremiumTrial(
       'Impossible de démarrer l’essai.',
     )
   } catch (error) {
+    if (isGraphqlStartTrialMissingError(error)) {
+      throw new Error(START_TRIAL_NOT_DEPLOYED_MESSAGE)
+    }
+
     throw toSubscriptionDeployError(error)
   }
 }

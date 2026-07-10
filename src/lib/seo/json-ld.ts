@@ -23,7 +23,7 @@ export function organizationJsonLd() {
     '@type': 'Organization',
     name: SITE_NAME,
     url: SITE_URL,
-    logo: absoluteUrl('/favicon.svg'),
+    logo: absoluteUrl('/logo.png'),
   }
 }
 
@@ -65,7 +65,7 @@ export function blogPostingJsonLd(input: {
       name: SITE_NAME,
       logo: {
         '@type': 'ImageObject',
-        url: absoluteUrl('/favicon.svg'),
+        url: absoluteUrl('/logo.png'),
       },
     },
     mainEntityOfPage: absoluteUrl(`/blog/${input.slug}`),

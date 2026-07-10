@@ -38,7 +38,8 @@
     "build:android": "npm run build && npx cap sync android && node scripts/patch-android-agp.mjs",
     "cap:sync": "npx cap sync android && node scripts/patch-android-agp.mjs",
     "cap:open:android": "npx cap open android",
-    "postinstall": "node scripts/patch-android-agp.mjs"
+    "postinstall": "node scripts/patch-android-agp.mjs",
+    "generate:brand-assets": "python scripts/generate-brand-assets.py"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^7.5.0",

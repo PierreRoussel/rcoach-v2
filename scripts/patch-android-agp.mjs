@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Aligns Capacitor-generated Gradle files with android/build.gradle (AGP 8.9.1 / JDK 17).
+ * Aligns Capacitor-generated Gradle files with android/build.gradle (AGP 8.2.2 / JDK 17).
  * Re-run after `npm install` or `cap sync android`.
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs'
@@ -8,7 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const targetAgp = '8.9.1'
+const targetAgp = '8.2.2'
 
 function collectGradleFiles(dir, files = []) {
   if (!existsSync(dir)) {

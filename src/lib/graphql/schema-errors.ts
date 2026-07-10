@@ -1,12 +1,25 @@
+export function getGraphqlErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message
+  }
+
+  return String(error)
+}
+
 export function isGraphqlMissingFieldError(
   error: unknown,
   fieldName: string,
 ): boolean {
-  if (!(error instanceof Error)) {
-    return false
-  }
-
-  const message = error.message
+  const message = getGraphqlErrorMessage(error)
 
   return (
     message.includes(`field '${fieldName}' not found in type:`) ||
@@ -81,6 +94,17 @@ const SUBSCRIPTION_CANCELLATION_FEEDBACK_FIELDS = [
 
 export const SUBSCRIPTION_NOT_DEPLOYED_MESSAGE =
   'Les abonnements nécessitent le déploiement Nhost (migrations subscriptions).'
+
+export const START_TRIAL_NOT_DEPLOYED_MESSAGE =
+  "Impossible de démarrer l'essai gratuit : déployez la fonction Nhost `start_my_premium_trial` (metadata + migration), puis réessayez dans quelques minutes."
+
+export function isGraphqlReconcileMissingError(error: unknown): boolean {
+  return isGraphqlMissingFieldError(error, 'reconcile_my_subscription')
+}
+
+export function isGraphqlStartTrialMissingError(error: unknown): boolean {
+  return isGraphqlMissingFieldError(error, 'start_my_premium_trial')
+}
 
 export function isGraphqlSubscriptionMissingError(error: unknown): boolean {
   return SUBSCRIPTION_GRAPHQL_FIELDS.some((field) =>

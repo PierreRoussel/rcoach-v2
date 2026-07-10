@@ -17,7 +17,15 @@ export default defineConfig({
       devOptions: {
         enabled: false,
       },
-      includeAssets: ['favicon.svg', 'icons.svg'],
+      includeAssets: [
+        'favicon-16x16.png',
+        'favicon-32x32.png',
+        'apple-touch-icon.png',
+        'logo.png',
+        'pwa-192.png',
+        'pwa-512.png',
+        'icons.svg',
+      ],
       manifest: {
         name: 'RCoach',
         short_name: 'RCoach',
@@ -28,10 +36,22 @@ export default defineConfig({
         start_url: '/app',
         icons: [
           {
-            src: '/favicon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: '/pwa-192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any',
+          },
+          {
+            src: '/pwa-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/pwa-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

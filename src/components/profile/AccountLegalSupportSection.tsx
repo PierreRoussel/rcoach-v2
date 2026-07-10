@@ -18,7 +18,7 @@ import { LegalLinksRow } from '@/components/legal/LegalLinksRow'
 import { clearAuthSession } from '@/lib/auth/clear-auth-session'
 import { deleteMyAccount } from '@/lib/legal/delete-my-account'
 import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLink'
-import { LEGAL_PATHS } from '@/lib/legal/config'
+import { LEGAL_PATHS, supportMailto } from '@/lib/legal/config'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function AccountLegalSupportSection() {
