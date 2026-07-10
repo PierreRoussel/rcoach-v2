@@ -25,8 +25,30 @@ cd android && ./gradlew :app:bundleRelease
 
 ### Itération rapide sur la montre
 
-Android Studio → Run module `wear` sur l'émulateur ou la montre physique (debug).
-Le téléphone doit avoir l'app `com.rcoach.app` installée et appairée.
+1. **Désinstallez** toute app `RCoach` / `com.rcoach.app` déjà présente sur la montre (souvent l’APK phone Capacitor).
+2. Android Studio → sélectionnez le module **`wear`** (pas `app`) → Run sur l’émulateur ou la montre physique.
+3. L’icône doit s’appeler **RCoach Montre** (`com.rcoach.app.wear` en debug).
+4. Le téléphone doit avoir l’app `com.rcoach.app` installée et être appairé.
+
+```bash
+cd android && ./gradlew :wear:installDebug
+```
+
+#### Erreur « This app requires a WebView »
+
+Vous avez lancé le module **phone** (`app`) sur la montre. Capacitor nécessite une WebView, absente sur Wear OS. Installez le module **`wear`** (Compose natif).
+
+#### « Montre non appairée » sur le téléphone
+
+L’app montre peut fonctionner sans que le téléphone la voie via Google Play Services.
+
+1. Sur le **téléphone** : app **Wear OS** → vérifiez que la montre est **Connectée**.
+2. Sur la **montre** : ouvrez **RCoach Montre** et laissez l’app au premier plan.
+3. Relancez la séance sur le téléphone.
+4. **Émulateurs** : appairez téléphone + montre via l’app Wear OS (Bluetooth actif sur les deux).
+5. Rebuild phone après changement du plugin : `npm run build:android` puis Run `app`.
+
+La pastille indique maintenant trois états : connectée, appairée sans RCoach ouvert, ou non appairée.
 
 ### Itération sur le téléphone
 

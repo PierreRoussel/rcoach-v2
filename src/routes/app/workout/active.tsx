@@ -253,7 +253,7 @@ function ActiveWorkoutPage() {
   }, [user?.id, overloadQuotaVersion])
 
   const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
-  const { watchAvailable } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
+  const { watchAvailable, watchStatusLabel } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
   const effectiveTemplateId = sourceTemplateId ?? initialTemplateId
   const { data: sourceTemplate } = useWorkoutTemplate(effectiveTemplateId ?? '')
   const saveWorkoutTemplate = useSaveWorkoutTemplate()
@@ -640,7 +640,7 @@ function ActiveWorkoutPage() {
     >
       {wearSyncEnabled ? (
         <Pill tone={watchAvailable ? 'secondary' : 'default'}>
-          {watchAvailable ? 'Montre Wear OS connectée' : 'Montre Wear OS non détectée'}
+          {watchStatusLabel}
         </Pill>
       ) : null}
 

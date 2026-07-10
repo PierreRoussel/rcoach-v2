@@ -6,13 +6,26 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+import { ANDROID_SHELL_ROUTE_IGNORE_PATTERN } from './scripts/vite/android-shell-constants'
+import { androidShellHtmlPlugin } from './scripts/vite/android-shell-html-plugin'
+
+export default defineConfig(({ mode }) => {
+  const isAndroidShell = mode === 'android'
+
+  return {
   plugins: [
-    TanStackRouterVite({ routesDirectory: './src/routes' }),
+    TanStackRouterVite({
+      routesDirectory: './src/routes',
+      generatedRouteTree: isAndroidShell
+        ? './src/routeTree.android.gen.ts'
+        : './src/routeTree.gen.ts',
+      routeFileIgnorePattern: isAndroidShell ? ANDROID_SHELL_ROUTE_IGNORE_PATTERN : undefined,
+    }),
     { enforce: 'pre', ...mdx() },
     react({ include: /\.(mdx|js|jsx|ts|tsx)$/ }),
     tailwindcss(),
-    VitePWA({
+    ...(isAndroidShell ? [androidShellHtmlPlugin()] : []),
+    ...(isAndroidShell ? [] : [VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
         enabled: false,
@@ -70,7 +83,7 @@ export default defineConfig({
           },
         ],
       },
-    }),
+    })]),
   ],
   resolve: {
     alias: {
@@ -125,4 +138,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

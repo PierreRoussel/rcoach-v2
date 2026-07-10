@@ -1,6 +1,5 @@
 package com.rcoach.wearbridge
 
-import android.net.Uri
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -29,43 +28,42 @@ class WearBridgePlugin : Plugin() {
 
     @PluginMethod
     fun isWatchAvailable(call: PluginCall) {
-        detectWatchAvailable { available ->
+        detectWatchStatus { available, paired, hasRcoachWear ->
             val result = JSObject()
             result.put("available", available)
+            result.put("paired", paired)
+            result.put("hasRcoachWear", hasRcoachWear)
             call.resolve(result)
         }
     }
 
-    private fun detectWatchAvailable(callback: (Boolean) -> Unit) {
+    private fun detectWatchStatus(
+        callback: (available: Boolean, paired: Boolean, hasRcoachWear: Boolean) -> Unit,
+    ) {
         val capabilityClient = Wearable.getCapabilityClient(context)
-        capabilityClient
-            .getCapability(WATCH_CAPABILITY, CapabilityClient.FILTER_REACHABLE)
-            .addOnSuccessListener { capabilityInfo ->
-                if (capabilityInfo.nodes.isNotEmpty()) {
-                    callback(true)
+        val nodeClient = Wearable.getNodeClient(context)
+
+        nodeClient.connectedNodes
+            .addOnSuccessListener { nodes ->
+                val paired = nodes.isNotEmpty()
+                if (!paired) {
+                    callback(false, false, false)
                     return@addOnSuccessListener
                 }
 
                 capabilityClient
                     .getCapability(WATCH_CAPABILITY, CapabilityClient.FILTER_ALL)
-                    .addOnSuccessListener { allCapabilityInfo ->
-                        if (allCapabilityInfo.nodes.isNotEmpty()) {
-                            callback(true)
-                            return@addOnSuccessListener
-                        }
-
-                        fallbackConnectedNodes(callback)
+                    .addOnSuccessListener { capabilityInfo ->
+                        val hasRcoachWear = capabilityInfo.nodes.isNotEmpty()
+                        callback(hasRcoachWear || paired, paired, hasRcoachWear)
                     }
-                    .addOnFailureListener { fallbackConnectedNodes(callback) }
+                    .addOnFailureListener {
+                        callback(paired, paired, false)
+                    }
             }
-            .addOnFailureListener { fallbackConnectedNodes(callback) }
-    }
-
-    private fun fallbackConnectedNodes(callback: (Boolean) -> Unit) {
-        Wearable.getNodeClient(context)
-            .connectedNodes
-            .addOnSuccessListener { nodes -> callback(nodes.isNotEmpty()) }
-            .addOnFailureListener { callback(false) }
+            .addOnFailureListener {
+                callback(false, false, false)
+            }
     }
 
     @PluginMethod

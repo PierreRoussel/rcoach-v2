@@ -6,9 +6,11 @@ import {
   type WatchCommand,
 } from '@/lib/wear/workout-sync-protocol'
 import {
-  isWearBridgeSupported,
+  formatWearWatchStatusLabel,
+  getWearWatchStatus,
   publishWorkoutSnapshot,
   subscribeToWatchCommands,
+  type WearWatchStatus,
 } from '@/lib/wear/wear-bridge'
 import {
   buildCircuitSteps,
@@ -20,12 +22,21 @@ import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 const WATCH_POLL_INTERVAL_MS = 1_000
 
 export function useWearWorkoutSync(enabled = true) {
-  const [watchAvailable, setWatchAvailable] = useState(false)
+  const [watchStatus, setWatchStatus] = useState<WearWatchStatus>({
+    available: false,
+    paired: false,
+    hasRcoachWear: false,
+  })
   const syncActiveRef = useRef(false)
+  const watchAvailable = watchStatus.available
 
   useEffect(() => {
     if (!enabled) {
-      setWatchAvailable(false)
+      setWatchStatus({
+        available: false,
+        paired: false,
+        hasRcoachWear: false,
+      })
       return
     }
 
@@ -34,26 +45,26 @@ export function useWearWorkoutSync(enabled = true) {
     let pollTimer: ReturnType<typeof setInterval> | undefined
 
     async function ensureWatchSync() {
-      const available = await isWearBridgeSupported()
+      const status = await getWearWatchStatus()
       if (cancelled) {
-        return available
+        return status.available
       }
 
-      setWatchAvailable(available)
+      setWatchStatus(status)
 
-      if (available && !syncActiveRef.current) {
+      if (status.available && !syncActiveRef.current) {
         unsubscribeCommands = await subscribeToWatchCommands(handleWatchCommand)
         syncActiveRef.current = true
         await publishCurrentSnapshot()
       }
 
-      if (!available && syncActiveRef.current) {
+      if (!status.available && syncActiveRef.current) {
         unsubscribeCommands?.()
         unsubscribeCommands = undefined
         syncActiveRef.current = false
       }
 
-      return available
+      return status.available
     }
 
     void ensureWatchSync()
@@ -109,7 +120,10 @@ export function useWearWorkoutSync(enabled = true) {
       : buildIdleWorkoutSnapshot()
 
     await publishWorkoutSnapshot(snapshot)
-    setWatchAvailable(true)
+    setWatchStatus((current) => ({
+      ...current,
+      available: true,
+    }))
   }
 
   async function handleWatchCommand(command: WatchCommand) {
@@ -153,5 +167,9 @@ export function useWearWorkoutSync(enabled = true) {
     }
   }
 
-  return { watchAvailable }
+  return {
+    watchAvailable,
+    watchStatus,
+    watchStatusLabel: formatWearWatchStatusLabel(watchStatus),
+  }
 }

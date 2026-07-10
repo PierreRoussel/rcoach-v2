@@ -27,6 +27,7 @@ data class WearUiState(
 
 class WearWorkoutViewModel(
     private val repository: WearSyncRepository,
+    private val defaultSessionTitle: String,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WearUiState())
     val uiState: StateFlow<WearUiState> = _uiState.asStateFlow()
@@ -76,7 +77,7 @@ class WearWorkoutViewModel(
 
         _uiState.value = WearUiState(
             sessionActive = true,
-            title = json.optString("title", "Seance"),
+            title = json.optString("title", defaultSessionTitle),
             exerciseName = exerciseName,
             setNumber = setNumber,
             weightKg = weightKg,

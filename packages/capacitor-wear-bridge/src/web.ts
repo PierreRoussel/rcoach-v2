@@ -4,7 +4,7 @@ import type { WearBridgePlugin } from './definitions'
 
 export class WearBridgeWeb extends WebPlugin implements WearBridgePlugin {
   async isWatchAvailable() {
-    return { available: false }
+    return { available: false, paired: false, hasRcoachWear: false }
   }
 
   async publishSnapshot() {

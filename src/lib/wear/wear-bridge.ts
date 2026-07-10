@@ -1,18 +1,27 @@
 import { Capacitor } from '@capacitor/core'
 
+import type { WearWatchStatus } from '@rcoach/capacitor-wear-bridge'
 import type { WorkoutSnapshot, WatchCommand } from '@/lib/wear/workout-sync-protocol'
 import {
   decodeWatchCommand,
   encodeWorkoutSnapshot,
 } from '@/lib/wear/workout-sync-protocol'
 
+export type { WearWatchStatus }
+
 type WearBridgeLike = {
-  isWatchAvailable(): Promise<{ available: boolean }>
+  isWatchAvailable(): Promise<WearWatchStatus>
   publishSnapshot(options: { snapshotJson: string }): Promise<void>
   addListener(
     eventName: 'watchCommand',
     listenerFunc: (event: { commandJson: string }) => void,
   ): Promise<{ remove: () => Promise<void> }>
+}
+
+const NO_WATCH_STATUS: WearWatchStatus = {
+  available: false,
+  paired: false,
+  hasRcoachWear: false,
 }
 
 let cachedBridge: WearBridgeLike | null | undefined
@@ -37,18 +46,22 @@ async function loadWearBridge(): Promise<WearBridgeLike | null> {
   return cachedBridge
 }
 
-export async function isWearBridgeSupported() {
+export async function getWearWatchStatus(): Promise<WearWatchStatus> {
   const bridge = await loadWearBridge()
   if (!bridge) {
-    return false
+    return NO_WATCH_STATUS
   }
 
   try {
-    const result = await bridge.isWatchAvailable()
-    return result.available
+    return await bridge.isWatchAvailable()
   } catch {
-    return false
+    return NO_WATCH_STATUS
   }
+}
+
+export async function isWearBridgeSupported() {
+  const status = await getWearWatchStatus()
+  return status.available
 }
 
 export async function publishWorkoutSnapshot(snapshot: WorkoutSnapshot) {
@@ -77,4 +90,16 @@ export async function subscribeToWatchCommands(
   return () => {
     void listener.remove()
   }
+}
+
+export function formatWearWatchStatusLabel(status: WearWatchStatus) {
+  if (status.hasRcoachWear || status.available) {
+    return 'Montre Wear OS connectée'
+  }
+
+  if (status.paired) {
+    return 'Montre appairée — ouvrez RCoach sur la montre'
+  }
+
+  return 'Montre non appairée (app Wear OS)'
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_app_name">RCoach Montre</string>
+    <string name="wear_idle_message">Ouvrez une séance sur RCoach</string>
+    <string name="wear_set_label">Série %1$d</string>
+    <string name="wear_weight_label">Poids: %1$s kg</string>
+    <string name="wear_weight_missing">Poids: - kg</string>
+    <string name="wear_reps_label">Reps: %1$s</string>
+    <string name="wear_reps_missing">Reps: -</string>
+    <string name="wear_rest_label">Repos %1$ds</string>
+    <string name="wear_adjust_weight_minus">-2.5</string>
+    <string name="wear_adjust_weight_plus">+2.5</string>
+    <string name="wear_adjust_reps_minus">-1 rep</string>
+    <string name="wear_adjust_reps_plus">+1 rep</string>
+    <string name="wear_log_set">Valider</string>
+    <string name="wear_skip_rest">Passer</string>
+    <string name="wear_default_session_title">Séance</string>
+</resources>

@@ -38,6 +38,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Distinct package en dev pour éviter d'installer l'APK phone sur la montre.
+            applicationIdSuffix '.wear'
+        }
         release {
             minifyEnabled false
             if (rcoachKeystorePropertiesFile.exists()) {

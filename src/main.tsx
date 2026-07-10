@@ -9,7 +9,12 @@ import { ThemeProvider } from '@/design-system'
 import { AuthProvider } from '@/lib/nhost/AuthProvider'
 import { queryClient } from '@/lib/query-client'
 import { resolveViewTransitionTypes } from '@/lib/router/view-transition-types'
-import { routeTree } from '@/routeTree.gen'
+import { routeTree as routeTreeAndroid } from '@/routeTree.android.gen'
+import { routeTree as routeTreeWeb } from '@/routeTree.gen'
+
+const routeTree = (
+  import.meta.env.VITE_BUILD_TARGET === 'android' ? routeTreeAndroid : routeTreeWeb
+) as typeof routeTreeWeb
 
 import './index.css'
 

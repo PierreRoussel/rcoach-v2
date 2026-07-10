@@ -5,4 +5,5 @@
     <string name="package_name">com.rcoach.app</string>
     <string name="custom_url_scheme">com.rcoach.app</string>
     <string name="health_connect_privacy_policy_url">https://rcoach.fr/legal/privacy</string>
+    <string name="wear_unsupported_message">RCoach sur montre utilise l\u2019app native Wear OS.\n\nEn dev : Android Studio \u2192 module wear \u2192 Run sur la montre.\n\nD\u00e9sinstallez cette variante phone si besoin, puis installez le module wear.</string>
 </resources>

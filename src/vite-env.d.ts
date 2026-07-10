@@ -17,6 +17,8 @@ interface ImportMetaEnv {
   readonly VITE_PLAY_PRODUCT_MONTHLY?: string
   readonly VITE_PLAY_PRODUCT_ANNUAL?: string
   readonly VITE_BILLING_FUNCTION_BASE?: string
+  /** Set in `.env.android` for the Capacitor shell build (no marketing routes). */
+  readonly VITE_BUILD_TARGET?: 'android'
 }
 
 interface ImportMeta {
