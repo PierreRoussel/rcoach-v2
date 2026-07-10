@@ -57,13 +57,15 @@ https://rcoach.fr/legal/privacy
 
 ```bash
 VITE_LEGAL_BASE_URL=https://rcoach.fr
-VITE_LEGAL_PUBLISHER_NAME=...
-VITE_LEGAL_PUBLISHER_ADDRESS=...
-VITE_LEGAL_SIRET=...
+VITE_LEGAL_PUBLISHER_NAME=RCoach
+VITE_LEGAL_PUBLISHER_ADDRESS=10 Grand Place, 62760 Pas-en-Artois, France
+VITE_LEGAL_SIREN=917869810
+VITE_LEGAL_SIRET=91786981000015
+VITE_LEGAL_VAT_NUMBER=FR20917869810
 VITE_SUPPORT_EMAIL=support@rcoach.fr
 ```
 
-Remplacer les placeholders **avant** publication.
+Les valeurs ci-dessus sont aussi définies par défaut dans `src/lib/legal/config.ts` (surchargeables via `.env` en production).
 
 ## Hors scope dépôt (manuel)
 
