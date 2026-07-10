@@ -1,6 +1,7 @@
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, registerPlugin } from '@capacitor/core'
 
-import type { WearWatchStatus } from '@rcoach/capacitor-wear-bridge'
+import type { WearBridgePlugin } from '@rcoach/capacitor-wear-bridge'
+import type { WearWatchStatus } from '../../../packages/capacitor-wear-bridge/src/definitions'
 import type { WorkoutSnapshot, WatchCommand } from '@/lib/wear/workout-sync-protocol'
 import {
   decodeWatchCommand,
@@ -9,24 +10,15 @@ import {
 
 export type { WearWatchStatus }
 
-type WearBridgeLike = {
-  isWatchAvailable(): Promise<WearWatchStatus>
-  publishSnapshot(options: { snapshotJson: string }): Promise<void>
-  addListener(
-    eventName: 'watchCommand',
-    listenerFunc: (event: { commandJson: string }) => void,
-  ): Promise<{ remove: () => Promise<void> }>
-}
-
 const NO_WATCH_STATUS: WearWatchStatus = {
   available: false,
   paired: false,
   hasRcoachWear: false,
 }
 
-let cachedBridge: WearBridgeLike | null | undefined
+let cachedBridge: WearBridgePlugin | null | undefined
 
-async function loadWearBridge(): Promise<WearBridgeLike | null> {
+function loadWearBridge(): WearBridgePlugin | null {
   if (cachedBridge !== undefined) {
     return cachedBridge
   }
@@ -36,18 +28,17 @@ async function loadWearBridge(): Promise<WearBridgeLike | null> {
     return cachedBridge
   }
 
-  try {
-    const module = await import('@rcoach/capacitor-wear-bridge')
-    cachedBridge = module.WearBridge as WearBridgeLike
-  } catch {
-    cachedBridge = null
-  }
-
+  cachedBridge = registerPlugin<WearBridgePlugin>('WearBridge', {
+    web: () =>
+      import('../../../packages/capacitor-wear-bridge/src/web').then(
+        (module) => new module.WearBridgeWeb(),
+      ),
+  })
   return cachedBridge
 }
 
 export async function getWearWatchStatus(): Promise<WearWatchStatus> {
-  const bridge = await loadWearBridge()
+  const bridge = loadWearBridge()
   if (!bridge) {
     return NO_WATCH_STATUS
   }
@@ -65,7 +56,7 @@ export async function isWearBridgeSupported() {
 }
 
 export async function publishWorkoutSnapshot(snapshot: WorkoutSnapshot) {
-  const bridge = await loadWearBridge()
+  const bridge = loadWearBridge()
   if (!bridge) {
     return
   }
@@ -78,7 +69,7 @@ export async function publishWorkoutSnapshot(snapshot: WorkoutSnapshot) {
 export async function subscribeToWatchCommands(
   handler: (command: WatchCommand) => void,
 ) {
-  const bridge = await loadWearBridge()
+  const bridge = loadWearBridge()
   if (!bridge) {
     return () => undefined
   }

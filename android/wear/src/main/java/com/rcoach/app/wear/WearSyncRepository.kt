@@ -1,6 +1,7 @@
 package com.rcoach.app.wear
 
 import android.content.Context
+import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
@@ -36,8 +37,32 @@ class WearSyncRepository(context: Context) : DataClient.OnDataChangedListener {
     }
 
     suspend fun sendCommand(commandJson: String) {
-        val nodes = Wearable.getNodeClient(appContext).connectedNodes.await()
-        val node = nodes.firstOrNull() ?: return
-        messageClient.sendMessage(node.id, "/rcoach/watch_command", commandJson.toByteArray()).await()
+        val nodeClient = Wearable.getNodeClient(appContext)
+        val capabilityClient = Wearable.getCapabilityClient(appContext)
+
+        var targetNodeId = nodeClient.connectedNodes.await().firstOrNull()?.id
+        if (targetNodeId == null) {
+            targetNodeId = capabilityClient
+                .getCapability(PHONE_CAPABILITY, CapabilityClient.FILTER_REACHABLE)
+                .await()
+                .nodes
+                .firstOrNull()
+                ?.id
+        }
+        if (targetNodeId == null) {
+            targetNodeId = capabilityClient
+                .getCapability(PHONE_CAPABILITY, CapabilityClient.FILTER_ALL)
+                .await()
+                .nodes
+                .firstOrNull()
+                ?.id
+        }
+
+        val nodeId = targetNodeId ?: return
+        messageClient.sendMessage(nodeId, "/rcoach/watch_command", commandJson.toByteArray()).await()
+    }
+
+    companion object {
+        private const val PHONE_CAPABILITY = "rcoach_phone"
     }
 }

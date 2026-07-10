@@ -39,8 +39,8 @@ android {
 
     buildTypes {
         debug {
-            // Distinct package en dev pour éviter d'installer l'APK phone sur la montre.
-            applicationIdSuffix '.wear'
+            // Même applicationId que le phone en debug : requis pour le Wear Data Layer
+            // (putDataItem / messages). Ne pas installer le module :app sur la montre.
         }
         release {
             minifyEnabled false
@@ -65,6 +65,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-wearable:18.2.0'
     implementation platform('androidx.compose:compose-bom:2024.08.00')
     implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.animation:animation'
     implementation 'androidx.wear.compose:compose-material:1.4.0'
     implementation 'androidx.wear.compose:compose-foundation:1.4.0'
     implementation 'androidx.activity:activity-compose:1.9.3'

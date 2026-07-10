@@ -26,13 +26,45 @@ cd android && ./gradlew :app:bundleRelease
 ### Itération rapide sur la montre
 
 1. **Désinstallez** toute app `RCoach` / `com.rcoach.app` déjà présente sur la montre (souvent l’APK phone Capacitor).
-2. Android Studio → sélectionnez le module **`wear`** (pas `app`) → Run sur l’émulateur ou la montre physique.
-3. L’icône doit s’appeler **RCoach Montre** (`com.rcoach.app.wear` en debug).
-4. Le téléphone doit avoir l’app `com.rcoach.app` installée et être appairé.
+2. L’icône doit s’appeler **RCoach Montre** (même `applicationId` `com.rcoach.app` que le phone — requis pour le Data Layer).
+3. Le téléphone doit avoir l’app `com.rcoach.app` installée et être appairé.
+
+**Important — même `applicationId` :** `./gradlew :wear:installDebug` installe sur **tous** les appareils adb connectés. L’APK montre **remplace** l’APK phone sur le téléphone → écran « Ouvrez une séance » sur le phone. Utilisez les scripts ciblés :
 
 ```bash
+npm run install:android:wear    # montre uniquement
+npm run install:android:phone   # téléphone uniquement
+npm run install:android:both    # build web + les deux APK aux bons appareils
+```
+
+Android Studio : module **`wear`** + **sélectionnez la montre** dans la liste des devices (pas le téléphone).
+
+#### L’écran montre (« Ouvrez une séance ») s’affiche sur le téléphone
+
+L’APK **wear** a été installé sur le téléphone (même `applicationId`). Réinstallez l’APK phone :
+
+```bash
+npm run install:android:phone
+```
+
+Puis réinstallez la montre séparément :
+
+```bash
+npm run install:android:wear
+```
+
+#### Erreur « Activity class {com.rcoach.app.wear/...} does not exist »
+
+L’icône ou Android Studio pointe encore vers l’ancien package debug `com.rcoach.app.wear`. Depuis la correction Data Layer, le module `wear` s’installe sous `com.rcoach.app` (activité `com.rcoach.app.wear.MainActivity`).
+
+```bash
+# Sur la montre (remplacer <watch> par l’id adb de la montre)
+adb -s <watch> uninstall com.rcoach.app.wear
+adb -s <watch> uninstall com.rcoach.app
 cd android && ./gradlew :wear:installDebug
 ```
+
+Relancez **RCoach Montre** depuis le tiroir d’apps (pas un ancien raccourci). Dans Android Studio : Run le module **`wear`**, pas une config figée sur `com.rcoach.app.wear`.
 
 #### Erreur « This app requires a WebView »
 
@@ -40,15 +72,19 @@ Vous avez lancé le module **phone** (`app`) sur la montre. Capacitor nécessite
 
 #### « Montre non appairée » sur le téléphone
 
-L’app montre peut fonctionner sans que le téléphone la voie via Google Play Services.
+L’app Wear OS peut afficher « Connecté » sans que l’API **Wearable** voie encore les nœuds (fréquent sur émulateur).
 
-1. Sur le **téléphone** : app **Wear OS** → vérifiez que la montre est **Connectée**.
-2. Sur la **montre** : ouvrez **RCoach Montre** et laissez l’app au premier plan.
-3. Relancez la séance sur le téléphone.
-4. **Émulateurs** : appairez téléphone + montre via l’app Wear OS (Bluetooth actif sur les deux).
-5. Rebuild phone après changement du plugin : `npm run build:android` puis Run `app`.
+1. Sur la **montre** (émulateur) : **⋯ → Wear OS → Pair with phone** → choisir l’émulateur téléphone.
+2. Sur le **téléphone** : app **Wear OS** → montre **Connectée**.
+3. Ouvrez **RCoach Montre** sur la montre, puis **RCoach** sur le téléphone.
+4. Rebuild obligatoire après changement du plugin :
+   ```bash
+   npm run build:android
+   ```
+   Puis Run `app` (téléphone) et Run `wear` (montre).
+5. Logcat téléphone : filtre `WearBridge` — vous devez voir `connected=… capability=…` et `Published workout snapshot`.
 
-La pastille indique maintenant trois états : connectée, appairée sans RCoach ouvert, ou non appairée.
+La pastille indique trois états : connectée, appairée sans RCoach ouvert, ou non appairée.
 
 ### Itération sur le téléphone
 

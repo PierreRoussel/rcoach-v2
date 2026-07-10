@@ -15,4 +15,11 @@
     <string name="wear_log_set">Valider</string>
     <string name="wear_skip_rest">Passer</string>
     <string name="wear_default_session_title">Séance</string>
+    <string name="wear_label_kg">Kg</string>
+    <string name="wear_label_reps">Répétitions</string>
+    <string name="wear_previous_set">précéd. %1$s x %2$s</string>
+    <string name="wear_previous_set_weight_only">précéd. %1$s</string>
+    <string name="wear_previous_set_reps_only">précéd. x %1$s</string>
+    <string name="wear_picker_confirm">Valider</string>
+    <string name="wear_picker_cancel">Annuler</string>
 </resources>

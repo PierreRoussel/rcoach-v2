@@ -10,19 +10,31 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
+data class WearPreviousSet(
+    val weightKg: Double?,
+    val reps: Int?,
+)
+
 data class WearUiState(
     val sessionActive: Boolean = false,
     val title: String = "",
     val exerciseName: String = "",
     val setNumber: Int = 1,
+    val totalSets: Int = 0,
     val weightKg: Double? = null,
     val reps: Int? = null,
+    val previousSet: WearPreviousSet? = null,
+    val heartRateBpm: Int? = null,
+    val estimatedKcal: Int? = null,
     val isResting: Boolean = false,
     val restSecondsLeft: Int = 0,
     val restTargetSeconds: Int = 0,
     val nextStepLabel: String? = null,
     val activeExerciseIndex: Int = 0,
     val activeSetIndex: Int = 0,
+    val activeStepIndex: Int = 0,
+    val canGoPrev: Boolean = false,
+    val canGoNext: Boolean = false,
 )
 
 class WearWorkoutViewModel(
@@ -33,10 +45,17 @@ class WearWorkoutViewModel(
     val uiState: StateFlow<WearUiState> = _uiState.asStateFlow()
 
     private var restJob: Job? = null
+    private var totalSteps: Int = 0
+    private var activeStepIndex: Int = 0
 
     init {
         repository.onSnapshot = { json -> applySnapshot(json) }
         repository.start()
+        viewModelScope.launch {
+            WearSessionBridge.snapshots.collect { json ->
+                applySnapshot(json)
+            }
+        }
     }
 
     override fun onCleared() {
@@ -50,9 +69,14 @@ class WearWorkoutViewModel(
 
         if (!sessionActive) {
             restJob?.cancel()
+            totalSteps = 0
+            activeStepIndex = 0
             _uiState.value = WearUiState()
             return
         }
+
+        totalSteps = json.optInt("totalSteps", 0)
+        activeStepIndex = json.optInt("activeStepIndex", 0)
 
         val currentStep = json.optJSONObject("currentStep")
         val isResting = json.optBoolean("isResting", false)
@@ -62,6 +86,7 @@ class WearWorkoutViewModel(
 
         val exerciseName = currentStep?.optString("exerciseName", "Exercice") ?: "Exercice"
         val setNumber = currentStep?.optInt("setNumber", 1) ?: 1
+        val totalSets = currentStep?.optInt("totalSets", 0) ?: 0
         val exerciseIndex = currentStep?.optInt("exerciseIndex", 0) ?: 0
         val setIndex = currentStep?.optInt("setIndex", 0) ?: 0
         val weightKg = if (currentStep != null && currentStep.has("weightKg") && !currentStep.isNull("weightKg")) {
@@ -75,19 +100,55 @@ class WearWorkoutViewModel(
             null
         }
 
+        val previousSet = currentStep?.optJSONObject("previousSet")?.let { previous ->
+            val previousWeight = if (previous.has("weightKg") && !previous.isNull("weightKg")) {
+                previous.optDouble("weightKg")
+            } else {
+                null
+            }
+            val previousReps = if (previous.has("reps") && !previous.isNull("reps")) {
+                previous.optInt("reps")
+            } else {
+                null
+            }
+            if (previousWeight == null && previousReps == null) {
+                null
+            } else {
+                WearPreviousSet(weightKg = previousWeight, reps = previousReps)
+            }
+        }
+
+        val heartRateBpm = if (json.has("heartRateBpm") && !json.isNull("heartRateBpm")) {
+            json.optInt("heartRateBpm")
+        } else {
+            null
+        }
+        val estimatedKcal = if (json.has("estimatedKcal") && !json.isNull("estimatedKcal")) {
+            json.optInt("estimatedKcal")
+        } else {
+            null
+        }
+
         _uiState.value = WearUiState(
             sessionActive = true,
             title = json.optString("title", defaultSessionTitle),
             exerciseName = exerciseName,
             setNumber = setNumber,
+            totalSets = totalSets,
             weightKg = weightKg,
             reps = reps,
+            previousSet = previousSet,
+            heartRateBpm = heartRateBpm,
+            estimatedKcal = estimatedKcal,
             isResting = isResting,
             restSecondsLeft = restSecondsLeft,
             restTargetSeconds = restTargetSeconds,
             nextStepLabel = nextStepLabel,
             activeExerciseIndex = exerciseIndex,
             activeSetIndex = setIndex,
+            activeStepIndex = activeStepIndex,
+            canGoPrev = activeStepIndex > 0,
+            canGoNext = totalSteps > 0 && activeStepIndex < totalSteps - 1,
         )
 
         if (isResting) {
@@ -97,15 +158,12 @@ class WearWorkoutViewModel(
         }
     }
 
-    fun adjustWeight(delta: Double) {
-        val current = _uiState.value
-        val next = ((current.weightKg ?: 0.0) + delta).coerceAtLeast(0.0)
-        _uiState.value = current.copy(weightKg = kotlin.math.round(next * 2) / 2.0)
+    fun setWeight(weightKg: Double) {
+        _uiState.value = _uiState.value.copy(weightKg = weightKg.coerceAtLeast(0.0))
     }
 
-    fun adjustReps(delta: Int) {
-        val current = _uiState.value
-        _uiState.value = current.copy(reps = ((current.reps ?: 0) + delta).coerceAtLeast(0))
+    fun setReps(reps: Int) {
+        _uiState.value = _uiState.value.copy(reps = reps.coerceAtLeast(0))
     }
 
     fun adjustRest(deltaSeconds: Int) {
@@ -131,6 +189,20 @@ class WearWorkoutViewModel(
 
         viewModelScope.launch {
             repository.sendCommand(command.toString())
+        }
+    }
+
+    fun goToPreviousStep() {
+        if (!_uiState.value.canGoPrev) return
+        viewModelScope.launch {
+            repository.sendCommand(JSONObject().put("type", "prevExercise").toString())
+        }
+    }
+
+    fun goToNextStep() {
+        if (!_uiState.value.canGoNext) return
+        viewModelScope.launch {
+            repository.sendCommand(JSONObject().put("type", "nextExercise").toString())
         }
     }
 

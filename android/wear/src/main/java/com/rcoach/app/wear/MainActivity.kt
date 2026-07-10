@@ -1,9 +1,11 @@
 package com.rcoach.app.wear
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,16 +21,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerWearCapability()
+        refreshLatestWorkoutSnapshot()
         setContent {
             MaterialTheme {
                 ProvideWearSyncRepository {
@@ -50,6 +53,28 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun refreshLatestWorkoutSnapshot() {
+        lifecycleScope.launch {
+            try {
+                val items = Wearable.getDataClient(this@MainActivity)
+                    .getDataItems(Uri.parse("wear://*/rcoach/workout_snapshot"))
+                    .await()
+
+                val latest = items.maxByOrNull { item ->
+                    DataMapItem.fromDataItem(item).dataMap.getLong("updatedAt", 0L)
+                } ?: return@launch
+
+                val snapshotJson = DataMapItem.fromDataItem(latest).dataMap
+                    .getString("snapshotJson")
+                    ?: return@launch
+
+                WearSessionBridge.emitSnapshot(JSONObject(snapshotJson))
+            } catch (_: Exception) {
+                // Pas de snapshot en cache — normal hors séance.
+            }
+        }
+    }
+
     companion object {
         private const val WEAR_CAPABILITY = "rcoach_wear"
     }
@@ -66,64 +91,36 @@ fun WearApp() {
     )
     val state by viewModel.uiState.collectAsState()
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (!state.sessionActive) {
+    if (!state.sessionActive) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 stringResource(R.string.wear_idle_message),
                 textAlign = TextAlign.Center,
             )
-            return@Column
         }
-
-        Text(state.title, textAlign = TextAlign.Center)
-        Text(state.exerciseName, textAlign = TextAlign.Center)
-
-        if (state.isResting) {
-            Text(stringResource(R.string.wear_rest_label, state.restSecondsLeft))
-            state.nextStepLabel?.let { label ->
-                Text(label, textAlign = TextAlign.Center)
-            }
-            Button(onClick = { viewModel.adjustRest(-15) }) { Text("-15s") }
-            Button(onClick = { viewModel.adjustRest(15) }) { Text("+15s") }
-            Button(onClick = { viewModel.skipRest() }) {
-                Text(stringResource(R.string.wear_skip_rest))
-            }
-            return@Column
-        }
-
-        Text(stringResource(R.string.wear_set_label, state.setNumber))
-        Text(
-            if (state.weightKg != null) {
-                stringResource(R.string.wear_weight_label, state.weightKg.toString())
-            } else {
-                stringResource(R.string.wear_weight_missing)
-            },
-        )
-        Text(
-            if (state.reps != null) {
-                stringResource(R.string.wear_reps_label, state.reps.toString())
-            } else {
-                stringResource(R.string.wear_reps_missing)
-            },
-        )
-        Button(onClick = { viewModel.adjustWeight(-2.5) }) {
-            Text(stringResource(R.string.wear_adjust_weight_minus))
-        }
-        Button(onClick = { viewModel.adjustWeight(2.5) }) {
-            Text(stringResource(R.string.wear_adjust_weight_plus))
-        }
-        Button(onClick = { viewModel.adjustReps(-1) }) {
-            Text(stringResource(R.string.wear_adjust_reps_minus))
-        }
-        Button(onClick = { viewModel.adjustReps(1) }) {
-            Text(stringResource(R.string.wear_adjust_reps_plus))
-        }
-        Button(onClick = { viewModel.logSet() }) {
-            Text(stringResource(R.string.wear_log_set))
-        }
+        return
     }
+
+    if (state.isResting) {
+        WearRestScreen(
+            restSecondsLeft = state.restSecondsLeft,
+            nextStepLabel = state.nextStepLabel,
+            onAdjustRest = viewModel::adjustRest,
+            onSkipRest = viewModel::skipRest,
+        )
+        return
+    }
+
+    WearActiveWorkoutScreen(
+        state = state,
+        onWeightChange = viewModel::setWeight,
+        onRepsChange = viewModel::setReps,
+        onLogSet = viewModel::logSet,
+        onPrevStep = viewModel::goToPreviousStep,
+        onNextStep = viewModel::goToNextStep,
+    )
 }

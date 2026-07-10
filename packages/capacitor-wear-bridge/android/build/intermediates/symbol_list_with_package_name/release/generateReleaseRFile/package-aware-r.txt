@@ -1,2 +1,0 @@
-com.rcoach.wearbridge
-array android_wear_capabilities

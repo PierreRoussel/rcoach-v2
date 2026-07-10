@@ -11,6 +11,8 @@ import android.os.Bundle;
 public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH)) {
             setContentView(R.layout.activity_wear_unsupported);
             return;

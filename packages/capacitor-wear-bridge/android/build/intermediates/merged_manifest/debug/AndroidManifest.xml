@@ -11,6 +11,14 @@
             android:name="com.rcoach.wearbridge.PhoneWearSyncService"
             android:exported="true" >
             <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+
+                <data
+                    android:host="*"
+                    android:pathPrefix="/rcoach/watch_command"
+                    android:scheme="wear" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
             </intent-filter>
         </service>

@@ -7,14 +7,21 @@ export type WorkoutSetValues = {
   rpe?: number | null
 }
 
+export type WorkoutSnapshotPreviousSet = {
+  weightKg: number | null
+  reps: number | null
+}
+
 export type WorkoutSnapshotCurrentStep = {
   exerciseIndex: number
   setIndex: number
   exerciseName: string
   setNumber: number
+  totalSets: number
   weightKg: number | null
   reps: number | null
   rpe?: number | null
+  previousSet?: WorkoutSnapshotPreviousSet | null
 }
 
 export type WorkoutSnapshotExercise = {
@@ -37,6 +44,8 @@ export type WorkoutSnapshot = {
   restSecondsLeft: number
   restTargetSeconds: number
   defaultRestSeconds: number
+  heartRateBpm?: number | null
+  estimatedKcal?: number | null
   updatedAt: string
 }
 
@@ -81,6 +90,35 @@ export type ActiveWorkoutSnapshotSource = {
   restTargetSeconds: number
   isResting: boolean
   restSecondsLeft: number
+}
+
+export function getPreviousSetValues(
+  sets: Array<{
+    weightKg: number | null
+    reps: number | null
+    completedAt?: string | null
+  }>,
+  setIndex: number,
+): WorkoutSnapshotPreviousSet | null {
+  if (setIndex > 0) {
+    const previous = sets[setIndex - 1]
+    if (previous) {
+      return {
+        weightKg: previous.weightKg,
+        reps: previous.reps,
+      }
+    }
+  }
+
+  const lastCompleted = [...sets].reverse().find((set) => Boolean(set.completedAt))
+  if (!lastCompleted) {
+    return null
+  }
+
+  return {
+    weightKg: lastCompleted.weightKg,
+    reps: lastCompleted.reps,
+  }
 }
 
 export function getSuggestedSetValues(
@@ -139,9 +177,13 @@ export function buildWorkoutSnapshot(
           setIndex: currentStep.setIndex,
           exerciseName: currentExercise?.exerciseName ?? 'Exercice',
           setNumber: currentStep.setIndex + 1,
+          totalSets: currentExercise?.sets.length ?? 0,
           weightKg: currentSet?.weightKg ?? null,
           reps: currentSet?.reps ?? null,
           rpe: currentSet?.rpe ?? null,
+          previousSet: currentExercise
+            ? getPreviousSetValues(currentExercise.sets, currentStep.setIndex)
+            : null,
         }
       : null,
     nextStepLabel: options?.nextStepLabel ?? null,

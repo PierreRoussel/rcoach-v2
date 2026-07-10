@@ -51,6 +51,8 @@ describe('workout-sync-protocol', () => {
 
     expect(snapshot.sessionId).toBe('2026-06-10T16:00:00.000Z')
     expect(snapshot.currentStep?.setNumber).toBe(2)
+    expect(snapshot.currentStep?.totalSets).toBe(2)
+    expect(snapshot.currentStep?.previousSet).toEqual({ weightKg: 60, reps: 8 })
     expect(snapshot.exercises[0]?.completedSetsCount).toBe(1)
     expect(snapshot.restTargetSeconds).toBe(60)
   })
