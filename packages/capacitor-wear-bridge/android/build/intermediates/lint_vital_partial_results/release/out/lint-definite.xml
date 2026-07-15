@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.2.2" type="incidents">
+
+    <incident
+        id="WearableBindListener"
+        severity="fatal"
+        message="The `com.google.android.gms.wearable.BIND_LISTENER` action is deprecated">
+        <location
+            file="${:rcoach-capacitor-wear-bridge*release*MAIN*sourceProvider*0*manifest*0}"
+            line="15"
+            column="25"
+            startOffset="638"
+            endLine="15"
+            endColumn="85"
+            endOffset="698"/>
+    </incident>
+
+</incidents>

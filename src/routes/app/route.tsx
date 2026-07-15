@@ -64,8 +64,8 @@ function AppLayout() {
       <GoalCoachingProvider>
       <NutritionStreakGamificationProvider>
         <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-background">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/90 pt-safe-header backdrop-blur">
+          <div className="flex items-center justify-between gap-3 px-4 pb-2.5">
             <AppWelcomeHeader
               displayName={resolveDisplayName(profile?.display_name, user) || null}
               userId={user?.id}

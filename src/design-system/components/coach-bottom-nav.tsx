@@ -24,7 +24,7 @@ export function CoachBottomNav({ showAdminNav = false }: CoachBottomNavProps) {
   return (
     <nav
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 grid border-t border-border bg-card/95 px-1 py-2 text-[10px] backdrop-blur md:hidden',
+        'fixed inset-x-0 bottom-0 z-40 grid border-t border-border bg-card/95 px-1 py-2 pb-safe-nav text-[10px] backdrop-blur md:hidden',
         showAdminNav ? 'grid-cols-5' : 'grid-cols-4',
       )}
     >

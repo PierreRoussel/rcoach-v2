@@ -55,8 +55,16 @@ export function GoogleSignInButton({
 
     try {
       await redirectToGoogleSignIn(nhost)
-    } catch {
-      setError('Connexion Google impossible. Réessayez plus tard.')
+    } catch (caught) {
+      const fallback = 'Connexion Google impossible. Réessayez plus tard.'
+      const message =
+        caught instanceof Error && caught.message.trim().length > 0
+          ? caught.message
+          : fallback
+      if (import.meta.env.DEV) {
+        console.error('[OAuth] Google sign-in failed', caught)
+      }
+      setError(message.length <= 160 ? message : fallback)
       setIsSubmitting(false)
     }
   }

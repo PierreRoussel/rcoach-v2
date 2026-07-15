@@ -2,12 +2,14 @@ import { Capacitor } from '@capacitor/core'
 import { createRootRoute, Outlet, redirect } from '@tanstack/react-router'
 
 import { AndroidBackNavigation } from '@/components/app/AndroidBackNavigation'
+import { NativeSafeAreaSetup } from '@/components/app/NativeSafeAreaSetup'
 import { OAuthCallbackListener } from '@/components/auth/OAuthCallbackListener'
 import { RootNotFoundRedirect } from '@/lib/router/section-not-found-redirect'
 
 function RootLayout() {
   return (
     <div className="min-h-svh bg-background font-body text-foreground">
+      <NativeSafeAreaSetup />
       <AndroidBackNavigation />
       <OAuthCallbackListener />
       <Outlet />

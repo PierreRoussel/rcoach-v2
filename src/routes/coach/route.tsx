@@ -115,7 +115,7 @@ function CoachLayout() {
       </aside>
 
       <div className="flex min-h-svh flex-col">
-        <header className="flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:hidden">
+        <header className="flex items-center justify-between border-b border-border bg-background/90 px-4 pb-3 pt-safe-header backdrop-blur md:hidden">
           <BrandLogo compact />
           <div className="flex items-center gap-1">
             <ThemeToggle />

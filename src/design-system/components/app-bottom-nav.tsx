@@ -33,7 +33,7 @@ export function AppBottomNav() {
   const badgeCount = useProfileNavBadgeCount()
 
   return (
-    <nav className="sticky bottom-0 z-40 grid grid-cols-4 border-t border-border bg-card px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-xs shadow-[0_-1px_0_0_var(--border)]">
+    <nav className="sticky bottom-0 z-40 grid grid-cols-4 border-t border-border bg-card px-2 py-2 pb-safe-nav text-xs shadow-[0_-1px_0_0_var(--border)]">
       {items.map((item) => {
         const isActive = isNavItemActive(pathname, item)
         const showBadge = 'badge' in item && item.badge && badgeCount > 0

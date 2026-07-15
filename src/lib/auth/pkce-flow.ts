@@ -53,6 +53,12 @@ export async function redirectToGoogleSignIn(nhost: NhostClient) {
   const redirectTo = buildOAuthRedirectUrl()
   const url = await startGoogleSignIn(nhost)
 
+  if (!url.startsWith('http')) {
+    throw new Error(
+      'Configuration Nhost invalide (VITE_NHOST_SUBDOMAIN / VITE_NHOST_REGION). Rebuild l’APK avec .env.local.',
+    )
+  }
+
   if (import.meta.env.DEV) {
     console.info(
       `[OAuth] redirectTo=${redirectTo} — add this exact URL in Nhost Dashboard → Authentication → URL Configuration → Allowed redirect URLs`,
@@ -60,7 +66,16 @@ export async function redirectToGoogleSignIn(nhost: NhostClient) {
   }
 
   if (Capacitor.isNativePlatform()) {
-    await Browser.open({ url, windowName: '_system' })
+    try {
+      await Browser.open({ url })
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      throw new Error(
+        detail.includes('not implemented')
+          ? 'Plugin navigateur indisponible. Réinstallez l’app depuis le Play Store (version 2+).'
+          : `Impossible d’ouvrir le navigateur OAuth (${detail}).`,
+      )
+    }
     return
   }
 
