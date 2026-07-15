@@ -8,7 +8,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { BarChart2, ChevronDown, GripVertical, Info, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 
 import { launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
@@ -303,15 +303,14 @@ function SortableExerciseItem({
   const exerciseComplete = isExerciseComplete(exercise.sets)
   const [open, setOpen] = useState(() => !exerciseComplete)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (exerciseComplete) {
-      setOpen(false)
+      setOpen((current) => (current ? false : current))
+      return
     }
-  }, [exerciseComplete])
 
-  useEffect(() => {
-    if (isActive && !exerciseComplete) {
-      setOpen(true)
+    if (isActive) {
+      setOpen((current) => (current ? current : true))
     }
   }, [exerciseComplete, isActive])
 
@@ -494,7 +493,16 @@ function SortableExerciseItem({
 
   if (hasSetsSection) {
     return (
-      <Collapsible open={open} onOpenChange={setOpen}>
+      <Collapsible
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && isActive && !exerciseComplete) {
+            return
+          }
+
+          setOpen(nextOpen)
+        }}
+      >
         {card}
       </Collapsible>
     )

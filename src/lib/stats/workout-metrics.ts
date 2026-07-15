@@ -3,7 +3,6 @@ import { fr } from 'date-fns/locale'
 
 import type { ActiveExerciseDraft } from '@/lib/db/dexie'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
-import { KCAL_PER_KG } from '@/lib/goals/weight-goal'
 import { estimateOneRepMax } from '@/lib/stats/strength-benchmarks'
 import type { CircuitExercise } from '@/lib/workout/workout-circuit'
 
@@ -157,6 +156,11 @@ export function formatWorkoutVolume(kg: number): string {
 }
 
 const DEFAULT_BODY_WEIGHT_KG = 70
+/** Rest between sets lowers average burn vs continuous cardio MET tables. */
+const STRENGTH_ACTIVE_TIME_FRACTION = 0.72
+/** Typical share of session energy from fat during mixed strength work. */
+const WORKOUT_FAT_OXIDATION_FRACTION = 0.35
+const KCAL_PER_GRAM_FAT = 9
 
 export function getWorkoutDurationMinutes(startedAt: string, endedAt: string): number {
   const minutes = Math.round(
@@ -173,18 +177,18 @@ function resolveStrengthTrainingMet(
   avgHeartRateBpm?: number | null,
 ): number {
   const volumePerMinute = volumeKg / durationMinutes
-  let met = 4.5
+  let met = 3.5
 
   if (volumePerMinute >= 80 || completedSets >= 20) {
-    met = 6
-  } else if (volumePerMinute >= 40 || completedSets >= 12) {
-    met = 5.5
-  } else if (volumePerMinute >= 15 || completedSets >= 8) {
     met = 5
+  } else if (volumePerMinute >= 40 || completedSets >= 12) {
+    met = 4.5
+  } else if (volumePerMinute >= 15 || completedSets >= 8) {
+    met = 4
   }
 
   if (avgHeartRateBpm != null && avgHeartRateBpm >= 100) {
-    const heartRateBoost = Math.min(1.5, Math.max(0, (avgHeartRateBpm - 100) / 60))
+    const heartRateBoost = Math.min(0.8, Math.max(0, (avgHeartRateBpm - 100) / 80))
     met += heartRateBoost
   }
 
@@ -200,7 +204,7 @@ export function estimateWorkoutCalories(input: {
   avgHeartRateBpm?: number | null
 }): number {
   const durationMinutes = getWorkoutDurationMinutes(input.startedAt, input.endedAt)
-  const durationHours = durationMinutes / 60
+  const effectiveDurationHours = (durationMinutes / 60) * STRENGTH_ACTIVE_TIME_FRACTION
   const bodyWeightKg =
     input.bodyWeightKg != null && input.bodyWeightKg > 0
       ? input.bodyWeightKg
@@ -212,20 +216,20 @@ export function estimateWorkoutCalories(input: {
     input.avgHeartRateBpm,
   )
 
-  return Math.round(Math.max(1, met * bodyWeightKg * durationHours))
+  return Math.round(Math.max(1, met * bodyWeightKg * effectiveDurationHours))
 }
 
 export function formatWorkoutCalories(kcal: number): string {
   return `${new Intl.NumberFormat('fr-FR').format(kcal)} kcal`
 }
 
-/** Équivalent masse grasse (7700 kcal ≈ 1 kg), aligné sur les objectifs poids. */
+/** Estimated fat oxidized during the session (not full caloric deficit). */
 export function estimateFatGramsFromCalories(kcal: number): number {
   if (kcal <= 0) {
     return 0
   }
 
-  const grams = (kcal / KCAL_PER_KG) * 1000
+  const grams = (kcal * WORKOUT_FAT_OXIDATION_FRACTION) / KCAL_PER_GRAM_FAT
   return Math.round(grams * 10) / 10
 }
 

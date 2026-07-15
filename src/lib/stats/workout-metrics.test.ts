@@ -193,8 +193,8 @@ describe('estimateWorkoutCalories', () => {
       bodyWeightKg: 75,
     })
 
-    expect(kcal).toBeGreaterThan(200)
-    expect(kcal).toBeLessThan(500)
+    expect(kcal).toBeGreaterThan(150)
+    expect(kcal).toBeLessThan(350)
   })
 
   it('uses a default body weight when none is provided', () => {
@@ -219,8 +219,8 @@ describe('estimateWorkoutCalories', () => {
     expect(formatWorkoutCalories(312)).toBe('312 kcal')
   })
 
-  it('converts workout calories to fat equivalent grams', () => {
-    expect(estimateFatGramsFromCalories(770)).toBe(100)
-    expect(formatWorkoutFatEquivalent(385)).toBe('50 g')
+  it('converts workout calories to fat oxidized during the session', () => {
+    expect(estimateFatGramsFromCalories(900)).toBe(35)
+    expect(formatWorkoutFatEquivalent(257)).toBe('10 g')
   })
 })

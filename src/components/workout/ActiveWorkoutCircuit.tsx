@@ -119,8 +119,8 @@ export function ActiveWorkoutCircuit({
   const nextPendingStepIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
   const targetStep =
     nextPendingStepIndex != null ? steps[nextPendingStepIndex] ?? null : null
+  const targetStepKey = targetStep ? stepKey(targetStep) : null
   const activeExerciseIndex = targetStep?.exerciseIndex ?? 0
-  const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const lastAutoScrolledStepKeyRef = useRef<string | null>(null)
   const [reorderOpen, setReorderOpen] = useState(false)
   const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(
@@ -151,26 +151,43 @@ export function ActiveWorkoutCircuit({
   }, [workoutStartedAt])
 
   useEffect(() => {
-    if (!targetStep || exercises.length === 0) {
+    if (!targetStepKey || exercises.length === 0) {
       return
     }
 
-    const key = stepKey(targetStep)
-    if (lastAutoScrolledStepKeyRef.current === key) {
+    if (lastAutoScrolledStepKeyRef.current === targetStepKey) {
       return
     }
 
-    return scrollElementIntoViewWhenReady(
-      () => stepRefs.current.get(key) ?? null,
-      {
-        behavior: 'smooth',
-        block: 'center',
-        onScroll: () => {
-          lastAutoScrolledStepKeyRef.current = key
+    let cancelled = false
+    let cancelScroll: (() => void) | undefined
+
+    const frame = window.requestAnimationFrame(() => {
+      if (cancelled) {
+        return
+      }
+
+      cancelScroll = scrollElementIntoViewWhenReady(
+        () =>
+          document.querySelector(
+            `[data-circuit-step-key="${CSS.escape(targetStepKey)}"]`,
+          ) as HTMLDivElement | null,
+        {
+          behavior: 'smooth',
+          block: 'center',
+          onScroll: () => {
+            lastAutoScrolledStepKeyRef.current = targetStepKey
+          },
         },
-      },
-    )
-  }, [exercises.length, lastCompletedStep, nextPendingStepIndex, targetStep])
+      )
+    })
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(frame)
+      cancelScroll?.()
+    }
+  }, [exercises.length, targetStepKey])
 
   function handleCompleteStep(exerciseIndex: number, setIndex: number) {
     const exercise = exercises[exerciseIndex]
@@ -229,11 +246,7 @@ export function ActiveWorkoutCircuit({
     return (
       <div
         key={`${exerciseIndex}-${setIndex}`}
-        ref={(node) => {
-          if (node) {
-            stepRefs.current.set(`${exerciseIndex}:${setIndex}`, node)
-          }
-        }}
+        data-circuit-step-key={`${exerciseIndex}:${setIndex}`}
         className={cn(
           'w-full border-b border-border/60 px-3 py-2 transition-colors last:border-b-0',
           isNextToDo
