@@ -1208,7 +1208,6 @@ export const GET_SHARED_TEMPLATE_BY_TOKEN = `
           name_fr
           muscle_group
           equipment
-          tracking_mode
         }
         workout_template_sets(order_by: { set_index: asc }) {
           set_index
@@ -2787,6 +2786,30 @@ export const LIST_UNREAD_MOTIVATIONS = `
         avatar_url
         is_premium
       }
+    }
+  }
+`
+
+export const LIST_UNREAD_MOTIVATIONS_LEGACY = `
+  query ListUnreadMotivationsLegacy($userId: uuid!) {
+    friend_motivations(
+      where: {
+        recipient_id: { _eq: $userId }
+        read_at: { _is_null: true }
+      }
+      order_by: { created_at: desc }
+    ) {
+      id
+      sender_id
+      recipient_id
+      emoji
+      message
+      preset_key
+      read_at
+      hearted_at
+      reply_message
+      sender_reply_seen_at
+      created_at
     }
   }
 `

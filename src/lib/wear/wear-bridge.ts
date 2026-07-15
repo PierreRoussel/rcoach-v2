@@ -66,6 +66,19 @@ export async function publishWorkoutSnapshot(snapshot: WorkoutSnapshot) {
   })
 }
 
+export async function launchWearWorkoutApp() {
+  const bridge = loadWearBridge()
+  if (!bridge) {
+    return
+  }
+
+  try {
+    await bridge.launchWearApp()
+  } catch {
+    // Montre non joignable — le snapshot Data Layer ouvrira l'app en secours.
+  }
+}
+
 export async function subscribeToWatchCommands(
   handler: (command: WatchCommand) => void,
 ) {
@@ -89,7 +102,7 @@ export function formatWearWatchStatusLabel(status: WearWatchStatus) {
   }
 
   if (status.paired) {
-    return 'Montre appairée — ouvrez RCoach sur la montre'
+    return 'Montre appairée — lancez RCoach Montre une fois'
   }
 
   return 'Montre non appairée (app Wear OS)'

@@ -21,6 +21,7 @@ class WearWorkoutDataService : WearableListenerService() {
                 .getString("snapshotJson")
                 ?: continue
 
+            WearSessionLauncher.handleSnapshot(applicationContext, snapshotJson)
             WearSessionBridge.emitSnapshot(JSONObject(snapshotJson))
         }
     }

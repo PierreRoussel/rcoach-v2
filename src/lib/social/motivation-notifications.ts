@@ -75,3 +75,13 @@ export function toReceivedMotivationNotification(
     bannerLabel: 'Nouveau message de motivation',
   }
 }
+
+export function buildHomeMotivationNotifications(
+  incomingUnread: FriendMotivation[],
+  unseenHeartReplies: FriendMotivation[],
+): MotivationNotification[] {
+  return [...buildMotivationNotificationsByFriend(incomingUnread, unseenHeartReplies).values()].sort(
+    (left, right) => notificationTimestamp(right).localeCompare(notificationTimestamp(left)),
+  )
+}
+

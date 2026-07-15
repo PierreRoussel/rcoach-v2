@@ -1,6 +1,7 @@
 import { Minus, Plus, SkipForward } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { APP_BOTTOM_NAV_OFFSET } from '@/lib/workout/fab-layout'
 import { cn } from '@/lib/utils'
 
 type RestTimerBarProps = {
@@ -28,9 +29,10 @@ export function RestTimerBar({
   return (
     <div
       className={cn(
-        'fixed inset-x-0 bottom-16 z-40 border-t border-border bg-card/95 px-4 py-3 shadow-lg backdrop-blur',
+        'fixed inset-x-0 z-40 border-t border-border bg-card/95 px-4 py-3 shadow-lg backdrop-blur',
         className,
       )}
+      style={{ bottom: APP_BOTTOM_NAV_OFFSET }}
     >
       <div className="mx-auto max-w-lg space-y-3">
         <div className="flex items-center justify-between gap-3">

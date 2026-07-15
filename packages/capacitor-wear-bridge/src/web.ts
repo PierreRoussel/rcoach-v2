@@ -10,4 +10,8 @@ export class WearBridgeWeb extends WebPlugin implements WearBridgePlugin {
   async publishSnapshot() {
     return
   }
+
+  async launchWearApp() {
+    return
+  }
 }

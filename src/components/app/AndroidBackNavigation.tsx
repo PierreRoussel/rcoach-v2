@@ -10,6 +10,7 @@ import {
   isDietMealPath,
 } from '@/hooks/useDietMealBackNavigation'
 import { closeTopOverlayLayer } from '@/lib/navigation/close-top-overlay'
+import { closeTopHistoryOverlay } from '@/hooks/useOverlayBackClose'
 import { toDateKey } from '@/lib/nutrition/dates'
 import type { MealType } from '@/lib/nutrition/types'
 
@@ -61,6 +62,10 @@ export function AndroidBackNavigation() {
 
     const listenerPromise = App.addListener('backButton', () => {
       if (closeTopOverlayLayer()) {
+        return
+      }
+
+      if (closeTopHistoryOverlay()) {
         return
       }
 

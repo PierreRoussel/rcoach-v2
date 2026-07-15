@@ -19,7 +19,7 @@ import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useNutritionSync } from '@/hooks/useNutritionSync'
-import { useProfileNavBadgeCount } from '@/hooks/useFriends'
+import { useProfileNavBadgeCount, useRefreshFriendMotivationsOnAppResume } from '@/hooks/useFriends'
 import { createSectionNotFoundRedirect } from '@/lib/router/section-not-found-redirect'
 
 export const Route = createFileRoute('/app')({
@@ -46,6 +46,7 @@ function AppLayout() {
 
   useNutritionSync()
   useProfileNavBadgeCount()
+  useRefreshFriendMotivationsOnAppResume()
 
   useEffect(() => {
     void hydrate()

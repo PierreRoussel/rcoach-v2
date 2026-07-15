@@ -193,7 +193,6 @@ query GetSharedTemplateByToken($token: uuid!) {
         name_fr
         muscle_group
         equipment
-        tracking_mode
       }
       workout_template_sets(order_by: { set_index: asc }) {
         set_index

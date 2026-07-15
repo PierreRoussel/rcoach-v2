@@ -75,6 +75,17 @@ function removeOverlayEntry(entry: OverlayStackEntry) {
   }
 }
 
+/** Pops the topmost history-backed overlay (e.g. Android hardware back). */
+export function closeTopHistoryOverlay(): boolean {
+  const top = overlayStack[overlayStack.length - 1]
+  if (!top?.historyPushed) {
+    return false
+  }
+
+  window.history.back()
+  return true
+}
+
 export function useOverlayBackClose(
   open: boolean,
   onOpenChange: (open: boolean) => void,

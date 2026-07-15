@@ -315,3 +315,85 @@ div.space-y-3:has(> [data-meal-type] .size-11) > [data-meal-type] {
   color: var(--secondary-foreground);
   background: var(--chart-2);
 }
+
+/* ---- Add food page — search focus layout ---- */
+
+.diet-add-page {
+  --diet-add-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.diet-add-page__collapse {
+  overflow: hidden;
+  max-height: 9rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    max-height 0.35s var(--diet-add-ease),
+    opacity 0.3s ease,
+    margin 0.35s var(--diet-add-ease),
+    visibility 0.35s var(--diet-add-ease);
+}
+
+.diet-add-page__collapse[data-collapsed='true'] {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: -1rem;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.diet-add-page__collapse[data-collapsed='false'] {
+  max-height: 9rem;
+  opacity: 1;
+  visibility: visible;
+}
+
+.diet-add-page__collapse-inner {
+  overflow: hidden;
+}
+
+.diet-add-page__topbar {
+  overflow: hidden;
+  transition:
+    max-height 0.35s var(--diet-add-ease),
+    opacity 0.3s ease,
+    margin 0.35s var(--diet-add-ease);
+}
+
+.diet-add-page__topbar--hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: -1rem;
+  pointer-events: none;
+}
+
+.diet-add-page__topbar--compact {
+  max-height: 2.75rem;
+  opacity: 1;
+}
+
+.diet-add-page__topbar--full {
+  max-height: 7.5rem;
+  opacity: 1;
+}
+
+.diet-add-page__search {
+  transition: transform 0.35s var(--diet-add-ease);
+  will-change: transform;
+}
+
+.diet-add-page[data-search-active='true'] .diet-add-page__search {
+  transform: translateY(-0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diet-add-page__topbar,
+  .diet-add-page__collapse,
+  .diet-add-page__search {
+    transition: none;
+  }
+
+  .diet-add-page[data-search-active='true'] .diet-add-page__search {
+    transform: none;
+  }
+}

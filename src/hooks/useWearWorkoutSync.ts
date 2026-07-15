@@ -8,6 +8,7 @@ import {
 import {
   formatWearWatchStatusLabel,
   getWearWatchStatus,
+  launchWearWorkoutApp,
   publishWorkoutSnapshot,
   subscribeToWatchCommands,
   type WearWatchStatus,
@@ -28,6 +29,7 @@ export function useWearWorkoutSync(enabled = true) {
     hasRcoachWear: false,
   })
   const syncActiveRef = useRef(false)
+  const launchedSessionRef = useRef<string | null>(null)
   const watchAvailable = watchStatus.available
 
   useEffect(() => {
@@ -120,6 +122,16 @@ export function useWearWorkoutSync(enabled = true) {
       : buildIdleWorkoutSnapshot()
 
     await publishWorkoutSnapshot(snapshot)
+
+    if (snapshot.sessionId) {
+      if (launchedSessionRef.current !== snapshot.sessionId) {
+        launchedSessionRef.current = snapshot.sessionId
+        void launchWearWorkoutApp()
+      }
+    } else {
+      launchedSessionRef.current = null
+    }
+
     setWatchStatus((current) => ({
       ...current,
       available: true,

@@ -56,8 +56,6 @@ function AppHomePage() {
         </StaggerGroup>
       </AnimateIn>
 
-      <MotivationHomeNotificationTile />
-
       <AnimateIn delay={320}>
         <GoalsHomeSummaryTile />
       </AnimateIn>
@@ -65,6 +63,8 @@ function AppHomePage() {
       <AnimateIn delay={380}>
         <NutritionHomeSummaryTile />
       </AnimateIn>
+
+      <MotivationHomeNotificationTile />
 
       <AnimateIn delay={410}>
         <MissedPlannedSessionHomeTile />

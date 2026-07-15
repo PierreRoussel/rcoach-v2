@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
@@ -23,6 +23,7 @@ import {
 import { useMealLogMutations } from '@/hooks/useMealLogMutations'
 import { useDietAddBackNavigation } from '@/hooks/useDietMealBackNavigation'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useOverlayBackClose } from '@/hooks/useOverlayBackClose'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { findFoodByBarcodeInDatabase } from '@/lib/nutrition/barcode-lookup'
 import { cacheFood } from '@/lib/nutrition/offline-food'
@@ -39,6 +40,7 @@ import {
 } from '@/lib/nutrition/food-search-history'
 import type { PortionInput } from '@/lib/nutrition/nutrient-math'
 import { MEAL_LABELS, type Food, type MealType } from '@/lib/nutrition/types'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 const addSearchSchema = z.object({
@@ -52,6 +54,7 @@ type AddFoodTab = 'frequent' | 'recent' | 'favorites'
 const QUICK_ADD_SUCCESS_MS = 1500
 const SEARCH_HISTORY_DEBOUNCE_MS = 700
 const SEARCH_BLUR_DELAY_MS = 150
+const ADD_SEARCH_FOCUS_HISTORY_KEY = '__dietAddSearchFocus'
 
 export const Route = createFileRoute('/app/diet/add')({
   validateSearch: addSearchSchema,
@@ -72,6 +75,22 @@ function AddFoodPage() {
   const quickAddResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [query, setQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
+  const setSearchFocusOpen = useOverlayBackClose(
+    searchFocused,
+    (open) => {
+      if (searchBlurTimerRef.current) {
+        clearTimeout(searchBlurTimerRef.current)
+        searchBlurTimerRef.current = null
+      }
+
+      setSearchFocused(open)
+
+      if (!open) {
+        searchInputRef.current?.blur()
+      }
+    },
+    ADD_SEARCH_FOCUS_HISTORY_KEY,
+  )
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [searchOffExternally, setSearchOffExternally] = useState(false)
   const [selectedFood, setSelectedFood] = useState<Food | null>(null)
@@ -330,13 +349,13 @@ function AddFoodPage() {
       searchBlurTimerRef.current = null
     }
 
-    setSearchFocused(true)
+    setSearchFocusOpen(true)
     setRecentSearches(readFoodSearchHistory(userId))
   }
 
   function handleSearchBlur() {
     searchBlurTimerRef.current = setTimeout(() => {
-      setSearchFocused(false)
+      setSearchFocusOpen(false)
       searchBlurTimerRef.current = null
     }, SEARCH_BLUR_DELAY_MS)
   }
@@ -348,6 +367,9 @@ function AddFoodPage() {
 
   const showRecentSearches =
     searchFocused && trimmedQuery.length < 2 && recentSearches.length > 0
+
+  const isSearchActive = searchFocused || trimmedQuery.length > 0
+  const topBarMode = searchFocused ? 'hidden' : isSearchActive ? 'compact' : 'full'
 
   async function handleScan() {
     setFeedback(null)
@@ -385,43 +407,80 @@ function AddFoodPage() {
   }
 
   return (
-    <div className="space-y-4 pb-24">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
-          <Link
-            to="/app/diet/meals/$mealType"
-            params={{ mealType }}
-            search={{ date }}
-            replace
-            aria-label="Retour au repas"
+    <div
+      className="diet-add-page space-y-4 pb-24"
+      data-search-active={isSearchActive ? 'true' : undefined}
+    >
+      <div className={cn('diet-add-page__topbar', `diet-add-page__topbar--${topBarMode}`)}>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="size-9 shrink-0" asChild>
+            <Link
+              to="/app/diet/meals/$mealType"
+              params={{ mealType }}
+              search={{ date }}
+              replace
+              aria-label="Retour au repas"
+            >
+              <ArrowLeft className="size-5" />
+            </Link>
+          </Button>
+          <div
+            className={cn(
+              'min-w-0 space-y-1 overflow-hidden transition-[max-width,opacity] duration-300 ease-out',
+              isSearchActive ? 'max-w-0 opacity-0' : 'max-w-full opacity-100',
+            )}
+            aria-hidden={isSearchActive}
           >
-            <ArrowLeft className="size-5" />
-          </Link>
-        </Button>
-        <div className="min-w-0 space-y-1">
-          <p className="text-xs font-medium text-primary">
-            {MEAL_LABELS[mealType]} · {formatFrenchDateLabel(date)}
-          </p>
-          <h1 className="font-display text-2xl font-black text-foreground">Ajouter un aliment</h1>
-          <p className="text-sm text-muted-foreground">
-            Recherchez un aliment, parcourez vos listes ou utilisez les raccourcis ci-dessous.
-          </p>
+            <p className="text-xs font-medium text-primary">
+              {MEAL_LABELS[mealType]} · {formatFrenchDateLabel(date)}
+            </p>
+            <h1 className="font-display text-2xl font-black text-foreground">Ajouter un aliment</h1>
+            <p className="text-sm text-muted-foreground">
+              Recherchez un aliment, parcourez vos listes ou utilisez les raccourcis ci-dessous.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="diet-add-page__search space-y-2">
         <label htmlFor="food-search" className="text-sm font-semibold text-foreground">
           Rechercher
         </label>
-        <Input
-          id="food-search"
-          ref={searchInputRef}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onFocus={handleSearchFocus}
-          onBlur={handleSearchBlur}
-          placeholder="Nom, marque ou code-barres..."
-        />
+        <div
+          className="relative"
+          onPointerDown={() => {
+            if (!searchFocused) {
+              handleSearchFocus()
+            }
+          }}
+        >
+          <Input
+            id="food-search"
+            ref={searchInputRef}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
+            placeholder="Nom, marque ou code-barres..."
+            className={cn(query.length > 0 && 'pr-9')}
+          />
+          {query.length > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                setQuery('')
+                searchInputRef.current?.focus()
+              }}
+              aria-label="Effacer la recherche"
+            >
+              <X className="size-4" />
+            </Button>
+          ) : null}
+        </div>
         {showRecentSearches ? (
           <FoodSearchRecentSuggestions
             queries={recentSearches}
@@ -430,18 +489,25 @@ function AddFoodPage() {
         ) : null}
       </div>
 
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-foreground">Autres options</p>
-        <FoodQuickActions
-          onSearchFocus={() => searchInputRef.current?.focus()}
-          onScan={() => void handleScan()}
-          onCreate={() =>
-            void navigate({
-              to: '/app/diet/foods/new',
-              search: { date, mealType, mode: 'manual' },
-            })
-          }
-        />
+      <div
+        className="diet-add-page__collapse"
+        data-collapsed={isSearchActive ? 'true' : 'false'}
+      >
+        <div className="diet-add-page__collapse-inner">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">Autres options</p>
+            <FoodQuickActions
+              onSearchFocus={() => searchInputRef.current?.focus()}
+              onScan={() => void handleScan()}
+              onCreate={() =>
+                void navigate({
+                  to: '/app/diet/foods/new',
+                  search: { date, mealType, mode: 'manual' },
+                })
+              }
+            />
+          </div>
+        </div>
       </div>
 
       {canTriggerOffSearch ? (

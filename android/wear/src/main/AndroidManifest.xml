@@ -28,6 +28,13 @@
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/rcoach/open_session"
+                    android:scheme="wear" />
+            </intent-filter>
         </service>
     </application>
 </manifest>

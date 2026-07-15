@@ -16,6 +16,7 @@ type NativeBarcodeScannerOverlayProps = {
 
 async function stopNativeScannerSession() {
   document.body.classList.remove('barcode-scanner-active')
+  document.documentElement.classList.remove('barcode-scanner-active')
 
   try {
     await BarcodeScanner.removeAllListeners()
@@ -74,6 +75,7 @@ export function NativeBarcodeScannerOverlay({
         }
 
         document.body.classList.add('barcode-scanner-active')
+        document.documentElement.classList.add('barcode-scanner-active')
 
         listenerRef.current = await BarcodeScanner.addListener('barcodesScanned', (event) => {
           if (handledRef.current) {

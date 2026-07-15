@@ -17,6 +17,7 @@ class WearBridgePlugin : Plugin() {
         private const val TAG = "WearBridge"
         private const val WATCH_CAPABILITY = "rcoach_wear"
         private const val PHONE_CAPABILITY = "rcoach_phone"
+        private const val OPEN_SESSION_PATH = "/rcoach/open_session"
     }
 
     override fun load() {
@@ -111,6 +112,45 @@ class WearBridgePlugin : Plugin() {
             .addOnFailureListener { error ->
                 Log.e(TAG, "Unable to publish workout snapshot", error)
                 call.reject(error.message ?: "Unable to publish snapshot")
+            }
+    }
+
+    @PluginMethod
+    fun launchWearApp(call: PluginCall) {
+        val capabilityClient = Wearable.getCapabilityClient(appContext)
+        val messageClient = Wearable.getMessageClient(appContext)
+
+        capabilityClient
+            .getCapability(WATCH_CAPABILITY, CapabilityClient.FILTER_REACHABLE)
+            .addOnSuccessListener { capabilityInfo ->
+                val nodes = capabilityInfo.nodes
+                if (nodes.isEmpty()) {
+                    Log.d(TAG, "No reachable wear nodes for launchWearApp")
+                    call.resolve()
+                    return@addOnSuccessListener
+                }
+
+                var pending = nodes.size
+                for (node in nodes) {
+                    messageClient
+                        .sendMessage(node.id, OPEN_SESSION_PATH, ByteArray(0))
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Log.d(TAG, "Sent open_session to wear node ${node.id}")
+                            } else {
+                                Log.w(TAG, "Unable to send open_session to wear node ${node.id}", task.exception)
+                            }
+
+                            pending -= 1
+                            if (pending == 0) {
+                                call.resolve()
+                            }
+                        }
+                }
+            }
+            .addOnFailureListener { error ->
+                Log.w(TAG, "launchWearApp capability lookup failed", error)
+                call.resolve()
             }
     }
 

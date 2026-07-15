@@ -1,5 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { format, startOfDay, subDays, subWeeks } from 'date-fns'
+import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+import { useEffect, useMemo } from 'react'
 
 import {
   COUNT_UNREAD_MOTIVATIONS,
@@ -13,6 +16,7 @@ import {
   LIST_MY_SENT_MOTIVATIONS,
   LIST_MY_SENT_MOTIVATIONS_LEGACY,
   LIST_UNREAD_MOTIVATIONS,
+  LIST_UNREAD_MOTIVATIONS_LEGACY,
   LIST_UNSEEN_HEART_REPLIES,
   MARK_MOTIVATION_READ,
   MARK_MOTIVATION_REPLY_SEEN,
@@ -38,10 +42,75 @@ import {
   type MotivationPresetKey,
 } from '@/lib/social/motivation-presets'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import { buildHomeMotivationNotifications } from '@/lib/social/motivation-notifications'
 
 const FRIENDS_QUERY_KEY = ['friends']
-const UNREAD_MOTIVATIONS_KEY = ['friend-motivations', 'unread']
+export const UNREAD_MOTIVATIONS_KEY = ['friend-motivations', 'unread']
 const SENT_MOTIVATIONS_KEY = ['friend-motivations', 'sent']
+
+const MOTIVATION_QUERY_OPTIONS = {
+  staleTime: 5_000,
+  refetchOnMount: 'always' as const,
+  refetchOnReconnect: true,
+}
+
+export function invalidateFriendMotivationQueries(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: UNREAD_MOTIVATIONS_KEY })
+}
+
+export function useRefreshFriendMotivationsOnAppResume() {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    function refresh() {
+      void invalidateFriendMotivationQueries(queryClient)
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refresh()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    let removeAppListener: (() => void) | undefined
+    if (Capacitor.isNativePlatform()) {
+      void App.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          refresh()
+        }
+      }).then((handle) => {
+        removeAppListener = () => {
+          void handle.remove()
+        }
+      })
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      removeAppListener?.()
+    }
+  }, [queryClient])
+}
+
+export function useHomeMotivationNotifications() {
+  const incoming = useUnreadMotivations()
+  const replies = useUnseenHeartReplies()
+
+  const notifications = useMemo(
+    () => buildHomeMotivationNotifications(incoming.data ?? [], replies.data ?? []),
+    [incoming.data, replies.data],
+  )
+
+  return {
+    notifications,
+    latest: notifications[0] ?? null,
+    isPending: incoming.isPending || replies.isPending,
+    isError: incoming.isError || replies.isError,
+    refetch: () => Promise.all([incoming.refetch(), replies.refetch()]),
+  }
+}
 
 function friendsQueryKey(userId: string | undefined) {
   return [...FRIENDS_QUERY_KEY, userId]
@@ -232,7 +301,7 @@ export function useUnreadMotivationsCount() {
   return useQuery({
     queryKey: [...UNREAD_MOTIVATIONS_KEY, 'count', userId],
     enabled: isAuthenticated && Boolean(userId),
-    staleTime: 60_000,
+    ...MOTIVATION_QUERY_OPTIONS,
     queryFn: async () => {
       const data = await graphqlRequest<{
         incoming: { aggregate: { count: number } | null }
@@ -253,14 +322,23 @@ export function useUnreadMotivations(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...UNREAD_MOTIVATIONS_KEY, userId],
     enabled: isAuthenticated && Boolean(userId) && (options?.enabled ?? true),
-    staleTime: 30_000,
+    ...MOTIVATION_QUERY_OPTIONS,
     queryFn: async () => {
-      const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
-        nhost,
-        LIST_UNREAD_MOTIVATIONS,
-        { userId: userId! },
-      )
-      return data.friend_motivations
+      try {
+        const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+          nhost,
+          LIST_UNREAD_MOTIVATIONS,
+          { userId: userId! },
+        )
+        return data.friend_motivations
+      } catch {
+        const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
+          nhost,
+          LIST_UNREAD_MOTIVATIONS_LEGACY,
+          { userId: userId! },
+        )
+        return data.friend_motivations
+      }
     },
   })
 }
@@ -272,7 +350,7 @@ export function useUnseenHeartReplies() {
   return useQuery({
     queryKey: [...UNREAD_MOTIVATIONS_KEY, 'heart-replies', userId],
     enabled: isAuthenticated && Boolean(userId),
-    staleTime: 30_000,
+    ...MOTIVATION_QUERY_OPTIONS,
     queryFn: async () => {
       try {
         const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(

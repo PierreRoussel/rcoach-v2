@@ -1,5 +1,6 @@
 export const WEAR_SNAPSHOT_PATH = '/rcoach/workout_snapshot'
 export const WEAR_COMMAND_PATH = '/rcoach/watch_command'
+export const WEAR_OPEN_SESSION_PATH = '/rcoach/open_session'
 
 export type WorkoutSetValues = {
   weightKg: number | null

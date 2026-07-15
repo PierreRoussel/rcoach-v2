@@ -1,11 +1,17 @@
 body.barcode-scanner-active {
+  visibility: hidden;
   background: transparent !important;
 }
 
-body.barcode-scanner-active #root {
-  visibility: hidden;
+html.barcode-scanner-active {
+  background: transparent !important;
 }
 
 body.barcode-scanner-active .barcode-scanner-modal {
+  visibility: visible;
+  background: transparent !important;
+}
+
+body.barcode-scanner-active .barcode-scanner-modal__chrome {
   visibility: visible;
 }

@@ -27,10 +27,15 @@ export function BarcodeScannerShell({
   }
 
   return createPortal(
-    <div className="barcode-scanner-modal fixed inset-0 z-[100] flex flex-col bg-black">
+    <div
+      className={cn(
+        'barcode-scanner-modal fixed inset-0 z-[100] flex flex-col',
+        frameTransparent ? 'bg-transparent' : 'bg-black',
+      )}
+    >
       {video}
 
-      <div className="relative z-10 flex flex-1 flex-col">
+      <div className="barcode-scanner-modal__chrome relative z-10 flex flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
           <Button
             type="button"

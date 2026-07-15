@@ -11,6 +11,7 @@ export type WearWatchStatus = {
 export interface WearBridgePlugin {
   isWatchAvailable(): Promise<WearWatchStatus>
   publishSnapshot(options: { snapshotJson: string }): Promise<void>
+  launchWearApp(): Promise<void>
   addListener(
     eventName: 'watchCommand',
     listenerFunc: (event: { commandJson: string }) => void,
