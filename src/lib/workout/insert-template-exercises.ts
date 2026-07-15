@@ -19,6 +19,8 @@ type InsertedTemplateExercise = {
 
 type TemplateInsertOptions = {
   includeSupersetId?: boolean
+  includeEmomGroupId?: boolean
+  includeTargetReps?: boolean
   includeDefaultRestSeconds?: boolean
   includeSetType?: boolean
   includeDurationSeconds?: boolean
@@ -26,6 +28,8 @@ type TemplateInsertOptions = {
 
 const FULL_TEMPLATE_INSERT_OPTIONS: TemplateInsertOptions = {
   includeSupersetId: true,
+  includeEmomGroupId: true,
+  includeTargetReps: true,
   includeDefaultRestSeconds: true,
   includeSetType: true,
   includeDurationSeconds: true,
@@ -195,6 +199,14 @@ function degradeTemplateInsertOptions(
 
   if (options.includeSupersetId && isGraphqlMissingFieldError(error, 'superset_id')) {
     return { ...options, includeSupersetId: false }
+  }
+
+  if (options.includeEmomGroupId && isGraphqlMissingFieldError(error, 'emom_group_id')) {
+    return { ...options, includeEmomGroupId: false }
+  }
+
+  if (options.includeTargetReps && isGraphqlMissingFieldError(error, 'target_reps')) {
+    return { ...options, includeTargetReps: false }
   }
 
   if (options.includeSetType && isGraphqlMissingFieldError(error, 'set_type')) {

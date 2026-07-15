@@ -179,6 +179,9 @@ query GetSharedTemplateByToken($token: uuid!) {
     name
     default_rest_seconds
     share_token
+    session_mode
+    emom_interval_seconds
+    emom_total_minutes
     user {
       display_name
     }
@@ -187,6 +190,8 @@ query GetSharedTemplateByToken($token: uuid!) {
       sort_order
       superset_id
       default_rest_seconds
+      target_reps
+      emom_group_id
       exercise {
         id
         name
@@ -235,9 +240,15 @@ query ListMyWorkoutTemplates {
     updated_at
     default_rest_seconds
     share_token
+    session_mode
+    emom_interval_seconds
+    emom_total_minutes
     workout_template_exercises(order_by: { sort_order: asc }) {
       id
       sort_order
+      superset_id
+      target_reps
+      emom_group_id
       exercise {
         id
         name
@@ -264,9 +275,15 @@ query GetWorkoutTemplate($id: uuid!) {
     updated_at
     default_rest_seconds
     share_token
+    session_mode
+    emom_interval_seconds
+    emom_total_minutes
     workout_template_exercises(order_by: { sort_order: asc }) {
       id
       sort_order
+      superset_id
+      target_reps
+      emom_group_id
       exercise {
         id
         name
@@ -297,6 +314,9 @@ mutation UpdateWorkoutTemplate(
   $name: String!
   $defaultRestSeconds: Int!
   $folderName: String
+  $sessionMode: String
+  $emomIntervalSeconds: Int
+  $emomTotalMinutes: Int
 ) {
   update_workout_templates_by_pk(
     pk_columns: { id: $id }
@@ -304,6 +324,9 @@ mutation UpdateWorkoutTemplate(
       name: $name
       folder_name: $folderName
       default_rest_seconds: $defaultRestSeconds
+      session_mode: $sessionMode
+      emom_interval_seconds: $emomIntervalSeconds
+      emom_total_minutes: $emomTotalMinutes
       updated_at: "now()"
     }
   ) {
@@ -311,6 +334,9 @@ mutation UpdateWorkoutTemplate(
     name
     folder_name
     default_rest_seconds
+    session_mode
+    emom_interval_seconds
+    emom_total_minutes
     updated_at
   }
 }

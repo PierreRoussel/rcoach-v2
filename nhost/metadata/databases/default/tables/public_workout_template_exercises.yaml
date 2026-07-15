@@ -26,6 +26,8 @@ select_permissions:
         - sort_order
         - superset_id
         - default_rest_seconds
+        - target_reps
+        - emom_group_id
       filter:
         template:
           user_id:
@@ -39,6 +41,8 @@ select_permissions:
         - sort_order
         - superset_id
         - default_rest_seconds
+        - target_reps
+        - emom_group_id
       filter:
         template:
           share_token:
@@ -56,6 +60,8 @@ insert_permissions:
         - sort_order
         - superset_id
         - default_rest_seconds
+        - target_reps
+        - emom_group_id
 update_permissions:
   - role: user
     permission:
@@ -63,6 +69,8 @@ update_permissions:
         - sort_order
         - superset_id
         - default_rest_seconds
+        - target_reps
+        - emom_group_id
       filter:
         template:
           user_id:

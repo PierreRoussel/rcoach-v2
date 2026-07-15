@@ -13,6 +13,12 @@ import {
 import { graphqlRequest } from '@/lib/graphql/request'
 import { insertTemplateExercises } from '@/lib/workout/insert-template-exercises'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import {
+  DEFAULT_EMOM_INTERVAL_SECONDS,
+  DEFAULT_SESSION_MODE,
+  normalizeSessionMode,
+  type SessionMode,
+} from '@/lib/workout/session-mode'
 
 export type TemplateSetType = 'normal' | 'warmup' | 'failure'
 
@@ -33,8 +39,17 @@ export type TemplateExerciseDraft = {
   muscleGroup: string | null
   equipment: string | null
   supersetId: number | null
+  emomGroupId?: number | null
+  targetReps?: number | null
   defaultRestSeconds: number
   sets: TemplateSetDraft[]
+}
+
+export type TemplateDraft = {
+  sessionMode: SessionMode
+  emomIntervalSeconds: number
+  emomTotalMinutes: number
+  exercises: TemplateExerciseDraft[]
 }
 
 export const DEFAULT_GLOBAL_REST_SECONDS = 90
@@ -83,13 +98,16 @@ export function useWorkoutTemplate(templateId: string) {
   })
 }
 
-export function templateToDraft(
-  template: WorkoutTemplate,
-): { exercises: TemplateExerciseDraft[] } {
+export function templateToDraft(template: WorkoutTemplate): TemplateDraft {
   const templateDefaultRestSeconds =
     template.default_rest_seconds ?? DEFAULT_GLOBAL_REST_SECONDS
+  const sessionMode = normalizeSessionMode(template.session_mode)
 
   return {
+    sessionMode,
+    emomIntervalSeconds:
+      template.emom_interval_seconds ?? DEFAULT_EMOM_INTERVAL_SECONDS,
+    emomTotalMinutes: template.emom_total_minutes ?? 12,
     exercises: template.workout_template_exercises.map((entry) => {
       const exerciseDefaultRestSeconds =
         entry.default_rest_seconds ?? templateDefaultRestSeconds
@@ -101,6 +119,8 @@ export function templateToDraft(
         muscleGroup: entry.exercise.muscle_group,
         equipment: entry.exercise.equipment,
         supersetId: entry.superset_id ?? null,
+        emomGroupId: entry.emom_group_id ?? null,
+        targetReps: entry.target_reps ?? null,
         defaultRestSeconds: exerciseDefaultRestSeconds,
         sets: (entry.workout_template_sets ?? []).map((set) => ({
           setIndex: set.set_index,
@@ -124,10 +144,16 @@ export function useCreateWorkoutTemplate() {
     mutationFn: async ({
       name,
       defaultRestSeconds = DEFAULT_GLOBAL_REST_SECONDS,
+      sessionMode = DEFAULT_SESSION_MODE,
+      emomIntervalSeconds = DEFAULT_EMOM_INTERVAL_SECONDS,
+      emomTotalMinutes = 12,
       exercises = [],
     }: {
       name: string
       defaultRestSeconds?: number
+      sessionMode?: SessionMode
+      emomIntervalSeconds?: number
+      emomTotalMinutes?: number
       exercises?: TemplateExerciseDraft[]
     }) => {
       const data = await graphqlRequest<{
@@ -136,6 +162,10 @@ export function useCreateWorkoutTemplate() {
         object: {
           name,
           default_rest_seconds: defaultRestSeconds,
+          session_mode: sessionMode,
+          emom_interval_seconds:
+            sessionMode === 'emom' ? emomIntervalSeconds : null,
+          emom_total_minutes: sessionMode === 'emom' ? emomTotalMinutes : null,
         },
       })
 
@@ -182,12 +212,18 @@ export function useSaveWorkoutTemplate() {
       name,
       folderName,
       defaultRestSeconds,
+      sessionMode = DEFAULT_SESSION_MODE,
+      emomIntervalSeconds = DEFAULT_EMOM_INTERVAL_SECONDS,
+      emomTotalMinutes = 12,
       exercises,
     }: {
       templateId: string
       name: string
       folderName?: string | null
       defaultRestSeconds: number
+      sessionMode?: SessionMode
+      emomIntervalSeconds?: number
+      emomTotalMinutes?: number
       exercises: TemplateExerciseDraft[]
     }) => {
       const normalizedFolderName = folderName?.trim() || null
@@ -197,6 +233,9 @@ export function useSaveWorkoutTemplate() {
         name,
         folderName: normalizedFolderName,
         defaultRestSeconds,
+        sessionMode,
+        emomIntervalSeconds: sessionMode === 'emom' ? emomIntervalSeconds : null,
+        emomTotalMinutes: sessionMode === 'emom' ? emomTotalMinutes : null,
       })
       await graphqlRequest(nhost, DELETE_WORKOUT_TEMPLATE_EXERCISES, {
         templateId,
@@ -236,9 +275,15 @@ export function exerciseToDraft(exercise: Exercise): TemplateExerciseDraft {
     muscleGroup: exercise.muscle_group,
     equipment: exercise.equipment,
     supersetId: null,
+    emomGroupId: null,
+    targetReps: null,
     defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
     sets: [],
   }
+}
+
+export function exerciseToEmomDraft(exercise: Exercise): TemplateExerciseDraft {
+  return exerciseToDraft(exercise)
 }
 
 export {

@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 
 import { TemplateEditorForm } from '@/components/workout/TemplateEditorForm'
+import type { TemplateEditorSessionConfig } from '@/components/workout/TemplateEditorForm'
 import { Button } from '@/components/ui/button'
 import {
   DEFAULT_GLOBAL_REST_SECONDS,
@@ -13,6 +14,7 @@ import {
 } from '@/hooks/useWorkoutTemplates'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
+import { DEFAULT_EMOM_COUNTDOWN_SECONDS } from '@/lib/workout/emom-store'
 
 export const Route = createFileRoute('/app/sessions/$templateId')({
   component: EditSessionTemplatePage,
@@ -36,12 +38,16 @@ function EditSessionTemplatePage() {
     name: string,
     exercises: TemplateExerciseDraft[],
     folderName: string | null,
+    config: TemplateEditorSessionConfig,
   ) {
     await saveTemplate.mutateAsync({
       templateId,
       name,
       folderName,
       defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
+      sessionMode: config.sessionMode,
+      emomIntervalSeconds: config.emomIntervalSeconds,
+      emomTotalMinutes: config.emomTotalMinutes,
       exercises,
     })
   }
@@ -50,19 +56,34 @@ function EditSessionTemplatePage() {
     name: string,
     exercises: TemplateExerciseDraft[],
     folderName: string | null,
+    config: TemplateEditorSessionConfig,
   ) {
     await saveTemplate.mutateAsync({
       templateId,
       name,
       folderName,
       defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
+      sessionMode: config.sessionMode,
+      emomIntervalSeconds: config.emomIntervalSeconds,
+      emomTotalMinutes: config.emomTotalMinutes,
       exercises,
     })
     await startWorkoutFromTemplate(
       name,
-      templateExercisesToActive(exercises),
+      templateExercisesToActive(exercises, config.sessionMode),
       DEFAULT_GLOBAL_REST_SECONDS,
       templateId,
+      {
+        sessionMode: config.sessionMode,
+        emom:
+          config.sessionMode === 'emom'
+            ? {
+                intervalSeconds: config.emomIntervalSeconds,
+                totalMinutes: config.emomTotalMinutes,
+                countdownSeconds: DEFAULT_EMOM_COUNTDOWN_SECONDS,
+              }
+            : undefined,
+      },
     )
     await navigate({ to: '/app/workout/active' })
   }
@@ -94,6 +115,9 @@ function EditSessionTemplatePage() {
         initialName={template.name}
         initialFolderName={template.folder_name ?? null}
         initialExercises={initial.exercises}
+        initialSessionMode={initial.sessionMode}
+        initialEmomIntervalSeconds={initial.emomIntervalSeconds}
+        initialEmomTotalMinutes={initial.emomTotalMinutes}
         isSaving={saveTemplate.isPending}
         onSave={handleSave}
         onStart={handleStart}

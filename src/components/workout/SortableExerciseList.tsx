@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import { SupersetMembershipDrawer } from '@/components/workout/SupersetMembershipDrawer'
+import { EmomGroupDrawer } from '@/components/workout/EmomGroupDrawer'
 import { Pill } from '@/design-system'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,6 +64,8 @@ type SortableExerciseListProps = {
   embedded?: boolean
   onApplySupersetMembership?: (anchorIndex: number, partnerIndices: number[]) => void
   onRemoveFromSuperset?: (index: number) => void
+  onApplyEmomGroupMembership?: (anchorIndex: number, partnerIndices: number[]) => void
+  onRemoveFromEmomGroup?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
   onOpenReorder?: () => void
   onAddSet?: (index: number) => void
@@ -86,6 +89,8 @@ function ExerciseActionsMenu({
   onRemove,
   onOpenSupersetDrawer,
   onRemoveFromSuperset,
+  onOpenEmomGroupDrawer,
+  onRemoveFromEmomGroup,
   onOpenReorder,
   onReplaceRequest,
   onViewStats,
@@ -96,6 +101,8 @@ function ExerciseActionsMenu({
   onRemove?: () => void
   onOpenSupersetDrawer?: () => void
   onRemoveFromSuperset?: (index: number) => void
+  onOpenEmomGroupDrawer?: () => void
+  onRemoveFromEmomGroup?: (index: number) => void
   onOpenReorder?: () => void
   onReplaceRequest?: (index: number) => void
   onViewStats?: (index: number) => void
@@ -104,9 +111,12 @@ function ExerciseActionsMenu({
   const exercise = exercises[index]
   const hasSupersetActions = onOpenSupersetDrawer && onRemoveFromSuperset
   const canConfigureSuperset = hasSupersetActions && exercises.length > 1
+  const hasEmomActions = onOpenEmomGroupDrawer && onRemoveFromEmomGroup
+  const canConfigureEmomGroup = hasEmomActions && exercises.length > 1
 
   if (
     !hasSupersetActions &&
+    !hasEmomActions &&
     !onOpenReorder &&
     !onRemove &&
     !onReplaceRequest &&
@@ -173,9 +183,28 @@ function ExerciseActionsMenu({
             </DropdownMenuItem>
           </>
         ) : null}
+        {hasEmomActions &&
+        (onOpenReorder || onReplaceRequest || onViewStats || onViewDetails || hasSupersetActions) ? (
+          <DropdownMenuSeparator />
+        ) : null}
+        {canConfigureEmomGroup ? (
+          <DropdownMenuItem onClick={onOpenEmomGroupDrawer}>
+            <Link2 className="size-4" />
+            Grouper dans la même minute
+          </DropdownMenuItem>
+        ) : null}
+        {hasEmomActions && exercise?.emomGroupId != null ? (
+          <>
+            {canConfigureEmomGroup ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuItem onClick={() => onRemoveFromEmomGroup(index)}>
+              <Unlink className="size-4" />
+              Retirer du groupe minute
+            </DropdownMenuItem>
+          </>
+        ) : null}
         {onRemove ? (
           <>
-            {onOpenReorder || hasSupersetActions || onReplaceRequest || onViewStats || onViewDetails ? (
+            {onOpenReorder || hasSupersetActions || hasEmomActions || onReplaceRequest || onViewStats || onViewDetails ? (
               <DropdownMenuSeparator />
             ) : null}
             <DropdownMenuItem
@@ -206,6 +235,8 @@ function SortableExerciseItem({
   embedded,
   onOpenSupersetDrawer,
   onRemoveFromSuperset,
+  onOpenEmomGroupDrawer,
+  onRemoveFromEmomGroup,
   onOpenReorder,
   onAddSet,
   onReplaceRequest,
@@ -229,6 +260,8 @@ function SortableExerciseItem({
   embedded: boolean
   onOpenSupersetDrawer?: () => void
   onRemoveFromSuperset?: (index: number) => void
+  onOpenEmomGroupDrawer?: () => void
+  onRemoveFromEmomGroup?: (index: number) => void
   onOpenReorder?: () => void
   onAddSet?: (index: number) => void
   onReplaceRequest?: (index: number) => void
@@ -376,6 +409,8 @@ function SortableExerciseItem({
               onRemove={showDeleteButton ? undefined : onRemove}
               onOpenSupersetDrawer={onOpenSupersetDrawer}
               onRemoveFromSuperset={onRemoveFromSuperset}
+              onOpenEmomGroupDrawer={onOpenEmomGroupDrawer}
+              onRemoveFromEmomGroup={onRemoveFromEmomGroup}
               onOpenReorder={onOpenReorder}
               onReplaceRequest={onReplaceRequest}
               onViewStats={onViewStats}
@@ -481,6 +516,8 @@ export function SortableExerciseList({
   embedded = false,
   onApplySupersetMembership,
   onRemoveFromSuperset,
+  onApplyEmomGroupMembership,
+  onRemoveFromEmomGroup,
   renderSetsContent,
   onOpenReorder,
   onAddSet,
@@ -498,6 +535,7 @@ export function SortableExerciseList({
   const sensors = useSortableSensors()
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
   const [supersetAnchorIndex, setSupersetAnchorIndex] = useState<number | null>(null)
+  const [emomGroupAnchorIndex, setEmomGroupAnchorIndex] = useState<number | null>(null)
   const launchedReplaceRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -579,6 +617,12 @@ export function SortableExerciseList({
             : undefined
         }
         onRemoveFromSuperset={onRemoveFromSuperset}
+        onOpenEmomGroupDrawer={
+          onApplyEmomGroupMembership
+            ? () => setEmomGroupAnchorIndex(index)
+            : undefined
+        }
+        onRemoveFromEmomGroup={onRemoveFromEmomGroup}
         onOpenReorder={onOpenReorder}
         onAddSet={onAddSet}
         onReplaceRequest={onReplace ? handleReplaceRequest : undefined}
@@ -650,6 +694,20 @@ export function SortableExerciseList({
           exercises={exercises}
           anchorIndex={supersetAnchorIndex}
           onConfirm={onApplySupersetMembership}
+        />
+      ) : null}
+
+      {onApplyEmomGroupMembership ? (
+        <EmomGroupDrawer
+          open={emomGroupAnchorIndex != null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEmomGroupAnchorIndex(null)
+            }
+          }}
+          exercises={exercises}
+          anchorIndex={emomGroupAnchorIndex}
+          onConfirm={onApplyEmomGroupMembership}
         />
       ) : null}
     </DndContext>

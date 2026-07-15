@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Play, Save } from 'lucide-react'
 
 import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
-import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
+import { SessionModeSelector } from '@/components/workout/SessionModeSelector'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { useExercisePickerConsumer } from '@/hooks/useExercisePickerConsumer'
 import {
@@ -22,6 +22,13 @@ import {
 } from '@/components/ui/card'
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  applyEmomGroupMembership,
+  cleanupEmomGroupAfterRemoval,
+  compactEmomGroupBlocks,
+  removeExerciseFromEmomGroup,
+} from '@/lib/workout/exercise-emom-group'
 import {
   applySupersetMembership,
   cleanupSupersetAfterRemoval,
@@ -39,6 +46,17 @@ import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 import { replaceTemplateExercise } from '@/lib/workout/replace-exercise'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
+import {
+  DEFAULT_EMOM_INTERVAL_SECONDS,
+  DEFAULT_SESSION_MODE,
+  type SessionMode,
+} from '@/lib/workout/session-mode'
+
+export type TemplateEditorSessionConfig = {
+  sessionMode: SessionMode
+  emomIntervalSeconds: number
+  emomTotalMinutes: number
+}
 
 type TemplateEditorFormProps = {
   templateId?: string
@@ -46,16 +64,21 @@ type TemplateEditorFormProps = {
   initialName?: string
   initialFolderName?: string | null
   initialExercises?: TemplateExerciseDraft[]
+  initialSessionMode?: SessionMode
+  initialEmomIntervalSeconds?: number
+  initialEmomTotalMinutes?: number
   isSaving?: boolean
   onSave: (
     name: string,
     exercises: TemplateExerciseDraft[],
     folderName: string | null,
+    config: TemplateEditorSessionConfig,
   ) => Promise<void>
   onStart?: (
     name: string,
     exercises: TemplateExerciseDraft[],
     folderName: string | null,
+    config: TemplateEditorSessionConfig,
   ) => Promise<void>
 }
 
@@ -65,6 +88,9 @@ export function TemplateEditorForm({
   initialName = '',
   initialFolderName = null,
   initialExercises = [],
+  initialSessionMode = DEFAULT_SESSION_MODE,
+  initialEmomIntervalSeconds = DEFAULT_EMOM_INTERVAL_SECONDS,
+  initialEmomTotalMinutes = 12,
   isSaving = false,
   onSave,
   onStart,
@@ -73,6 +99,11 @@ export function TemplateEditorForm({
   const rpeEnabled = profile?.rpe_enabled ?? false
   const [name, setName] = useState(initialName)
   const [folderName, setFolderName] = useState(initialFolderName ?? '')
+  const [sessionMode, setSessionMode] = useState<SessionMode>(initialSessionMode)
+  const [emomIntervalSeconds, setEmomIntervalSeconds] = useState(
+    String(initialEmomIntervalSeconds),
+  )
+  const [emomTotalMinutes, setEmomTotalMinutes] = useState(String(initialEmomTotalMinutes))
   const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
   const [activeIndex, setActiveIndex] = useState(0)
   const [reorderOpen, setReorderOpen] = useState(false)
@@ -82,14 +113,49 @@ export function TemplateEditorForm({
   )
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const isEmom = sessionMode === 'emom'
 
   useEffect(() => {
     setName(initialName)
     setFolderName(initialFolderName ?? '')
     setExercises(initialExercises)
-  }, [initialName, initialFolderName, initialExercises])
+    setSessionMode(initialSessionMode)
+    setEmomIntervalSeconds(String(initialEmomIntervalSeconds))
+    setEmomTotalMinutes(String(initialEmomTotalMinutes))
+  }, [
+    initialName,
+    initialFolderName,
+    initialExercises,
+    initialSessionMode,
+    initialEmomIntervalSeconds,
+    initialEmomTotalMinutes,
+  ])
 
-  const activeEntries: ActiveExerciseEntry[] = templateExercisesToActive(exercises)
+  const activeEntries: ActiveExerciseEntry[] = templateExercisesToActive(
+    exercises,
+    sessionMode,
+  )
+
+  function buildSessionConfig(): TemplateEditorSessionConfig {
+    const intervalSeconds = Number.parseInt(emomIntervalSeconds, 10)
+    const totalMinutes = Number.parseInt(emomTotalMinutes, 10)
+
+    if (sessionMode === 'emom') {
+      if (!Number.isFinite(totalMinutes) || totalMinutes < 1) {
+        throw new Error('Indiquez une durée EMOM valide (au moins 1 minute).')
+      }
+
+      if (!Number.isFinite(intervalSeconds) || intervalSeconds < 1) {
+        throw new Error('Indiquez un intervalle EMOM valide (au moins 1 seconde).')
+      }
+    }
+
+    return {
+      sessionMode,
+      emomIntervalSeconds: intervalSeconds || DEFAULT_EMOM_INTERVAL_SECONDS,
+      emomTotalMinutes: totalMinutes || 12,
+    }
+  }
 
   function handleAddExercise(exercise: Exercise) {
     if (exercises.some((item) => item.exerciseId === exercise.id)) {
@@ -108,7 +174,7 @@ export function TemplateEditorForm({
       return
     }
     next.splice(to, 0, moved)
-    const compacted = compactSupersetBlocks(next)
+    const compacted = isEmom ? compactEmomGroupBlocks(next) : compactSupersetBlocks(next)
     setExercises(compacted)
 
     if (activeIndex === from) {
@@ -121,9 +187,13 @@ export function TemplateEditorForm({
   }
 
   function handleRemove(index: number) {
-    const next = cleanupSupersetAfterRemoval(
-      exercises.filter((_, itemIndex) => itemIndex !== index),
-    )
+    const next = isEmom
+      ? cleanupEmomGroupAfterRemoval(
+          exercises.filter((_, itemIndex) => itemIndex !== index),
+        )
+      : cleanupSupersetAfterRemoval(
+          exercises.filter((_, itemIndex) => itemIndex !== index),
+        )
     setExercises(next)
     setActiveIndex(Math.min(activeIndex, Math.max(next.length - 1, 0)))
   }
@@ -176,9 +246,28 @@ export function TemplateEditorForm({
     setExercises((current) => removeExerciseFromSuperset(current, index))
   }
 
+  function handleApplyEmomGroupMembership(anchorIndex: number, partnerIndices: number[]) {
+    setExercises((current) => applyEmomGroupMembership(current, anchorIndex, partnerIndices))
+  }
+
+  function handleRemoveFromEmomGroup(index: number) {
+    setExercises((current) => removeExerciseFromEmomGroup(current, index))
+  }
+
   function handleUpdateExercise(index: number, exercise: TemplateExerciseDraft) {
     setExercises((current) =>
       current.map((item, itemIndex) => (itemIndex === index ? exercise : item)),
+    )
+  }
+
+  function handleUpdateTargetReps(index: number, rawValue: string) {
+    const targetReps = rawValue.trim() === '' ? null : Number.parseInt(rawValue, 10)
+    setExercises((current) =>
+      current.map((exercise, itemIndex) =>
+        itemIndex === index
+          ? { ...exercise, targetReps: Number.isFinite(targetReps) ? targetReps : null }
+          : exercise,
+      ),
     )
   }
 
@@ -193,7 +282,7 @@ export function TemplateEditorForm({
     }
 
     try {
-      await onSave(trimmedName, exercises, folderName.trim() || null)
+      await onSave(trimmedName, exercises, folderName.trim() || null, buildSessionConfig())
       setMessage('Séance sauvegardée.')
     } catch (saveError) {
       setError(
@@ -223,7 +312,7 @@ export function TemplateEditorForm({
     }
 
     try {
-      await onStart(trimmedName, exercises, folderName.trim() || null)
+      await onStart(trimmedName, exercises, folderName.trim() || null, buildSessionConfig())
     } catch (startError) {
       setError(
         startError instanceof Error
@@ -257,6 +346,33 @@ export function TemplateEditorForm({
           placeholder="Dossier (optionnel)"
           className="h-9 border-border/70 bg-muted/20 text-sm"
         />
+        <SessionModeSelector value={sessionMode} onChange={setSessionMode} disabled={isSaving} />
+        {isEmom ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="templateEmomTotalMinutes">Durée totale (minutes)</Label>
+              <Input
+                id="templateEmomTotalMinutes"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={emomTotalMinutes}
+                onChange={(event) => setEmomTotalMinutes(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="templateEmomIntervalSeconds">Intervalle (secondes)</Label>
+              <Input
+                id="templateEmomIntervalSeconds"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={emomIntervalSeconds}
+                onChange={(event) => setEmomIntervalSeconds(event.target.value)}
+              />
+            </div>
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="pill"
@@ -286,7 +402,10 @@ export function TemplateEditorForm({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle className="font-display font-black">Exercices</CardTitle>
-              <CardDescription>{exercises.length} exercice(s)</CardDescription>
+              <CardDescription>
+                {exercises.length} exercice(s)
+                {isEmom ? ' · rotation par minute' : ''}
+              </CardDescription>
             </div>
             <ExercisePicker
               excludeIds={exercises.map((exercise) => exercise.exerciseId)}
@@ -307,14 +426,16 @@ export function TemplateEditorForm({
             onReorder={handleReorder}
             onRemove={handleRemove}
             onReplace={handleReplace}
-            onApplySupersetMembership={handleApplySupersetMembership}
-            onRemoveFromSuperset={handleRemoveFromSuperset}
-            showSetCount
+            onApplySupersetMembership={isEmom ? undefined : handleApplySupersetMembership}
+            onRemoveFromSuperset={isEmom ? undefined : handleRemoveFromSuperset}
+            onApplyEmomGroupMembership={isEmom ? handleApplyEmomGroupMembership : undefined}
+            onRemoveFromEmomGroup={isEmom ? handleRemoveFromEmomGroup : undefined}
+            showSetCount={!isEmom}
             dragHandle="subtle"
             showDeleteButton={false}
             embedded
             onOpenReorder={() => setReorderOpen(true)}
-            onAddSet={handleAddSet}
+            onAddSet={isEmom ? undefined : handleAddSet}
             pickerContext="template"
             pickerReturnTo={{
               to: '/app/sessions/$templateId',
@@ -341,14 +462,39 @@ export function TemplateEditorForm({
                 equipment: exercise.equipment,
               })
             }}
-            renderSetsContent={(index) => (
-              <TemplateExerciseSetsEditor
-                exercise={exercises[index]!}
-                templateId={templateId}
-                includeRpeInHistory={rpeEnabled}
-                onChange={(exercise) => handleUpdateExercise(index, exercise)}
-              />
-            )}
+            renderBelowTitle={
+              isEmom
+                ? (index) => (
+                    <div className="mt-2 flex items-center gap-2 px-4">
+                      <Label htmlFor={`target-reps-${index}`} className="text-xs text-muted-foreground">
+                        Reps cible
+                      </Label>
+                      <Input
+                        id={`target-reps-${index}`}
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        placeholder="Optionnel"
+                        value={exercises[index]?.targetReps ?? ''}
+                        onChange={(event) => handleUpdateTargetReps(index, event.target.value)}
+                        className="h-8 w-24"
+                      />
+                    </div>
+                  )
+                : undefined
+            }
+            renderSetsContent={
+              isEmom
+                ? undefined
+                : (index) => (
+                    <TemplateExerciseSetsEditor
+                      exercise={exercises[index]!}
+                      templateId={templateId}
+                      includeRpeInHistory={rpeEnabled}
+                      onChange={(exercise) => handleUpdateExercise(index, exercise)}
+                    />
+                  )
+            }
           />
 
           <div className="px-4 pb-4">

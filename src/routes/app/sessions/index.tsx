@@ -50,6 +50,7 @@ import {
 import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
+import { DEFAULT_EMOM_COUNTDOWN_SECONDS } from '@/lib/workout/emom-store'
 import { FREE_HISTORY_WEEKS, FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
 import {
   countActiveTemplates,
@@ -179,9 +180,20 @@ function CatalogTab() {
     const draft = templateToDraft(template)
     await startWorkoutFromTemplate(
       template.name,
-      templateExercisesToActive(draft.exercises),
+      templateExercisesToActive(draft.exercises, draft.sessionMode),
       DEFAULT_GLOBAL_REST_SECONDS,
       template.id,
+      {
+        sessionMode: draft.sessionMode,
+        emom:
+          draft.sessionMode === 'emom'
+            ? {
+                intervalSeconds: draft.emomIntervalSeconds,
+                totalMinutes: draft.emomTotalMinutes,
+                countdownSeconds: DEFAULT_EMOM_COUNTDOWN_SECONDS,
+              }
+            : undefined,
+      },
     )
     await navigate({ to: '/app/workout/active' })
   }

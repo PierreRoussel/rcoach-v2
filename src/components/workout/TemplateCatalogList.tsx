@@ -13,6 +13,10 @@ import { FrozenBadge, Pill } from '@/design-system'
 import type { WorkoutTemplate, ScheduledSessionRecord } from '@/lib/graphql/operations'
 import { formatRelativeScheduleDate } from '@/lib/schedule/format-relative-schedule-date'
 import {
+  formatEmomTemplateMeta,
+  getTemplateSessionLabel,
+} from '@/lib/workout/template-session-label'
+import {
   groupTemplatesForCatalog,
   shouldUseTemplateCatalogAccordions,
   type TemplateCatalogGroup,
@@ -77,11 +81,31 @@ function TemplateCatalogRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="font-display font-black">{template.name}</p>
+            {getTemplateSessionLabel(template.session_mode) ? (
+              <Pill tone="secondary" className="shrink-0 text-[10px]">
+                {getTemplateSessionLabel(template.session_mode)}
+              </Pill>
+            ) : null}
             {isFrozen ? <FrozenBadge /> : null}
           </div>
-          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            <Dumbbell className="size-3 shrink-0" />
-            {template.workout_template_exercises.length} exercices
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Dumbbell className="size-3 shrink-0" />
+              {template.workout_template_exercises.length} exercices
+            </span>
+            {formatEmomTemplateMeta(
+              template.session_mode,
+              template.emom_total_minutes,
+              template.emom_interval_seconds,
+            ) ? (
+              <span>
+                {formatEmomTemplateMeta(
+                  template.session_mode,
+                  template.emom_total_minutes,
+                  template.emom_interval_seconds,
+                )}
+              </span>
+            ) : null}
           </p>
         </div>
         {nextOccurrenceDate ? (

@@ -5,11 +5,13 @@ import { WORKOUT_FAB_BOTTOM_OFFSET } from '@/lib/workout/fab-layout'
 
 type ActiveWorkoutFinishFabProps = {
   disabled?: boolean
+  subtitle?: string
   onFinish: () => void
 }
 
 export function ActiveWorkoutFinishFab({
   disabled = false,
+  subtitle = 'Toutes les séries sont validées',
   onFinish,
 }: ActiveWorkoutFinishFabProps) {
   return (
@@ -48,7 +50,7 @@ export function ActiveWorkoutFinishFab({
               Terminer la séance
             </span>
             <span className="mt-0.5 block text-[11px] font-medium text-secondary-foreground/85">
-              Toutes les séries sont validées
+              {subtitle}
             </span>
           </span>
         </button>

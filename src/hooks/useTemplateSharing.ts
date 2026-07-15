@@ -79,21 +79,24 @@ export function useImportTemplateFromShare() {
       template: WorkoutTemplate | SharedWorkoutTemplate
       name: string
     }) => {
-      const { exercises } = templateToDraft(template)
+      const draft = templateToDraft(template)
       const defaultRestSeconds =
         template.default_rest_seconds ?? DEFAULT_GLOBAL_REST_SECONDS
 
-      if (exercises.length === 0) {
+      if (draft.exercises.length === 0) {
         throw new Error('Ce modèle ne contient aucun exercice à importer.')
       }
 
       const created = await insertWorkoutTemplateWithFallbacks(nhost, {
         name,
         defaultRestSeconds,
+        sessionMode: draft.sessionMode,
+        emomIntervalSeconds: draft.emomIntervalSeconds,
+        emomTotalMinutes: draft.emomTotalMinutes,
       })
 
       try {
-        await insertTemplateExercises(nhost, created.id, exercises, defaultRestSeconds)
+        await insertTemplateExercises(nhost, created.id, draft.exercises, defaultRestSeconds)
       } catch (error) {
         await graphqlRequest(nhost, DELETE_WORKOUT_TEMPLATE, { id: created.id }).catch(
           () => undefined,

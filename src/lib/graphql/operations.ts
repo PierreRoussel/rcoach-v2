@@ -115,6 +115,8 @@ export type WorkoutTemplateExercise = {
   sort_order: number
   superset_id?: number | null
   default_rest_seconds?: number
+  target_reps?: number | null
+  emom_group_id?: number | null
   exercise: Exercise
   workout_template_sets: WorkoutTemplateSet[]
 }
@@ -128,6 +130,9 @@ export type WorkoutTemplate = {
   default_rest_seconds: number
   source_workout_id?: string | null
   share_token?: string | null
+  session_mode?: string | null
+  emom_interval_seconds?: number | null
+  emom_total_minutes?: number | null
   workout_template_exercises: WorkoutTemplateExercise[]
 }
 
@@ -1194,6 +1199,9 @@ export const GET_SHARED_TEMPLATE_BY_TOKEN = `
       name
       default_rest_seconds
       share_token
+      session_mode
+      emom_interval_seconds
+      emom_total_minutes
       user {
         display_name
       }
@@ -1202,6 +1210,8 @@ export const GET_SHARED_TEMPLATE_BY_TOKEN = `
         sort_order
         superset_id
         default_rest_seconds
+        target_reps
+        emom_group_id
         exercise {
           id
           name
@@ -1264,11 +1274,16 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
       updated_at
       default_rest_seconds
       share_token
+      session_mode
+      emom_interval_seconds
+      emom_total_minutes
       workout_template_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
         superset_id
         default_rest_seconds
+        target_reps
+        emom_group_id
         exercise {
           id
           name
@@ -1300,11 +1315,16 @@ export const GET_WORKOUT_TEMPLATE = `
       updated_at
       default_rest_seconds
       share_token
+      session_mode
+      emom_interval_seconds
+      emom_total_minutes
       workout_template_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
         superset_id
         default_rest_seconds
+        target_reps
+        emom_group_id
         exercise {
           id
           name
@@ -1349,6 +1369,9 @@ export const UPDATE_WORKOUT_TEMPLATE = `
     $name: String!
     $defaultRestSeconds: Int!
     $folderName: String
+    $sessionMode: String
+    $emomIntervalSeconds: Int
+    $emomTotalMinutes: Int
   ) {
     update_workout_templates_by_pk(
       pk_columns: { id: $id }
@@ -1356,6 +1379,9 @@ export const UPDATE_WORKOUT_TEMPLATE = `
         name: $name
         folder_name: $folderName
         default_rest_seconds: $defaultRestSeconds
+        session_mode: $sessionMode
+        emom_interval_seconds: $emomIntervalSeconds
+        emom_total_minutes: $emomTotalMinutes
         updated_at: "now()"
       }
     ) {
@@ -1363,6 +1389,9 @@ export const UPDATE_WORKOUT_TEMPLATE = `
       name
       folder_name
       default_rest_seconds
+      session_mode
+      emom_interval_seconds
+      emom_total_minutes
       updated_at
     }
   }

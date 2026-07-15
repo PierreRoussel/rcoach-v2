@@ -2,17 +2,39 @@ import { create } from 'zustand'
 
 import { db, type ActiveExerciseDraft, type ActiveSetDraft, type ActiveWorkoutDraft } from '@/lib/db/dexie'
 import {
+  applyEmomGroupMembership as mergeEmomGroupMembership,
+  cleanupEmomGroupAfterRemoval,
+  compactEmomGroupBlocks,
+  removeExerciseFromEmomGroup,
+} from '@/lib/workout/exercise-emom-group'
+import {
   applySupersetMembership as mergeSupersetMembership,
   cleanupSupersetAfterRemoval,
   compactSupersetBlocks,
   removeExerciseFromSuperset,
 } from '@/lib/workout/exercise-superset'
+import {
+  createInitialEmomState,
+  logEmomMinuteState,
+  normalizeEmomState,
+  skipToNextMinuteState,
+  syncEmomSecondsLeft,
+  tickEmomState,
+  type EmomTimerState,
+} from '@/lib/workout/emom-store'
+import { handleEmomTickEvents } from '@/lib/workout/emom-timer-feedback'
 import { replaceActiveExercise } from '@/lib/workout/replace-exercise'
 import { getExerciseTrackingKind, isTimedExercise } from '@/lib/workout/exercise-tracking'
 import {
   playRestCompleteBeep,
   warmUpRestTimerAudio,
 } from '@/lib/workout/rest-timer-audio'
+import {
+  DEFAULT_EMOM_INTERVAL_SECONDS,
+  DEFAULT_SESSION_MODE,
+  normalizeSessionMode,
+  type SessionMode,
+} from '@/lib/workout/session-mode'
 import {
   buildCircuitSteps,
   findLastCompletedStep,
@@ -30,6 +52,16 @@ import {
 
 export type ActiveSet = ActiveSetDraft
 export type ActiveExerciseEntry = ActiveExerciseDraft
+export type ActiveEmomState = EmomTimerState
+
+export type StartWorkoutOptions = {
+  sessionMode?: SessionMode
+  emom?: {
+    intervalSeconds: number
+    totalMinutes: number
+    countdownSeconds?: number
+  }
+}
 
 type CompleteStepValues = {
   weightKg?: number | null
@@ -112,6 +144,8 @@ type PersistableState = Pick<
   ActiveWorkoutState,
   | 'title'
   | 'startedAt'
+  | 'sessionMode'
+  | 'emom'
   | 'defaultRestSeconds'
   | 'sourceTemplateId'
   | 'sourceTemplateExerciseLineup'
@@ -123,6 +157,8 @@ type PersistableState = Pick<
 type ActiveWorkoutState = {
   title: string
   startedAt: string | null
+  sessionMode: SessionMode
+  emom: ActiveEmomState | null
   defaultRestSeconds: number
   sourceTemplateId: string | null
   sourceTemplateExerciseLineup: TemplateExerciseLineSnapshot[] | null
@@ -139,12 +175,13 @@ type ActiveWorkoutState = {
   holdEndsAt: number | null
   holdingStep: CircuitStep | null
   hydrate: () => Promise<void>
-  startWorkout: (title: string) => Promise<void>
+  startWorkout: (title: string, options?: StartWorkoutOptions) => Promise<void>
   startWorkoutFromTemplate: (
     title: string,
     exercises: ActiveExerciseEntry[],
     defaultRestSeconds?: number,
     sourceTemplateId?: string | null,
+    options?: StartWorkoutOptions,
   ) => Promise<void>
   addExercise: (exercise: {
     id: string
@@ -169,6 +206,12 @@ type ActiveWorkoutState = {
   updateExerciseDefaultRest: (exerciseIndex: number, restSeconds: number) => Promise<void>
   applySupersetMembership: (anchorIndex: number, partnerIndices: number[]) => Promise<void>
   removeFromSuperset: (exerciseIndex: number) => Promise<void>
+  applyEmomGroupMembership: (anchorIndex: number, partnerIndices: number[]) => Promise<void>
+  removeFromEmomGroup: (exerciseIndex: number) => Promise<void>
+  updateExerciseTargetReps: (exerciseIndex: number, targetReps: number | null) => Promise<void>
+  tickEmom: () => void
+  logEmomMinute: (minuteIndex?: number) => Promise<void>
+  skipEmomMinute: () => Promise<void>
   updatePlannedSet: (
     exerciseIndex: number,
     setIndex: number,
@@ -274,6 +317,8 @@ async function persistDraft(
     id: 'current',
     title: state.title,
     startedAt: state.startedAt,
+    sessionMode: state.sessionMode ?? get().sessionMode,
+    emom: state.emom !== undefined ? state.emom : get().emom ?? undefined,
     defaultRestSeconds: state.defaultRestSeconds,
     sourceTemplateId,
     sourceTemplateExerciseLineup,
@@ -281,6 +326,38 @@ async function persistDraft(
     lastCompletedStep: state.lastCompletedStep,
     exercises: state.exercises,
   })
+}
+
+function resolveStartWorkoutState(options?: StartWorkoutOptions) {
+  const sessionMode = normalizeSessionMode(options?.sessionMode)
+  const emom =
+    sessionMode === 'emom' && options?.emom
+      ? createInitialEmomState(
+          options.emom.intervalSeconds ?? DEFAULT_EMOM_INTERVAL_SECONDS,
+          options.emom.totalMinutes,
+          { countdownSeconds: options.emom.countdownSeconds },
+        )
+      : null
+
+  return { sessionMode, emom }
+}
+
+function compactExercisesAfterStructureChange(
+  sessionMode: SessionMode,
+  exercises: ActiveExerciseEntry[],
+) {
+  return sessionMode === 'emom'
+    ? compactEmomGroupBlocks(exercises)
+    : compactSupersetBlocks(exercises)
+}
+
+function cleanupExercisesAfterRemoval(
+  sessionMode: SessionMode,
+  exercises: ActiveExerciseEntry[],
+) {
+  return sessionMode === 'emom'
+    ? cleanupEmomGroupAfterRemoval(exercises)
+    : cleanupSupersetAfterRemoval(exercises)
 }
 
 function syncWorkoutProgress(
@@ -335,6 +412,8 @@ function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<
 export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   title: '',
   startedAt: null,
+  sessionMode: DEFAULT_SESSION_MODE,
+  emom: null,
   defaultRestSeconds: 90,
   sourceTemplateId: null,
   sourceTemplateExerciseLineup: null,
@@ -388,6 +467,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title: draft.title,
       startedAt: draft.startedAt,
+      sessionMode: normalizeSessionMode(draft.sessionMode),
+      emom: draft.emom ? normalizeEmomState(draft.emom) : null,
       defaultRestSeconds: draft.defaultRestSeconds ?? 90,
       sourceTemplateId: draft.sourceTemplateId ?? null,
       sourceTemplateExerciseLineup: draft.sourceTemplateExerciseLineup ?? null,
@@ -396,13 +477,26 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       lastCompletedStep,
       ...IDLE_TIMER_STATE,
     })
+
+    if (draft.emom?.emomEndsAt != null) {
+      const secondsLeft = syncEmomSecondsLeft(draft.emom.emomEndsAt)
+      set({
+        emom: {
+          ...draft.emom,
+          secondsLeftInMinute: secondsLeft,
+        },
+      })
+    }
   },
 
-  startWorkout: async (title) => {
+  startWorkout: async (title, options) => {
     const startedAt = new Date().toISOString()
+    const { sessionMode, emom } = resolveStartWorkoutState(options)
     set({
       title,
       startedAt,
+      sessionMode,
+      emom,
       defaultRestSeconds: 90,
       sourceTemplateId: null,
       sourceTemplateExerciseLineup: null,
@@ -414,6 +508,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft(get, {
       title,
       startedAt,
+      sessionMode,
+      emom,
       defaultRestSeconds: 90,
       sourceTemplateId: null,
       sourceTemplateExerciseLineup: null,
@@ -428,8 +524,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     exercises,
     defaultRestSeconds = 90,
     sourceTemplateId = null,
+    options,
   ) => {
     const startedAt = new Date().toISOString()
+    const { sessionMode, emom } = resolveStartWorkoutState(options)
     const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
     const sourceTemplateExerciseLineup = sourceTemplateId
       ? snapshotExerciseLineup(exercises)
@@ -438,6 +536,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title,
       startedAt,
+      sessionMode,
+      emom,
       defaultRestSeconds,
       sourceTemplateId,
       sourceTemplateExerciseLineup,
@@ -449,6 +549,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft(get, {
       title,
       startedAt,
+      sessionMode,
+      emom,
       defaultRestSeconds,
       sourceTemplateId,
       sourceTemplateExerciseLineup,
@@ -464,7 +566,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
 
     const defaultRestSeconds = get().defaultRestSeconds
-    const timed = isTimedExercise({
+    const isEmom = get().sessionMode === 'emom'
+    const timed = !isEmom && isTimedExercise({
       name: exercise.name,
       equipment: exercise.equipment ?? null,
       tracking_mode: exercise.tracking_mode ?? null,
@@ -478,8 +581,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         muscleGroup: exercise.muscle_group ?? null,
         equipment: exercise.equipment ?? null,
         supersetId: null,
+        emomGroupId: null,
+        targetReps: null,
         defaultRestSeconds,
-        sets: [createEmptySet(0, defaultRestSeconds, { timed })],
+        sets: isEmom ? [] : [createEmptySet(0, defaultRestSeconds, { timed })],
       },
     ]
     const { activeStepIndex, lastCompletedStep } =
@@ -497,7 +602,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   removeExercise: async (exerciseIndex) => {
-    const nextExercises = cleanupSupersetAfterRemoval(
+    const nextExercises = cleanupExercisesAfterRemoval(
+      get().sessionMode,
       get().exercises.filter((_, index) => index !== exerciseIndex),
     )
     const { activeStepIndex, lastCompletedStep } =
@@ -553,7 +659,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
     exercises.splice(toIndex, 0, moved)
 
-    const compacted = compactSupersetBlocks(exercises)
+    const compacted = compactExercisesAfterStructureChange(get().sessionMode, exercises)
     const { activeStepIndex, lastCompletedStep } =
       syncAfterExerciseStructureChange(compacted)
 
@@ -597,6 +703,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   applySupersetMembership: async (anchorIndex, partnerIndices) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const exercises = mergeSupersetMembership(
       get().exercises,
       anchorIndex,
@@ -616,6 +726,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   removeFromSuperset: async (exerciseIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const exercises = removeExerciseFromSuperset(get().exercises, exerciseIndex)
     const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
@@ -630,7 +744,77 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
   },
 
+  applyEmomGroupMembership: async (anchorIndex, partnerIndices) => {
+    if (get().sessionMode !== 'emom') {
+      return
+    }
+
+    const exercises = mergeEmomGroupMembership(
+      get().exercises,
+      anchorIndex,
+      partnerIndices,
+    )
+
+    set({ exercises })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: get().emom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
+  removeFromEmomGroup: async (exerciseIndex) => {
+    if (get().sessionMode !== 'emom') {
+      return
+    }
+
+    const exercises = removeExerciseFromEmomGroup(get().exercises, exerciseIndex)
+
+    set({ exercises })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: get().emom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
+  updateExerciseTargetReps: async (exerciseIndex, targetReps) => {
+    if (get().sessionMode !== 'emom') {
+      return
+    }
+
+    const exercises = get().exercises.map((exercise, index) =>
+      index === exerciseIndex ? { ...exercise, targetReps } : exercise,
+    )
+
+    set({ exercises })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: get().emom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
   updatePlannedSet: async (exerciseIndex, setIndex, patch) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const exercises = get().exercises.map((exercise, index) => {
       if (index !== exerciseIndex) {
         return exercise
@@ -656,6 +840,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   addPlannedSet: async (exerciseIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const exercises = get().exercises.map((exercise, index) => {
       if (index !== exerciseIndex) {
         return exercise
@@ -693,6 +881,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   removePlannedSet: async (exerciseIndex, setIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const exercise = get().exercises[exerciseIndex]
     if (!exercise || exercise.sets.length <= 1) {
       return
@@ -703,6 +895,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   reorderPlannedSets: async (exerciseIndex, fromIndex, toIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const exercise = get().exercises[exerciseIndex]
     if (!exercise || fromIndex === toIndex) {
       return
@@ -719,6 +915,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   goToStep: (stepIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const steps = buildCircuitSteps(get().exercises)
     if (stepIndex < 0 || stepIndex >= steps.length) {
       return
@@ -745,6 +945,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   completeStep: async (exerciseIndex, setIndex, values) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     if (get().isHolding) {
       return
     }
@@ -839,6 +1043,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   uncompleteStep: async (exerciseIndex, setIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const targetSet = get().exercises[exerciseIndex]?.sets[setIndex]
     if (!targetSet?.completedAt) {
       const holding = get().holdingStep
@@ -886,10 +1094,18 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   startRest: (seconds) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     set(createRestTimerState(seconds))
   },
 
   adjustRest: (deltaSeconds) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const state = get()
     if (!state.isResting) {
       return
@@ -907,6 +1123,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   tickRest: () => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const state = get()
     if (!state.isResting) {
       return
@@ -924,6 +1144,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   skipRest: () => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     if (!get().isResting) {
       return
     }
@@ -932,6 +1156,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   startHold: (exerciseIndex, setIndex) => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     if (get().isResting || get().isHolding) {
       return
     }
@@ -956,6 +1184,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   stopHold: async () => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     if (!get().isHolding || !get().holdingStep) {
       return
     }
@@ -974,6 +1206,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   tickHold: () => {
+    if (get().sessionMode === 'emom') {
+      return
+    }
+
     const state = get()
     if (!state.isHolding || !state.holdingStep) {
       return
@@ -998,10 +1234,86 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     }
   },
 
+  tickEmom: () => {
+    const emom = get().emom
+    if (get().sessionMode !== 'emom' || !emom) {
+      return
+    }
+
+    const { state: nextEmom, events } = tickEmomState(emom)
+    if (nextEmom === emom && events.length === 0) {
+      return
+    }
+
+    if (events.length > 0) {
+      void handleEmomTickEvents(events)
+    }
+
+    set({ emom: nextEmom })
+    void persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: nextEmom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises: get().exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
+  logEmomMinute: async (minuteIndex) => {
+    const emom = get().emom
+    if (get().sessionMode !== 'emom' || !emom) {
+      return
+    }
+
+    const targetMinute = minuteIndex ?? emom.currentMinuteIndex
+    const nextEmom = logEmomMinuteState(emom, targetMinute, new Date().toISOString())
+
+    set({ emom: nextEmom })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: nextEmom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises: get().exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
+  skipEmomMinute: async () => {
+    const emom = get().emom
+    if (get().sessionMode !== 'emom' || !emom) {
+      return
+    }
+
+    const { state: nextEmom, events } = skipToNextMinuteState(emom)
+    if (events.length > 0) {
+      void handleEmomTickEvents(events)
+    }
+
+    set({ emom: nextEmom })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: nextEmom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises: get().exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
   finishWorkout: async () => {
     const {
       title,
       startedAt,
+      sessionMode,
+      emom,
       exercises,
       defaultRestSeconds,
       sourceTemplateId,
@@ -1015,6 +1327,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       id: 'current',
       title,
       startedAt,
+      sessionMode,
+      emom: emom ?? undefined,
       defaultRestSeconds,
       sourceTemplateId,
       sourceTemplateExerciseLineup,
@@ -1025,6 +1339,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title: '',
       startedAt: null,
+      sessionMode: DEFAULT_SESSION_MODE,
+      emom: null,
       defaultRestSeconds: 90,
       sourceTemplateId: null,
       sourceTemplateExerciseLineup: null,
@@ -1042,6 +1358,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     set({
       title: '',
       startedAt: null,
+      sessionMode: DEFAULT_SESSION_MODE,
+      emom: null,
       defaultRestSeconds: 90,
       sourceTemplateId: null,
       sourceTemplateExerciseLineup: null,

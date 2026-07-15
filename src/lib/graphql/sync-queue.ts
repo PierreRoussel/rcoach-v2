@@ -42,6 +42,7 @@ export async function syncWorkoutDraft(
   draft: {
     title: string
     startedAt: string
+    sessionMode?: string
     workoutTemplateId?: string | null
     exercises: Array<{
       exerciseId: string
@@ -61,6 +62,7 @@ export async function syncWorkoutDraft(
     title: draft.title,
     started_at: draft.startedAt,
     ended_at: endedAt,
+    session_mode: draft.sessionMode ?? 'circuit',
     workout_template_id: draft.workoutTemplateId ?? null,
     workout_exercises: {
       data: draft.exercises.map((exercise, sortOrder) => ({

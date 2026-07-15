@@ -33,6 +33,9 @@ select_permissions:
         - default_rest_seconds
         - source_workout_id
         - share_token
+        - session_mode
+        - emom_interval_seconds
+        - emom_total_minutes
       filter:
         user_id:
           _eq: X-Hasura-User-Id
@@ -43,6 +46,9 @@ select_permissions:
         - name
         - default_rest_seconds
         - share_token
+        - session_mode
+        - emom_interval_seconds
+        - emom_total_minutes
       filter:
         share_token:
           _is_null: false
@@ -59,6 +65,9 @@ insert_permissions:
         - folder_name
         - default_rest_seconds
         - source_workout_id
+        - session_mode
+        - emom_interval_seconds
+        - emom_total_minutes
 update_permissions:
   - role: user
     permission:
@@ -69,6 +78,9 @@ update_permissions:
         - source_workout_id
         - share_token
         - updated_at
+        - session_mode
+        - emom_interval_seconds
+        - emom_total_minutes
       filter:
         user_id:
           _eq: X-Hasura-User-Id

@@ -34,6 +34,7 @@ select_permissions:
         - notes
         - share_token
         - created_at
+        - session_mode
       filter:
         _or:
           - user_id:
@@ -83,6 +84,7 @@ insert_permissions:
         - started_at
         - ended_at
         - notes
+        - session_mode
 update_permissions:
   - role: user
     permission:
@@ -94,6 +96,7 @@ update_permissions:
         - ended_at
         - notes
         - share_token
+        - session_mode
       filter:
         user_id:
           _eq: X-Hasura-User-Id

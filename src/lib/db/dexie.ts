@@ -1,6 +1,8 @@
 import Dexie, { type EntityTable } from 'dexie'
 
 import type { Food } from '@/lib/nutrition/types'
+import type { EmomMinuteLog } from '@/lib/workout/emom-circuit'
+import { normalizeSessionMode, type SessionMode } from '@/lib/workout/session-mode'
 
 export type SyncQueueItem = {
   id?: number
@@ -42,14 +44,30 @@ export type ActiveExerciseDraft = {
   muscleGroup?: string | null
   equipment?: string | null
   supersetId?: number | null
+  emomGroupId?: number | null
+  targetReps?: number | null
   defaultRestSeconds?: number
   sets: ActiveSetDraft[]
+}
+
+export type ActiveEmomDraft = {
+  intervalSeconds: number
+  totalMinutes: number
+  startedAtMs: number
+  phase?: 'countdown' | 'minute' | 'complete'
+  countdownSecondsLeft?: number | null
+  currentMinuteIndex: number
+  secondsLeftInMinute: number
+  emomEndsAt: number | null
+  minuteLogs: Record<number, EmomMinuteLog>
 }
 
 export type ActiveWorkoutDraft = {
   id: 'current'
   title: string
   startedAt: string
+  sessionMode?: SessionMode
+  emom?: ActiveEmomDraft
   defaultRestSeconds?: number
   sourceTemplateId?: string | null
   sourceTemplateExerciseLineup?: Array<{
@@ -139,6 +157,22 @@ class RCoachDB extends Dexie {
       })
       .upgrade(async (transaction) => {
         await transaction.table('nutritionDayCache').clear()
+      })
+
+    this.version(8)
+      .stores({
+        syncQueue: '++id, type, createdAt',
+        activeDraft: 'id',
+        nutritionDayCache: 'id, userId, date',
+        foodsCache: 'id, name, barcode, off_product_id',
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table<ActiveWorkoutDraft, 'current'>('activeDraft')
+          .toCollection()
+          .modify((draft) => {
+            draft.sessionMode = normalizeSessionMode(draft.sessionMode)
+          })
       })
   }
 }

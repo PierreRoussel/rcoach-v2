@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useShallow } from 'zustand/react/shallow'
 
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
+import { ActiveWorkoutEmomView } from '@/components/workout/ActiveWorkoutEmomView'
 import { ActiveWorkoutFinishFab } from '@/components/workout/ActiveWorkoutFinishFab'
 import { ActiveWorkoutHoldTimerOverlay } from '@/components/workout/ActiveWorkoutHoldTimerOverlay'
 import { ActiveWorkoutRestTimerOverlay } from '@/components/workout/ActiveWorkoutRestTimerOverlay'
@@ -78,6 +79,14 @@ import {
   isWorkoutComplete,
 } from '@/lib/workout/workout-circuit'
 import {
+  buildEmomSlots,
+  getEmomExercisesForSync,
+  getSlotExerciseIndices,
+  getSlotForMinute,
+  isEmomComplete,
+} from '@/lib/workout/emom-circuit'
+import { countLoggedEmomMinutes } from '@/lib/workout/emom-store'
+import {
   applyOverloadToWorkingSets,
   isWorkingSet,
 } from '@/lib/workout/progressive-overload'
@@ -150,6 +159,8 @@ function ActiveWorkoutPage() {
   const {
     title,
     startedAt,
+    sessionMode,
+    emom,
     sourceTemplateId,
     sourceTemplateExerciseLineup,
     exercises: activeExercises,
@@ -175,6 +186,8 @@ function ActiveWorkoutPage() {
     useShallow((state) => ({
       title: state.title,
       startedAt: state.startedAt,
+      sessionMode: state.sessionMode,
+      emom: state.emom,
       sourceTemplateId: state.sourceTemplateId,
       sourceTemplateExerciseLineup: state.sourceTemplateExerciseLineup,
       exercises: state.exercises,
@@ -263,8 +276,41 @@ function ActiveWorkoutPage() {
     return getFreeOverloadAdviceState(user.id)
   }, [user?.id, overloadQuotaVersion])
 
-  const wearSyncEnabled = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+  const wearSyncEnabled =
+    sessionMode !== 'emom' &&
+    Capacitor.isNativePlatform() &&
+    Capacitor.getPlatform() === 'android'
   const { watchAvailable, watchStatusLabel } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
+  const isEmomSession = sessionMode === 'emom'
+  const emomSlots = useMemo(
+    () => (isEmomSession ? buildEmomSlots(activeExercises) : []),
+    [activeExercises, isEmomSession],
+  )
+  const emomCurrentSlot = emom
+    ? getSlotForMinute(emomSlots, emom.currentMinuteIndex)
+    : null
+  const emomCurrentExerciseIndices = getSlotExerciseIndices(emomCurrentSlot)
+  const emomCurrentExerciseLabel = useMemo(() => {
+    if (!isEmomSession || emomCurrentExerciseIndices.length === 0) {
+      return null
+    }
+
+    return emomCurrentExerciseIndices
+      .map((index) =>
+        getStepExerciseDisplayName(activeExercises, { exerciseIndex: index, setIndex: 0 }, exerciseLocale),
+      )
+      .join(' · ')
+  }, [activeExercises, emomCurrentExerciseIndices, exerciseLocale, isEmomSession])
+  const emomProgressPercent = emom
+    ? emom.phase === 'countdown'
+      ? 0
+      : emom.phase === 'complete'
+        ? 100
+        : Math.min(100, (emom.currentMinuteIndex / emom.totalMinutes) * 100)
+    : null
+  const emomComplete = emom
+    ? emom.phase === 'complete' || isEmomComplete(emom.currentMinuteIndex, emom.totalMinutes)
+    : false
   const effectiveTemplateId = sourceTemplateId ?? initialTemplateId
   const { data: sourceTemplate } = useWorkoutTemplate(effectiveTemplateId ?? '')
   const saveWorkoutTemplate = useSaveWorkoutTemplate()
@@ -358,7 +404,13 @@ function ActiveWorkoutPage() {
         return
       }
 
-      const validatedExercises = getValidatedExercisesForSync(draft.exercises)
+      const validatedExercises = isEmomSession
+        ? getEmomExercisesForSync(
+            activeExercises,
+            draft.emom?.minuteLogs ?? {},
+            buildEmomSlots(activeExercises),
+          )
+        : getValidatedExercisesForSync(draft.exercises)
       const endedAt = new Date().toISOString()
 
       const heartRatePromise = readHeartRateSummary(draft.startedAt, endedAt)
@@ -367,6 +419,7 @@ function ActiveWorkoutPage() {
         const workoutId = await syncWorkoutDraft(nhost, {
           title: draft.title,
           startedAt: draft.startedAt,
+          sessionMode: draft.sessionMode ?? 'circuit',
           workoutTemplateId: draft.sourceTemplateId,
           exercises: validatedExercises.map((exercise) => ({
             exerciseId: exercise.exerciseId,
@@ -608,7 +661,7 @@ function ActiveWorkoutPage() {
           {title}
         </h1>
         <Pill tone="secondary" className="shrink-0 font-semibold">
-          En cours
+          {isEmomSession ? 'EMOM' : 'En cours'}
         </Pill>
       </div>
 
@@ -616,11 +669,24 @@ function ActiveWorkoutPage() {
         <ActiveWorkoutSummaryTile
           startedAt={startedAt}
           exercises={activeExercises}
-          currentExerciseLabel={currentExerciseLabel}
+          currentExerciseLabel={isEmomSession ? emomCurrentExerciseLabel : currentExerciseLabel}
           bodyWeightKg={bodyWeightKg}
+          sessionMode={sessionMode}
+          emomMinuteLabel={
+            emom
+              ? emom.phase === 'countdown'
+                ? `Départ dans ${emom.countdownSecondsLeft ?? 0}s`
+                : `Minute ${Math.min(emom.currentMinuteIndex + 1, emom.totalMinutes)} / ${emom.totalMinutes}`
+              : null
+          }
+          emomProgressPercent={emomProgressPercent}
+          emomLoggedMinutes={emom ? countLoggedEmomMinutes(emom) : null}
         />
       ) : null}
 
+      {isEmomSession ? (
+        <ActiveWorkoutEmomView />
+      ) : (
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-display font-black">
@@ -748,8 +814,9 @@ function ActiveWorkoutPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
-      {activeExercises.length > 0 ? (
+      {!isEmomSession && activeExercises.length > 0 ? (
         <div className="flex justify-center">
           <ExercisePicker
             excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
@@ -766,7 +833,7 @@ function ActiveWorkoutPage() {
           variant="pill"
           disabled={isSaving}
           onClick={() => {
-            if (completedCount === 0) {
+            if (!isEmomSession && completedCount === 0) {
               setError('Validez au moins une série avant de terminer.')
               return
             }
@@ -792,8 +859,9 @@ function ActiveWorkoutPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Terminer la séance ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Votre séance sera enregistrée avec les séries validées ({completedCount}{' '}
-              série{completedCount > 1 ? 's' : ''}).
+              {isEmomSession
+                ? 'Votre séance EMOM sera enregistrée avec le temps écoulé et les minutes loguées.'
+                : `Votre séance sera enregistrée avec les séries validées (${completedCount} série${completedCount > 1 ? 's' : ''}).`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -855,12 +923,27 @@ function ActiveWorkoutPage() {
       {error ? <FormMessage>{error}</FormMessage> : null}
 
       <ActiveWorkoutTimerDrivers />
-      <ActiveWorkoutHoldTimerOverlay />
-      <ActiveWorkoutRestTimerOverlay />
+      {!isEmomSession ? <ActiveWorkoutHoldTimerOverlay /> : null}
+      {!isEmomSession ? <ActiveWorkoutRestTimerOverlay /> : null}
 
-      {allSetsComplete ? (
+      {!isEmomSession && allSetsComplete ? (
         <ActiveWorkoutFinishFab
           disabled={isSaving}
+          onFinish={() => {
+            setError(null)
+            setFinishConfirmOpen(true)
+          }}
+        />
+      ) : null}
+
+      {isEmomSession && (emomComplete || activeExercises.length > 0) ? (
+        <ActiveWorkoutFinishFab
+          disabled={isSaving}
+          subtitle={
+            emomComplete
+              ? 'Temps écoulé — enregistrez la séance'
+              : 'Terminer à tout moment'
+          }
           onFinish={() => {
             setError(null)
             setFinishConfirmOpen(true)

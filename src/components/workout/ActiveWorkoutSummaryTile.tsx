@@ -25,6 +25,10 @@ type ActiveWorkoutSummaryTileProps = {
   currentExerciseLabel?: string | null
   bodyWeightKg?: number | null
   className?: string
+  sessionMode?: 'circuit' | 'emom'
+  emomMinuteLabel?: string | null
+  emomProgressPercent?: number | null
+  emomLoggedMinutes?: number | null
 }
 
 function WorkoutProgressRing({ percent }: { percent: number }) {
@@ -99,12 +103,19 @@ export function ActiveWorkoutSummaryTile({
   currentExerciseLabel,
   bodyWeightKg,
   className,
+  sessionMode = 'circuit',
+  emomMinuteLabel,
+  emomProgressPercent,
+  emomLoggedMinutes,
 }: ActiveWorkoutSummaryTileProps) {
   const elapsed = useActiveWorkoutElapsed(startedAt)
+  const isEmom = sessionMode === 'emom'
 
   const completedSets = countCompletedSets(exercises)
   const totalSets = countPlannedSets(exercises)
-  const progressPercent = Math.round(computeWorkoutProgressPercent(exercises))
+  const progressPercent = isEmom
+    ? Math.round(emomProgressPercent ?? 0)
+    : Math.round(computeWorkoutProgressPercent(exercises))
 
   const estimatedCalories = useMemo(() => {
     const validated = getValidatedExercisesForSync(exercises)
@@ -160,7 +171,7 @@ export function ActiveWorkoutSummaryTile({
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
         <p className="min-w-0 truncate text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">En cours :</span>{' '}
-          {currentExerciseLabel ?? 'Aucun exercice'}
+          {isEmom ? emomMinuteLabel ?? currentExerciseLabel ?? 'EMOM' : currentExerciseLabel ?? 'Aucun exercice'}
         </p>
         <p className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
           <span
@@ -170,10 +181,22 @@ export function ActiveWorkoutSummaryTile({
             <Check className="size-3" strokeWidth={2.5} />
           </span>
           <span>
-            <span className="font-semibold text-foreground tabular-nums">
-              {completedSets}/{totalSets}
-            </span>{' '}
-            séries validées
+            {isEmom ? (
+              <>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {emomLoggedMinutes ?? 0}
+                </span>{' '}
+                minute{(emomLoggedMinutes ?? 0) > 1 ? 's' : ''} loguée
+                {(emomLoggedMinutes ?? 0) > 1 ? 's' : ''}
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {completedSets}/{totalSets}
+                </span>{' '}
+                séries validées
+              </>
+            )}
           </span>
         </p>
       </div>

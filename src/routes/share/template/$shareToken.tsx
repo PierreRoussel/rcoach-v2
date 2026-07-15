@@ -5,6 +5,10 @@ import { SharedTemplateMenu } from '@/components/workout/SharedTemplateMenu'
 import { TemplatePreviewContent } from '@/components/workout/TemplatePreviewContent'
 import { BrandLogo, PageHeader, Pill } from '@/design-system'
 import { useSharedTemplateByToken } from '@/hooks/useTemplateSharing'
+import {
+  formatEmomTemplateMeta,
+  getTemplateSessionLabel,
+} from '@/lib/workout/template-session-label'
 
 export const Route = createFileRoute('/share/template/$shareToken')({
   component: SharedTemplatePage,
@@ -58,6 +62,22 @@ function SharedTemplatePage() {
             <Dumbbell className="size-3" />
             {exerciseCount} exercice(s)
           </Pill>
+          {getTemplateSessionLabel(template.session_mode) ? (
+            <Pill tone="secondary">{getTemplateSessionLabel(template.session_mode)}</Pill>
+          ) : null}
+          {formatEmomTemplateMeta(
+            template.session_mode,
+            template.emom_total_minutes,
+            template.emom_interval_seconds,
+          ) ? (
+            <Pill tone="default">
+              {formatEmomTemplateMeta(
+                template.session_mode,
+                template.emom_total_minutes,
+                template.emom_interval_seconds,
+              )}
+            </Pill>
+          ) : null}
         </div>
 
         <TemplatePreviewContent template={template} />

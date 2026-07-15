@@ -11,6 +11,7 @@ import type { ScheduleOccurrence } from '@/lib/schedule/expand-occurrences'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
+import { DEFAULT_EMOM_COUNTDOWN_SECONDS } from '@/lib/workout/emom-store'
 
 export function useStartPlannedSession() {
   const { nhost } = useAuth()
@@ -53,9 +54,20 @@ export function useStartPlannedSession() {
           occurrence.workoutTemplateName ||
           template.name ||
           'Séance planifiée',
-        templateExercisesToActive(draft.exercises),
+        templateExercisesToActive(draft.exercises, draft.sessionMode),
         DEFAULT_GLOBAL_REST_SECONDS,
         occurrence.workoutTemplateId,
+        {
+          sessionMode: draft.sessionMode,
+          emom:
+            draft.sessionMode === 'emom'
+              ? {
+                  intervalSeconds: draft.emomIntervalSeconds,
+                  totalMinutes: draft.emomTotalMinutes,
+                  countdownSeconds: DEFAULT_EMOM_COUNTDOWN_SECONDS,
+                }
+              : undefined,
+        },
       )
       await navigate({ to: '/app/workout/active' })
     } finally {
