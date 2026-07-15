@@ -2,20 +2,27 @@ import { describe, expect, it } from 'vitest'
 
 import {
   adjustWeightKg,
+  buildProjectionPersistPayload,
+  computeProjectionSnapshot,
   inferWeightGoalType,
   institutionWeightSnapshot,
   isMaintainGoalInRange,
   isProgressOnTrack,
+  isProjectionStale,
   isWeightGoalReached,
   isWeightGoalReinstitution,
   milestoneStepFromProgress,
   progressKgSinceStart,
   projectWeightGoalCompletion,
+  refreshAndMergeProjection,
   resolveGoalChartProjection,
+  resolveGoalPaceStatus,
+  resolveStableProjection,
   remainingKgToTarget,
   resolveMaintainGoalDisplay,
   shouldSuggestCalorieUpdate,
   suggestCalorieTarget,
+  type WeightGoal,
 } from '@/lib/goals/weight-goal'
 import type { NutritionSettings } from '@/lib/nutrition/types'
 
@@ -417,6 +424,177 @@ describe('resolveGoalChartProjection', () => {
     expect(chartProjection?.weeklyRateKg).toBeGreaterThan(0)
     expect(chartProjection?.projectedDate.getTime()).toBeGreaterThan(
       now.getTime(),
+    )
+  })
+})
+
+const anchoredGoalBase: WeightGoal = {
+  user_id: 'user-1',
+  target_weight_kg: 78,
+  start_weight_kg: 80,
+  current_weight_kg: 79,
+  goal_type: 'lose',
+  last_milestone_step: 0,
+  projected_completion_at: '2026-08-24T00:00:00.000Z',
+  projection_computed_at: '2026-06-01T00:00:00.000Z',
+  projection_weekly_rate_kg: 0.5,
+  created_at: '2026-06-01T00:00:00.000Z',
+  updated_at: '2026-06-01T00:00:00.000Z',
+}
+
+describe('resolveStableProjection', () => {
+  const settings = {
+    ...baseSettings,
+    daily_calorie_target: 2000,
+    tdee_calculated: 2500,
+  }
+
+  it('keeps the anchored date stable when now advances without new weigh-ins', () => {
+    const early = resolveStableProjection(
+      anchoredGoalBase,
+      settings,
+      baseMeasurements,
+      '2026-06-10T00:00:00.000Z',
+      new Date('2026-06-15T00:00:00.000Z'),
+    )
+    const later = resolveStableProjection(
+      anchoredGoalBase,
+      settings,
+      baseMeasurements,
+      '2026-06-10T00:00:00.000Z',
+      new Date('2026-06-22T00:00:00.000Z'),
+    )
+
+    expect(early?.projectedDate?.toISOString()).toBe('2026-08-24T00:00:00.000Z')
+    expect(later?.projectedDate?.toISOString()).toBe('2026-08-24T00:00:00.000Z')
+    expect(early?.isAnchored).toBe(true)
+  })
+
+  it('recalculates when no anchor is stored', () => {
+    const goal: WeightGoal = {
+      ...anchoredGoalBase,
+      projected_completion_at: null,
+      projection_computed_at: null,
+      projection_weekly_rate_kg: null,
+    }
+
+    const projection = resolveStableProjection(
+      goal,
+      settings,
+      baseMeasurements,
+      '2026-06-10T00:00:00.000Z',
+      new Date('2026-06-15T00:00:00.000Z'),
+    )
+
+    expect(projection?.isAnchored).toBe(false)
+    expect(projection?.projectedDate).not.toBeNull()
+  })
+})
+
+describe('resolveGoalPaceStatus', () => {
+  it('returns on_track when close to the linear trajectory', () => {
+    const status = resolveGoalPaceStatus(
+      {
+        ...anchoredGoalBase,
+        current_weight_kg: 79,
+      },
+      new Date('2026-08-24T00:00:00.000Z'),
+      '2026-07-10T00:00:00.000Z',
+      new Date('2026-07-15T00:00:00.000Z'),
+    )
+
+    expect(status?.status).toBe('on_track')
+    expect(status?.message).toBe('Dans les temps')
+  })
+
+  it('returns ahead when below the expected trajectory for weight loss', () => {
+    const status = resolveGoalPaceStatus(
+      {
+        ...anchoredGoalBase,
+        current_weight_kg: 78.5,
+      },
+      new Date('2026-08-24T00:00:00.000Z'),
+      '2026-07-10T00:00:00.000Z',
+      new Date('2026-07-15T00:00:00.000Z'),
+    )
+
+    expect(status?.status).toBe('ahead')
+  })
+
+  it('returns stale when the last weigh-in is too old', () => {
+    const status = resolveGoalPaceStatus(
+      anchoredGoalBase,
+      new Date('2026-08-24T00:00:00.000Z'),
+      '2026-06-01T00:00:00.000Z',
+      new Date('2026-07-01T00:00:00.000Z'),
+    )
+
+    expect(status?.status).toBe('stale')
+  })
+})
+
+describe('isProjectionStale', () => {
+  it('returns true after 14 days without a weigh-in', () => {
+    expect(
+      isProjectionStale(
+        '2026-06-01T00:00:00.000Z',
+        new Date('2026-06-20T00:00:00.000Z'),
+      ),
+    ).toBe(true)
+  })
+
+  it('returns false for a recent weigh-in', () => {
+    expect(
+      isProjectionStale(
+        '2026-06-18T00:00:00.000Z',
+        new Date('2026-06-20T00:00:00.000Z'),
+      ),
+    ).toBe(false)
+  })
+})
+
+describe('buildProjectionPersistPayload', () => {
+  it('clears projection fields when the goal is reached', () => {
+    const payload = buildProjectionPersistPayload(
+      {
+        weeklyRateKg: 0,
+        remainingKg: 0,
+        projectedDate: null,
+        dailyDeficitKcal: 0,
+        isReached: true,
+      },
+      new Date('2026-06-01T00:00:00.000Z'),
+    )
+
+    expect(payload.projected_completion_at).toBeNull()
+    expect(payload.projection_weekly_rate_kg).toBeNull()
+  })
+})
+
+describe('refreshAndMergeProjection', () => {
+  it('allows an earlier date when the user is ahead after a weigh-in', () => {
+    const existing = {
+      projected_completion_at: '2026-08-24T00:00:00.000Z',
+    }
+    const snapshot = computeProjectionSnapshot(
+      {
+        goal_type: 'lose',
+        current_weight_kg: 78.5,
+        target_weight_kg: 78,
+      },
+      {
+        ...baseSettings,
+        daily_calorie_target: 2000,
+        tdee_calculated: 2500,
+      },
+      baseMeasurements,
+      new Date('2026-07-01T00:00:00.000Z'),
+    )!
+
+    const merged = refreshAndMergeProjection(existing, snapshot, 'weight_logged')
+
+    expect(merged.projectedDate!.getTime()).toBeLessThan(
+      new Date(existing.projected_completion_at).getTime(),
     )
   })
 })

@@ -1,6 +1,21 @@
 import type { WeightEntry } from '@/lib/graphql/operations'
 import type { WeightGoal, WeightGoalRecord } from '@/lib/goals/weight-goal'
 
+export function getLatestWeightLoggedAt(
+  entries: WeightEntry[] | null | undefined,
+): string | null {
+  if (!entries?.length) {
+    return null
+  }
+
+  const sorted = [...entries].sort(
+    (left, right) =>
+      new Date(right.logged_at).getTime() - new Date(left.logged_at).getTime(),
+  )
+
+  return sorted[0]?.logged_at ?? null
+}
+
 export function getLatestWeightKg(
   entries: WeightEntry[] | null | undefined,
 ): number | null {

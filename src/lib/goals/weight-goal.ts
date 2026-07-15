@@ -1,8 +1,8 @@
-import { addWeeks, format, parseISO, startOfWeek } from 'date-fns'
+import { addWeeks, differenceInCalendarDays, format, parseISO, startOfWeek } from 'date-fns'
 
 import type { StoredUserMeasurements } from '@/lib/measurements/types'
 import { calculateTdee } from '@/lib/nutrition/tdee'
-import type { NutritionGoal, NutritionSettings } from '@/lib/nutrition/types'
+import type { NutritionGoal, NutritionSettings, NutritionSex } from '@/lib/nutrition/types'
 
 export const WEIGHT_ADJUST_STEP_KG = 0.1
 export const WEIGHT_MILESTONE_STEP_KG = 0.5
@@ -13,6 +13,8 @@ export const WEIGHT_GOAL_MAINTAIN_THRESHOLD_KG = 0.25
 export const WEIGHT_GOAL_MAINTAIN_RANGE_KG = 1.5
 export const CALORIE_SUGGESTION_THRESHOLD = 50
 export const KCAL_PER_KG = 7700
+export const PROJECTION_STALE_DAYS = 14
+export const GOAL_PACE_TOLERANCE_KG = 0.3
 
 export type WeightGoalRecord = {
   user_id: string
@@ -20,6 +22,9 @@ export type WeightGoalRecord = {
   start_weight_kg: number
   goal_type: NutritionGoal
   last_milestone_step: number
+  projected_completion_at: string | null
+  projection_computed_at: string | null
+  projection_weekly_rate_kg: number | null
   created_at: string
   updated_at: string
 }
@@ -361,6 +366,275 @@ export type WeightGoalProjection = {
   projectedDate: Date | null
   dailyDeficitKcal: number
   isReached: boolean
+}
+
+export type ProjectionRefreshTrigger =
+  | 'goal_created'
+  | 'weight_logged'
+  | 'nutrition_changed'
+
+export type GoalPaceStatusKind = 'ahead' | 'on_track' | 'behind' | 'stale'
+
+export type GoalPaceStatus = {
+  status: GoalPaceStatusKind
+  message: string
+  expectedWeightKg: number | null
+}
+
+export type StableWeightGoalProjection = WeightGoalProjection & {
+  isAnchored: boolean
+  paceStatus: GoalPaceStatus | null
+  isStale: boolean
+}
+
+export function needsProjectionBackfill(
+  goal: Pick<WeightGoalRecord, 'goal_type' | 'projected_completion_at'>,
+) {
+  return (
+    goal.goal_type !== 'maintain' &&
+    goal.projected_completion_at == null
+  )
+}
+
+export function isProjectionStale(
+  lastWeightLoggedAt: string | null | undefined,
+  now: Date = new Date(),
+) {
+  if (!lastWeightLoggedAt) {
+    return true
+  }
+
+  const days = differenceInCalendarDays(now, parseISO(lastWeightLoggedAt))
+  return days >= PROJECTION_STALE_DAYS
+}
+
+export function computeProjectionSnapshot(
+  goal: Pick<WeightGoal, 'goal_type' | 'current_weight_kg' | 'target_weight_kg'>,
+  settings: NutritionSettings | null | undefined,
+  measurements?: StoredUserMeasurements | null,
+  anchorDate: Date = new Date(),
+): WeightGoalProjection | null {
+  return projectWeightGoalCompletion(goal, settings, anchorDate, measurements)
+}
+
+export function buildProjectionPersistPayload(
+  snapshot: WeightGoalProjection,
+  computedAt: Date = new Date(),
+) {
+  return {
+    projected_completion_at: snapshot.projectedDate?.toISOString() ?? null,
+    projection_computed_at: computedAt.toISOString(),
+    projection_weekly_rate_kg:
+      snapshot.isReached || snapshot.weeklyRateKg <= 0
+        ? null
+        : Math.round(snapshot.weeklyRateKg * 1000) / 1000,
+  }
+}
+
+export function resolveExpectedWeightOnTrajectory(
+  goal: Pick<
+    WeightGoal,
+    'goal_type' | 'start_weight_kg' | 'target_weight_kg' | 'created_at'
+  >,
+  projectedCompletionAt: Date,
+  now: Date = new Date(),
+) {
+  const start = parseISO(goal.created_at)
+  const totalMs = projectedCompletionAt.getTime() - start.getTime()
+
+  if (totalMs <= 0) {
+    return clampWeightKg(goal.start_weight_kg)
+  }
+
+  const elapsedMs = Math.min(
+    Math.max(0, now.getTime() - start.getTime()),
+    totalMs,
+  )
+  const progress = elapsedMs / totalMs
+  const expected =
+    goal.start_weight_kg +
+    progress * (goal.target_weight_kg - goal.start_weight_kg)
+
+  return clampWeightKg(expected)
+}
+
+export function resolveGoalPaceStatus(
+  goal: WeightGoal,
+  projectedCompletionAt: Date | null,
+  lastWeightLoggedAt: string | null | undefined,
+  now: Date = new Date(),
+): GoalPaceStatus | null {
+  if (goal.goal_type === 'maintain' || isWeightGoalReached(goal)) {
+    return null
+  }
+
+  if (!projectedCompletionAt) {
+    return null
+  }
+
+  if (isProjectionStale(lastWeightLoggedAt, now)) {
+    return {
+      status: 'stale',
+      message: 'Pesez-vous pour affiner votre suivi',
+      expectedWeightKg: null,
+    }
+  }
+
+  const expected = resolveExpectedWeightOnTrajectory(
+    goal,
+    projectedCompletionAt,
+    now,
+  )
+  const current = clampWeightKg(goal.current_weight_kg)
+  const remaining = remainingKgToTarget(goal)
+  const progress = progressKgSinceStart(goal)
+
+  if (goal.goal_type === 'lose') {
+    const diff = current - expected
+
+    if (diff <= -GOAL_PACE_TOLERANCE_KG) {
+      return {
+        status: 'ahead',
+        message: 'En avance — bravo !',
+        expectedWeightKg: expected,
+      }
+    }
+
+    if (Math.abs(diff) <= GOAL_PACE_TOLERANCE_KG) {
+      return {
+        status: 'on_track',
+        message: 'Dans les temps',
+        expectedWeightKg: expected,
+      }
+    }
+
+    if (progress > 0) {
+      return {
+        status: 'behind',
+        message: `${formatWeightKg(progress).replace(' kg', '')} kg déjà — continuez, il reste ${formatWeightKg(remaining)}`,
+        expectedWeightKg: expected,
+      }
+    }
+
+    return {
+      status: 'behind',
+      message: `Continuez, il reste ${formatWeightKg(remaining)}`,
+      expectedWeightKg: expected,
+    }
+  }
+
+  const diff = current - expected
+
+  if (diff >= GOAL_PACE_TOLERANCE_KG) {
+    return {
+      status: 'ahead',
+      message: 'En avance — bravo !',
+      expectedWeightKg: expected,
+    }
+  }
+
+  if (Math.abs(diff) <= GOAL_PACE_TOLERANCE_KG) {
+    return {
+      status: 'on_track',
+      message: 'Dans les temps',
+      expectedWeightKg: expected,
+    }
+  }
+
+  if (progress > 0) {
+    return {
+      status: 'behind',
+      message: `${formatWeightKg(progress).replace(' kg', '')} kg déjà — continuez, il reste ${formatWeightKg(remaining)}`,
+      expectedWeightKg: expected,
+    }
+  }
+
+  return {
+    status: 'behind',
+    message: `Continuez, il reste ${formatWeightKg(remaining)}`,
+    expectedWeightKg: expected,
+  }
+}
+
+export function resolveStableProjection(
+  goal: WeightGoal,
+  settings: NutritionSettings | null | undefined,
+  measurements?: StoredUserMeasurements | null,
+  lastWeightLoggedAt?: string | null,
+  now: Date = new Date(),
+): StableWeightGoalProjection | null {
+  if (goal.goal_type === 'maintain') {
+    return null
+  }
+
+  const stale = isProjectionStale(lastWeightLoggedAt, now)
+  const liveSnapshot = computeProjectionSnapshot(goal, settings, measurements, now)
+
+  if (goal.projected_completion_at) {
+    const projectedDate = parseISO(goal.projected_completion_at)
+    const remainingKg = remainingKgToTarget(goal)
+    const isReached = isWeightGoalReached(goal)
+    const weeklyRateKg =
+      goal.projection_weekly_rate_kg != null && goal.projection_weekly_rate_kg > 0
+        ? Number(goal.projection_weekly_rate_kg)
+        : (liveSnapshot?.weeklyRateKg ?? 0)
+
+    return {
+      weeklyRateKg,
+      remainingKg,
+      projectedDate: isReached ? null : projectedDate,
+      dailyDeficitKcal: liveSnapshot?.dailyDeficitKcal ?? 0,
+      isReached,
+      isAnchored: true,
+      paceStatus: isReached
+        ? null
+        : resolveGoalPaceStatus(goal, projectedDate, lastWeightLoggedAt, now),
+      isStale: stale,
+    }
+  }
+
+  if (!liveSnapshot) {
+    return null
+  }
+
+  return {
+    ...liveSnapshot,
+    isAnchored: false,
+    paceStatus: liveSnapshot.projectedDate
+      ? resolveGoalPaceStatus(
+          goal,
+          liveSnapshot.projectedDate,
+          lastWeightLoggedAt,
+          now,
+        )
+      : null,
+    isStale: stale,
+  }
+}
+
+export function refreshAndMergeProjection(
+  existing: Pick<WeightGoalRecord, 'projected_completion_at'>,
+  snapshot: WeightGoalProjection,
+  trigger: ProjectionRefreshTrigger,
+): WeightGoalProjection {
+  if (trigger === 'goal_created' || trigger === 'nutrition_changed') {
+    return snapshot
+  }
+
+  if (
+    trigger === 'weight_logged' &&
+    existing.projected_completion_at &&
+    snapshot.projectedDate
+  ) {
+    const existingDate = parseISO(existing.projected_completion_at)
+    const nextDate = snapshot.projectedDate
+
+    if (nextDate.getTime() < existingDate.getTime()) {
+      return snapshot
+    }
+  }
+
+  return snapshot
 }
 
 export function isWeightGoalReached(

@@ -1743,6 +1743,9 @@ export type WeightGoalInput = {
   start_weight_kg: number
   goal_type: 'lose' | 'maintain' | 'gain'
   last_milestone_step?: number
+  projected_completion_at?: string | null
+  projection_computed_at?: string | null
+  projection_weekly_rate_kg?: number | null
 }
 
 export const GET_WEIGHT_GOAL = `
@@ -1753,6 +1756,9 @@ export const GET_WEIGHT_GOAL = `
       start_weight_kg
       goal_type
       last_milestone_step
+      projected_completion_at
+      projection_computed_at
+      projection_weekly_rate_kg
       created_at
       updated_at
     }
@@ -1770,6 +1776,9 @@ export const UPSERT_WEIGHT_GOAL = `
           start_weight_kg
           goal_type
           last_milestone_step
+          projected_completion_at
+          projection_computed_at
+          projection_weekly_rate_kg
           updated_at
         ]
       }
@@ -1779,6 +1788,9 @@ export const UPSERT_WEIGHT_GOAL = `
       start_weight_kg
       goal_type
       last_milestone_step
+      projected_completion_at
+      projection_computed_at
+      projection_weekly_rate_kg
       created_at
       updated_at
     }
@@ -1799,6 +1811,9 @@ export const UPDATE_WEIGHT_GOAL = `
       start_weight_kg
       goal_type
       last_milestone_step
+      projected_completion_at
+      projection_computed_at
+      projection_weekly_rate_kg
       created_at
       updated_at
     }

@@ -29,6 +29,9 @@ const weightGoal: WeightGoal = {
   current_weight_kg: 79,
   goal_type: 'lose',
   last_milestone_step: 0,
+  projected_completion_at: null,
+  projection_computed_at: null,
+  projection_weekly_rate_kg: null,
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',
 }

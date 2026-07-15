@@ -7,6 +7,7 @@ import {
   type WeightEntryInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { triggerWeightGoalProjectionSync } from '@/lib/goals/trigger-weight-goal-projection-sync'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useWeightEntries() {
@@ -25,7 +26,7 @@ export function useWeightEntries() {
 }
 
 export function useInsertWeightEntry() {
-  const { nhost } = useAuth()
+  const { nhost, user } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -38,8 +39,35 @@ export function useInsertWeightEntry() {
 
       return data.insert_weight_entries_one
     },
-    onSuccess: () => {
+    onSuccess: async (entry) => {
+      if (user?.id) {
+        queryClient.setQueryData<WeightEntry[]>(
+          ['weight-entries', user.id],
+          (previous) => {
+            const next = previous ? [entry, ...previous] : [entry]
+            return next.sort(
+              (left, right) =>
+                new Date(right.logged_at).getTime() -
+                new Date(left.logged_at).getTime(),
+            )
+          },
+        )
+      }
+
       void queryClient.invalidateQueries({ queryKey: ['weight-entries'] })
+
+      if (user?.id) {
+        try {
+          await triggerWeightGoalProjectionSync(
+            nhost,
+            queryClient,
+            user.id,
+            'weight_logged',
+          )
+        } catch {
+          // Projection sync is best-effort after a weigh-in.
+        }
+      }
     },
   })
 }

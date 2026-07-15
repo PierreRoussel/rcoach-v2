@@ -6,6 +6,8 @@ import {
   type NutritionSettingsInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import { shouldSyncProjectionOnNutritionChange } from '@/lib/goals/sync-weight-goal-projection'
+import { triggerWeightGoalProjectionSync } from '@/lib/goals/trigger-weight-goal-projection-sync'
 import type { NutritionSettings } from '@/lib/nutrition/types'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -54,8 +56,32 @@ export function useUpsertNutritionSettings() {
 
       return data.insert_nutrition_settings_one
     },
-    onSuccess: () => {
+    onSuccess: async (record) => {
+      const previous = user?.id
+        ? queryClient.getQueryData<NutritionSettings | null>([
+            'nutrition-settings',
+            user.id,
+          ])
+        : null
+      const shouldSyncProjection = shouldSyncProjectionOnNutritionChange(
+        previous,
+        record,
+      )
+
       void queryClient.invalidateQueries({ queryKey: ['nutrition-settings'] })
+
+      if (user?.id && shouldSyncProjection) {
+        try {
+          await triggerWeightGoalProjectionSync(
+            nhost,
+            queryClient,
+            user.id,
+            'nutrition_changed',
+          )
+        } catch {
+          // Projection sync is best-effort after nutrition update.
+        }
+      }
     },
   })
 }

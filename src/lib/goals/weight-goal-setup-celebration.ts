@@ -98,6 +98,9 @@ export function buildCelebrationGoalSnapshot(
     current_weight_kg: current,
     goal_type: institution.goal_type,
     last_milestone_step: 0,
+    projected_completion_at: null,
+    projection_computed_at: null,
+    projection_weekly_rate_kg: null,
     created_at: now.toISOString(),
     updated_at: now.toISOString(),
   }
