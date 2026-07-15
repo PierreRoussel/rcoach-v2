@@ -14,6 +14,9 @@ select_permissions:
         - start_weight_kg
         - goal_type
         - last_milestone_step
+        - projected_completion_at
+        - projection_computed_at
+        - projection_weekly_rate_kg
         - created_at
         - updated_at
       filter:
@@ -32,6 +35,9 @@ insert_permissions:
         - start_weight_kg
         - goal_type
         - last_milestone_step
+        - projected_completion_at
+        - projection_computed_at
+        - projection_weekly_rate_kg
 update_permissions:
   - role: user
     permission:
@@ -40,6 +46,9 @@ update_permissions:
         - start_weight_kg
         - goal_type
         - last_milestone_step
+        - projected_completion_at
+        - projection_computed_at
+        - projection_weekly_rate_kg
         - updated_at
       filter:
         user_id:

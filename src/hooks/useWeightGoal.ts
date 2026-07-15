@@ -15,6 +15,10 @@ import {
 } from '@/lib/goals/sync-weight-goal-projection'
 import type { WeightGoal, WeightGoalRecord } from '@/lib/goals/weight-goal'
 import {
+  fetchWeightGoalRecord,
+  normalizeWeightGoalRecord,
+} from '@/lib/goals/weight-goal-graphql'
+import {
   getLatestWeightKg,
   resolveWeightGoal,
 } from '@/lib/measurements/current-weight'
@@ -30,10 +34,7 @@ export function useWeightGoal() {
     enabled: isAuthenticated && Boolean(user?.id),
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const data = await graphqlRequest<{
-        weight_goals_by_pk: WeightGoalRecord | null
-      }>(nhost, GET_WEIGHT_GOAL, { userId: user!.id })
-      return data.weight_goals_by_pk
+      return fetchWeightGoalRecord(nhost, user!.id, GET_WEIGHT_GOAL)
     },
   })
 }
@@ -79,7 +80,7 @@ export function useUpsertWeightGoal() {
         object: input,
       })
 
-      return data.insert_weight_goals_one
+      return normalizeWeightGoalRecord(data.insert_weight_goals_one)
     },
     onSuccess: async (record) => {
       if (user?.id) {
@@ -137,7 +138,7 @@ export function useUpdateWeightGoal() {
         },
       })
 
-      return data.update_weight_goals_by_pk
+      return normalizeWeightGoalRecord(data.update_weight_goals_by_pk)
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['weight-goal'] })

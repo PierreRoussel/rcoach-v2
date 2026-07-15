@@ -1,8 +1,6 @@
 import type { NhostClient } from '@nhost/nhost-js'
 
 import type { WeightEntry } from '@/lib/graphql/operations'
-import { UPDATE_WEIGHT_GOAL } from '@/lib/graphql/operations'
-import { graphqlRequest } from '@/lib/graphql/request'
 import {
   buildProjectionPersistPayload,
   computeProjectionSnapshot,
@@ -11,6 +9,7 @@ import {
   type WeightGoal,
   type WeightGoalRecord,
 } from '@/lib/goals/weight-goal'
+import { updateWeightGoalProjection } from '@/lib/goals/weight-goal-graphql'
 import { resolveWeightGoal } from '@/lib/measurements/current-weight'
 import type { StoredUserMeasurements } from '@/lib/measurements/types'
 import type { NutritionSettings } from '@/lib/nutrition/types'
@@ -54,17 +53,20 @@ export async function syncWeightGoalProjection(
   const computedAt = new Date()
   const payload = buildProjectionPersistPayload(merged, computedAt)
 
-  const data = await graphqlRequest<{
-    update_weight_goals_by_pk: WeightGoalRecord
-  }>(nhost, UPDATE_WEIGHT_GOAL, {
-    userId,
-    changes: {
-      ...payload,
-      updated_at: computedAt.toISOString(),
-    },
+  const updated = await updateWeightGoalProjection(nhost, userId, {
+    ...payload,
+    updated_at: computedAt.toISOString(),
   })
 
-  return data.update_weight_goals_by_pk
+  if (!updated) {
+    return null
+  }
+
+  return {
+    ...goalRecord,
+    ...payload,
+    updated_at: computedAt.toISOString(),
+  }
 }
 
 export function buildSyncWeightGoalProjectionInput(
