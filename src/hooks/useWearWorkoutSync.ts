@@ -9,6 +9,7 @@ import {
   formatWearWatchStatusLabel,
   getWearWatchStatus,
   launchWearWorkoutApp,
+  promptWearAppInstall,
   publishWorkoutSnapshot,
   subscribeToWatchCommands,
   type WearWatchStatus,
@@ -183,5 +184,7 @@ export function useWearWorkoutSync(enabled = true) {
     watchAvailable,
     watchStatus,
     watchStatusLabel: formatWearWatchStatusLabel(watchStatus),
+    needsWearInstall: watchStatus.paired && !watchStatus.hasRcoachWear,
+    promptWearInstall: promptWearAppInstall,
   }
 }

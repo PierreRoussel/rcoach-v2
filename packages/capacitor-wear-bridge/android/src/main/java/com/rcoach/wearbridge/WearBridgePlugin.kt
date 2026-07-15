@@ -1,6 +1,10 @@
 package com.rcoach.wearbridge
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import androidx.core.content.ContextCompat
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -9,6 +13,9 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
+import com.google.common.util.concurrent.FutureCallback
+import com.google.common.util.concurrent.Futures
+import java.util.concurrent.Executors
 
 @CapacitorPlugin(name = "WearBridge")
 class WearBridgePlugin : Plugin() {
@@ -112,6 +119,72 @@ class WearBridgePlugin : Plugin() {
             .addOnFailureListener { error ->
                 Log.e(TAG, "Unable to publish workout snapshot", error)
                 call.reject(error.message ?: "Unable to publish snapshot")
+            }
+    }
+
+    @PluginMethod
+    fun promptWearAppInstall(call: PluginCall) {
+        val nodeClient = Wearable.getNodeClient(appContext)
+        val packageName = appContext.packageName
+        val playStoreUri = Uri.parse("market://details?id=$packageName")
+        val intent = Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(playStoreUri)
+        val executor = Executors.newSingleThreadExecutor()
+        val remoteActivityHelper = RemoteActivityHelper(appContext, executor)
+
+        nodeClient.connectedNodes
+            .addOnSuccessListener { nodes ->
+                if (nodes.isEmpty()) {
+                    val result = JSObject()
+                    result.put("launched", false)
+                    result.put("reason", "no_paired_watch")
+                    call.resolve(result)
+                    return@addOnSuccessListener
+                }
+
+                var pending = nodes.size
+                var anySuccess = false
+                var lastError: String? = null
+
+                for (node in nodes) {
+                    Futures.addCallback(
+                        remoteActivityHelper.startRemoteActivity(intent, node.id),
+                        object : FutureCallback<Void> {
+                            override fun onSuccess(result: Void?) {
+                                anySuccess = true
+                                Log.d(TAG, "Opened Play Store on wear node ${node.id}")
+                                finishPrompt()
+                            }
+
+                            override fun onFailure(throwable: Throwable) {
+                                lastError = throwable.message ?: "remote_activity_failed"
+                                Log.w(TAG, "Unable to open Play Store on wear node ${node.id}", throwable)
+                                finishPrompt()
+                            }
+
+                            private fun finishPrompt() {
+                                pending -= 1
+                                if (pending == 0) {
+                                    val result = JSObject()
+                                    result.put("launched", anySuccess)
+                                    if (!anySuccess && lastError != null) {
+                                        result.put("reason", lastError)
+                                    }
+                                    call.resolve(result)
+                                }
+                            }
+                        },
+                        ContextCompat.getMainExecutor(appContext),
+                    )
+                }
+            }
+            .addOnFailureListener { error ->
+                Log.w(TAG, "promptWearAppInstall node lookup failed", error)
+                val result = JSObject()
+                result.put("launched", false)
+                result.put("reason", "node_lookup_failed")
+                call.resolve(result)
             }
     }
 

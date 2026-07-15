@@ -9,6 +9,7 @@ import {
 } from '@/lib/wear/workout-sync-protocol'
 
 export type { WearWatchStatus }
+export type { PromptWearAppInstallResult } from '../../../packages/capacitor-wear-bridge/src/definitions'
 
 const NO_WATCH_STATUS: WearWatchStatus = {
   available: false,
@@ -79,6 +80,19 @@ export async function launchWearWorkoutApp() {
   }
 }
 
+export async function promptWearAppInstall() {
+  const bridge = loadWearBridge()
+  if (!bridge) {
+    return { launched: false, reason: 'unsupported_platform' as const }
+  }
+
+  try {
+    return await bridge.promptWearAppInstall()
+  } catch {
+    return { launched: false, reason: 'prompt_failed' as const }
+  }
+}
+
 export async function subscribeToWatchCommands(
   handler: (command: WatchCommand) => void,
 ) {
@@ -102,7 +116,7 @@ export function formatWearWatchStatusLabel(status: WearWatchStatus) {
   }
 
   if (status.paired) {
-    return 'Montre appairée — lancez RCoach Montre une fois'
+    return 'Montre appairée — installez RCoach sur la montre'
   }
 
   return 'Montre non appairée (app Wear OS)'

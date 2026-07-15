@@ -280,7 +280,8 @@ function ActiveWorkoutPage() {
     sessionMode !== 'emom' &&
     Capacitor.isNativePlatform() &&
     Capacitor.getPlatform() === 'android'
-  const { watchAvailable, watchStatusLabel } = useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
+  const { watchAvailable, watchStatusLabel, needsWearInstall, promptWearInstall } =
+    useWearWorkoutSync(wearSyncEnabled && Boolean(startedAt))
   const isEmomSession = sessionMode === 'emom'
   const emomSlots = useMemo(
     () => (isEmomSession ? buildEmomSlots(activeExercises) : []),
@@ -381,6 +382,11 @@ function ActiveWorkoutPage() {
   )
 
   useEffect(() => {
+    const startedAt = useActiveWorkoutStore.getState().startedAt
+    if (startedAt) {
+      return
+    }
+
     void hydrate()
   }, [hydrate])
 
@@ -651,9 +657,21 @@ function ActiveWorkoutPage() {
       }
     >
       {wearSyncEnabled ? (
-        <Pill tone={watchAvailable ? 'secondary' : 'default'}>
-          {watchStatusLabel}
-        </Pill>
+        needsWearInstall ? (
+          <Button
+            type="button"
+            variant="soft"
+            size="sm"
+            className="h-auto rounded-full px-3 py-1 text-xs"
+            onClick={() => void promptWearInstall()}
+          >
+            {watchStatusLabel}
+          </Button>
+        ) : (
+          <Pill tone={watchAvailable ? 'secondary' : 'default'}>
+            {watchStatusLabel}
+          </Pill>
+        )
       ) : null}
 
       <div className="flex items-center gap-2.5">

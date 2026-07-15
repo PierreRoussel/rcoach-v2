@@ -8,10 +8,16 @@ export type WearWatchStatus = {
   hasRcoachWear: boolean
 }
 
+export type PromptWearAppInstallResult = {
+  launched: boolean
+  reason?: string
+}
+
 export interface WearBridgePlugin {
   isWatchAvailable(): Promise<WearWatchStatus>
   publishSnapshot(options: { snapshotJson: string }): Promise<void>
   launchWearApp(): Promise<void>
+  promptWearAppInstall(): Promise<PromptWearAppInstallResult>
   addListener(
     eventName: 'watchCommand',
     listenerFunc: (event: { commandJson: string }) => void,

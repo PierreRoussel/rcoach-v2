@@ -28,6 +28,7 @@ import { StandaloneDocumentLink } from '@/components/legal/StandaloneDocumentLin
 import { LEGAL_PATHS } from '@/lib/legal/config'
 import { ProfileSubscriptionHighlightCard } from '@/components/profile/ProfileSubscriptionHighlightCard'
 import { UserMeasurementsSection } from '@/components/profile/UserMeasurementsSection'
+import { WearWatchSetupCard } from '@/components/wear/WearWatchSetupCard'
 import { FriendsSection } from '@/components/social/FriendsSection'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
 import { ThemePicker, ThemeSetting } from '@/design-system'
@@ -36,8 +37,6 @@ import { useTheme } from '@/design-system/theme-provider'
 import { WorkoutCalendarPanel } from '@/components/schedule/CalendarDayDetail'
 import { useMyProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAuth } from '@/lib/nhost/AuthProvider'
-import { Capacitor } from '@capacitor/core'
-
 export const Route = createFileRoute('/app/profile/')({
   component: ProfilePage,
 })
@@ -233,25 +232,7 @@ function ProfilePage() {
             </div>
           ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Montre Wear OS</CardTitle>
-              <CardDescription>
-                Disponible via l'application Android Capacitor pendant une séance active.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Plateforme actuelle :{' '}
-                {Capacitor.isNativePlatform() ? Capacitor.getPlatform() : 'web/PWA'}
-              </p>
-              <p>
-                Installez l'APK Android, ouvrez une séance active et vérifiez le bandeau
-                « Montre Wear OS connectée » sur l'écran séance.
-              </p>
-              <p>Voir docs/wear-os-testing.md pour le pairing emulateur.</p>
-            </CardContent>
-          </Card>
+          <WearWatchSetupCard />
         </CardContent>
       </Card>
 

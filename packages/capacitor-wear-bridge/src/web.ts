@@ -14,4 +14,8 @@ export class WearBridgeWeb extends WebPlugin implements WearBridgePlugin {
   async launchWearApp() {
     return
   }
+
+  async promptWearAppInstall() {
+    return { launched: false, reason: 'unsupported_platform' }
+  }
 }
