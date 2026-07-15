@@ -54,14 +54,7 @@ export function GoalsHomeSummaryTile() {
     goal.goal_type !== 'maintain' &&
     projection?.projectedDate &&
     !projection.isReached
-      ? [
-          `visé le ${format(projection.projectedDate, 'd MMMM', { locale: fr })}`,
-          projection.paceStatus?.status === 'stale'
-            ? null
-            : projection.paceStatus?.message.toLowerCase(),
-        ]
-          .filter(Boolean)
-          .join(' · ')
+      ? `estimé le ${format(projection.projectedDate, 'd MMMM', { locale: fr })}`
       : null
 
   return (
