@@ -9,6 +9,10 @@ import {
   type WeightGoalInput,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
+import {
+  buildSyncWeightGoalProjectionInput,
+  syncWeightGoalProjection,
+} from '@/lib/goals/sync-weight-goal-projection'
 import type { WeightGoal, WeightGoalRecord } from '@/lib/goals/weight-goal'
 import {
   getLatestWeightKg,
@@ -77,8 +81,34 @@ export function useUpsertWeightGoal() {
 
       return data.insert_weight_goals_one
     },
-    onSuccess: () => {
+    onSuccess: async (record) => {
+      if (user?.id) {
+        queryClient.setQueryData<WeightGoalRecord | null>(
+          ['weight-goal', user.id],
+          record,
+        )
+      }
+
       void queryClient.invalidateQueries({ queryKey: ['weight-goal'] })
+
+      if (user?.id && record.goal_type !== 'maintain') {
+        try {
+          await syncWeightGoalProjection(
+            nhost,
+            user.id,
+            buildSyncWeightGoalProjectionInput(
+              'goal_created',
+              record,
+              queryClient.getQueryData(['weight-entries', user.id]),
+              queryClient.getQueryData(['nutrition-settings', user.id]),
+              queryClient.getQueryData(['user-measurements', user.id]),
+            ),
+          )
+          void queryClient.invalidateQueries({ queryKey: ['weight-goal'] })
+        } catch {
+          // Projection sync is best-effort after goal upsert.
+        }
+      }
     },
   })
 }

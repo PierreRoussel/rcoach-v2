@@ -16,13 +16,16 @@ import {
 import { useNutritionSettings } from '@/hooks/useNutritionSettings'
 import { useEntitlement } from '@/hooks/useSubscription'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
+import { useWeightEntries } from '@/hooks/useWeightEntries'
+import { useWeightGoalProjectionBackfill } from '@/hooks/useWeightGoalProjectionBackfill'
 import { useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatMaintainGoalStatusLabel,
   goalProgressPercent,
-  projectWeightGoalCompletion,
+  resolveStableProjection,
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
+import { getLatestWeightLoggedAt } from '@/lib/measurements/current-weight'
 
 function formatWeightNumber(value: number) {
   return value.toFixed(1).replace('.', ',')
@@ -32,11 +35,18 @@ export function GoalsHomeSummaryTile() {
   const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
   const { data: nutritionSettings } = useNutritionSettings()
   const { data: userMeasurements } = useUserMeasurements()
+  const { data: weightEntries = [] } = useWeightEntries()
   const { entitled: hasGoalProjection } = useEntitlement('goal_projection')
+  useWeightGoalProjectionBackfill()
 
   const projection =
     goal && nutritionSettings
-      ? projectWeightGoalCompletion(goal, nutritionSettings, new Date(), userMeasurements)
+      ? resolveStableProjection(
+          goal,
+          nutritionSettings,
+          userMeasurements,
+          getLatestWeightLoggedAt(weightEntries),
+        )
       : null
 
   const estimationLabel =
@@ -44,7 +54,14 @@ export function GoalsHomeSummaryTile() {
     goal.goal_type !== 'maintain' &&
     projection?.projectedDate &&
     !projection.isReached
-      ? `estimé le ${format(projection.projectedDate, 'd MMMM', { locale: fr })}`
+      ? [
+          `visé le ${format(projection.projectedDate, 'd MMMM', { locale: fr })}`,
+          projection.paceStatus?.status === 'stale'
+            ? null
+            : projection.paceStatus?.message.toLowerCase(),
+        ]
+          .filter(Boolean)
+          .join(' · ')
       : null
 
   return (

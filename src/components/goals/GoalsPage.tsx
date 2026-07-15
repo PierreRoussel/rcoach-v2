@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/card'
 import { FormMessage } from '@/components/ui/form'
 import { Progress } from '@/components/ui/progress'
-import { PageHeader } from '@/design-system'
+import { PageHeader, Pill } from '@/design-system'
 import { useAdjustWeightGoal } from '@/hooks/useAdjustWeightGoal'
 import {
   useNutritionSettings,
@@ -32,6 +32,7 @@ import {
 } from '@/hooks/useNutritionSettings'
 import { useWeightGoalSetupCelebration } from '@/hooks/useWeightGoalSetupCelebration'
 import { useWeightEntries } from '@/hooks/useWeightEntries'
+import { useWeightGoalProjectionBackfill } from '@/hooks/useWeightGoalProjectionBackfill'
 import { useUpdateWeightGoal, useResolvedWeightGoal } from '@/hooks/useWeightGoal'
 import {
   formatWeightKg,
@@ -39,10 +40,12 @@ import {
   hasTdeeProfileData,
   isMaintainGoalInRange,
   isWeightGoalReached,
-  projectWeightGoalCompletion,
+  resolveStableProjection,
+  type StableWeightGoalProjection,
   type WeightGoal,
   WEIGHT_GOAL_TYPE_LABELS,
 } from '@/lib/goals/weight-goal'
+import { getLatestWeightLoggedAt } from '@/lib/measurements/current-weight'
 import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import { useEntitlement } from '@/hooks/useSubscription'
 import { useWaistEntries } from '@/hooks/useWaistEntries'
@@ -86,6 +89,18 @@ export function GoalsPage({
   } = useWeightGoalSetupCelebration({
     previewGoalType: previewWeightGoalSetup,
   })
+  useWeightGoalProjectionBackfill()
+
+  const lastWeightLoggedAt = getLatestWeightLoggedAt(weightEntries)
+  const projection: StableWeightGoalProjection | null =
+    goal && nutritionSettings
+      ? resolveStableProjection(
+          goal,
+          nutritionSettings,
+          userMeasurements,
+          lastWeightLoggedAt,
+        )
+      : null
 
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardMode, setWizardMode] = useState<'create' | 'edit'>('create')
@@ -148,11 +163,6 @@ export function GoalsPage({
     [celebrationGoal, nutritionSettings, updateGoal, upsertNutrition],
   )
 
-  const projection =
-    goal && nutritionSettings
-      ? projectWeightGoalCompletion(goal, nutritionSettings, new Date(), userMeasurements)
-      : null
-
   const showWaistChart = userMeasurements?.waist_cm != null
 
   if (goalLoading) {
@@ -166,7 +176,7 @@ export function GoalsPage({
       <PageHeader
         eyebrow="Progression"
         title="Objectif poids"
-        description="Suivez votre évolution et projetez votre date d’arrivée."
+        description="Suivez votre évolution et votre objectif visé."
       />
 
       <GoalCoachingDevTools />
@@ -291,7 +301,8 @@ export function GoalsPage({
                   Projection
                 </CardTitle>
                 <CardDescription>
-                  Estimation basée sur votre déficit calorique actuel.
+                  Projection basée sur votre plan nutritionnel — actualisée à
+                  chaque pesée.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -305,6 +316,20 @@ export function GoalsPage({
                     showPremiumCta
                   >
                     <div className="space-y-2">
+                      {projection.paceStatus ? (
+                        <Pill
+                          tone={
+                            projection.paceStatus.status === 'ahead'
+                              ? 'solid-secondary'
+                              : projection.paceStatus.status === 'on_track'
+                                ? 'accent'
+                                : 'secondary'
+                          }
+                          className="text-[10px]"
+                        >
+                          {projection.paceStatus.message}
+                        </Pill>
+                      ) : null}
                       <p>
                         Rythme estimé :{' '}
                         <span className="font-semibold">
@@ -312,7 +337,7 @@ export function GoalsPage({
                         </span>
                       </p>
                       <p>
-                        Arrivée estimée :{' '}
+                        Objectif visé le{' '}
                         <span className="font-semibold text-primary">
                           {format(projection.projectedDate, 'd MMMM yyyy', {
                             locale: fr,
@@ -324,6 +349,11 @@ export function GoalsPage({
                         {goal.goal_type === 'lose' ? 'perdre' : 'gagner'} avec un
                         déficit de {Math.abs(projection.dailyDeficitKcal)} kcal/j.
                       </p>
+                      {projection.isStale ? (
+                        <p className="text-xs text-muted-foreground">
+                          Pesez-vous pour affiner votre suivi.
+                        </p>
+                      ) : null}
                     </div>
                   </GoalProjectionPremiumBlur>
                 ) : (

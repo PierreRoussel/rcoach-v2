@@ -37,6 +37,9 @@ const baseGoal = {
   current_weight_kg: 79.9,
   target_weight_kg: 75,
   last_milestone_step: 0,
+  projected_completion_at: null,
+  projection_computed_at: null,
+  projection_weekly_rate_kg: null,
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',
 }

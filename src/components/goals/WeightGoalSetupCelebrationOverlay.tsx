@@ -267,7 +267,7 @@ export function WeightGoalSetupCelebrationOverlay({
                   </p>
                   {hasProjectedDate ? (
                     <p className="mt-1 text-sm text-[#4B5563]">
-                      Objectif estimé le{' '}
+                      Objectif visé le{' '}
                       {format(nutritionProjection!.projectedDate!, 'd MMMM yyyy', {
                         locale: fr,
                       })}
