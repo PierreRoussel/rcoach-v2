@@ -5,6 +5,7 @@ import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import { useExercisePickerConsumer } from '@/hooks/useExercisePickerConsumer'
 import {
   ExerciseStatsDrawer,
   type ExerciseStatsDrawerTarget,
@@ -41,6 +42,7 @@ import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 
 type TemplateEditorFormProps = {
   templateId?: string
+  shareToken?: string | null
   initialName?: string
   initialFolderName?: string | null
   initialExercises?: TemplateExerciseDraft[]
@@ -59,6 +61,7 @@ type TemplateEditorFormProps = {
 
 export function TemplateEditorForm({
   templateId,
+  shareToken = null,
   initialName = '',
   initialFolderName = null,
   initialExercises = [],
@@ -136,6 +139,11 @@ export function TemplateEditorForm({
       ),
     )
   }
+
+  useExercisePickerConsumer({
+    onAdd: handleAddExercise,
+    onReplace: handleReplace,
+  })
 
   function handleAddSet(exerciseIndex: number) {
     setExercises((current) =>
@@ -236,7 +244,11 @@ export function TemplateEditorForm({
             className="h-10 min-w-0 flex-1 border-0 bg-transparent px-1 font-display text-lg font-black shadow-none focus-visible:ring-0"
           />
           {templateId ? (
-            <TemplateEditorMenu templateId={templateId} title={name} />
+            <TemplateEditorMenu
+              templateId={templateId}
+              title={name}
+              shareToken={shareToken}
+            />
           ) : null}
         </div>
         <Input
@@ -277,8 +289,13 @@ export function TemplateEditorForm({
               <CardDescription>{exercises.length} exercice(s)</CardDescription>
             </div>
             <ExercisePicker
-              onSelect={handleAddExercise}
               excludeIds={exercises.map((exercise) => exercise.exerciseId)}
+              context="template"
+              templateId={templateId}
+              returnTo={{
+                to: '/app/sessions/$templateId',
+                params: templateId ? { templateId } : undefined,
+              }}
             />
           </div>
         </CardHeader>
@@ -298,6 +315,12 @@ export function TemplateEditorForm({
             embedded
             onOpenReorder={() => setReorderOpen(true)}
             onAddSet={handleAddSet}
+            pickerContext="template"
+            pickerReturnTo={{
+              to: '/app/sessions/$templateId',
+              params: templateId ? { templateId } : undefined,
+            }}
+            pickerTemplateId={templateId}
             onViewDetails={(index) => {
               const exercise = activeEntries[index]
               if (exercise) {

@@ -11,6 +11,8 @@ export function NativeSafeAreaSetup() {
       return
     }
 
+    document.documentElement.classList.add('capacitor-native')
+
     void SystemBars.setStyle({
       style: colorMode === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
     })

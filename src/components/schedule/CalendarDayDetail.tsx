@@ -35,6 +35,10 @@ import {
   isPastCalendarDay,
   type CalendarMarkers,
 } from '@/lib/schedule/calendar-markers'
+import {
+  findFulfillingWorkout,
+  occurrenceIsFulfilled,
+} from '@/lib/schedule/occurrence-fulfillment'
 import type { ScheduleOccurrence } from '@/lib/schedule/expand-occurrences'
 import { cn } from '@/lib/utils'
 
@@ -141,8 +145,6 @@ export function CalendarDayDetail({
 }: CalendarDayDetailProps) {
   const marker = getDayMarker(markers, date)
   const isPastDay = isPastCalendarDay(date)
-  const canStartPlanned = canStartPlannedOccurrence(date, marker)
-  const recordedWorkout = marker?.workouts[0]
   const hasSportContent = Boolean(marker?.workouts.length || marker?.planned.length)
   const hasNutritionContent = Boolean(showNutrition && nutritionDay?.hasLogs)
   const hasContent = hasSportContent || hasNutritionContent
@@ -220,6 +222,11 @@ export function CalendarDayDetail({
           </p>
           <ul className="space-y-2">
             {marker.planned.map((occurrence) => {
+              const isFulfilled = occurrenceIsFulfilled(marker.workouts, occurrence)
+              const fulfillingWorkout = findFulfillingWorkout(marker.workouts, occurrence)
+              const canStartThis = canStartPlannedOccurrence(date, marker, occurrence)
+              const isMissed = isPastDay && !isFulfilled
+
               const occurrenceContent = (
                 <>
                   <div className="min-w-0">
@@ -230,7 +237,7 @@ export function CalendarDayDetail({
                       </p>
                     ) : null}
                   </div>
-                  {canStartPlanned && onStartPlanned ? (
+                  {canStartThis && onStartPlanned ? (
                     <Button
                       type="button"
                       variant="pill"
@@ -242,13 +249,13 @@ export function CalendarDayDetail({
                       <Play className="size-3" />
                       Go
                     </Button>
-                  ) : recordedWorkout ? (
+                  ) : fulfillingWorkout ? (
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   ) : (
                     <CalendarClock
                       className={cn(
                         'size-4 shrink-0',
-                        isPastDay ? 'text-muted-foreground/50' : 'text-secondary',
+                        isMissed ? 'text-muted-foreground/50' : 'text-secondary',
                       )}
                     />
                   )}
@@ -257,20 +264,20 @@ export function CalendarDayDetail({
 
               const rowClassName = cn(
                 'flex items-center justify-between gap-3 rounded-xl px-3 py-2.5',
-                isPastDay
+                isMissed
                   ? 'border border-dashed border-muted-foreground/25 bg-muted/20'
-                  : 'border border-dashed border-secondary/35 bg-soft-secondary/35',
-                !canStartPlanned &&
-                  recordedWorkout &&
-                  'transition-colors active:bg-muted/30',
+                  : isFulfilled
+                    ? 'border border-primary/15 bg-soft-primary/25'
+                    : 'border border-dashed border-secondary/35 bg-soft-secondary/35',
+                fulfillingWorkout && 'transition-colors active:bg-muted/30',
               )
 
               return (
                 <li key={`${occurrence.sessionId}-${occurrence.date}`}>
-                  {!canStartPlanned && recordedWorkout ? (
+                  {fulfillingWorkout ? (
                     <Link
                       to="/app/workouts/$workoutId"
-                      params={{ workoutId: recordedWorkout.id }}
+                      params={{ workoutId: fulfillingWorkout.id }}
                       className={rowClassName}
                     >
                       {occurrenceContent}
@@ -442,7 +449,6 @@ export function WorkoutCalendarPanel({
         selected={selected}
         onSelect={setSelected}
       />
-      {belowCalendar ? <div>{belowCalendar}</div> : null}
       {selected && mode === 'full' ? (
         <>
           <PlanningDayConnector date={selected} />
@@ -470,6 +476,7 @@ export function WorkoutCalendarPanel({
           isStarting={isStarting}
         />
       ) : null}
+      {belowCalendar ? <div>{belowCalendar}</div> : null}
     </div>
   )
 }

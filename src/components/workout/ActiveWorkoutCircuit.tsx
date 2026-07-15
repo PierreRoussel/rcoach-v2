@@ -338,6 +338,8 @@ export function ActiveWorkoutCircuit({
         onApplySupersetMembership={onApplySupersetMembership}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={() => setReorderOpen(true)}
+        pickerContext="active"
+        pickerReturnTo={{ to: '/app/workout/active' }}
         onViewStats={(index) => {
           const exercise = exercises[index]
           if (!exercise) {

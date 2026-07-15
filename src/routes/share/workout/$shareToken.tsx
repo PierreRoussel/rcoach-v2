@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale'
 import { Trophy } from 'lucide-react'
 
 import { WorkoutDetailContent } from '@/components/workout/WorkoutDetailContent'
+import { WorkoutDetailMenu } from '@/components/workout/WorkoutDetailMenu'
 import { WorkoutShareCard } from '@/components/workout/WorkoutShareCard'
 import { BrandLogo, PageHeader, Pill } from '@/design-system'
 import { useSharedWorkoutByToken } from '@/hooks/useWorkoutSharing'
@@ -64,15 +65,19 @@ function SharedWorkoutPage() {
           />
         </div>
 
-        <PageHeader
-          eyebrow="Séance partagée"
-          title={workout.title}
-          description={
-            workout.user?.display_name
-              ? `Par ${workout.user.display_name} · ${dateLabel}`
-              : dateLabel
-          }
-        />
+        <div className="flex items-start justify-between gap-3">
+          <PageHeader
+            eyebrow="Séance partagée"
+            title={workout.title}
+            description={
+              workout.user?.display_name
+                ? `Par ${workout.user.display_name} · ${dateLabel}`
+                : dateLabel
+            }
+            className="min-w-0 flex-1"
+          />
+          <WorkoutDetailMenu workout={workout} variant="shared" />
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {duration ? <Pill tone="secondary">{duration}</Pill> : null}

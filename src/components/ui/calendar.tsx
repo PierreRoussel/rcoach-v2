@@ -38,24 +38,11 @@ function DayMarker({ modifiers }: { modifiers: DayButtonProps['modifiers'] }) {
     return null
   }
 
-  const isMixed =
-    Boolean(modifiers.mixed) ||
-    (Boolean(modifiers.done) && Boolean(modifiers.planned))
-
-  if (isMixed) {
-    return (
-      <span
-        aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] h-1.5 w-3 -translate-x-1/2 rounded-full bg-gradient-to-r from-primary to-secondary"
-      />
-    )
-  }
-
   if (modifiers.done) {
     return (
       <span
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] size-2 -translate-x-1/2 rounded-full bg-primary shadow-sm shadow-primary/40"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] h-1.5 w-5 -translate-x-1/2 rounded-full bg-secondary shadow-sm shadow-secondary/35"
       />
     )
   }
@@ -64,7 +51,7 @@ function DayMarker({ modifiers }: { modifiers: DayButtonProps['modifiers'] }) {
     return (
       <span
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] size-2 -translate-x-1/2 rounded-full bg-secondary shadow-sm shadow-secondary/30"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] h-1.5 w-5 -translate-x-1/2 rounded-full bg-primary/30 ring-1 ring-inset ring-primary/35"
       />
     )
   }
@@ -73,7 +60,7 @@ function DayMarker({ modifiers }: { modifiers: DayButtonProps['modifiers'] }) {
     return (
       <span
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] size-2 -translate-x-1/2 rounded-full bg-muted-foreground/50"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-[2] h-1.5 w-5 -translate-x-1/2 rounded-full bg-muted-foreground/45"
       />
     )
   }

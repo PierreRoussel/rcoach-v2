@@ -35,6 +35,8 @@ export type OverloadSuggestion = {
   suggestedDistanceKm: number | null
   /** false = message informatif (RPE trop élevé, RPE manquant). */
   actionable: boolean
+  /** Encart positif : la charge actuelle convient (RPE élevé sur la dernière séance). */
+  adaptedLoad?: boolean
 }
 
 export const MAX_RPE_FOR_PROGRESSION = 9
@@ -278,22 +280,17 @@ export function formatBodyweightSessionReference(sets: SetSnapshot[]): string {
 
 function buildRpeBlockedSuggestion(
   kind: ExerciseKind,
-  referenceSet: SetSnapshot,
+  _referenceSet: SetSnapshot,
 ): OverloadSuggestion {
-  const lastSession = formatLastSessionReference(referenceSet)
-  const rpe = referenceSet.rpe
-
   return {
     kind,
-    message:
-      rpe != null
-        ? `Dernière séance : ${lastSession}. RPE ${Number.isInteger(rpe) ? rpe : rpe} — consolidez avant d'augmenter.`
-        : `Dernière séance : ${lastSession}. Consolidez avant d'augmenter.`,
+    message: 'Charge adaptée',
     suggestedWeightKg: null,
     suggestedReps: null,
     suggestedDurationSeconds: null,
     suggestedDistanceKm: null,
     actionable: false,
+    adaptedLoad: true,
   }
 }
 

@@ -173,6 +173,50 @@ mutation EnableWorkoutShare($id: uuid!, $shareToken: uuid!) {
   }
 }
 
+query GetSharedTemplateByToken($token: uuid!) {
+  workout_templates(where: { share_token: { _eq: $token } }, limit: 1) {
+    id
+    name
+    default_rest_seconds
+    share_token
+    user {
+      display_name
+    }
+    workout_template_exercises(order_by: { sort_order: asc }) {
+      id
+      sort_order
+      superset_id
+      default_rest_seconds
+      exercise {
+        id
+        name
+        name_fr
+        muscle_group
+        equipment
+        tracking_mode
+      }
+      workout_template_sets(order_by: { set_index: asc }) {
+        set_index
+        weight_kg
+        reps
+        rest_seconds
+        set_type
+        duration_seconds
+      }
+    }
+  }
+}
+
+mutation EnableTemplateShare($id: uuid!, $shareToken: uuid!) {
+  update_workout_templates_by_pk(
+    pk_columns: { id: $id }
+    _set: { share_token: $shareToken }
+  ) {
+    id
+    share_token
+  }
+}
+
 query TemplateBySourceWorkout($workoutId: uuid!) {
   workout_templates(
     where: { source_workout_id: { _eq: $workoutId } }
@@ -191,6 +235,7 @@ query ListMyWorkoutTemplates {
     created_at
     updated_at
     default_rest_seconds
+    share_token
     workout_template_exercises(order_by: { sort_order: asc }) {
       id
       sort_order
@@ -219,6 +264,7 @@ query GetWorkoutTemplate($id: uuid!) {
     created_at
     updated_at
     default_rest_seconds
+    share_token
     workout_template_exercises(order_by: { sort_order: asc }) {
       id
       sort_order

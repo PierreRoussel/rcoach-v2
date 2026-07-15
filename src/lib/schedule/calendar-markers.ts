@@ -7,6 +7,10 @@ import {
   type ScheduledSession,
   type ScheduleOccurrence,
 } from '@/lib/schedule/expand-occurrences'
+import {
+  isCompletedWorkout,
+  occurrenceIsFulfilled,
+} from '@/lib/schedule/occurrence-fulfillment'
 
 export type DayMarkerKind = 'done' | 'planned' | 'missed' | 'mixed'
 
@@ -28,6 +32,16 @@ function emptyMarker(date: string): DayMarker {
   }
 }
 
+function recomputeSpontaneousDoneKind(marker: DayMarker) {
+  if (marker.planned.length > 0) {
+    return
+  }
+
+  if (marker.workouts.some(isCompletedWorkout)) {
+    marker.kinds.add('done')
+  }
+}
+
 export function buildCalendarMarkers(
   workouts: CalendarWorkoutSummary[],
   sessions: ScheduledSession[],
@@ -42,7 +56,6 @@ export function buildCalendarMarkers(
     const date = format(parseISO(workout.started_at), 'yyyy-MM-dd')
     const marker = markers.get(date) ?? emptyMarker(date)
     marker.workouts.push(workout)
-    marker.kinds.add('done')
     markers.set(date, marker)
   }
 
@@ -53,9 +66,9 @@ export function buildCalendarMarkers(
     marker.planned.push(occurrence)
 
     const day = startOfDay(parseISO(`${occurrence.date}T12:00:00`))
-    const hasWorkout = marker.workouts.length > 0
+    const fulfilled = occurrenceIsFulfilled(marker.workouts, occurrence)
 
-    if (hasWorkout) {
+    if (fulfilled) {
       marker.kinds.add('done')
     } else if (isBefore(day, today)) {
       marker.kinds.add('missed')
@@ -63,11 +76,11 @@ export function buildCalendarMarkers(
       marker.kinds.add('planned')
     }
 
-    if (hasWorkout && marker.planned.length > 0) {
-      marker.kinds.add('mixed')
-    }
-
     markers.set(occurrence.date, marker)
+  }
+
+  for (const marker of markers.values()) {
+    recomputeSpontaneousDoneKind(marker)
   }
 
   return markers
@@ -78,16 +91,12 @@ export function getMarkerKind(marker: DayMarker | undefined): DayMarkerKind | nu
     return null
   }
 
-  if (marker.kinds.has('mixed') || (marker.kinds.has('done') && marker.kinds.has('planned'))) {
-    return 'mixed'
+  if (marker.kinds.has('missed')) {
+    return 'missed'
   }
 
   if (marker.kinds.has('done')) {
     return 'done'
-  }
-
-  if (marker.kinds.has('missed')) {
-    return 'missed'
   }
 
   if (marker.kinds.has('planned')) {
@@ -95,6 +104,21 @@ export function getMarkerKind(marker: DayMarker | undefined): DayMarkerKind | nu
   }
 
   return null
+}
+
+export function markerDatesWithKind(
+  markers: CalendarMarkers,
+  kind: DayMarkerKind,
+): Date[] {
+  const dates: Date[] = []
+
+  for (const marker of markers.values()) {
+    if (marker.kinds.has(kind)) {
+      dates.push(parseISO(`${marker.date}T12:00:00`))
+    }
+  }
+
+  return dates
 }
 
 export function workoutMatchesDay(workout: CalendarWorkoutSummary, date: Date): boolean {
@@ -124,18 +148,26 @@ export function isPastCalendarDay(date: Date, now = new Date()): boolean {
 
 export function canStartPlannedOccurrence(
   date: Date,
-  marker: Pick<DayMarker, 'workouts'> | undefined,
+  marker: Pick<DayMarker, 'workouts' | 'planned'> | undefined,
+  occurrence?: ScheduleOccurrence,
   now = new Date(),
 ): boolean {
   if (isPastCalendarDay(date, now)) {
     return false
   }
 
-  if (marker?.workouts.length) {
-    return false
+  if (occurrence) {
+    return !occurrenceIsFulfilled(marker?.workouts ?? [], occurrence)
   }
 
-  return true
+  if (!marker?.planned.length) {
+    return true
+  }
+
+  return marker.planned.some(
+    (plannedOccurrence) =>
+      !occurrenceIsFulfilled(marker.workouts, plannedOccurrence),
+  )
 }
 
 export function calendarDayTimestamp(date: Date, hour = 12): Date {

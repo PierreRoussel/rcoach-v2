@@ -122,9 +122,13 @@ select_permissions:
         - id
         - display_name
       filter:
-        workouts:
-          share_token:
-            _is_null: false
+        _or:
+          - workouts:
+              share_token:
+                _is_null: false
+          - workout_templates:
+              share_token:
+                _is_null: false
 update_permissions:
   - role: user
     permission:

@@ -1,9 +1,10 @@
-import { Dumbbell } from 'lucide-react'
+import { Dumbbell, Plus } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 
 import { ExerciseBodyMap } from '@/components/workout/ExerciseBodyMap'
 import { ExerciseCoachingText } from '@/components/workout/ExerciseCoachingText'
 import { ExerciseDemoPlayer } from '@/components/workout/ExerciseDemoPlayer'
+import { Button } from '@/components/ui/button'
 import {
   Drawer,
   DrawerContent,
@@ -31,6 +32,9 @@ type ExerciseDetailDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   exercise: ExerciseDetailDrawerTarget | null
+  headerAction?: ReactNode
+  onAdd?: () => void
+  addLabel?: string
 }
 
 function DetailRow({
@@ -54,6 +58,9 @@ export function ExerciseDetailDrawer({
   open,
   onOpenChange,
   exercise,
+  headerAction,
+  onAdd,
+  addLabel = "Ajouter l'exercice",
 }: ExerciseDetailDrawerProps) {
   const displayExerciseName = useExerciseDisplayName(
     exercise?.exerciseName,
@@ -98,9 +105,25 @@ export function ExerciseDetailDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="flex max-h-[92vh] flex-col overflow-hidden rounded-t-2xl px-0">
         <DrawerHeader className="shrink-0 px-4 pb-2 text-left">
-          <DrawerTitle className="font-display font-black">
-            {displayExerciseName || "Détails de l'exercice"}
-          </DrawerTitle>
+          <div className="flex items-start justify-between gap-3">
+            <DrawerTitle className="min-w-0 flex-1 font-display font-black">
+              {displayExerciseName || "Détails de l'exercice"}
+            </DrawerTitle>
+            {headerAction ??
+              (onAdd ? (
+                <Button
+                  type="button"
+                  variant="pill"
+                  size="sm"
+                  className="shrink-0 rounded-full"
+                  onClick={onAdd}
+                >
+                  <Plus className="size-4 sm:hidden" aria-hidden />
+                  <span className="hidden sm:inline">{addLabel}</span>
+                  <span className="sr-only sm:hidden">{addLabel}</span>
+                </Button>
+              ) : null)}
+          </div>
         </DrawerHeader>
 
         {exercise ? (

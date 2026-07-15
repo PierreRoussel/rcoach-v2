@@ -2,6 +2,7 @@ import type { Plugin } from 'vite'
 
 const ANDROID_SHELL_ENTRY_SCRIPT = `
 ;(function redirectAndroidShellEntry() {
+  document.documentElement.classList.add('capacitor-native')
   var path = location.pathname
   if (path === '/' || path === '/index.html') {
     location.replace('/app' + location.search + location.hash)

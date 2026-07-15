@@ -1,30 +1,20 @@
 import { isBefore, startOfDay, subDays } from 'date-fns'
 
 import {
-  datesMatchWorkoutDay,
   getOccurrencesForDate,
   type ScheduledSession,
   type ScheduleOccurrence,
 } from '@/lib/schedule/expand-occurrences'
+import {
+  occurrenceIsFulfilled,
+  type WorkoutOccurrenceCheck,
+} from '@/lib/schedule/occurrence-fulfillment'
 
-type WorkoutDayCheck = {
-  started_at: string
-  ended_at: string | null
-}
-
-export function hadCompletedWorkoutOnDay(
-  workouts: WorkoutDayCheck[],
-  day: Date,
-): boolean {
-  return workouts.some(
-    (workout) =>
-      workout.ended_at != null && datesMatchWorkoutDay(workout.started_at, day),
-  )
-}
+export { hadCompletedWorkoutOnDay } from '@/lib/schedule/occurrence-fulfillment'
 
 export function getMissedOccurrencesForDay(
   sessions: ScheduledSession[],
-  workouts: WorkoutDayCheck[],
+  workouts: WorkoutOccurrenceCheck[],
   day: Date,
   now = new Date(),
 ): ScheduleOccurrence[] {
@@ -35,16 +25,14 @@ export function getMissedOccurrencesForDay(
     return []
   }
 
-  if (hadCompletedWorkoutOnDay(workouts, day)) {
-    return []
-  }
-
-  return getOccurrencesForDate(sessions, day)
+  return getOccurrencesForDate(sessions, day).filter(
+    (occurrence) => !occurrenceIsFulfilled(workouts, occurrence),
+  )
 }
 
 export function getYesterdayMissedOccurrences(
   sessions: ScheduledSession[],
-  workouts: WorkoutDayCheck[],
+  workouts: WorkoutOccurrenceCheck[],
   now = new Date(),
 ): ScheduleOccurrence[] {
   const yesterday = subDays(startOfDay(now), 1)

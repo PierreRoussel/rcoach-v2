@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { Button } from '@/components/ui/button'
+import { useExercisePickerConsumer } from '@/hooks/useExercisePickerConsumer'
 import {
   Card,
   CardContent,
@@ -63,6 +64,10 @@ function ProgramDetailPage() {
       targetReps: '8-12',
     })
   }
+
+  useExercisePickerConsumer({
+    onAdd: handleAddExercise,
+  })
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Chargement...</p>
@@ -144,7 +149,15 @@ function ProgramDetailPage() {
                   Exercices, séries cibles et notes pour ce jour.
                 </CardDescription>
               </div>
-              <ExercisePicker onSelect={(exercise) => void handleAddExercise(exercise)} />
+              <ExercisePicker
+                context="program"
+                programId={program.id}
+                programDayId={activeDay.id}
+                returnTo={{
+                  to: '/coach/programs/$programId',
+                  params: { programId: program.id },
+                }}
+              />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">

@@ -90,6 +90,7 @@ function EditSessionTemplatePage() {
       <TemplateEditorForm
         key={`${template.id}-${template.updated_at}`}
         templateId={templateId}
+        shareToken={template.share_token ?? null}
         initialName={template.name}
         initialFolderName={template.folder_name ?? null}
         initialExercises={initial.exercises}

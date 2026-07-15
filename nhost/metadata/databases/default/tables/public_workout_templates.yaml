@@ -32,6 +32,7 @@ select_permissions:
         - updated_at
         - default_rest_seconds
         - source_workout_id
+        - share_token
       filter:
         user_id:
           _eq: X-Hasura-User-Id
@@ -39,9 +40,12 @@ select_permissions:
     permission:
       columns:
         - id
+        - name
+        - default_rest_seconds
+        - share_token
       filter:
-        id:
-          _is_null: true
+        share_token:
+          _is_null: false
 insert_permissions:
   - role: user
     permission:
@@ -63,6 +67,7 @@ update_permissions:
         - folder_name
         - default_rest_seconds
         - source_workout_id
+        - share_token
         - updated_at
       filter:
         user_id:

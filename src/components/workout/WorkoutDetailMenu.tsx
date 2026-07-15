@@ -31,6 +31,7 @@ import {
 import { useDeleteWorkout } from '@/hooks/useWorkouts'
 import { useEntitlement } from '@/hooks/useSubscription'
 import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
+import { useAuth } from '@/lib/nhost/AuthProvider'
 import { FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
 import { cn } from '@/lib/utils'
 
@@ -54,17 +55,21 @@ type WorkoutMenuData = (WorkoutDetail | WorkoutSummary) & {
 type WorkoutDetailMenuProps = {
   workout: WorkoutMenuData
   compact?: boolean
+  variant?: 'owner' | 'shared'
 }
 
 export function WorkoutDetailMenu({
   workout,
   compact = false,
+  variant = 'owner',
 }: WorkoutDetailMenuProps) {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+  const isSharedView = variant === 'shared'
   const [menuOpen, setMenuOpen] = useState(false)
   const { data: savedTemplate } = useTemplateBySourceWorkout(
     workout.id,
-    menuOpen && !workout.workout_template_id,
+    menuOpen && !workout.workout_template_id && isAuthenticated,
   )
   const linkedTemplateId = workout.workout_template_id ?? savedTemplate?.id ?? null
   const createTemplate = useCreateTemplateFromWorkout()
@@ -121,6 +126,21 @@ export function WorkoutDetailMenu({
 
   const isBusy = createTemplate.isPending || deleteWorkout.isPending
 
+  function handleSaveAsTemplateClick() {
+    if (isSharedView && !isAuthenticated) {
+      const returnTo = `${window.location.pathname}${window.location.search}`
+      void navigate({ to: '/auth/login', search: { returnTo } })
+      return
+    }
+
+    if (atTemplateLimit) {
+      setLimitDialogOpen(true)
+      return
+    }
+
+    setSaveDialogOpen(true)
+  }
+
   return (
     <div
       className="flex flex-col items-end gap-1"
@@ -140,29 +160,33 @@ export function WorkoutDetailMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem
-            disabled={isBusy}
-            onClick={() => setShareDialogOpen(true)}
-          >
-            <Share2 className="size-4" />
-            Partager la séance
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              to="/app/planning"
-              search={buildPlanningSearchParams({
-                title: workout.title,
-                templateId: linkedTemplateId ?? undefined,
-                openScheduleForm: true,
-              })}
-            >
-              <CalendarClock className="size-4" />
-              Programmer une recurrence
-            </Link>
-          </DropdownMenuItem>
+          {!isSharedView ? (
+            <>
+              <DropdownMenuItem
+                disabled={isBusy}
+                onClick={() => setShareDialogOpen(true)}
+              >
+                <Share2 className="size-4" />
+                Partager la séance
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/app/planning"
+                  search={buildPlanningSearchParams({
+                    title: workout.title,
+                    templateId: linkedTemplateId ?? undefined,
+                    openScheduleForm: true,
+                  })}
+                >
+                  <CalendarClock className="size-4" />
+                  Programmer une recurrence
+                </Link>
+              </DropdownMenuItem>
+            </>
+          ) : null}
           {linkedTemplateId ? (
             <>
-              <DropdownMenuSeparator />
+              {!isSharedView ? <DropdownMenuSeparator /> : null}
               <DropdownMenuItem asChild>
                 <Link
                   to="/app/sessions/$templateId"
@@ -176,30 +200,28 @@ export function WorkoutDetailMenu({
           ) : (
             <DropdownMenuItem
               disabled={isBusy}
-              onClick={() => {
-                if (atTemplateLimit) {
-                  setLimitDialogOpen(true)
-                  return
-                }
-                setSaveDialogOpen(true)
-              }}
+              onClick={handleSaveAsTemplateClick}
             >
               <BookmarkPlus className="size-4" />
-              Enregistrer comme modèle
+              {isSharedView ? 'Ajouter le modèle' : 'Enregistrer comme modèle'}
             </DropdownMenuItem>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            disabled={isBusy}
-            className="text-destructive focus:text-destructive"
-            onSelect={(event) => {
-              event.preventDefault()
-              openDeleteDialogAfterMenuClose(setMenuOpen, setDeleteDialogOpen)
-            }}
-          >
-            <Trash2 className="size-4" />
-            Supprimer la séance
-          </DropdownMenuItem>
+          {!isSharedView ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={isBusy}
+                className="text-destructive focus:text-destructive"
+                onSelect={(event) => {
+                  event.preventDefault()
+                  openDeleteDialogAfterMenuClose(setMenuOpen, setDeleteDialogOpen)
+                }}
+              >
+                <Trash2 className="size-4" />
+                Supprimer la séance
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -215,11 +237,13 @@ export function WorkoutDetailMenu({
         </p>
       ) : null}
 
-      <WorkoutShareDialog
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        workout={workout}
-      />
+      {!isSharedView ? (
+        <WorkoutShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          workout={workout}
+        />
+      ) : null}
 
       <TemplateLimitDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} />
 
@@ -228,10 +252,14 @@ export function WorkoutDetailMenu({
         onOpenChange={setSaveDialogOpen}
         onConfirm={handleSaveAsTemplate}
         isPending={createTemplate.isPending}
-        title="Enregistrer comme modèle"
-        description="Créez un modèle reutilisable a partir de cette séance."
+        title={isSharedView ? 'Ajouter le modèle' : 'Enregistrer comme modèle'}
+        description={
+          isSharedView
+            ? 'Importez cette séance comme modèle réutilisable dans votre catalogue.'
+            : 'Créez un modèle reutilisable a partir de cette séance.'
+        }
         placeholder={workout.title}
-        confirmLabel="Enregistrer"
+        confirmLabel={isSharedView ? 'Ajouter' : 'Enregistrer'}
         defaultName={workout.title}
         quotaRecap={
           !hasUnlimitedTemplates
@@ -240,7 +268,8 @@ export function WorkoutDetailMenu({
         }
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {!isSharedView ? (
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette séance ?</AlertDialogTitle>
@@ -267,6 +296,7 @@ export function WorkoutDetailMenu({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      ) : null}
     </div>
   )
 }

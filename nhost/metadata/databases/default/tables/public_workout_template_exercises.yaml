@@ -30,6 +30,19 @@ select_permissions:
         template:
           user_id:
             _eq: X-Hasura-User-Id
+  - role: public
+    permission:
+      columns:
+        - id
+        - template_id
+        - exercise_id
+        - sort_order
+        - superset_id
+        - default_rest_seconds
+      filter:
+        template:
+          share_token:
+            _is_null: false
 insert_permissions:
   - role: user
     permission:

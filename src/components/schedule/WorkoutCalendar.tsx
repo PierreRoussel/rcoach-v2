@@ -1,11 +1,11 @@
-import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
+import { addMonths, format, startOfMonth, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, CircleHelp } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 
-import { createPlanningCalendarComponents } from '@/components/schedule/PlanningCalendarDay'
+import { createPlanningCalendarComponents, sportMarkerClass } from '@/components/schedule/PlanningCalendarDay'
 import { Calendar } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,7 +19,7 @@ import { WeeklyStreakIndicator } from '@/components/schedule/WeeklyStreakBadge'
 import { Pill } from '@/design-system'
 import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
 import {
-  getMarkerKind,
+  markerDatesWithKind,
   type CalendarMarkers,
   type DayMarker,
 } from '@/lib/schedule/calendar-markers'
@@ -77,35 +77,22 @@ export type WorkoutCalendarProps = {
   streak?: number
 }
 
-function markerDates(markers: CalendarMarkers, kinds: string[]): Date[] {
-  const dates: Date[] = []
-
-  for (const marker of markers.values()) {
-    const kind = getMarkerKind(marker)
-    if (kind && kinds.includes(kind)) {
-      dates.push(parseISO(`${marker.date}T12:00:00`))
-    }
-  }
-
-  return dates
-}
-
 function CalendarLegend({ showNutrition = false }: { showNutrition?: boolean }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-xs font-medium text-foreground">Sport</p>
         <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
-            <span className="h-1 w-4 rounded-full bg-primary" />
+          <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <span className={sportMarkerClass.done} />
             Séance réalisée
           </Pill>
-          <Pill tone="secondary" className="gap-1.5 py-1.5 pl-2 pr-3">
-            <span className="h-1 w-4 rounded-full bg-secondary" />
+          <Pill tone="primary" className="gap-1.5 py-1.5 pl-2 pr-3">
+            <span className={sportMarkerClass.planned} />
             Séance planifiée
           </Pill>
           <Pill tone="default" className="gap-1.5 py-1.5 pl-2 pr-3">
-            <span className="h-1 w-4 rounded-full bg-muted-foreground/35" />
+            <span className={sportMarkerClass.missed} />
             Séance manquée
           </Pill>
         </div>
@@ -219,10 +206,9 @@ export function WorkoutCalendar({
 
   const modifiers = useMemo(
     () => ({
-      done: markerDates(markers, ['done', 'mixed']),
-      planned: markerDates(markers, ['planned', 'mixed']),
-      missed: markerDates(markers, ['missed']),
-      mixed: markerDates(markers, ['mixed']),
+      done: markerDatesWithKind(markers, 'done'),
+      planned: markerDatesWithKind(markers, 'planned'),
+      missed: markerDatesWithKind(markers, 'missed'),
     }),
     [markers],
   )

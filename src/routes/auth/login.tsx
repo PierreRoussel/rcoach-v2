@@ -17,6 +17,7 @@ export const Route = createFileRoute('/auth/login')({
   beforeLoad: redirectIfAuthenticated,
   validateSearch: z.object({
     passwordUpdated: z.string().optional(),
+    returnTo: z.string().optional(),
   }),
   component: LoginPage,
 })
@@ -49,7 +50,10 @@ function LoginPage() {
       }
 
       await ensureAuthenticatedProfile()
-      const destination = await resolveDefaultAuthenticatedPath()
+      const destination =
+        search.returnTo?.startsWith('/') && !search.returnTo.startsWith('//')
+          ? search.returnTo
+          : await resolveDefaultAuthenticatedPath()
       await navigate({ to: destination })
     } catch (error) {
       setError(mapAuthError(error, 'Connexion impossible. Vérifiez vos identifiants.'))

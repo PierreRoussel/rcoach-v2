@@ -96,7 +96,7 @@ export type WorkoutSummary = {
 
 export type WorkoutHeaderSummary = Pick<
   WorkoutSummary,
-  'id' | 'title' | 'started_at' | 'ended_at'
+  'id' | 'title' | 'started_at' | 'ended_at' | 'workout_template_id'
 >
 
 export type CalendarWorkoutSummary = WorkoutHeaderSummary
@@ -127,7 +127,12 @@ export type WorkoutTemplate = {
   updated_at: string
   default_rest_seconds: number
   source_workout_id?: string | null
+  share_token?: string | null
   workout_template_exercises: WorkoutTemplateExercise[]
+}
+
+export type SharedWorkoutTemplate = WorkoutTemplate & {
+  user: { display_name: string } | null
 }
 
 export type WorkoutDetail = Omit<WorkoutSummary, 'workout_exercises'> & {
@@ -439,6 +444,7 @@ export const LIST_MY_WORKOUTS_IN_RANGE = `
       title
       started_at
       ended_at
+      workout_template_id
     }
   }
 `
@@ -1181,6 +1187,54 @@ export const ENABLE_WORKOUT_SHARE = `
   }
 `
 
+export const GET_SHARED_TEMPLATE_BY_TOKEN = `
+  query GetSharedTemplateByToken($token: uuid!) {
+    workout_templates(where: { share_token: { _eq: $token } }, limit: 1) {
+      id
+      name
+      default_rest_seconds
+      share_token
+      user {
+        display_name
+      }
+      workout_template_exercises(order_by: { sort_order: asc }) {
+        id
+        sort_order
+        superset_id
+        default_rest_seconds
+        exercise {
+          id
+          name
+          name_fr
+          muscle_group
+          equipment
+          tracking_mode
+        }
+        workout_template_sets(order_by: { set_index: asc }) {
+          set_index
+          weight_kg
+          reps
+          rest_seconds
+          set_type
+          duration_seconds
+        }
+      }
+    }
+  }
+`
+
+export const ENABLE_TEMPLATE_SHARE = `
+  mutation EnableTemplateShare($id: uuid!, $shareToken: uuid!) {
+    update_workout_templates_by_pk(
+      pk_columns: { id: $id }
+      _set: { share_token: $shareToken }
+    ) {
+      id
+      share_token
+    }
+  }
+`
+
 export const DELETE_WORKOUT = `
   mutation DeleteWorkout($id: uuid!) {
     delete_workouts_by_pk(id: $id) {
@@ -1210,6 +1264,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
       created_at
       updated_at
       default_rest_seconds
+      share_token
       workout_template_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
@@ -1245,6 +1300,7 @@ export const GET_WORKOUT_TEMPLATE = `
       created_at
       updated_at
       default_rest_seconds
+      share_token
       workout_template_exercises(order_by: { sort_order: asc }) {
         id
         sort_order

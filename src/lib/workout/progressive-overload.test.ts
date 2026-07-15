@@ -106,8 +106,9 @@ describe('suggestProgressiveOverload', () => {
 
     expect(suggestion).toMatchObject({
       actionable: false,
+      adaptedLoad: true,
+      message: 'Charge adaptée',
     })
-    expect(suggestion?.message).toContain('consolidez')
     expect(suggestion?.suggestedWeightKg).toBeNull()
   })
 

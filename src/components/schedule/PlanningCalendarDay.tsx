@@ -11,14 +11,23 @@ import { cn } from '@/lib/utils'
 
 const NUMBER_SLOT =
   'flex size-7 shrink-0 items-center justify-center rounded-full leading-none ring-1 ring-transparent'
-const SPORT_SLOT = 'flex h-1 w-4 shrink-0 items-center justify-center'
+const SPORT_SLOT = 'flex h-1.5 w-5 shrink-0 items-center justify-center'
+
+const sportMarkerClass = {
+  done: 'h-1.5 w-5 rounded-full bg-secondary shadow-sm shadow-secondary/35',
+  planned:
+    'h-1.5 w-5 rounded-full bg-primary/30 ring-1 ring-inset ring-primary/35',
+  missed: 'h-1.5 w-5 rounded-full bg-muted-foreground/45',
+} as const
+
+export { sportMarkerClass }
 
 function dayButtonAppearance(
   modifiers: DayButtonProps['modifiers'],
   className?: string,
 ) {
   return cn(
-    'relative grid h-11 w-10 shrink-0 grid-rows-[1.75rem_0.25rem] items-center justify-items-center gap-0.5 bg-transparent p-0 font-display text-sm font-bold tabular-nums transition-colors duration-200 hover:bg-muted/40 active:scale-[0.98]',
+    'relative grid h-11 w-10 shrink-0 grid-rows-[1.75rem_0.375rem] items-center justify-items-center gap-0.5 bg-transparent p-0 font-display text-sm font-bold tabular-nums transition-colors duration-200 hover:bg-muted/40 active:scale-[0.98]',
     modifiers.outside && 'text-muted-foreground/25 hover:bg-transparent',
     !modifiers.selected && modifiers.missed && 'text-muted-foreground/50',
     className,
@@ -51,26 +60,16 @@ function nutritionNumberStyle(
 }
 
 function SportDayMarker({ modifiers }: { modifiers: DayButtonProps['modifiers'] }) {
-  const isMixed =
-    Boolean(modifiers.mixed) ||
-    (Boolean(modifiers.done) && Boolean(modifiers.planned))
-
-  if (isMixed) {
-    return (
-      <span className="h-1 w-4 overflow-hidden rounded-full bg-gradient-to-r from-primary to-secondary" />
-    )
-  }
-
   if (modifiers.done) {
-    return <span className="h-1 w-4 rounded-full bg-primary" />
+    return <span className={sportMarkerClass.done} />
   }
 
   if (modifiers.planned) {
-    return <span className="h-1 w-4 rounded-full bg-secondary" />
+    return <span className={sportMarkerClass.planned} />
   }
 
   if (modifiers.missed) {
-    return <span className="h-1 w-4 rounded-full bg-muted-foreground/35" />
+    return <span className={sportMarkerClass.missed} />
   }
 
   return null
@@ -117,12 +116,7 @@ export function PlanningCalendarDayButton({
   const nutritionStyle = nutritionNumberStyle(nutrition, showNutrition, modifiers)
   const showSportMarker =
     !modifiers.selected &&
-    Boolean(
-      modifiers.done ||
-        modifiers.planned ||
-        modifiers.missed ||
-        modifiers.mixed,
-    )
+    Boolean(modifiers.done || modifiers.planned || modifiers.missed)
 
   React.useEffect(() => {
     if (!modifiers.focused || !ref.current) {
@@ -143,9 +137,7 @@ export function PlanningCalendarDayButton({
         ? 'Séance planifiée'
         : sportKind === 'missed'
           ? 'Séance manquée'
-          : sportKind === 'mixed'
-            ? 'Séance partiellement réalisée'
-            : undefined
+          : undefined
 
   const nutritionLabel =
     nutrition?.hasLogs && showNutrition

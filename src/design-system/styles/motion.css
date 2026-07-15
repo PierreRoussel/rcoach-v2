@@ -1,5 +1,10 @@
 /* Route view transitions (View Transitions API types) */
 
+html.capacitor-native::view-transition-old(root),
+html.capacitor-native::view-transition-new(root) {
+  animation: none !important;
+}
+
 @keyframes vt-fade-in {
   from {
     opacity: 0;

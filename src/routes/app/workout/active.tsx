@@ -12,6 +12,7 @@ import { ActiveWorkoutSummaryTile } from '@/components/workout/ActiveWorkoutSumm
 import { ActiveWorkoutTimerDrivers } from '@/components/workout/ActiveWorkoutTimerDrivers'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
+import { useExercisePickerConsumer } from '@/hooks/useExercisePickerConsumer'
 import { UpdateTemplateFromWorkoutDialog } from '@/components/workout/UpdateTemplateFromWorkoutDialog'
 import {
   WorkoutRecapDialog,
@@ -197,6 +198,11 @@ function ActiveWorkoutPage() {
       cancelWorkout: state.cancelWorkout,
     })),
   )
+
+  useExercisePickerConsumer({
+    onAdd: (exercise) => addExercise(exercise),
+    onReplace: (index, exercise) => replaceExercise(index, exercise),
+  })
 
   const startHold = useActiveWorkoutStore((state) => state.startHold)
   const isResting = useActiveWorkoutStore((state) => state.isResting)
@@ -634,8 +640,9 @@ function ActiveWorkoutPage() {
               <div className="mt-4">
                 <ExercisePicker
                   excludeIds={[]}
-                  onSelect={(exercise) => void addExercise(exercise)}
                   triggerLabel="Ajouter exercice"
+                  context="active"
+                  returnTo={{ to: '/app/workout/active' }}
                 />
               </div>
             </div>
@@ -746,8 +753,9 @@ function ActiveWorkoutPage() {
         <div className="flex justify-center">
           <ExercisePicker
             excludeIds={activeExercises.map((exercise) => exercise.exerciseId)}
-            onSelect={(exercise) => void addExercise(exercise)}
             triggerLabel="Ajouter exercice"
+            context="active"
+            returnTo={{ to: '/app/workout/active' }}
           />
         </div>
       ) : null}

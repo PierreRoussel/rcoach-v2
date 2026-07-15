@@ -18,13 +18,20 @@ const routeTree = (
 
 import './index.css'
 
+const isAndroidShell = import.meta.env.VITE_BUILD_TARGET === 'android'
+
 const router = createRouter({
   routeTree,
   context: {},
-  defaultViewTransition: {
-    types: ({ fromLocation, toLocation }) =>
-      resolveViewTransitionTypes(fromLocation?.pathname, toLocation.pathname),
-  },
+  // View Transitions API leaves Android WebView stuck on a black frame at boot.
+  ...(isAndroidShell
+    ? {}
+    : {
+        defaultViewTransition: {
+          types: ({ fromLocation, toLocation }) =>
+            resolveViewTransitionTypes(fromLocation?.pathname, toLocation.pathname),
+        },
+      }),
 })
 
 declare module '@tanstack/react-router' {

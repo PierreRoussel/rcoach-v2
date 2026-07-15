@@ -5,11 +5,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useNavigate, useLocation } from '@tanstack/react-router'
 import { BarChart2, ChevronDown, GripVertical, Info, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { ExercisePicker } from '@/components/workout/ExercisePicker'
+import { launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import { SupersetMembershipDrawer } from '@/components/workout/SupersetMembershipDrawer'
 import { Pill } from '@/design-system'
@@ -36,7 +37,11 @@ import { cn } from '@/lib/utils'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
 import { isExerciseComplete } from '@/lib/workout/format-exercise-collapsed-summary'
 import type { Exercise } from '@/lib/graphql/operations'
-import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
+import {
+  getExercisePickerSession,
+  type ExercisePickerContext,
+  type ExercisePickerReturnTo,
+} from '@/lib/workout/exercise-picker-session'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 
 const SUPERSET_ACCENTS = [
@@ -66,6 +71,9 @@ type SortableExerciseListProps = {
   onViewDetails?: (index: number) => void
   renderBelowTitle?: (index: number) => ReactNode
   renderCollapsedSummary?: (index: number) => string | null
+  pickerContext?: ExercisePickerContext
+  pickerReturnTo?: ExercisePickerReturnTo
+  pickerTemplateId?: string
 }
 
 function supersetAccentClass(supersetId: number) {
@@ -481,27 +489,58 @@ export function SortableExerciseList({
   onViewDetails,
   renderBelowTitle,
   renderCollapsedSummary,
+  pickerContext = 'active',
+  pickerReturnTo,
+  pickerTemplateId,
 }: SortableExerciseListProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
   const sensors = useSortableSensors()
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
   const [supersetAnchorIndex, setSupersetAnchorIndex] = useState<number | null>(null)
-  const replaceExerciseName = useExerciseDisplayName(
-    replaceIndex != null ? exercises[replaceIndex]?.exerciseName : null,
-    replaceIndex != null ? exercises[replaceIndex]?.exerciseNameFr : null,
-    replaceIndex != null ? exercises[replaceIndex]?.exerciseId : null,
-  )
+  const launchedReplaceRef = useRef<number | null>(null)
 
-  function handleReplaceRequest(index: number) {
-    setReplaceIndex(index)
-  }
-
-  function handleReplaceSelect(exercise: Exercise) {
-    if (replaceIndex == null || !onReplace) {
+  useEffect(() => {
+    if (replaceIndex == null || !onReplace || !pickerReturnTo) {
+      launchedReplaceRef.current = null
       return
     }
 
-    onReplace(replaceIndex, exercise)
-    setReplaceIndex(null)
+    if (launchedReplaceRef.current === replaceIndex) {
+      return
+    }
+
+    launchedReplaceRef.current = replaceIndex
+    launchExercisePickerPage({
+      excludeIds: exercises
+        .filter((_, index) => index !== replaceIndex)
+        .map((exercise) => exercise.exerciseId),
+      mode: 'replace',
+      replaceIndex,
+      context: pickerContext,
+      returnTo: pickerReturnTo,
+      templateId: pickerTemplateId,
+      navigate: (options) => void navigate(options),
+    })
+  }, [
+    exercises,
+    navigate,
+    onReplace,
+    pickerContext,
+    pickerReturnTo,
+    pickerTemplateId,
+    replaceIndex,
+  ])
+
+  useEffect(() => {
+    if (!getExercisePickerSession() && replaceIndex != null) {
+      setReplaceIndex(null)
+      launchedReplaceRef.current = null
+    }
+  }, [location.pathname, replaceIndex])
+
+  function handleReplaceRequest(index: number) {
+    setReplaceIndex(index)
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -599,24 +638,6 @@ export function SortableExerciseList({
           })}
         </div>
       </SortableContext>
-
-      {onReplace && replaceIndex != null ? (
-        <ExercisePicker
-          hideTrigger
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              setReplaceIndex(null)
-            }
-          }}
-          dialogTitle="Remplacer l'exercice"
-          dialogDescription={`Choisissez un exercice pour remplacer ${replaceExerciseName || 'cet exercice'}. Les séries planifiées sont conservées.`}
-          excludeIds={exercises
-            .filter((_, index) => index !== replaceIndex)
-            .map((exercise) => exercise.exerciseId)}
-          onSelect={handleReplaceSelect}
-        />
-      ) : null}
 
       {onApplySupersetMembership ? (
         <SupersetMembershipDrawer

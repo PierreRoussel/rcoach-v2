@@ -22,6 +22,22 @@ select_permissions:
           template:
             user_id:
               _eq: X-Hasura-User-Id
+  - role: public
+    permission:
+      columns:
+        - id
+        - template_exercise_id
+        - set_index
+        - weight_kg
+        - reps
+        - rest_seconds
+        - set_type
+        - duration_seconds
+      filter:
+        template_exercise:
+          template:
+            share_token:
+              _is_null: false
 insert_permissions:
   - role: user
     permission:

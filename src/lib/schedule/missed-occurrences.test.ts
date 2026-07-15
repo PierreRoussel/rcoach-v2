@@ -59,16 +59,41 @@ describe('getYesterdayMissedOccurrences', () => {
     expect(missed[0]?.title).toBe('Push')
   })
 
-  it('returns empty when a workout was completed yesterday', () => {
+  it('returns empty when the planned template was completed yesterday', () => {
     const sessions = [weeklySession({ weekdays: [3] })]
 
     const missed = getYesterdayMissedOccurrences(
       sessions,
-      [{ started_at: '2026-06-24T07:00:00.000Z', ended_at: '2026-06-24T08:00:00.000Z' }],
+      [
+        {
+          started_at: '2026-06-24T07:00:00.000Z',
+          ended_at: '2026-06-24T08:00:00.000Z',
+          workout_template_id: 'tpl-1',
+        },
+      ],
       now,
     )
 
     expect(missed).toHaveLength(0)
+  })
+
+  it('still returns missed when another template was completed yesterday', () => {
+    const sessions = [weeklySession({ weekdays: [3] })]
+
+    const missed = getYesterdayMissedOccurrences(
+      sessions,
+      [
+        {
+          started_at: '2026-06-24T07:00:00.000Z',
+          ended_at: '2026-06-24T08:00:00.000Z',
+          workout_template_id: 'tpl-b',
+        },
+      ],
+      now,
+    )
+
+    expect(missed).toHaveLength(1)
+    expect(missed[0]?.workoutTemplateId).toBe('tpl-1')
   })
 
   it('returns empty when there was no planned session yesterday', () => {
