@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from '@tanstack/react-router'
 
-import { consumeExercisePickerOutcome } from '@/lib/workout/exercise-picker-session'
+import { isExerciseAddPath } from '@/hooks/useExerciseAddBackNavigation'
+import {
+  consumeExercisePickerOutcome,
+  getExercisePickerSession,
+  isExercisePickerReturnLocation,
+} from '@/lib/workout/exercise-picker-session'
 import type { Exercise } from '@/lib/graphql/operations'
 
 type UseExercisePickerConsumerOptions = {
@@ -21,6 +26,15 @@ export function useExercisePickerConsumer({
   onReplaceRef.current = onReplace
 
   useEffect(() => {
+    if (isExerciseAddPath(location.pathname)) {
+      return
+    }
+
+    const session = getExercisePickerSession()
+    if (!session || !isExercisePickerReturnLocation(location.pathname, session.returnTo)) {
+      return
+    }
+
     const outcome = consumeExercisePickerOutcome()
     if (!outcome) {
       return

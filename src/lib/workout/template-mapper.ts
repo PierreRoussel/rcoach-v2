@@ -17,6 +17,7 @@ export function templateExercisesToActive(
     supersetId: isEmom ? null : exercise.supersetId,
     emomGroupId: isEmom ? exercise.emomGroupId ?? null : null,
     targetReps: isEmom ? exercise.targetReps ?? null : null,
+    targetWeightKg: isEmom ? exercise.targetWeightKg ?? null : null,
     defaultRestSeconds: exercise.defaultRestSeconds,
     sets: isEmom
       ? []

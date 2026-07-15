@@ -5,6 +5,7 @@ export function buildTemplateExerciseInsertObjects(
     supersetId: number | null
     emomGroupId?: number | null
     targetReps?: number | null
+    targetWeightKg?: number | null
     defaultRestSeconds: number
     sets: Array<{
       setIndex: number
@@ -20,6 +21,7 @@ export function buildTemplateExerciseInsertObjects(
     includeSupersetId?: boolean
     includeEmomGroupId?: boolean
     includeTargetReps?: boolean
+    includeTargetWeightKg?: boolean
     includeDefaultRestSeconds?: boolean
     includeSetType?: boolean
   },
@@ -27,6 +29,7 @@ export function buildTemplateExerciseInsertObjects(
   const includeSupersetId = options?.includeSupersetId ?? false
   const includeEmomGroupId = options?.includeEmomGroupId ?? false
   const includeTargetReps = options?.includeTargetReps ?? false
+  const includeTargetWeightKg = options?.includeTargetWeightKg ?? false
   const includeDefaultRestSeconds = options?.includeDefaultRestSeconds ?? false
   const includeSetType = options?.includeSetType ?? false
 
@@ -72,6 +75,10 @@ export function buildTemplateExerciseInsertObjects(
 
     if (includeTargetReps && exercise.targetReps != null) {
       object.target_reps = exercise.targetReps
+    }
+
+    if (includeTargetWeightKg && exercise.targetWeightKg != null) {
+      object.target_weight_kg = exercise.targetWeightKg
     }
 
     if (includeDefaultRestSeconds) {

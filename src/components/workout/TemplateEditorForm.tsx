@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Play, Save } from 'lucide-react'
 
 import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
+import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
-import { SessionModeSelector } from '@/components/workout/SessionModeSelector'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
+import { Pill } from '@/design-system'
 import { useExercisePickerConsumer } from '@/hooks/useExercisePickerConsumer'
 import {
   ExerciseStatsDrawer,
@@ -38,6 +39,7 @@ import {
 import {
   createTemplateSet,
   exerciseToDraft,
+  exerciseToEmomDraft,
   inheritSetValues,
   type TemplateExerciseDraft,
 } from '@/hooks/useWorkoutTemplates'
@@ -99,7 +101,7 @@ export function TemplateEditorForm({
   const rpeEnabled = profile?.rpe_enabled ?? false
   const [name, setName] = useState(initialName)
   const [folderName, setFolderName] = useState(initialFolderName ?? '')
-  const [sessionMode, setSessionMode] = useState<SessionMode>(initialSessionMode)
+  const [sessionMode] = useState<SessionMode>(initialSessionMode)
   const [emomIntervalSeconds, setEmomIntervalSeconds] = useState(
     String(initialEmomIntervalSeconds),
   )
@@ -119,7 +121,6 @@ export function TemplateEditorForm({
     setName(initialName)
     setFolderName(initialFolderName ?? '')
     setExercises(initialExercises)
-    setSessionMode(initialSessionMode)
     setEmomIntervalSeconds(String(initialEmomIntervalSeconds))
     setEmomTotalMinutes(String(initialEmomTotalMinutes))
   }, [
@@ -162,7 +163,10 @@ export function TemplateEditorForm({
       return
     }
 
-    const next = [...exercises, exerciseToDraft(exercise)]
+    const next = [
+      ...exercises,
+      isEmom ? exerciseToEmomDraft(exercise) : exerciseToDraft(exercise),
+    ]
     setExercises(next)
     setActiveIndex(next.length - 1)
   }
@@ -271,6 +275,24 @@ export function TemplateEditorForm({
     )
   }
 
+  function handleUpdateTargetWeight(index: number, rawValue: string) {
+    const targetWeightKg =
+      rawValue.trim() === '' ? null : Number.parseFloat(rawValue.replace(',', '.'))
+    setExercises((current) =>
+      current.map((exercise, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...exercise,
+              targetWeightKg:
+                targetWeightKg != null && Number.isFinite(targetWeightKg) && targetWeightKg >= 0
+                  ? targetWeightKg
+                  : null,
+            }
+          : exercise,
+      ),
+    )
+  }
+
   async function handleSave() {
     setError(null)
     setMessage(null)
@@ -346,7 +368,12 @@ export function TemplateEditorForm({
           placeholder="Dossier (optionnel)"
           className="h-9 border-border/70 bg-muted/20 text-sm"
         />
-        <SessionModeSelector value={sessionMode} onChange={setSessionMode} disabled={isSaving} />
+        <div className="space-y-2">
+          <Label>Type de séance</Label>
+          <Pill tone={isEmom ? 'purple' : 'secondary'}>
+            {isEmom ? 'EMOM' : 'Circuit'}
+          </Pill>
+        </div>
         {isEmom ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
@@ -465,20 +492,48 @@ export function TemplateEditorForm({
             renderBelowTitle={
               isEmom
                 ? (index) => (
-                    <div className="mt-2 flex items-center gap-2 px-4">
-                      <Label htmlFor={`target-reps-${index}`} className="text-xs text-muted-foreground">
-                        Reps cible
-                      </Label>
-                      <Input
-                        id={`target-reps-${index}`}
-                        type="number"
-                        min={0}
-                        inputMode="numeric"
-                        placeholder="Optionnel"
-                        value={exercises[index]?.targetReps ?? ''}
-                        onChange={(event) => handleUpdateTargetReps(index, event.target.value)}
-                        className="h-8 w-24"
-                      />
+                    <div className="mt-2 flex flex-wrap items-center gap-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`target-reps-${index}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          Reps
+                        </Label>
+                        <Input
+                          id={`target-reps-${index}`}
+                          type="number"
+                          min={0}
+                          inputMode="numeric"
+                          placeholder="—"
+                          value={exercises[index]?.targetReps ?? ''}
+                          onChange={(event) =>
+                            handleUpdateTargetReps(index, event.target.value)
+                          }
+                          className="h-8 w-20"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`target-weight-${index}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          Charge (kg)
+                        </Label>
+                        <Input
+                          id={`target-weight-${index}`}
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          inputMode="decimal"
+                          placeholder="—"
+                          value={exercises[index]?.targetWeightKg ?? ''}
+                          onChange={(event) =>
+                            handleUpdateTargetWeight(index, event.target.value)
+                          }
+                          className="h-8 w-24"
+                        />
+                      </div>
                     </div>
                   )
                 : undefined

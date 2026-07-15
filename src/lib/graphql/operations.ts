@@ -116,6 +116,7 @@ export type WorkoutTemplateExercise = {
   superset_id?: number | null
   default_rest_seconds?: number
   target_reps?: number | null
+  target_weight_kg?: number | null
   emom_group_id?: number | null
   exercise: Exercise
   workout_template_sets: WorkoutTemplateSet[]
@@ -1211,6 +1212,7 @@ export const GET_SHARED_TEMPLATE_BY_TOKEN = `
         superset_id
         default_rest_seconds
         target_reps
+        target_weight_kg
         emom_group_id
         exercise {
           id
@@ -1283,6 +1285,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
         superset_id
         default_rest_seconds
         target_reps
+        target_weight_kg
         emom_group_id
         exercise {
           id
@@ -1324,6 +1327,7 @@ export const GET_WORKOUT_TEMPLATE = `
         superset_id
         default_rest_seconds
         target_reps
+        target_weight_kg
         emom_group_id
         exercise {
           id

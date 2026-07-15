@@ -18,13 +18,18 @@ import {
 function makeEmomExercise(
   id: string,
   name: string,
-  options?: { emomGroupId?: number | null; targetReps?: number | null },
+  options?: {
+    emomGroupId?: number | null
+    targetReps?: number | null
+    targetWeightKg?: number | null
+  },
 ) {
   return {
     exerciseId: id,
     exerciseName: name,
     emomGroupId: options?.emomGroupId ?? null,
     targetReps: options?.targetReps ?? null,
+    targetWeightKg: options?.targetWeightKg ?? null,
     sets: [],
   }
 }
@@ -84,6 +89,19 @@ describe('emom-circuit', () => {
     expect(synced).toHaveLength(1)
     expect(synced[0]?.exerciseId).toBe('a')
     expect(synced[0]?.sets[0]?.reps).toBe(10)
+  })
+
+  it('includes target weight when syncing logged minutes', () => {
+    const exercises = [makeEmomExercise('a', 'Squat', { targetReps: 5, targetWeightKg: 60 })]
+    const slots = buildEmomSlots(exercises)
+    const synced = getEmomExercisesForSync(
+      exercises,
+      { 0: { loggedAt: '2026-01-01T00:00:00Z' } },
+      slots,
+    )
+
+    expect(synced[0]?.sets[0]?.weightKg).toBe(60)
+    expect(synced[0]?.sets[0]?.reps).toBe(5)
   })
 })
 

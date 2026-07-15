@@ -248,6 +248,7 @@ query ListMyWorkoutTemplates {
       sort_order
       superset_id
       target_reps
+      target_weight_kg
       emom_group_id
       exercise {
         id
@@ -283,6 +284,7 @@ query GetWorkoutTemplate($id: uuid!) {
       sort_order
       superset_id
       target_reps
+      target_weight_kg
       emom_group_id
       exercise {
         id

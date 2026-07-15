@@ -209,6 +209,10 @@ type ActiveWorkoutState = {
   applyEmomGroupMembership: (anchorIndex: number, partnerIndices: number[]) => Promise<void>
   removeFromEmomGroup: (exerciseIndex: number) => Promise<void>
   updateExerciseTargetReps: (exerciseIndex: number, targetReps: number | null) => Promise<void>
+  updateExerciseTargetWeight: (
+    exerciseIndex: number,
+    targetWeightKg: number | null,
+  ) => Promise<void>
   tickEmom: () => void
   logEmomMinute: (minuteIndex?: number) => Promise<void>
   skipEmomMinute: () => Promise<void>
@@ -583,6 +587,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         supersetId: null,
         emomGroupId: null,
         targetReps: null,
+        targetWeightKg: null,
         defaultRestSeconds,
         sets: isEmom ? [] : [createEmptySet(0, defaultRestSeconds, { timed })],
       },
@@ -795,6 +800,28 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     const exercises = get().exercises.map((exercise, index) =>
       index === exerciseIndex ? { ...exercise, targetReps } : exercise,
+    )
+
+    set({ exercises })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: get().emom,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises,
+      activeStepIndex: get().activeStepIndex,
+      lastCompletedStep: get().lastCompletedStep,
+    })
+  },
+
+  updateExerciseTargetWeight: async (exerciseIndex, targetWeightKg) => {
+    if (get().sessionMode !== 'emom') {
+      return
+    }
+
+    const exercises = get().exercises.map((exercise, index) =>
+      index === exerciseIndex ? { ...exercise, targetWeightKg } : exercise,
     )
 
     set({ exercises })

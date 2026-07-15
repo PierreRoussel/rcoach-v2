@@ -45,6 +45,7 @@ export function navigateExerciseAddBack(
   void navigate({
     ...session.returnTo,
     replace: true,
+    viewTransition: false,
   })
 }
 
@@ -84,6 +85,7 @@ export function useExerciseAddBackNavigation() {
         void navigate({
           ...session.returnTo,
           replace: true,
+          viewTransition: false,
         } as Parameters<typeof navigate>[0]).finally(() => {
           handlingBackRef.current = false
         })

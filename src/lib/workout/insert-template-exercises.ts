@@ -21,6 +21,7 @@ type TemplateInsertOptions = {
   includeSupersetId?: boolean
   includeEmomGroupId?: boolean
   includeTargetReps?: boolean
+  includeTargetWeightKg?: boolean
   includeDefaultRestSeconds?: boolean
   includeSetType?: boolean
   includeDurationSeconds?: boolean
@@ -30,6 +31,7 @@ const FULL_TEMPLATE_INSERT_OPTIONS: TemplateInsertOptions = {
   includeSupersetId: true,
   includeEmomGroupId: true,
   includeTargetReps: true,
+  includeTargetWeightKg: true,
   includeDefaultRestSeconds: true,
   includeSetType: true,
   includeDurationSeconds: true,
@@ -207,6 +209,13 @@ function degradeTemplateInsertOptions(
 
   if (options.includeTargetReps && isGraphqlMissingFieldError(error, 'target_reps')) {
     return { ...options, includeTargetReps: false }
+  }
+
+  if (
+    options.includeTargetWeightKg &&
+    isGraphqlMissingFieldError(error, 'target_weight_kg')
+  ) {
+    return { ...options, includeTargetWeightKg: false }
   }
 
   if (options.includeSetType && isGraphqlMissingFieldError(error, 'set_type')) {

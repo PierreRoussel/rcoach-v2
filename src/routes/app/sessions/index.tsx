@@ -26,7 +26,10 @@ import { WorkoutHistoryCard } from '@/components/workout/WorkoutHistoryCard'
 import { TemplateLimitDialog } from '@/components/subscription/TemplateLimitDialog'
 import { TemplateFrozenDialog } from '@/components/subscription/TemplateFrozenDialog'
 import { UpgradePrompt } from '@/components/subscription/PremiumGate'
-import { SessionNameDialog } from '@/components/workout/SessionNameDialog'
+import {
+  SessionNameDialog,
+  type SessionNameDialogSessionConfig,
+} from '@/components/workout/SessionNameDialog'
 import { TemplateCatalogList } from '@/components/workout/TemplateCatalogList'
 import { WorkoutSessionConflictDialog } from '@/components/workout/WorkoutSessionConflictDialog'
 import { Pill } from '@/design-system'
@@ -47,6 +50,7 @@ import {
   HISTORY_WORKOUTS_LOAD_MORE_PAGE_SIZE,
   useMyWorkoutsInfinite,
 } from '@/hooks/useWorkouts'
+import { waitForDialogClose } from '@/lib/router/dialog-navigation'
 import { buildNextOccurrenceByTemplateId } from '@/lib/schedule/expand-occurrences'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
@@ -164,15 +168,25 @@ function CatalogTab() {
 
   const templatesMissing = isGraphqlTemplatesMissingError(error)
 
-  async function handleCreate(name: string) {
+  async function handleCreate(name: string, sessionConfig?: SessionNameDialogSessionConfig) {
     if (atTemplateLimit) {
       return
     }
 
-    const template = await createEmpty.mutateAsync(name)
+    const template = await createEmpty.mutateAsync({
+      name,
+      sessionMode: sessionConfig?.sessionMode,
+      emomIntervalSeconds: sessionConfig?.emomIntervalSeconds,
+      emomTotalMinutes: sessionConfig?.emomTotalMinutes,
+    })
+
+    setDialogOpen(false)
+    await waitForDialogClose()
+
     await navigate({
       to: '/app/sessions/$templateId',
       params: { templateId: template.id },
+      viewTransition: false,
     })
   }
 
@@ -297,6 +311,8 @@ function CatalogTab() {
         onOpenChange={setDialogOpen}
         onConfirm={handleCreate}
         isPending={createEmpty.isPending}
+        showSessionMode
+        description="Donnez un nom et choisissez le type de séance avant de sélectionner les exercices."
         quotaRecap={
           !hasUnlimitedTemplates
             ? { current: activeTemplateCount, max: FREE_WORKOUT_TEMPLATES }

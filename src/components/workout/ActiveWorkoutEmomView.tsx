@@ -15,6 +15,7 @@ import {
   getSlotForMinute,
   isEmomComplete,
 } from '@/lib/workout/emom-circuit'
+import { formatSetPerformanceSummary } from '@/lib/workout/format-set-performance'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { cn } from '@/lib/utils'
 
@@ -27,6 +28,9 @@ export function ActiveWorkoutEmomView() {
   )
   const updateExerciseTargetReps = useActiveWorkoutStore(
     (state) => state.updateExerciseTargetReps,
+  )
+  const updateExerciseTargetWeight = useActiveWorkoutStore(
+    (state) => state.updateExerciseTargetWeight,
   )
   const logEmomMinute = useActiveWorkoutStore((state) => state.logEmomMinute)
   const skipEmomMinute = useActiveWorkoutStore((state) => state.skipEmomMinute)
@@ -109,6 +113,14 @@ export function ActiveWorkoutEmomView() {
                     return null
                   }
 
+                  const targetSummary = formatSetPerformanceSummary(
+                    {
+                      reps: exercise.targetReps,
+                      weightKg: exercise.targetWeightKg,
+                    },
+                    { includeRpe: false },
+                  )
+
                   return (
                     <div key={exercise.exerciseId} className="space-y-1">
                       <p className="font-display text-lg font-black">
@@ -118,10 +130,8 @@ export function ActiveWorkoutEmomView() {
                           exerciseId={exercise.exerciseId}
                         />
                       </p>
-                      {exercise.targetReps != null ? (
-                        <p className="text-sm text-muted-foreground">
-                          {exercise.targetReps} reps
-                        </p>
+                      {targetSummary ? (
+                        <p className="text-sm text-muted-foreground">{targetSummary}</p>
                       ) : null}
                     </div>
                   )
@@ -200,6 +210,28 @@ export function ActiveWorkoutEmomView() {
                     void updateExerciseTargetReps(
                       index,
                       raw === '' ? null : Number.parseInt(raw, 10),
+                    )
+                  }}
+                  className="h-9 w-20"
+                />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.5}
+                  placeholder="kg"
+                  value={exercise.targetWeightKg ?? ''}
+                  onChange={(event) => {
+                    const raw = event.target.value.trim()
+                    if (raw === '') {
+                      void updateExerciseTargetWeight(index, null)
+                      return
+                    }
+
+                    const parsed = Number.parseFloat(raw.replace(',', '.'))
+                    void updateExerciseTargetWeight(
+                      index,
+                      Number.isFinite(parsed) && parsed >= 0 ? parsed : null,
                     )
                   }}
                   className="h-9 w-20"

@@ -27,9 +27,13 @@ export function TemplatePreviewContent({ template }: TemplatePreviewContentProps
             </CardTitle>
             <CardDescription>
               {isEmom
-                ? entry.target_reps != null
-                  ? `${entry.target_reps} reps cible`
-                  : 'EMOM · reps libres'
+                ? formatSetPerformanceSummary(
+                    {
+                      reps: entry.target_reps,
+                      weightKg: entry.target_weight_kg,
+                    },
+                    { includeRpe: false },
+                  ) ?? 'EMOM · objectif libre'
                 : `${entry.workout_template_sets.length} série(s)`}
             </CardDescription>
           </CardHeader>

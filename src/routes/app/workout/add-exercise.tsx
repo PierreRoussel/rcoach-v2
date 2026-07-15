@@ -46,7 +46,9 @@ export const Route = createFileRoute('/app/workout/add-exercise')({
 
 function AddExercisePage() {
   const navigate = useNavigate()
+  const { context } = Route.useSearch()
   const session = getExercisePickerSession()
+  const hadSessionRef = useRef(Boolean(session))
   const searchInputRef = useRef<HTMLInputElement>(null)
   const quickAddResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -75,14 +77,34 @@ function AddExercisePage() {
   const { data: recentExercises = [] } = useRecentExercises(20)
 
   useEffect(() => {
-    if (!session) {
-      void navigate({ to: '/app/workout/active', replace: true })
+    if (session) {
+      hadSessionRef.current = true
+      setExcludeIds(session.excludeIds)
+      searchInputRef.current?.focus()
       return
     }
 
-    setExcludeIds(session.excludeIds)
-    searchInputRef.current?.focus()
-  }, [navigate, session])
+    if (hadSessionRef.current) {
+      return
+    }
+
+    if (context === 'template') {
+      void navigate({
+        to: '/app/sessions',
+        search: { tab: 'catalog' },
+        replace: true,
+        viewTransition: false,
+      })
+      return
+    }
+
+    if (context === 'program') {
+      void navigate({ to: '/coach/programs', replace: true, viewTransition: false })
+      return
+    }
+
+    void navigate({ to: '/app/workout/active', replace: true, viewTransition: false })
+  }, [context, navigate, session])
 
   useEffect(() => {
     return () => {
@@ -144,7 +166,10 @@ function AddExercisePage() {
     )
   }
 
-  async function applyExerciseAdd(exercise: Exercise) {
+  async function applyExerciseAdd(
+    exercise: Exercise,
+    options?: { skipLocalExcludeUpdate?: boolean },
+  ) {
     if (!session) {
       return
     }
@@ -191,9 +216,22 @@ function AddExercisePage() {
     }
 
     excludeExerciseFromPicker(exercise.id)
-    setExcludeIds((current) =>
-      current.includes(exercise.id) ? current : [...current, exercise.id],
-    )
+    if (!options?.skipLocalExcludeUpdate) {
+      setExcludeIds((current) =>
+        current.includes(exercise.id) ? current : [...current, exercise.id],
+      )
+    }
+  }
+
+  function scheduleQuickAddReturn() {
+    if (quickAddResetTimerRef.current) {
+      clearTimeout(quickAddResetTimerRef.current)
+    }
+
+    quickAddResetTimerRef.current = setTimeout(() => {
+      quickAddResetTimerRef.current = null
+      navigateBack()
+    }, QUICK_ADD_SUCCESS_MS)
   }
 
   async function handleQuickAdd(exercise: Exercise) {
@@ -201,17 +239,27 @@ function AddExercisePage() {
       return
     }
 
+    const returnAfterQuickAdd = session.context === 'template'
+
     setFeedback(null)
     setQuickAddState({ exerciseId: exercise.id, status: 'adding' })
 
     try {
-      await applyExerciseAdd(exercise)
+      await applyExerciseAdd(exercise, {
+        skipLocalExcludeUpdate: returnAfterQuickAdd,
+      })
 
       if (session.mode === 'replace') {
         return
       }
 
       setQuickAddState({ exerciseId: exercise.id, status: 'success' })
+
+      if (returnAfterQuickAdd) {
+        scheduleQuickAddReturn()
+        return
+      }
+
       scheduleQuickAddReset()
     } catch (error) {
       setQuickAddState(null)
@@ -237,7 +285,7 @@ function AddExercisePage() {
       }
 
       if (session.context === 'template') {
-        addPendingExercise(detailExercise)
+        await applyExerciseAdd(detailExercise)
         setDetailExercise(null)
         navigateBack()
         return

@@ -121,3 +121,26 @@ export function consumeExercisePickerOutcome(): ExercisePickerOutcome | null {
 export function peekExercisePickerExcludeIds() {
   return state.session?.excludeIds ?? []
 }
+
+function normalizePathname(pathname: string) {
+  return pathname.replace(/\/$/, '') || '/'
+}
+
+export function resolveExercisePickerReturnPathname(returnTo: ExercisePickerReturnTo): string {
+  let path = returnTo.to
+
+  if (returnTo.params) {
+    for (const [key, value] of Object.entries(returnTo.params)) {
+      path = path.replace(`$${key}`, value)
+    }
+  }
+
+  return normalizePathname(path)
+}
+
+export function isExercisePickerReturnLocation(
+  pathname: string,
+  returnTo: ExercisePickerReturnTo,
+): boolean {
+  return normalizePathname(pathname) === resolveExercisePickerReturnPathname(returnTo)
+}

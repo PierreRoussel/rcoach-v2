@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/design-system'
 import { AuthProvider } from '@/lib/nhost/AuthProvider'
 import { queryClient } from '@/lib/query-client'
 import { resolveViewTransitionTypes } from '@/lib/router/view-transition-types'
+import { installViewTransitionErrorGuard } from '@/lib/router/view-transition-guard'
 import { routeTree as routeTreeAndroid } from '@/routeTree.android.gen'
 import { routeTree as routeTreeWeb } from '@/routeTree.gen'
 
@@ -19,6 +20,10 @@ const routeTree = (
 import './index.css'
 
 const isAndroidShell = import.meta.env.VITE_BUILD_TARGET === 'android'
+
+if (!isAndroidShell) {
+  installViewTransitionErrorGuard()
+}
 
 const router = createRouter({
   routeTree,

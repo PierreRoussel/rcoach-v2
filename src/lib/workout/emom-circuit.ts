@@ -6,6 +6,7 @@ export type EmomSlot =
 
 export type EmomExercise = ActiveExerciseDraft & {
   targetReps?: number | null
+  targetWeightKg?: number | null
   emomGroupId?: number | null
 }
 
@@ -113,7 +114,7 @@ export function getEmomExercisesForSync(
         {
           setIndex: existing.length,
           setType: 'normal' as const,
-          weightKg: null,
+          weightKg: exercise.targetWeightKg ?? null,
           reps: exercise.targetReps ?? null,
           completedAt: log.loggedAt,
         },

@@ -71,7 +71,11 @@ export function launchExercisePickerPage(options: {
   programId?: string
   programDayId?: string
   templateId?: string
-  navigate: (options: { to: string; search?: { context?: ExercisePickerContext } }) => void
+  navigate: (options: {
+    to: string
+    search?: { context?: ExercisePickerContext }
+    viewTransition?: boolean
+  }) => void
 }) {
   const context = options.context ?? 'active'
 
@@ -89,5 +93,6 @@ export function launchExercisePickerPage(options: {
   options.navigate({
     to: '/app/workout/add-exercise',
     search: { context },
+    viewTransition: false,
   })
 }

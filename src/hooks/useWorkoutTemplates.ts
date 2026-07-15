@@ -41,6 +41,7 @@ export type TemplateExerciseDraft = {
   supersetId: number | null
   emomGroupId?: number | null
   targetReps?: number | null
+  targetWeightKg?: number | null
   defaultRestSeconds: number
   sets: TemplateSetDraft[]
 }
@@ -121,6 +122,7 @@ export function templateToDraft(template: WorkoutTemplate): TemplateDraft {
         supersetId: entry.superset_id ?? null,
         emomGroupId: entry.emom_group_id ?? null,
         targetReps: entry.target_reps ?? null,
+        targetWeightKg: entry.target_weight_kg ?? null,
         defaultRestSeconds: exerciseDefaultRestSeconds,
         sets: (entry.workout_template_sets ?? []).map((set) => ({
           setIndex: set.set_index,
@@ -188,11 +190,27 @@ export function useCreateEmptyWorkoutTemplate() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async ({
+      name,
+      sessionMode = DEFAULT_SESSION_MODE,
+      emomIntervalSeconds = DEFAULT_EMOM_INTERVAL_SECONDS,
+      emomTotalMinutes = 12,
+    }: {
+      name: string
+      sessionMode?: SessionMode
+      emomIntervalSeconds?: number
+      emomTotalMinutes?: number
+    }) => {
       const data = await graphqlRequest<{
         insert_workout_templates_one: WorkoutTemplate
       }>(nhost, INSERT_WORKOUT_TEMPLATE, {
-        object: { name },
+        object: {
+          name,
+          session_mode: sessionMode,
+          emom_interval_seconds:
+            sessionMode === 'emom' ? emomIntervalSeconds : null,
+          emom_total_minutes: sessionMode === 'emom' ? emomTotalMinutes : null,
+        },
       })
       return data.insert_workout_templates_one
     },
@@ -277,6 +295,7 @@ export function exerciseToDraft(exercise: Exercise): TemplateExerciseDraft {
     supersetId: null,
     emomGroupId: null,
     targetReps: null,
+    targetWeightKg: null,
     defaultRestSeconds: DEFAULT_GLOBAL_REST_SECONDS,
     sets: [],
   }

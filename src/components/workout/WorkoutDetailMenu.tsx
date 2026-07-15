@@ -32,10 +32,8 @@ import { useDeleteWorkout } from '@/hooks/useWorkouts'
 import { useEntitlement } from '@/hooks/useSubscription'
 import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
 import { useAuth } from '@/lib/nhost/AuthProvider'
-import { FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
+import { waitForDialogClose } from '@/lib/router/dialog-navigation'
 import { cn } from '@/lib/utils'
-
-const DIALOG_CLOSE_MS = 200
 
 function openDeleteDialogAfterMenuClose(
   setMenuOpen: (open: boolean) => void,
@@ -90,9 +88,12 @@ export function WorkoutDetailMenu({
     setError(null)
     try {
       const template = await createTemplate.mutateAsync({ workout, name })
+      setSaveDialogOpen(false)
+      await waitForDialogClose()
       await navigate({
         to: '/app/sessions/$templateId',
         params: { templateId: template.id },
+        viewTransition: false,
       })
     } catch (saveError) {
       const message =
@@ -112,9 +113,12 @@ export function WorkoutDetailMenu({
       setDeleteDialogOpen(false)
       setMenuOpen(false)
 
-      window.setTimeout(() => {
-        void navigate({ to: '/app/sessions', search: { tab: 'history' } })
-      }, DIALOG_CLOSE_MS)
+      await waitForDialogClose()
+      void navigate({
+        to: '/app/sessions',
+        search: { tab: 'history' },
+        viewTransition: false,
+      })
     } catch (deleteError) {
       setError(
         deleteError instanceof Error

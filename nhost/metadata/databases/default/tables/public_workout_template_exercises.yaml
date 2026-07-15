@@ -27,6 +27,7 @@ select_permissions:
         - superset_id
         - default_rest_seconds
         - target_reps
+        - target_weight_kg
         - emom_group_id
       filter:
         template:
@@ -42,6 +43,7 @@ select_permissions:
         - superset_id
         - default_rest_seconds
         - target_reps
+        - target_weight_kg
         - emom_group_id
       filter:
         template:
@@ -61,6 +63,7 @@ insert_permissions:
         - superset_id
         - default_rest_seconds
         - target_reps
+        - target_weight_kg
         - emom_group_id
 update_permissions:
   - role: user
@@ -70,6 +73,7 @@ update_permissions:
         - superset_id
         - default_rest_seconds
         - target_reps
+        - target_weight_kg
         - emom_group_id
       filter:
         template:

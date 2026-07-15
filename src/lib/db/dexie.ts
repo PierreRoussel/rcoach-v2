@@ -46,6 +46,7 @@ export type ActiveExerciseDraft = {
   supersetId?: number | null
   emomGroupId?: number | null
   targetReps?: number | null
+  targetWeightKg?: number | null
   defaultRestSeconds?: number
   sets: ActiveSetDraft[]
 }

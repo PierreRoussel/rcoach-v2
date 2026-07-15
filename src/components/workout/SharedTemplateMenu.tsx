@@ -16,6 +16,7 @@ import { useEntitlement } from '@/hooks/useSubscription'
 import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
 import type { SharedWorkoutTemplate, WorkoutTemplate } from '@/lib/graphql/operations'
 import { useAuth } from '@/lib/nhost/AuthProvider'
+import { waitForDialogClose } from '@/lib/router/dialog-navigation'
 import { FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
 
 type SharedTemplateMenuProps = {
@@ -60,9 +61,12 @@ export function SharedTemplateMenu({
 
     try {
       const created = await importTemplate.mutateAsync({ template, name })
+      setSaveDialogOpen(false)
+      await waitForDialogClose()
       await navigate({
         to: '/app/sessions/$templateId',
         params: { templateId: created.id },
+        viewTransition: false,
       })
     } catch (importError) {
       const message =
