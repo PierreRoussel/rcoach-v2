@@ -7,6 +7,8 @@ import {
   draftToWorkoutSummary,
   estimateWorkoutCalories,
   formatWorkoutCalories,
+  formatWorkoutFatEquivalent,
+  estimateFatGramsFromCalories,
 } from '@/lib/stats/workout-metrics'
 
 function buildWorkout(
@@ -215,5 +217,10 @@ describe('estimateWorkoutCalories', () => {
 
   it('formats calories for display', () => {
     expect(formatWorkoutCalories(312)).toBe('312 kcal')
+  })
+
+  it('converts workout calories to fat equivalent grams', () => {
+    expect(estimateFatGramsFromCalories(770)).toBe(100)
+    expect(formatWorkoutFatEquivalent(385)).toBe('50 g')
   })
 })

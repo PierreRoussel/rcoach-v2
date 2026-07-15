@@ -22,7 +22,7 @@ import {
 import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import {
-  addExerciseToSuperset,
+  applySupersetMembership,
   cleanupSupersetAfterRemoval,
   compactSupersetBlocks,
   removeExerciseFromSuperset,
@@ -160,8 +160,8 @@ export function TemplateEditorForm({
     )
   }
 
-  function handleAddToSuperset(fromIndex: number, partnerIndex: number) {
-    setExercises((current) => addExerciseToSuperset(current, fromIndex, partnerIndex))
+  function handleApplySupersetMembership(anchorIndex: number, partnerIndices: number[]) {
+    setExercises((current) => applySupersetMembership(current, anchorIndex, partnerIndices))
   }
 
   function handleRemoveFromSuperset(index: number) {
@@ -290,7 +290,7 @@ export function TemplateEditorForm({
             onReorder={handleReorder}
             onRemove={handleRemove}
             onReplace={handleReplace}
-            onAddToSuperset={handleAddToSuperset}
+            onApplySupersetMembership={handleApplySupersetMembership}
             onRemoveFromSuperset={handleRemoveFromSuperset}
             showSetCount
             dragHandle="subtle"

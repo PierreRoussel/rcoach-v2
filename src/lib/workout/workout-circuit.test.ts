@@ -67,10 +67,10 @@ describe('workout-circuit', () => {
     ])
   })
 
-  it('detects intra-superset transitions without rest', () => {
+  it('applies rest from the validated set on intra-superset transitions', () => {
     const exercises = [
-      makeExercise('a', 'Bench', 2, { supersetId: 1 }),
-      makeExercise('b', 'Row', 2, { supersetId: 1 }),
+      makeExercise('a', 'Bench', 2, { supersetId: 1, restSeconds: 45 }),
+      makeExercise('b', 'Row', 2, { supersetId: 1, restSeconds: 90 }),
     ]
 
     expect(
@@ -88,7 +88,16 @@ describe('workout-circuit', () => {
         { exerciseIndex: 1, setIndex: 0 },
         90,
       ),
-    ).toBe(0)
+    ).toBe(45)
+
+    expect(
+      getStepRestSeconds(
+        exercises,
+        { exerciseIndex: 1, setIndex: 0 },
+        { exerciseIndex: 0, setIndex: 1 },
+        90,
+      ),
+    ).toBe(90)
   })
 
   it('applies rest after superset round and isolated sets', () => {
@@ -269,11 +278,11 @@ describe('workout-circuit', () => {
     ])
   })
 
-  it('applies zero rest between three-exercise superset transitions in a round', () => {
+  it('applies rest from each validated set between superset exercises in a round', () => {
     const exercises = [
       makeExercise('a', 'Bench', 2, { supersetId: 1, restSeconds: 60 }),
-      makeExercise('b', 'Row', 2, { supersetId: 1, restSeconds: 60 }),
-      makeExercise('c', 'Curl', 2, { supersetId: 1, restSeconds: 60 }),
+      makeExercise('b', 'Row', 2, { supersetId: 1, restSeconds: 75 }),
+      makeExercise('c', 'Curl', 2, { supersetId: 1, restSeconds: 45 }),
     ]
 
     expect(
@@ -283,7 +292,7 @@ describe('workout-circuit', () => {
         { exerciseIndex: 1, setIndex: 0 },
         90,
       ),
-    ).toBe(0)
+    ).toBe(60)
 
     expect(
       getStepRestSeconds(
@@ -292,7 +301,7 @@ describe('workout-circuit', () => {
         { exerciseIndex: 2, setIndex: 0 },
         90,
       ),
-    ).toBe(0)
+    ).toBe(75)
 
     expect(
       getStepRestSeconds(
@@ -301,7 +310,7 @@ describe('workout-circuit', () => {
         { exerciseIndex: 0, setIndex: 1 },
         90,
       ),
-    ).toBe(60)
+    ).toBe(45)
   })
 
   it('handles two supersets in the same workout', () => {

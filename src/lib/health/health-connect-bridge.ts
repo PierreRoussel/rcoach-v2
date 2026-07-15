@@ -1,55 +1,19 @@
 import { Capacitor } from '@capacitor/core'
+import { HealthConnect } from '@rcoach/capacitor-health-connect'
 
 import type { HealthConnectAvailability, HeartRateSummary } from '@rcoach/capacitor-health-connect'
 
-type HealthConnectPluginLike = {
-  isAvailable(): Promise<{ status: HealthConnectAvailability }>
-  getPermissionStatus(): Promise<{ granted: boolean }>
-  requestHealthPermissions(): Promise<{ granted: boolean }>
-  writeExerciseSession(options: {
-    clientRecordId: string
-    title: string
-    startTime: string
-    endTime: string
-    exerciseType?: 'STRENGTH_TRAINING'
-  }): Promise<void>
-  readHeartRateSummary(options: {
-    startTime: string
-    endTime: string
-  }): Promise<HeartRateSummary>
-  openHealthConnectSettings(): Promise<void>
-}
-
-let cachedPlugin: HealthConnectPluginLike | null | undefined
-
-async function loadHealthConnectPlugin(): Promise<HealthConnectPluginLike | null> {
-  if (cachedPlugin !== undefined) {
-    return cachedPlugin
-  }
-
-  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
-    cachedPlugin = null
-    return cachedPlugin
-  }
-
-  try {
-    const module = await import('@rcoach/capacitor-health-connect')
-    cachedPlugin = module.HealthConnect as HealthConnectPluginLike
-  } catch {
-    cachedPlugin = null
-  }
-
-  return cachedPlugin
+function isAndroidNative() {
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
 }
 
 export async function isHealthConnectBridgeSupported() {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     return false
   }
 
   try {
-    const result = await plugin.isAvailable()
+    const result = await HealthConnect.isAvailable()
     return result.status === 'Available'
   } catch {
     return false
@@ -57,13 +21,12 @@ export async function isHealthConnectBridgeSupported() {
 }
 
 export async function getHealthConnectAvailability(): Promise<HealthConnectAvailability | null> {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     return null
   }
 
   try {
-    const result = await plugin.isAvailable()
+    const result = await HealthConnect.isAvailable()
     return result.status
   } catch {
     return null
@@ -71,18 +34,17 @@ export async function getHealthConnectAvailability(): Promise<HealthConnectAvail
 }
 
 export async function getHealthConnectPermissionStatus() {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     return { granted: false, available: false }
   }
 
   try {
-    const availability = await plugin.isAvailable()
+    const availability = await HealthConnect.isAvailable()
     if (availability.status !== 'Available') {
       return { granted: false, available: false, status: availability.status }
     }
 
-    const permissions = await plugin.getPermissionStatus()
+    const permissions = await HealthConnect.getPermissionStatus()
     return {
       granted: permissions.granted,
       available: true,
@@ -94,12 +56,11 @@ export async function getHealthConnectPermissionStatus() {
 }
 
 export async function requestHealthConnectPermissions() {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     return { granted: false }
   }
 
-  return plugin.requestHealthPermissions()
+  return HealthConnect.requestHealthPermissions()
 }
 
 export async function writeHealthConnectExerciseSession(options: {
@@ -109,35 +70,32 @@ export async function writeHealthConnectExerciseSession(options: {
   endTime: string
   exerciseType?: 'STRENGTH_TRAINING'
 }) {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     throw new Error('Health Connect is not available on this platform')
   }
 
-  await plugin.writeExerciseSession(options)
+  await HealthConnect.writeExerciseSession(options)
 }
 
 export async function readHeartRateSummaryFromBridge(
   startTime: string,
   endTime: string,
 ): Promise<HeartRateSummary> {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     return { sampleCount: 0 }
   }
 
   try {
-    return await plugin.readHeartRateSummary({ startTime, endTime })
+    return await HealthConnect.readHeartRateSummary({ startTime, endTime })
   } catch {
     return { sampleCount: 0 }
   }
 }
 
 export async function openHealthConnectSettings() {
-  const plugin = await loadHealthConnectPlugin()
-  if (!plugin) {
+  if (!isAndroidNative()) {
     return
   }
 
-  await plugin.openHealthConnectSettings()
+  await HealthConnect.openHealthConnectSettings()
 }

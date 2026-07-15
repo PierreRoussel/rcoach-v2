@@ -223,6 +223,7 @@ export function TemplateExerciseSetsEditor({
               id: exercise.exerciseId,
               name: exercise.exerciseName,
               equipment: exercise.equipment,
+              muscle_group: exercise.muscleGroup,
             }}
             onApply={(suggestion) =>
               onChange({
@@ -249,6 +250,7 @@ export function TemplateExerciseSetsEditor({
             id: exercise.exerciseId,
             name: exercise.exerciseName,
             equipment: exercise.equipment,
+            muscle_group: exercise.muscleGroup,
           }}
           onApply={(suggestion) =>
             onChange({

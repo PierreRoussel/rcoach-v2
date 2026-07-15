@@ -207,10 +207,6 @@ export function getStepRestSeconds(
     return 0
   }
 
-  if (isIntraSupersetTransition(exercises, completedStep, nextStep)) {
-    return 0
-  }
-
   const completedSet = exercises[completedStep.exerciseIndex]?.sets[completedStep.setIndex]
   if (completedSet?.restSeconds != null) {
     return completedSet.restSeconds

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import { db, type ActiveExerciseDraft, type ActiveSetDraft, type ActiveWorkoutDraft } from '@/lib/db/dexie'
 import {
-  addExerciseToSuperset,
+  applySupersetMembership as mergeSupersetMembership,
   cleanupSupersetAfterRemoval,
   compactSupersetBlocks,
   removeExerciseFromSuperset,
@@ -41,6 +41,73 @@ type CompleteStepValues = {
 
 const DEFAULT_HOLD_SECONDS = 30
 
+function createRestTimerState(seconds: number) {
+  const normalized = Math.max(0, Math.round(seconds))
+
+  if (normalized <= 0) {
+    return clearRestTimerState()
+  }
+
+  return {
+    isResting: true,
+    restSecondsLeft: normalized,
+    restTargetSeconds: normalized,
+    restEndsAt: Date.now() + normalized * 1_000,
+  }
+}
+
+function clearRestTimerState() {
+  return {
+    isResting: false,
+    restSecondsLeft: 0,
+    restTargetSeconds: 0,
+    restEndsAt: null as number | null,
+  }
+}
+
+function createHoldTimerState(seconds: number, holdingStep: CircuitStep) {
+  const normalized = Math.max(1, Math.round(seconds))
+
+  return {
+    isHolding: true,
+    holdSecondsLeft: normalized,
+    holdTargetSeconds: normalized,
+    holdEndsAt: Date.now() + normalized * 1_000,
+    holdingStep,
+  }
+}
+
+function clearHoldTimerState() {
+  return {
+    isHolding: false,
+    holdSecondsLeft: 0,
+    holdTargetSeconds: 0,
+    holdEndsAt: null as number | null,
+    holdingStep: null as CircuitStep | null,
+  }
+}
+
+function syncRestSecondsLeft(restEndsAt: number | null) {
+  if (restEndsAt == null) {
+    return 0
+  }
+
+  return Math.max(0, Math.ceil((restEndsAt - Date.now()) / 1_000))
+}
+
+function syncHoldSecondsLeft(holdEndsAt: number | null) {
+  if (holdEndsAt == null) {
+    return 0
+  }
+
+  return Math.max(0, Math.ceil((holdEndsAt - Date.now()) / 1_000))
+}
+
+const IDLE_TIMER_STATE = {
+  ...clearRestTimerState(),
+  ...clearHoldTimerState(),
+}
+
 type PersistableState = Pick<
   ActiveWorkoutState,
   | 'title'
@@ -64,10 +131,12 @@ type ActiveWorkoutState = {
   lastCompletedStep: CircuitStep | null
   restSecondsLeft: number
   restTargetSeconds: number
+  restEndsAt: number | null
   isResting: boolean
   isHolding: boolean
   holdSecondsLeft: number
   holdTargetSeconds: number
+  holdEndsAt: number | null
   holdingStep: CircuitStep | null
   hydrate: () => Promise<void>
   startWorkout: (title: string) => Promise<void>
@@ -98,7 +167,7 @@ type ActiveWorkoutState = {
   ) => Promise<void>
   reorderExercises: (fromIndex: number, toIndex: number) => Promise<void>
   updateExerciseDefaultRest: (exerciseIndex: number, restSeconds: number) => Promise<void>
-  addToSuperset: (fromIndex: number, partnerIndex: number) => Promise<void>
+  applySupersetMembership: (anchorIndex: number, partnerIndices: number[]) => Promise<void>
   removeFromSuperset: (exerciseIndex: number) => Promise<void>
   updatePlannedSet: (
     exerciseIndex: number,
@@ -244,15 +313,13 @@ function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<
   const nextIndex = findNextStepIndexAfter(steps, exercises, lastCompletedStep)
 
   if (nextIndex == null) {
-    set({ isResting: false, restSecondsLeft: 0, restTargetSeconds: 0 })
+    set(clearRestTimerState())
     return
   }
 
   set({
     activeStepIndex: nextIndex,
-    isResting: false,
-    restSecondsLeft: 0,
-    restTargetSeconds: 0,
+    ...clearRestTimerState(),
   })
 
   void persistDraft(get, {
@@ -276,10 +343,12 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   lastCompletedStep: null,
   restSecondsLeft: 0,
   restTargetSeconds: 0,
+  restEndsAt: null,
   isResting: false,
   isHolding: false,
   holdSecondsLeft: 0,
   holdTargetSeconds: 0,
+  holdEndsAt: null,
   holdingStep: null,
 
   getCircuitSteps: () => buildCircuitSteps(get().exercises),
@@ -325,13 +394,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       exercises,
       activeStepIndex,
       lastCompletedStep,
-      restSecondsLeft: 0,
-      restTargetSeconds: 0,
-      isResting: false,
-      isHolding: false,
-      holdSecondsLeft: 0,
-      holdTargetSeconds: 0,
-      holdingStep: null,
+      ...IDLE_TIMER_STATE,
     })
   },
 
@@ -346,13 +409,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,
-      restSecondsLeft: 0,
-      restTargetSeconds: 0,
-      isResting: false,
-      isHolding: false,
-      holdSecondsLeft: 0,
-      holdTargetSeconds: 0,
-      holdingStep: null,
+      ...IDLE_TIMER_STATE,
     })
     await persistDraft(get, {
       title,
@@ -387,13 +444,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       exercises,
       activeStepIndex,
       lastCompletedStep,
-      restSecondsLeft: 0,
-      restTargetSeconds: 0,
-      isResting: false,
-      isHolding: false,
-      holdSecondsLeft: 0,
-      holdTargetSeconds: 0,
-      holdingStep: null,
+      ...IDLE_TIMER_STATE,
     })
     await persistDraft(get, {
       title,
@@ -545,8 +596,12 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
   },
 
-  addToSuperset: async (fromIndex, partnerIndex) => {
-    const exercises = addExerciseToSuperset(get().exercises, fromIndex, partnerIndex)
+  applySupersetMembership: async (anchorIndex, partnerIndices) => {
+    const exercises = mergeSupersetMembership(
+      get().exercises,
+      anchorIndex,
+      partnerIndices,
+    )
     const { activeStepIndex, lastCompletedStep } = syncAfterExerciseStructureChange(exercises)
 
     set({ exercises, activeStepIndex, lastCompletedStep })
@@ -669,7 +724,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       return
     }
 
-    set({ activeStepIndex: stepIndex, isResting: false, restSecondsLeft: 0, restTargetSeconds: 0 })
+    set({ activeStepIndex: stepIndex, ...clearRestTimerState() })
     void persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
@@ -753,9 +808,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         exercises,
         lastCompletedStep,
         activeStepIndex,
-        isResting: false,
-        restSecondsLeft: 0,
-        restTargetSeconds: 0,
+        ...clearRestTimerState(),
       })
     } else if (restSeconds > 0) {
       activeStepIndex =
@@ -764,18 +817,14 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         exercises,
         lastCompletedStep,
         activeStepIndex,
-        isResting: true,
-        restSecondsLeft: restSeconds,
-        restTargetSeconds: restSeconds,
+        ...createRestTimerState(restSeconds),
       })
     } else {
       set({
         exercises,
         lastCompletedStep,
         activeStepIndex,
-        isResting: false,
-        restSecondsLeft: 0,
-        restTargetSeconds: 0,
+        ...clearRestTimerState(),
       })
     }
 
@@ -798,12 +847,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         holding?.exerciseIndex === exerciseIndex &&
         holding?.setIndex === setIndex
       ) {
-        set({
-          isHolding: false,
-          holdSecondsLeft: 0,
-          holdTargetSeconds: 0,
-          holdingStep: null,
-        })
+        set(clearHoldTimerState())
       }
       return
     }
@@ -828,13 +872,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       exercises,
       lastCompletedStep,
       activeStepIndex,
-      isResting: false,
-      restSecondsLeft: 0,
-      restTargetSeconds: 0,
-      isHolding: false,
-      holdSecondsLeft: 0,
-      holdTargetSeconds: 0,
-      holdingStep: null,
+      ...IDLE_TIMER_STATE,
     })
 
     await persistDraft(get, {
@@ -848,32 +886,41 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   startRest: (seconds) => {
-    const normalized = Math.max(0, seconds)
-    set({
-      isResting: true,
-      restSecondsLeft: normalized,
-      restTargetSeconds: normalized,
-    })
+    set(createRestTimerState(seconds))
   },
 
   adjustRest: (deltaSeconds) => {
-    const next = Math.max(0, get().restSecondsLeft + deltaSeconds)
-    const target = Math.max(0, get().restTargetSeconds + deltaSeconds)
-    set({ restSecondsLeft: next, restTargetSeconds: target })
-  },
-
-  tickRest: () => {
-    if (!get().isResting) {
+    const state = get()
+    if (!state.isResting) {
       return
     }
 
-    const next = get().restSecondsLeft - 1
-    if (next <= 0) {
+    const target = Math.max(0, state.restTargetSeconds + deltaSeconds)
+    const endsAt = (state.restEndsAt ?? Date.now()) + deltaSeconds * 1_000
+    const left = syncRestSecondsLeft(endsAt)
+
+    set({
+      restSecondsLeft: left,
+      restTargetSeconds: target,
+      restEndsAt: endsAt,
+    })
+  },
+
+  tickRest: () => {
+    const state = get()
+    if (!state.isResting) {
+      return
+    }
+
+    const left = syncRestSecondsLeft(state.restEndsAt)
+    if (left <= 0) {
       advanceAfterRest(get, set)
       return
     }
 
-    set({ restSecondsLeft: next })
+    if (left !== state.restSecondsLeft) {
+      set({ restSecondsLeft: left })
+    }
   },
 
   skipRest: () => {
@@ -905,17 +952,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     void warmUpRestTimerAudio()
 
-    const target = Math.max(
-      1,
-      targetSet.durationSeconds ?? DEFAULT_HOLD_SECONDS,
-    )
-
-    set({
-      isHolding: true,
-      holdSecondsLeft: target,
-      holdTargetSeconds: target,
-      holdingStep: { exerciseIndex, setIndex },
-    })
+    set(createHoldTimerState(targetSet.durationSeconds ?? DEFAULT_HOLD_SECONDS, { exerciseIndex, setIndex }))
   },
 
   stopHold: async () => {
@@ -925,16 +962,11 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     const elapsed = Math.max(
       1,
-      get().holdTargetSeconds - get().holdSecondsLeft,
+      get().holdTargetSeconds - syncHoldSecondsLeft(get().holdEndsAt),
     )
     const { exerciseIndex, setIndex } = get().holdingStep
 
-    set({
-      isHolding: false,
-      holdSecondsLeft: 0,
-      holdTargetSeconds: 0,
-      holdingStep: null,
-    })
+    set(clearHoldTimerState())
 
     await get().completeStep(exerciseIndex, setIndex, {
       durationSeconds: elapsed,
@@ -942,22 +974,18 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   tickHold: () => {
-    if (!get().isHolding || !get().holdingStep) {
+    const state = get()
+    if (!state.isHolding || !state.holdingStep) {
       return
     }
 
-    const next = get().holdSecondsLeft - 1
-    if (next <= 0) {
+    const left = syncHoldSecondsLeft(state.holdEndsAt)
+    if (left <= 0) {
       void playRestCompleteBeep()
-      const { exerciseIndex, setIndex } = get().holdingStep
-      const target = get().holdTargetSeconds
+      const { exerciseIndex, setIndex } = state.holdingStep
+      const target = state.holdTargetSeconds
 
-      set({
-        isHolding: false,
-        holdSecondsLeft: 0,
-        holdTargetSeconds: 0,
-        holdingStep: null,
-      })
+      set(clearHoldTimerState())
 
       void get().completeStep(exerciseIndex, setIndex, {
         durationSeconds: target,
@@ -965,7 +993,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       return
     }
 
-    set({ holdSecondsLeft: next })
+    if (left !== state.holdSecondsLeft) {
+      set({ holdSecondsLeft: left })
+    }
   },
 
   finishWorkout: async () => {
@@ -1001,13 +1031,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,
-      restSecondsLeft: 0,
-      restTargetSeconds: 0,
-      isResting: false,
-      isHolding: false,
-      holdSecondsLeft: 0,
-      holdTargetSeconds: 0,
-      holdingStep: null,
+      ...IDLE_TIMER_STATE,
     })
 
     return draft
@@ -1024,9 +1048,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       exercises: [],
       activeStepIndex: 0,
       lastCompletedStep: null,
-      restSecondsLeft: 0,
-      restTargetSeconds: 0,
-      isResting: false,
+      ...IDLE_TIMER_STATE,
     })
   },
 }))

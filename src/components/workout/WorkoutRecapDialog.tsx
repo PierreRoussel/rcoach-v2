@@ -15,6 +15,7 @@ import { WorkoutPersonalRecordsList } from '@/components/workout/WorkoutPersonal
 import type { HeartRateRecap } from '@/lib/health/read-heart-rate-summary'
 import {
   formatWorkoutCalories,
+  formatWorkoutFatEquivalent,
   formatWorkoutDuration,
   formatWorkoutVolume,
   type PersonalRecordHit,
@@ -126,6 +127,20 @@ export function WorkoutRecapDialog({
             className="p-3"
           />
         </div>
+
+        {recap.estimatedCaloriesKcal > 0 ? (
+          <div className="flex items-start gap-3 rounded-xl border border-orange-200/70 bg-gradient-to-br from-orange-50/90 to-amber-50/60 px-4 py-3 dark:border-orange-900/40 dark:from-orange-950/35 dark:to-amber-950/20">
+            <Flame
+              className="mt-0.5 size-5 shrink-0 text-orange-500"
+              aria-hidden
+            />
+            <p className="text-sm leading-snug text-foreground">
+              <span className="font-semibold">Vous avancez vers votre objectif !</span>{' '}
+              {formatWorkoutCalories(recap.estimatedCaloriesKcal)} ={' '}
+              {formatWorkoutFatEquivalent(recap.estimatedCaloriesKcal)} de gras brûlé !
+            </p>
+          </div>
+        ) : null}
 
         {hasBodyMap ? (
           <HumanBodyHeatmap

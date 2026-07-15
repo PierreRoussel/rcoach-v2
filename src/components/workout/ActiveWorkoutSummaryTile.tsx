@@ -1,5 +1,5 @@
 import { Check, Clock, Flame } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { useActiveWorkoutElapsed } from '@/hooks/useActiveWorkoutElapsed'
 import {
@@ -101,15 +101,6 @@ export function ActiveWorkoutSummaryTile({
   className,
 }: ActiveWorkoutSummaryTileProps) {
   const elapsed = useActiveWorkoutElapsed(startedAt)
-  const [now, setNow] = useState(() => new Date())
-
-  useEffect(() => {
-    const tick = () => setNow(new Date())
-    tick()
-
-    const timer = window.setInterval(tick, 1000)
-    return () => window.clearInterval(timer)
-  }, [startedAt])
 
   const completedSets = countCompletedSets(exercises)
   const totalSets = countPlannedSets(exercises)
@@ -120,12 +111,12 @@ export function ActiveWorkoutSummaryTile({
 
     return estimateWorkoutCalories({
       startedAt,
-      endedAt: now.toISOString(),
+      endedAt: new Date().toISOString(),
       volumeKg: computeDraftVolume(validated),
       completedSets,
       bodyWeightKg,
     })
-  }, [bodyWeightKg, completedSets, exercises, now, startedAt])
+  }, [bodyWeightKg, completedSets, elapsed, exercises, startedAt])
 
   return (
     <div

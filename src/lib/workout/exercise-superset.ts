@@ -60,71 +60,90 @@ export function compactSupersetBlocks<T extends ExerciseWithSuperset>(
   return result
 }
 
-function moveExerciseAdjacentToSuperset<T extends ExerciseWithSuperset>(
-  exercises: T[],
-  fromIndex: number,
-  supersetId: number,
-): T[] {
-  const moving = exercises[fromIndex]
-  if (!moving) {
-    return exercises
-  }
-
-  const withoutMoving = exercises.filter((_, index) => index !== fromIndex)
-  const memberIndices = getSupersetMemberIndices(withoutMoving, supersetId)
-
-  if (memberIndices.length === 0) {
-    return exercises
-  }
-
-  const insertAt = Math.max(...memberIndices) + 1
-  const next = [...withoutMoving]
-  next.splice(insertAt, 0, moving)
-  return next
-}
-
 export function addExerciseToSuperset<T extends ExerciseWithSuperset>(
   exercises: T[],
   fromIndex: number,
   partnerIndex: number,
 ): T[] {
-  if (fromIndex === partnerIndex) {
+  return applySupersetMembership(exercises, fromIndex, [partnerIndex])
+}
+
+export function getDefaultSupersetPartnerIndices(
+  exercises: ExerciseWithSuperset[],
+  anchorIndex: number,
+): number[] {
+  const anchor = exercises[anchorIndex]
+  if (!anchor?.supersetId) {
+    return []
+  }
+
+  return exercises
+    .map((exercise, index) => ({ exercise, index }))
+    .filter(
+      ({ exercise, index }) =>
+        index !== anchorIndex && exercise.supersetId === anchor.supersetId,
+    )
+    .map(({ index }) => index)
+}
+
+export function applySupersetMembership<T extends ExerciseWithSuperset>(
+  exercises: T[],
+  anchorIndex: number,
+  selectedPartnerIndices: number[],
+): T[] {
+  const anchor = exercises[anchorIndex]
+  if (!anchor) {
     return exercises
   }
 
-  const partner = exercises[partnerIndex]
-  const from = exercises[fromIndex]
-  if (!partner || !from) {
-    return exercises
+  const partnerIndices = [
+    ...new Set(
+      selectedPartnerIndices.filter(
+        (index) => index >= 0 && index < exercises.length && index !== anchorIndex,
+      ),
+    ),
+  ]
+
+  if (partnerIndices.length === 0) {
+    if (anchor.supersetId == null) {
+      return exercises
+    }
+
+    return cleanupSupersetAfterRemoval(
+      removeExerciseFromSuperset(exercises, anchorIndex),
+    )
   }
 
-  const supersetId = partner.supersetId ?? nextSupersetId(exercises)
-  if (from.supersetId === supersetId) {
-    return compactSupersetBlocks(exercises)
+  let supersetId = anchor.supersetId ?? null
+  if (supersetId == null) {
+    for (const partnerIndex of partnerIndices) {
+      const partner = exercises[partnerIndex]
+      if (partner?.supersetId != null) {
+        supersetId = partner.supersetId
+        break
+      }
+    }
+  }
+  if (supersetId == null) {
+    supersetId = nextSupersetId(exercises)
   }
 
-  const previousSupersetId = from.supersetId
+  const memberIndices = new Set([anchorIndex, ...partnerIndices])
 
   let next = exercises.map((exercise, index) => {
-    if (index === fromIndex) {
+    if (memberIndices.has(index)) {
       return { ...exercise, supersetId }
     }
 
-    if (index === partnerIndex && partner.supersetId == null) {
-      return { ...exercise, supersetId }
+    if (anchor.supersetId != null && exercise.supersetId === anchor.supersetId) {
+      return { ...exercise, supersetId: null }
     }
 
     return exercise
   })
 
-  next = moveExerciseAdjacentToSuperset(next, fromIndex, supersetId)
-  next = compactSupersetBlocks(next)
-
-  if (previousSupersetId != null && previousSupersetId !== supersetId) {
-    next = cleanupSupersetAfterRemoval(next)
-  }
-
-  return next
+  next = cleanupSupersetAfterRemoval(next)
+  return compactSupersetBlocks(next)
 }
 
 export function removeExerciseFromSuperset<T extends ExerciseWithSuperset>(

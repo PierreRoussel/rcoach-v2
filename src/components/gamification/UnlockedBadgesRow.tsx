@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Medal } from 'lucide-react'
 
 import { BadgeArt } from '@/components/gamification/BadgeArt'
 import { BadgeDetailDrawer } from '@/components/gamification/BadgeDetailDrawer'
@@ -54,16 +55,34 @@ export function UnlockedBadgesRow({
     }
 
     return (
-      <div className="flex divide-x divide-border/50">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex min-w-[33.333%] flex-1 items-center justify-center py-2"
-            aria-hidden={index > 0}
-          >
-            <span className="size-12 rounded-full border border-dashed border-border/70 bg-background/30" />
-          </div>
-        ))}
+      <div className="space-y-2.5">
+        <div
+          className="flex overflow-hidden rounded-xl border border-primary/15 bg-gradient-to-b from-primary/[0.06] via-card/30 to-card/10 shadow-sm ring-1 ring-inset ring-white/50"
+          role="group"
+          aria-label="Emplacements de médailles vides"
+        >
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className={cn(
+                'flex min-w-[33.333%] flex-1 flex-col items-center justify-center py-3.5',
+                index > 0 && 'border-l border-primary/10',
+              )}
+              aria-hidden={index > 0}
+            >
+              <span className="flex size-14 items-center justify-center rounded-full border-2 border-dashed border-primary/30 bg-background/80 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)]">
+                <Medal
+                  className="size-6 text-primary/45"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-[11px] font-medium leading-snug text-muted-foreground">
+          Vos prochaines médailles apparaîtront ici
+        </p>
       </div>
     )
   }

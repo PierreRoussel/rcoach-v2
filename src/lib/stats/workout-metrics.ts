@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 
 import type { ActiveExerciseDraft } from '@/lib/db/dexie'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
+import { KCAL_PER_KG } from '@/lib/goals/weight-goal'
 import { estimateOneRepMax } from '@/lib/stats/strength-benchmarks'
 import type { CircuitExercise } from '@/lib/workout/workout-circuit'
 
@@ -216,6 +217,25 @@ export function estimateWorkoutCalories(input: {
 
 export function formatWorkoutCalories(kcal: number): string {
   return `${new Intl.NumberFormat('fr-FR').format(kcal)} kcal`
+}
+
+/** Équivalent masse grasse (7700 kcal ≈ 1 kg), aligné sur les objectifs poids. */
+export function estimateFatGramsFromCalories(kcal: number): number {
+  if (kcal <= 0) {
+    return 0
+  }
+
+  const grams = (kcal / KCAL_PER_KG) * 1000
+  return Math.round(grams * 10) / 10
+}
+
+export function formatWorkoutFatEquivalent(kcal: number): string {
+  const grams = estimateFatGramsFromCalories(kcal)
+  const formatted = new Intl.NumberFormat('fr-FR', {
+    maximumFractionDigits: grams >= 10 ? 0 : 1,
+  }).format(grams)
+
+  return `${formatted} g`
 }
 
 type ExerciseBest = {

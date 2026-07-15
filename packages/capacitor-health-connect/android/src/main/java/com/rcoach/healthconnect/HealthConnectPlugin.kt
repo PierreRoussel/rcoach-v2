@@ -44,8 +44,7 @@ class HealthConnectPlugin : Plugin() {
 
     override fun load() {
         super.load()
-        val activity = activity ?: return
-        permissionLauncher = activity.registerForActivityResult(
+        permissionLauncher = bridge.registerForActivityResult(
             PermissionController.createRequestPermissionResultContract(),
         ) { granted ->
             val call = permissionCall

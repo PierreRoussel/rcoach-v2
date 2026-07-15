@@ -2,13 +2,15 @@ import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { ArrowLeft, ListOrdered } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useShallow } from 'zustand/react/shallow'
 
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
 import { ActiveWorkoutFinishFab } from '@/components/workout/ActiveWorkoutFinishFab'
+import { ActiveWorkoutHoldTimerOverlay } from '@/components/workout/ActiveWorkoutHoldTimerOverlay'
+import { ActiveWorkoutRestTimerOverlay } from '@/components/workout/ActiveWorkoutRestTimerOverlay'
 import { ActiveWorkoutSummaryTile } from '@/components/workout/ActiveWorkoutSummaryTile'
+import { ActiveWorkoutTimerDrivers } from '@/components/workout/ActiveWorkoutTimerDrivers'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
-import { RestTimerBar } from '@/components/workout/RestTimerBar'
-import { HoldTimerBar } from '@/components/workout/HoldTimerBar'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
 import { UpdateTemplateFromWorkoutDialog } from '@/components/workout/UpdateTemplateFromWorkoutDialog'
 import {
@@ -40,11 +42,9 @@ import { FormMessage } from '@/components/ui/form'
 import { PageHeader, Pill } from '@/design-system'
 import { useLastTemplateSetHistory } from '@/hooks/useLastTemplateSetHistory'
 import { useExerciseLocale } from '@/hooks/useExerciseLocale'
-import { useExerciseDisplayName } from '@/hooks/useExerciseDisplayName'
 import { useCurrentWeightKg } from '@/hooks/useWeightGoal'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useSubscriptionSummary } from '@/hooks/useSubscription'
-import { useRestTimerAudio } from '@/hooks/useRestTimerAudio'
 import { useMyWorkouts, useWorkoutStreakDates } from '@/hooks/useWorkouts'
 import { useScheduledSessions } from '@/hooks/useScheduledSessions'
 import { useWearWorkoutSync } from '@/hooks/useWearWorkoutSync'
@@ -73,7 +73,6 @@ import {
   countCompletedSets,
   findNextStepIndexAfter,
   getStepExerciseDisplayName,
-  getStepLabel,
   getValidatedExercisesForSync,
   isWorkoutComplete,
 } from '@/lib/workout/workout-circuit'
@@ -154,20 +153,13 @@ function ActiveWorkoutPage() {
     sourceTemplateExerciseLineup,
     exercises: activeExercises,
     lastCompletedStep,
-    restSecondsLeft,
-    restTargetSeconds,
-    isResting,
-    isHolding,
-    holdSecondsLeft,
-    holdTargetSeconds,
-    holdingStep,
     hydrate,
     addExercise,
     removeExercise,
     replaceExercise,
     reorderExercises,
     updateExerciseDefaultRest,
-    addToSuperset,
+    applySupersetMembership,
     removeFromSuperset,
     updatePlannedSet,
     addPlannedSet,
@@ -176,31 +168,41 @@ function ActiveWorkoutPage() {
     completeStep,
     uncompleteStep,
     goToStep,
-    adjustRest,
-    tickRest,
-    skipRest,
-    startHold,
-    stopHold,
-    tickHold,
     finishWorkout,
     cancelWorkout,
-  } = useActiveWorkoutStore()
+  } = useActiveWorkoutStore(
+    useShallow((state) => ({
+      title: state.title,
+      startedAt: state.startedAt,
+      sourceTemplateId: state.sourceTemplateId,
+      sourceTemplateExerciseLineup: state.sourceTemplateExerciseLineup,
+      exercises: state.exercises,
+      lastCompletedStep: state.lastCompletedStep,
+      hydrate: state.hydrate,
+      addExercise: state.addExercise,
+      removeExercise: state.removeExercise,
+      replaceExercise: state.replaceExercise,
+      reorderExercises: state.reorderExercises,
+      updateExerciseDefaultRest: state.updateExerciseDefaultRest,
+      applySupersetMembership: state.applySupersetMembership,
+      removeFromSuperset: state.removeFromSuperset,
+      updatePlannedSet: state.updatePlannedSet,
+      addPlannedSet: state.addPlannedSet,
+      removePlannedSet: state.removePlannedSet,
+      reorderPlannedSets: state.reorderPlannedSets,
+      completeStep: state.completeStep,
+      uncompleteStep: state.uncompleteStep,
+      goToStep: state.goToStep,
+      finishWorkout: state.finishWorkout,
+      cancelWorkout: state.cancelWorkout,
+    })),
+  )
+
+  const startHold = useActiveWorkoutStore((state) => state.startHold)
+  const isResting = useActiveWorkoutStore((state) => state.isResting)
+  const isHolding = useActiveWorkoutStore((state) => state.isHolding)
 
   const exerciseLocale = useExerciseLocale()
-
-  const nextStepLabel = useMemo(() => {
-    const steps = buildCircuitSteps(activeExercises)
-    const nextIndex = findNextStepIndexAfter(
-      steps,
-      activeExercises,
-      lastCompletedStep,
-    )
-    return getStepLabel(
-      activeExercises,
-      nextIndex != null ? steps[nextIndex] ?? null : null,
-      exerciseLocale,
-    )
-  }, [activeExercises, lastCompletedStep, exerciseLocale])
 
   const currentExerciseLabel = useMemo(() => {
     const steps = buildCircuitSteps(activeExercises)
@@ -231,6 +233,9 @@ function ActiveWorkoutPage() {
   } | null>(null)
   const [overloadTeaserOpen, setOverloadTeaserOpen] = useState(false)
   const [overloadQuotaVersion, setOverloadQuotaVersion] = useState(0)
+  const [overloadHintsHandled, setOverloadHintsHandled] = useState<Set<string>>(
+    () => new Set(),
+  )
   const [pendingBadgeUnlocks, setPendingBadgeUnlocks] = useState<BadgeDefinition[]>([])
   const [badgeOverlayOpen, setBadgeOverlayOpen] = useState(false)
   const syncBadges = useSyncMyBadges()
@@ -310,33 +315,11 @@ function ActiveWorkoutPage() {
       return
     }
 
-    if (finishedWorkoutId) {
-      setIsRecapFlow(false)
-      setCelebrationQueue([])
-      void navigate({
-        to: '/app/workouts/$workoutId',
-        params: { workoutId: finishedWorkoutId },
-      })
-      return
-    }
-
     setRecapOpen(true)
   }
 
   function dismissBadgeOverlay() {
     setBadgeOverlayOpen(false)
-
-    if (finishedWorkoutId) {
-      setIsRecapFlow(false)
-      setCelebrationQueue([])
-      setPendingBadgeUnlocks([])
-      void navigate({
-        to: '/app/workouts/$workoutId',
-        params: { workoutId: finishedWorkoutId },
-      })
-      return
-    }
-
     setRecapOpen(true)
   }
   const allSetsComplete = isWorkoutComplete(
@@ -345,40 +328,9 @@ function ActiveWorkoutPage() {
     lastCompletedStep,
   )
 
-  useRestTimerAudio(isResting, restSecondsLeft)
-
   useEffect(() => {
     void hydrate()
   }, [hydrate])
-
-  useEffect(() => {
-    if (!isResting) {
-      return
-    }
-
-    const timer = window.setInterval(() => tickRest(), 1000)
-    return () => window.clearInterval(timer)
-  }, [isResting, tickRest])
-
-  useEffect(() => {
-    if (!isHolding) {
-      return
-    }
-
-    const timer = window.setInterval(() => tickHold(), 1000)
-    return () => window.clearInterval(timer)
-  }, [isHolding, tickHold])
-
-  const holdingExercise =
-    holdingStep != null ? activeExercises[holdingStep.exerciseIndex] ?? null : null
-  const holdDisplayName = useExerciseDisplayName(
-    holdingExercise?.exerciseName,
-    holdingExercise?.exerciseNameFr,
-    holdingExercise?.exerciseId,
-  )
-  const holdExerciseLabel = holdingExercise
-    ? `${holdDisplayName} — série ${(holdingStep?.setIndex ?? 0) + 1}`
-    : null
 
   async function saveFinishedWorkout(updateTemplate: boolean) {
     setTemplateUpdateOpen(false)
@@ -605,6 +557,7 @@ function ActiveWorkoutPage() {
           onContinue={() => {
             setIsRecapFlow(false)
             setCelebrationQueue([])
+            setPendingBadgeUnlocks([])
             if (finishedWorkoutId) {
               void navigate({
                 to: '/app/workouts/$workoutId',
@@ -711,7 +664,9 @@ function ActiveWorkoutPage() {
               onReplaceExercise={(exerciseIndex, exercise) =>
                 void replaceExercise(exerciseIndex, exercise)
               }
-              onAddToSuperset={(from, partner) => void addToSuperset(from, partner)}
+              onApplySupersetMembership={(anchor, partners) =>
+                void applySupersetMembership(anchor, partners)
+              }
               onRemoveFromSuperset={(index) => void removeFromSuperset(index)}
               onUpdateExerciseRest={(index, restSeconds) =>
                 void updateExerciseDefaultRest(index, restSeconds)
@@ -737,7 +692,7 @@ function ActiveWorkoutPage() {
               }
               onApplyOverloadSuggestion={(exerciseIndex, suggestion) => {
                 const exercise = activeExercises[exerciseIndex]
-                if (!exercise) {
+                if (!exercise || !suggestion.actionable) {
                   return
                 }
 
@@ -757,6 +712,12 @@ function ActiveWorkoutPage() {
                   })
                 })
 
+                setOverloadHintsHandled((previous) => {
+                  const next = new Set(previous)
+                  next.add(exercise.exerciseId)
+                  return next
+                })
+
                 if (
                   !isPremium &&
                   user?.id &&
@@ -767,6 +728,14 @@ function ActiveWorkoutPage() {
                   setOverloadQuotaVersion((version) => version + 1)
                   setOverloadTeaserOpen(true)
                 }
+              }}
+              overloadHintsHandled={overloadHintsHandled}
+              onDismissOverloadHint={(exerciseId) => {
+                setOverloadHintsHandled((previous) => {
+                  const next = new Set(previous)
+                  next.add(exerciseId)
+                  return next
+                })
               }}
             />
           )}
@@ -877,24 +846,9 @@ function ActiveWorkoutPage() {
       ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
 
-      {isHolding ? (
-        <HoldTimerBar
-          holdSecondsLeft={holdSecondsLeft}
-          holdTargetSeconds={holdTargetSeconds}
-          exerciseLabel={holdExerciseLabel}
-          onStop={() => void stopHold()}
-        />
-      ) : null}
-
-      {isResting ? (
-        <RestTimerBar
-          restSecondsLeft={restSecondsLeft}
-          restTargetSeconds={restTargetSeconds}
-          nextStepLabel={nextStepLabel}
-          onAdjust={adjustRest}
-          onSkip={skipRest}
-        />
-      ) : null}
+      <ActiveWorkoutTimerDrivers />
+      <ActiveWorkoutHoldTimerOverlay />
+      <ActiveWorkoutRestTimerOverlay />
 
       {allSetsComplete ? (
         <ActiveWorkoutFinishFab

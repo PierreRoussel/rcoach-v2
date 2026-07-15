@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
+import { SupersetMembershipDrawer } from '@/components/workout/SupersetMembershipDrawer'
 import { Pill } from '@/design-system'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,9 +24,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -58,7 +56,7 @@ type SortableExerciseListProps = {
   dragHandle?: 'subtle' | 'default'
   showDeleteButton?: boolean
   embedded?: boolean
-  onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
+  onApplySupersetMembership?: (anchorIndex: number, partnerIndices: number[]) => void
   onRemoveFromSuperset?: (index: number) => void
   renderSetsContent?: (index: number) => ReactNode
   onOpenReorder?: () => void
@@ -74,82 +72,11 @@ function supersetAccentClass(supersetId: number) {
   return SUPERSET_ACCENTS[(supersetId - 1) % SUPERSET_ACCENTS.length]
 }
 
-type SupersetPartnerOption =
-  | {
-      type: 'superset'
-      partnerIndex: number
-      supersetId: number
-      members: Array<{
-        exerciseId: string
-        exerciseName: string
-        exerciseNameFr?: string | null
-      }>
-    }
-  | {
-      type: 'exercise'
-      partnerIndex: number
-      exerciseId: string
-      exerciseName: string
-      exerciseNameFr?: string | null
-    }
-
-function buildSupersetPartnerOptions(
-  exercises: ActiveExerciseEntry[],
-  fromIndex: number,
-): SupersetPartnerOption[] {
-  const options: SupersetPartnerOption[] = []
-  const seenSupersetIds = new Set<number>()
-
-  for (let itemIndex = 0; itemIndex < exercises.length; itemIndex += 1) {
-    if (itemIndex === fromIndex) {
-      continue
-    }
-
-    const item = exercises[itemIndex]
-    if (!item) {
-      continue
-    }
-
-    if (item.supersetId != null) {
-      if (seenSupersetIds.has(item.supersetId)) {
-        continue
-      }
-
-      seenSupersetIds.add(item.supersetId)
-      const members = exercises
-        .map((exercise, exerciseIndex) => ({ exercise, exerciseIndex }))
-        .filter(({ exercise }) => exercise.supersetId === item.supersetId)
-
-      options.push({
-        type: 'superset',
-        partnerIndex: members[0]?.exerciseIndex ?? itemIndex,
-        supersetId: item.supersetId,
-        members: members.map(({ exercise }) => ({
-          exerciseId: exercise.exerciseId,
-          exerciseName: exercise.exerciseName,
-          exerciseNameFr: exercise.exerciseNameFr,
-        })),
-      })
-      continue
-    }
-
-    options.push({
-      type: 'exercise',
-      partnerIndex: itemIndex,
-      exerciseId: item.exerciseId,
-      exerciseName: item.exerciseName,
-      exerciseNameFr: item.exerciseNameFr,
-    })
-  }
-
-  return options
-}
-
 function ExerciseActionsMenu({
   index,
   exercises,
   onRemove,
-  onAddToSuperset,
+  onOpenSupersetDrawer,
   onRemoveFromSuperset,
   onOpenReorder,
   onReplaceRequest,
@@ -159,7 +86,7 @@ function ExerciseActionsMenu({
   index: number
   exercises: ActiveExerciseEntry[]
   onRemove?: () => void
-  onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
+  onOpenSupersetDrawer?: () => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
   onReplaceRequest?: (index: number) => void
@@ -167,8 +94,8 @@ function ExerciseActionsMenu({
   onViewDetails?: (index: number) => void
 }) {
   const exercise = exercises[index]
-  const partnerOptions = buildSupersetPartnerOptions(exercises, index)
-  const hasSupersetActions = onAddToSuperset && onRemoveFromSuperset
+  const hasSupersetActions = onOpenSupersetDrawer && onRemoveFromSuperset
+  const canConfigureSuperset = hasSupersetActions && exercises.length > 1
 
   if (
     !hasSupersetActions &&
@@ -223,57 +150,15 @@ function ExerciseActionsMenu({
         (onOpenReorder || onReplaceRequest || onViewStats || onViewDetails) ? (
           <DropdownMenuSeparator />
         ) : null}
-        {hasSupersetActions && partnerOptions.length > 0 ? (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Link2 className="size-4" />
-              Ajouter a un superset
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-              {partnerOptions.map((option) => {
-                if (option.type === 'superset') {
-                  return (
-                    <DropdownMenuItem
-                      key={`superset-${option.supersetId}`}
-                      onClick={() => onAddToSuperset(index, option.partnerIndex)}
-                    >
-                      <span className="truncate">
-                        Superset {option.supersetId} (
-                        {option.members.map((member, nameIndex) => (
-                          <span key={`${option.supersetId}-${member.exerciseId}`}>
-                            {nameIndex > 0 ? ' · ' : null}
-                            <DisplayExerciseName
-                              name={member.exerciseName}
-                              nameFr={member.exerciseNameFr}
-                              exerciseId={member.exerciseId}
-                            />
-                          </span>
-                        ))}
-                        )
-                      </span>
-                    </DropdownMenuItem>
-                  )
-                }
-
-                return (
-                  <DropdownMenuItem
-                    key={`exercise-${option.partnerIndex}`}
-                    onClick={() => onAddToSuperset(index, option.partnerIndex)}
-                  >
-                    <DisplayExerciseName
-                      name={option.exerciseName}
-                      nameFr={option.exerciseNameFr}
-                      exerciseId={option.exerciseId}
-                    />
-                  </DropdownMenuItem>
-                )
-              })}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+        {canConfigureSuperset ? (
+          <DropdownMenuItem onClick={onOpenSupersetDrawer}>
+            <Link2 className="size-4" />
+            Configurer le superset
+          </DropdownMenuItem>
         ) : null}
         {hasSupersetActions && exercise?.supersetId != null ? (
           <>
-            {partnerOptions.length > 0 ? <DropdownMenuSeparator /> : null}
+            {canConfigureSuperset ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem onClick={() => onRemoveFromSuperset(index)}>
               <Unlink className="size-4" />
               Retirer du superset
@@ -311,7 +196,7 @@ function SortableExerciseItem({
   dragHandle,
   showDeleteButton,
   embedded,
-  onAddToSuperset,
+  onOpenSupersetDrawer,
   onRemoveFromSuperset,
   onOpenReorder,
   onAddSet,
@@ -334,7 +219,7 @@ function SortableExerciseItem({
   dragHandle: 'subtle' | 'default'
   showDeleteButton: boolean
   embedded: boolean
-  onAddToSuperset?: (fromIndex: number, partnerIndex: number) => void
+  onOpenSupersetDrawer?: () => void
   onRemoveFromSuperset?: (index: number) => void
   onOpenReorder?: () => void
   onAddSet?: (index: number) => void
@@ -481,7 +366,7 @@ function SortableExerciseItem({
               index={index}
               exercises={exercises}
               onRemove={showDeleteButton ? undefined : onRemove}
-              onAddToSuperset={onAddToSuperset}
+              onOpenSupersetDrawer={onOpenSupersetDrawer}
               onRemoveFromSuperset={onRemoveFromSuperset}
               onOpenReorder={onOpenReorder}
               onReplaceRequest={onReplaceRequest}
@@ -586,7 +471,7 @@ export function SortableExerciseList({
   dragHandle = 'default',
   showDeleteButton = true,
   embedded = false,
-  onAddToSuperset,
+  onApplySupersetMembership,
   onRemoveFromSuperset,
   renderSetsContent,
   onOpenReorder,
@@ -599,6 +484,7 @@ export function SortableExerciseList({
 }: SortableExerciseListProps) {
   const sensors = useSortableSensors()
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
+  const [supersetAnchorIndex, setSupersetAnchorIndex] = useState<number | null>(null)
   const replaceExerciseName = useExerciseDisplayName(
     replaceIndex != null ? exercises[replaceIndex]?.exerciseName : null,
     replaceIndex != null ? exercises[replaceIndex]?.exerciseNameFr : null,
@@ -648,7 +534,11 @@ export function SortableExerciseList({
         dragHandle={dragHandle}
         showDeleteButton={showDeleteButton}
         embedded={embedded}
-        onAddToSuperset={onAddToSuperset}
+        onOpenSupersetDrawer={
+          onApplySupersetMembership
+            ? () => setSupersetAnchorIndex(index)
+            : undefined
+        }
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={onOpenReorder}
         onAddSet={onAddSet}
@@ -725,6 +615,20 @@ export function SortableExerciseList({
             .filter((_, index) => index !== replaceIndex)
             .map((exercise) => exercise.exerciseId)}
           onSelect={handleReplaceSelect}
+        />
+      ) : null}
+
+      {onApplySupersetMembership ? (
+        <SupersetMembershipDrawer
+          open={supersetAnchorIndex != null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSupersetAnchorIndex(null)
+            }
+          }}
+          exercises={exercises}
+          anchorIndex={supersetAnchorIndex}
+          onConfirm={onApplySupersetMembership}
         />
       ) : null}
     </DndContext>

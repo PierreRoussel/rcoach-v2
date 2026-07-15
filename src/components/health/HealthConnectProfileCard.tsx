@@ -29,7 +29,26 @@ import {
 } from '@/lib/health/health-connect-preferences'
 
 const HEALTH_CONNECT_PLAY_STORE_URL =
-  'https://play.google.com/store/apps/détails?id=com.google.android.apps.healthdata'
+  'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata'
+
+const HEALTH_CONNECT_STATUS_TIMEOUT_MS = 8_000
+
+async function withTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs = HEALTH_CONNECT_STATUS_TIMEOUT_MS) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallback), timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
 
 type ConnectionState =
   | 'unsupported'
@@ -140,8 +159,14 @@ export function HealthConnectProfileCard() {
     setIsLoading(true)
 
     try {
-      const availability = await getHealthConnectAvailability()
-      const permissions = await getHealthConnectPermissionStatus()
+      const availability = await withTimeout(
+        getHealthConnectAvailability(),
+        null,
+      )
+      const permissions = await withTimeout(
+        getHealthConnectPermissionStatus(),
+        { granted: false, available: false },
+      )
       const enabled = isHealthConnectSyncEnabled()
       setSyncEnabled(enabled)
       setConnectionState(
@@ -151,6 +176,13 @@ export function HealthConnectProfileCard() {
           permissions.granted,
         ),
       )
+
+      if (availability === null && permissions.available === false) {
+        showMessage(
+          'Impossible de joindre Health Connect. Réessayez ou ouvrez les autorisations manuellement.',
+          'error',
+        )
+      }
     } finally {
       setIsLoading(false)
     }
@@ -181,7 +213,7 @@ export function HealthConnectProfileCard() {
       const permissionResult = await requestHealthConnectPermissions()
       if (!permissionResult.granted) {
         showMessage(
-          'Autorisations refusées. Vous pouvez les modifier dans Health Connect.',
+          'Autorisations refusées ou indisponibles. Ouvrez « Gérer les autorisations » et accordez l’accès aux séances et à la fréquence cardiaque.',
           'error',
         )
         setHealthConnectSyncEnabled(false)

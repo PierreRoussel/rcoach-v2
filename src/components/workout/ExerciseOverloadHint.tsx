@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Crown, Lock, TrendingUp, X } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -33,9 +33,12 @@ type OverloadGateState = {
 }
 
 type ExerciseOverloadHintProps = {
-  exercise: Pick<Exercise, 'id' | 'name' | 'equipment'>
+  exercise: Pick<Exercise, 'id' | 'name' | 'equipment' | 'muscle_group'>
   bodyWeightKg?: number | null
+  rpeEnabled?: boolean
+  hidden?: boolean
   onApply?: (suggestion: OverloadSuggestion) => void
+  onDismiss?: () => void
   compact?: boolean
   className?: string
   overloadGate?: OverloadGateState
@@ -65,18 +68,17 @@ function OverloadAdjustDialog({
   const [weightValue, setWeightValue] = useState('')
   const [repsValue, setRepsValue] = useState('')
 
-  useEffect(() => {
-    if (!open) {
-      return
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      setWeightValue(
+        suggestion.suggestedWeightKg != null ? String(suggestion.suggestedWeightKg) : '',
+      )
+      setRepsValue(
+        suggestion.suggestedReps != null ? String(suggestion.suggestedReps) : '',
+      )
     }
-
-    setWeightValue(
-      suggestion.suggestedWeightKg != null ? String(suggestion.suggestedWeightKg) : '',
-    )
-    setRepsValue(
-      suggestion.suggestedReps != null ? String(suggestion.suggestedReps) : '',
-    )
-  }, [open, suggestion])
+    onOpenChange(nextOpen)
+  }
 
   function handleConfirm() {
     onConfirm({
@@ -88,12 +90,12 @@ function OverloadAdjustDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display font-black">Ajuster la surcharge</DialogTitle>
           <DialogDescription>
-            Modifiez la charge et les répétitions a appliquer aux séries de travail.
+            Modifiez la charge et les répétitions à appliquer aux séries de travail.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
@@ -178,20 +180,42 @@ function OverloadHintActions({
   )
 }
 
+function DismissOnlyAction({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="flex justify-end">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+        aria-label="Masquer le hint"
+        onClick={onDismiss}
+      >
+        <X className="size-3.5" />
+      </Button>
+    </div>
+  )
+}
+
 export function ExerciseOverloadHint({
   exercise,
   bodyWeightKg,
+  rpeEnabled = false,
+  hidden = false,
   onApply,
+  onDismiss,
   compact = false,
   className,
   overloadGate,
 }: ExerciseOverloadHintProps) {
   const { data: lastPerformance, isLoading } = useLastExercisePerformance(exercise.id)
-  const [dismissed, setDismissed] = useState(false)
   const [adjustOpen, setAdjustOpen] = useState(false)
 
   const suggestion = lastPerformance
-    ? suggestProgressiveOverload(exercise, lastPerformance, { bodyWeightKg })
+    ? suggestProgressiveOverload(exercise, lastPerformance, {
+        bodyWeightKg,
+        rpeEnabled,
+      })
     : null
 
   const isPremium = overloadGate?.isPremium ?? true
@@ -201,20 +225,18 @@ export function ExerciseOverloadHint({
     overloadGate?.isFreeQuotaAvailable === true
   const isLocked = !isPremium && !canUseFreeAdvice
 
-  useEffect(() => {
-    setDismissed(false)
-  }, [exercise.id])
-
-  if (isWarmUpExerciseName(exercise.name)) {
-    return null
+  function handleDismiss() {
+    onDismiss?.()
   }
 
   function handleApplySuggestion(nextSuggestion: OverloadSuggestion) {
+    if (!nextSuggestion.actionable) {
+      return
+    }
     onApply?.(nextSuggestion)
-    setDismissed(true)
   }
 
-  if (dismissed) {
+  if (isWarmUpExerciseName(exercise.name) || hidden) {
     return null
   }
 
@@ -273,7 +295,9 @@ export function ExerciseOverloadHint({
     )
   }
 
-  const effectiveOnApply = onApply && (isPremium || canUseFreeAdvice) ? onApply : undefined
+  const isInfoOnly = !suggestion.actionable
+  const effectiveOnApply =
+    onApply && suggestion.actionable && (isPremium || canUseFreeAdvice) ? onApply : undefined
   const adjustDialog = effectiveOnApply ? (
     <OverloadAdjustDialog
       open={adjustOpen}
@@ -288,30 +312,48 @@ export function ExerciseOverloadHint({
       <>
         <div
           className={cn(
-            'flex flex-col gap-2 rounded-xl bg-soft-accent/40 px-3 py-2',
+            'flex flex-col gap-2 rounded-xl px-3 py-2',
+            isInfoOnly
+              ? 'border border-border bg-muted/40'
+              : 'bg-soft-accent/40',
             className,
           )}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
           <p className="text-xs leading-relaxed text-foreground">{suggestion.message}</p>
-          <OverloadHintActions
-            onApply={effectiveOnApply ? () => handleApplySuggestion(suggestion) : undefined}
-            onAdjust={effectiveOnApply ? () => setAdjustOpen(true) : undefined}
-            onDismiss={() => setDismissed(true)}
-          />
+          {!isInfoOnly ? (
+            <p className="text-[10px] text-muted-foreground">
+              Appliqué aux séries de travail uniquement.
+            </p>
+          ) : null}
+          {isInfoOnly ? (
+            <DismissOnlyAction onDismiss={handleDismiss} />
+          ) : (
+            <OverloadHintActions
+              onApply={effectiveOnApply ? () => handleApplySuggestion(suggestion) : undefined}
+              onAdjust={effectiveOnApply ? () => setAdjustOpen(true) : undefined}
+              onDismiss={handleDismiss}
+            />
+          )}
         </div>
         {adjustDialog}
       </>
     )
   }
 
-  const best = lastPerformance.bestSet
+  const referenceSet = lastPerformance.bestSet
   const dateLabel = format(new Date(lastPerformance.date), 'd MMM yyyy', { locale: fr })
 
   return (
     <>
-      <div className={cn('space-y-2 rounded-2xl bg-soft-secondary/50 p-3', className)}>
+      <div
+        className={cn(
+          'space-y-2 rounded-2xl p-3',
+          isInfoOnly ? 'border border-border bg-muted/40' : 'bg-soft-secondary/50',
+          className,
+        )}
+      >
         <div className="flex items-center gap-2">
           <TrendingUp className="size-4 text-secondary-foreground" />
           <p className="text-xs font-semibold text-foreground">
@@ -319,16 +361,25 @@ export function ExerciseOverloadHint({
           </p>
         </div>
         <p className="font-data text-xs text-muted-foreground">
-          {formatLastSessionReference(best)}
+          {formatLastSessionReference(referenceSet)}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="accent">{suggestion.message}</Pill>
-          <OverloadHintActions
-            onApply={effectiveOnApply ? () => handleApplySuggestion(suggestion) : undefined}
-            onAdjust={effectiveOnApply ? () => setAdjustOpen(true) : undefined}
-            onDismiss={() => setDismissed(true)}
-          />
+          <Pill tone={isInfoOnly ? 'secondary' : 'accent'}>{suggestion.message}</Pill>
+          {isInfoOnly ? (
+            <DismissOnlyAction onDismiss={handleDismiss} />
+          ) : (
+            <OverloadHintActions
+              onApply={effectiveOnApply ? () => handleApplySuggestion(suggestion) : undefined}
+              onAdjust={effectiveOnApply ? () => setAdjustOpen(true) : undefined}
+              onDismiss={handleDismiss}
+            />
+          )}
         </div>
+        {!isInfoOnly ? (
+          <p className="text-[10px] text-muted-foreground">
+            Appliqué aux séries de travail uniquement.
+          </p>
+        ) : null}
       </div>
       {adjustDialog}
     </>

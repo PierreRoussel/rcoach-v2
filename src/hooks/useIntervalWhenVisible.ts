@@ -1,16 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
-import { formatActiveWorkoutElapsed } from '@/lib/workout/workout-encouragement'
-
-export function useActiveWorkoutElapsed(startedAt: string | null): string | null {
-  const [now, setNow] = useState(() => new Date())
+/**
+ * Runs `callback` on a fixed interval only while the document is visible.
+ * Pausing in background saves battery during long workout sessions (PWA / native).
+ */
+export function useIntervalWhenVisible(callback: () => void, delayMs: number | null) {
+  const callbackRef = useRef(callback)
 
   useEffect(() => {
-    if (!startedAt) {
+    callbackRef.current = callback
+  }, [callback])
+
+  useEffect(() => {
+    if (delayMs == null || delayMs <= 0) {
       return
     }
 
-    const tick = () => setNow(new Date())
     let timerId: ReturnType<typeof setInterval> | undefined
 
     const stop = () => {
@@ -22,8 +27,10 @@ export function useActiveWorkoutElapsed(startedAt: string | null): string | null
 
     const start = () => {
       stop()
-      tick()
-      timerId = setInterval(tick, 1_000)
+      callbackRef.current()
+      timerId = setInterval(() => {
+        callbackRef.current()
+      }, delayMs)
     }
 
     const handleVisibilityChange = () => {
@@ -45,11 +52,5 @@ export function useActiveWorkoutElapsed(startedAt: string | null): string | null
       stop()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [startedAt])
-
-  if (!startedAt) {
-    return null
-  }
-
-  return formatActiveWorkoutElapsed(startedAt, now)
+  }, [delayMs])
 }

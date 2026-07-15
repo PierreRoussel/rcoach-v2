@@ -21,6 +21,7 @@ export type ExerciseKind =
 export type PerformanceSummary = {
   date: string
   workoutTitle: string
+  /** Dernière série de travail (référence RPE / surcharge). */
   bestSet: SetSnapshot | null
   allSets: SetSnapshot[]
 }
@@ -32,6 +33,27 @@ export type OverloadSuggestion = {
   suggestedReps: number | null
   suggestedDurationSeconds: number | null
   suggestedDistanceKm: number | null
+  /** false = message informatif (RPE trop élevé, RPE manquant). */
+  actionable: boolean
+}
+
+export const MAX_RPE_FOR_PROGRESSION = 9
+
+const ISOLATION_MUSCLE_GROUPS = new Set([
+  'biceps',
+  'triceps',
+  'shoulders',
+  'abs',
+])
+
+const ISOLATION_NAME_PATTERN =
+  /curl|extension|raise|fly|kickback|pushdown|skull|lateral|triceps|biceps/i
+
+type ProgressionProfile = {
+  type: 'isolation' | 'compound'
+  repCeiling: number
+  repMin: number
+  resolveWeightIncrementKg: (weight: number, equipment: string) => number
 }
 
 function normalizeExerciseName(name: string): string {
@@ -98,48 +120,67 @@ export function classifyExercise(exercise: Pick<Exercise, 'name' | 'equipment'>)
   return 'weighted'
 }
 
+export function resolveProgressionProfile(
+  exercise: Pick<Exercise, 'name' | 'equipment' | 'muscle_group'>,
+): ProgressionProfile {
+  const muscle = exercise.muscle_group?.toLowerCase() ?? ''
+  const name = exercise.name.toLowerCase()
+  const equipment = exercise.equipment?.toLowerCase() ?? ''
+
+  const isIsolation =
+    ISOLATION_MUSCLE_GROUPS.has(muscle) || ISOLATION_NAME_PATTERN.test(name)
+
+  if (isIsolation) {
+    return {
+      type: 'isolation',
+      repCeiling: 12,
+      repMin: 8,
+      resolveWeightIncrementKg: () => 1,
+    }
+  }
+
+  return {
+    type: 'compound',
+    repCeiling: 8,
+    repMin: 6,
+    resolveWeightIncrementKg: (weight) =>
+      equipment === 'barbell' && weight >= 80 ? 5 : 2.5,
+  }
+}
+
 function workingSets(sets: SetSnapshot[]) {
   return sets.filter(
     (set) => set.set_type !== 'warmup' && (set.reps != null || set.duration_seconds != null),
   )
 }
 
-function bestWorkingSet(sets: SetSnapshot[], kind?: ExerciseKind) {
-  const candidates = workingSets(sets)
+function resolveTimedKind(candidates: SetSnapshot[]): ExerciseKind {
+  return candidates.every(
+    (set) =>
+      (set.duration_seconds ?? 0) > 0 &&
+      (set.reps == null || set.reps === 0) &&
+      (set.weight_kg == null || set.weight_kg === 0),
+  )
+    ? 'timed'
+    : 'weighted'
+}
+
+/** Dernière série de travail (ordre set_index), excluant l'échauffement. */
+export function lastWorkingSet(
+  sets: SetSnapshot[],
+  kind?: ExerciseKind,
+): SetSnapshot | null {
+  const candidates = workingSets(sets).sort((left, right) => left.set_index - right.set_index)
   if (candidates.length === 0) {
     return null
   }
 
-  const resolvedKind =
-    kind ??
-    (candidates.every(
-      (set) =>
-        (set.duration_seconds ?? 0) > 0 &&
-        (set.reps == null || set.reps === 0) &&
-        (set.weight_kg == null || set.weight_kg === 0),
-    )
-      ? 'timed'
-      : 'weighted')
-
+  const resolvedKind = kind ?? resolveTimedKind(candidates)
   if (resolvedKind === 'timed') {
-    return candidates.reduce((best, current) => {
-      const bestDuration = best.duration_seconds ?? 0
-      const currentDuration = current.duration_seconds ?? 0
-      return currentDuration > bestDuration ? current : best
-    })
+    return candidates[candidates.length - 1] ?? null
   }
 
-  return candidates.reduce((best, current) => {
-    const bestScore = (best.weight_kg ?? 0) * (best.reps ?? 0)
-    const currentScore = (current.weight_kg ?? 0) * (current.reps ?? 0)
-    if (currentScore > bestScore) {
-      return current
-    }
-    if (currentScore === bestScore && (current.reps ?? 0) > (best.reps ?? 0)) {
-      return current
-    }
-    return best
-  })
+  return candidates[candidates.length - 1] ?? null
 }
 
 function formatRpeSuffix(rpe: number | null | undefined): string {
@@ -188,7 +229,7 @@ export function summarizePerformance(
   return {
     date: startedAt,
     workoutTitle,
-    bestSet: bestWorkingSet(sets, kind),
+    bestSet: lastWorkingSet(sets, kind),
     allSets: sets,
   }
 }
@@ -235,10 +276,77 @@ export function formatBodyweightSessionReference(sets: SetSnapshot[]): string {
   return reps.join(', ') + ' reps'
 }
 
+function buildRpeBlockedSuggestion(
+  kind: ExerciseKind,
+  referenceSet: SetSnapshot,
+): OverloadSuggestion {
+  const lastSession = formatLastSessionReference(referenceSet)
+  const rpe = referenceSet.rpe
+
+  return {
+    kind,
+    message:
+      rpe != null
+        ? `Dernière séance : ${lastSession}. RPE ${Number.isInteger(rpe) ? rpe : rpe} — consolidez avant d'augmenter.`
+        : `Dernière séance : ${lastSession}. Consolidez avant d'augmenter.`,
+    suggestedWeightKg: null,
+    suggestedReps: null,
+    suggestedDurationSeconds: null,
+    suggestedDistanceKm: null,
+    actionable: false,
+  }
+}
+
+function buildMissingRpeSuggestion(
+  kind: ExerciseKind,
+  referenceSet: SetSnapshot,
+): OverloadSuggestion {
+  const lastSession = formatLastSessionReference(referenceSet)
+
+  return {
+    kind,
+    message: `Dernière séance : ${lastSession}. Indiquez un RPE sur la dernière série pour obtenir une suggestion.`,
+    suggestedWeightKg: null,
+    suggestedReps: null,
+    suggestedDurationSeconds: null,
+    suggestedDistanceKm: null,
+    actionable: false,
+  }
+}
+
+function checkRpeProgressionGate(
+  kind: ExerciseKind,
+  referenceSet: SetSnapshot,
+  options?: { rpeEnabled?: boolean },
+): OverloadSuggestion | null {
+  const rpe = referenceSet.rpe
+
+  if (rpe != null && rpe >= MAX_RPE_FOR_PROGRESSION) {
+    return buildRpeBlockedSuggestion(kind, referenceSet)
+  }
+
+  if (options?.rpeEnabled && rpe == null) {
+    return buildMissingRpeSuggestion(kind, referenceSet)
+  }
+
+  return null
+}
+
 function suggestBodyweightOverload(
   last: PerformanceSummary,
   bodyWeightKg?: number | null,
+  options?: { rpeEnabled?: boolean },
 ): OverloadSuggestion | null {
+  const referenceSet = last.bestSet
+  if (!referenceSet) {
+    return null
+  }
+
+  const rpeGate = checkRpeProgressionGate('bodyweight', referenceSet, options)
+  if (rpeGate) {
+    return rpeGate
+  }
+
   const stats = bodyweightRepStats(last.allSets)
   if (!stats) {
     return null
@@ -252,10 +360,11 @@ function suggestBodyweightOverload(
     return {
       kind,
       message: `Dernière séance : ${lastSession}. Viser ${best} reps sur chaque série.`,
-      suggestedWeightKg: last.bestSet?.weight_kg ?? null,
+      suggestedWeightKg: referenceSet.weight_kg ?? null,
       suggestedReps: best,
       suggestedDurationSeconds: null,
       suggestedDistanceKm: null,
+      actionable: true,
     }
   }
 
@@ -268,17 +377,65 @@ function suggestBodyweightOverload(
     message: conservative
       ? `Dernière séance : ${lastSession}. Viser ${targetReps} rep${targetReps > 1 ? 's' : ''} si toutes les séries restent propres.`
       : `Dernière séance : ${lastSession}. Viser ${targetReps} rep${targetReps > 1 ? 's' : ''}.`,
-    suggestedWeightKg: last.bestSet?.weight_kg ?? null,
+    suggestedWeightKg: referenceSet.weight_kg ?? null,
     suggestedReps: targetReps,
     suggestedDurationSeconds: null,
     suggestedDistanceKm: null,
+    actionable: true,
+  }
+}
+
+function suggestWeightedOverload(
+  exercise: Pick<Exercise, 'name' | 'equipment' | 'muscle_group'>,
+  referenceSet: SetSnapshot,
+  options?: { rpeEnabled?: boolean },
+): OverloadSuggestion | null {
+  const kind = 'weighted' as const
+  const rpeGate = checkRpeProgressionGate(kind, referenceSet, options)
+  if (rpeGate) {
+    return rpeGate
+  }
+
+  const weight = referenceSet.weight_kg ?? 0
+  const reps = referenceSet.reps ?? 0
+  if (weight <= 0 || reps <= 0) {
+    return null
+  }
+
+  const lastSession = formatLastSessionReference(referenceSet)
+  const profile = resolveProgressionProfile(exercise)
+  const equipment = exercise.equipment?.toLowerCase() ?? ''
+
+  if (reps < profile.repCeiling) {
+    return {
+      kind,
+      message: `Dernière séance : ${lastSession}. +1 rep à ${weight} kg.`,
+      suggestedWeightKg: weight,
+      suggestedReps: reps + 1,
+      suggestedDurationSeconds: null,
+      suggestedDistanceKm: null,
+      actionable: true,
+    }
+  }
+
+  const increment = profile.resolveWeightIncrementKg(weight, equipment)
+  const targetReps = Math.max(reps - 1, profile.repMin)
+
+  return {
+    kind,
+    message: `Dernière séance : ${lastSession}. Plafond atteint — +${increment} kg à ${targetReps} reps.`,
+    suggestedWeightKg: weight + increment,
+    suggestedReps: targetReps,
+    suggestedDurationSeconds: null,
+    suggestedDistanceKm: null,
+    actionable: true,
   }
 }
 
 export function suggestProgressiveOverload(
-  exercise: Pick<Exercise, 'name' | 'equipment' | 'tracking_mode'>,
+  exercise: Pick<Exercise, 'name' | 'equipment' | 'tracking_mode' | 'muscle_group'>,
   last: PerformanceSummary | null,
-  options?: { bodyWeightKg?: number | null },
+  options?: { bodyWeightKg?: number | null; rpeEnabled?: boolean },
 ): OverloadSuggestion | null {
   if (isWarmUpExerciseName(exercise.name)) {
     return null
@@ -289,44 +446,23 @@ export function suggestProgressiveOverload(
   }
 
   const kind = getExerciseTrackingKind(exercise)
-  const best = last.bestSet
-  const lastSession = formatLastSessionReference(best)
+  const referenceSet = last.bestSet
+  const lastSession = formatLastSessionReference(referenceSet)
 
   switch (kind) {
-    case 'weighted': {
-      const weight = best.weight_kg ?? 0
-      const reps = best.reps ?? 0
-      if (weight <= 0 || reps <= 0) {
-        return null
-      }
-
-      if (reps >= 8) {
-        const increment = weight >= 80 ? 5 : 2.5
-        return {
-          kind,
-          message: `Dernière séance : ${lastSession}. Essayer ${weight + increment} kg x ${Math.max(reps - 1, 6)} reps.`,
-          suggestedWeightKg: weight + increment,
-          suggestedReps: Math.max(reps - 1, 6),
-          suggestedDurationSeconds: null,
-          suggestedDistanceKm: null,
-        }
-      }
-
-      return {
-        kind,
-        message: `Dernière séance : ${lastSession}. Viser ${weight} kg x ${reps + 1} reps.`,
-        suggestedWeightKg: weight,
-        suggestedReps: reps + 1,
-        suggestedDurationSeconds: null,
-        suggestedDistanceKm: null,
-      }
-    }
+    case 'weighted':
+      return suggestWeightedOverload(exercise, referenceSet, options)
 
     case 'bodyweight':
-      return suggestBodyweightOverload(last, options?.bodyWeightKg)
+      return suggestBodyweightOverload(last, options?.bodyWeightKg, options)
 
     case 'band': {
-      const reps = best.reps ?? 0
+      const rpeGate = checkRpeProgressionGate('band', referenceSet, options)
+      if (rpeGate) {
+        return rpeGate
+      }
+
+      const reps = referenceSet.reps ?? 0
       return {
         kind,
         message: reps
@@ -336,12 +472,13 @@ export function suggestProgressiveOverload(
         suggestedReps: reps ? reps + 1 : null,
         suggestedDurationSeconds: null,
         suggestedDistanceKm: null,
+        actionable: true,
       }
     }
 
     case 'cardio': {
-      const distance = best.distance_km ?? null
-      const duration = best.duration_seconds ?? null
+      const distance = referenceSet.distance_km ?? null
+      const duration = referenceSet.duration_seconds ?? null
       if (distance != null) {
         return {
           kind,
@@ -350,6 +487,7 @@ export function suggestProgressiveOverload(
           suggestedReps: null,
           suggestedDurationSeconds: duration,
           suggestedDistanceKm: Math.round((distance + 0.2) * 100) / 100,
+          actionable: true,
         }
       }
 
@@ -361,6 +499,7 @@ export function suggestProgressiveOverload(
           suggestedReps: null,
           suggestedDurationSeconds: duration + 120,
           suggestedDistanceKm: null,
+          actionable: true,
         }
       }
 
@@ -368,7 +507,7 @@ export function suggestProgressiveOverload(
     }
 
     case 'timed': {
-      const duration = best.duration_seconds ?? 0
+      const duration = referenceSet.duration_seconds ?? 0
       if (duration <= 0) {
         return null
       }
@@ -380,6 +519,7 @@ export function suggestProgressiveOverload(
         suggestedReps: null,
         suggestedDurationSeconds: duration + 10,
         suggestedDistanceKm: null,
+        actionable: true,
       }
     }
 
@@ -388,8 +528,9 @@ export function suggestProgressiveOverload(
   }
 }
 
-export function isWorkingSet(set: { setType?: string }) {
-  return (set.setType ?? 'normal') !== 'warmup'
+export function isWorkingSet(set: { setType?: string; set_type?: string }) {
+  const setType = set.setType ?? set.set_type ?? 'normal'
+  return setType !== 'warmup'
 }
 
 type OverloadSetFields = {
@@ -404,6 +545,10 @@ export function applyOverloadToWorkingSets<T extends OverloadSetFields>(
   sets: T[],
   suggestion: OverloadSuggestion,
 ): T[] {
+  if (!suggestion.actionable) {
+    return sets
+  }
+
   return sets.map((set) => {
     if (!isWorkingSet(set)) {
       return set

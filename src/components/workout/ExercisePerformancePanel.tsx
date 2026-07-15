@@ -4,7 +4,7 @@ import type { OverloadSuggestion } from '@/lib/workout/progressive-overload'
 import { ExerciseOverloadHint } from '@/components/workout/ExerciseOverloadHint'
 
 type ExercisePerformancePanelProps = {
-  exercise: Pick<Exercise, 'id' | 'name' | 'equipment'>
+  exercise: Pick<Exercise, 'id' | 'name' | 'equipment' | 'muscle_group'>
   onApplySuggestion?: (suggestion: OverloadSuggestion) => void
 }
 

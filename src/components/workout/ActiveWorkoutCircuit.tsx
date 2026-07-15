@@ -54,7 +54,7 @@ type ActiveWorkoutCircuitProps = {
     muscle_group?: string | null
     equipment?: string | null
   }) => void
-  onAddToSuperset: (fromIndex: number, partnerIndex: number) => void
+  onApplySupersetMembership: (anchorIndex: number, partnerIndices: number[]) => void
   onRemoveFromSuperset: (exerciseIndex: number) => void
   onUpdateExerciseRest: (exerciseIndex: number, restSeconds: number) => void
   onUpdateSet: (
@@ -78,6 +78,8 @@ type ActiveWorkoutCircuitProps = {
     exerciseIndex: number,
     suggestion: OverloadSuggestion,
   ) => void
+  overloadHintsHandled?: ReadonlySet<string>
+  onDismissOverloadHint?: (exerciseId: string) => void
   bodyWeightKg?: number
   overloadGate?: {
     isPremium: boolean
@@ -97,7 +99,7 @@ export function ActiveWorkoutCircuit({
   onReorderExercises,
   onRemoveExercise,
   onReplaceExercise,
-  onAddToSuperset,
+  onApplySupersetMembership,
   onRemoveFromSuperset,
   onUpdateExerciseRest,
   onUpdateSet,
@@ -108,6 +110,8 @@ export function ActiveWorkoutCircuit({
   onDeleteSet,
   onReorderSets,
   onApplyOverloadSuggestion,
+  overloadHintsHandled,
+  onDismissOverloadHint,
   bodyWeightKg,
   overloadGate,
 }: ActiveWorkoutCircuitProps) {
@@ -331,7 +335,7 @@ export function ActiveWorkoutCircuit({
         onReorder={onReorderExercises}
         onRemove={onRemoveExercise}
         onReplace={onReplaceExercise}
-        onAddToSuperset={onAddToSuperset}
+        onApplySupersetMembership={onApplySupersetMembership}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={() => setReorderOpen(true)}
         onViewStats={(index) => {
@@ -424,10 +428,13 @@ export function ActiveWorkoutCircuit({
               <ExerciseOverloadHint
                 compact
                 bodyWeightKg={bodyWeightKg}
+                rpeEnabled={rpeEnabled}
+                hidden={overloadHintsHandled?.has(exercise.exerciseId) ?? false}
                 exercise={{
                   id: exercise.exerciseId,
                   name: exercise.exerciseName,
                   equipment: exercise.equipment ?? null,
+                  muscle_group: exercise.muscleGroup ?? null,
                 }}
                 overloadGate={
                   overloadGate
@@ -439,6 +446,7 @@ export function ActiveWorkoutCircuit({
                       }
                     : undefined
                 }
+                onDismiss={() => onDismissOverloadHint?.(exercise.exerciseId)}
                 onApply={
                   onApplyOverloadSuggestion
                     ? (suggestion) => onApplyOverloadSuggestion(index, suggestion)

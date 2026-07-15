@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   addExerciseToSuperset,
+  applySupersetMembership,
   cleanupSupersetAfterRemoval,
   compactSupersetBlocks,
+  getDefaultSupersetPartnerIndices,
   getSupersetMemberIndices,
   removeExerciseFromSuperset,
 } from '@/lib/workout/exercise-superset'
@@ -129,5 +131,38 @@ describe('exercise-superset', () => {
     ])
     expect(getSupersetMemberIndices(next, 1)).toEqual([0, 1])
     expect(getSupersetMemberIndices(next, 2)).toEqual([3, 4])
+  })
+
+  it('returns default partner indices from the anchor superset', () => {
+    const exercises = [
+      makeExercise('a', 1),
+      makeExercise('b', 1),
+      makeExercise('c', null),
+    ]
+
+    expect(getDefaultSupersetPartnerIndices(exercises, 0)).toEqual([1])
+    expect(getDefaultSupersetPartnerIndices(exercises, 2)).toEqual([])
+  })
+
+  it('applies multi-select superset membership from a drawer selection', () => {
+    const exercises = [
+      makeExercise('a', 1),
+      makeExercise('b', 1),
+      makeExercise('c', null),
+      makeExercise('d', null),
+    ]
+
+    const next = applySupersetMembership(exercises, 0, [2])
+
+    expect(next.map((exercise) => exercise.supersetId)).toEqual([1, 1, null, null])
+    expect(next.map((exercise) => exercise.id)).toEqual(['a', 'c', 'b', 'd'])
+  })
+
+  it('dissolves the superset when no partner remains selected', () => {
+    const exercises = [makeExercise('a', 1), makeExercise('b', 1)]
+
+    const next = applySupersetMembership(exercises, 0, [])
+
+    expect(next.every((exercise) => exercise.supersetId == null)).toBe(true)
   })
 })

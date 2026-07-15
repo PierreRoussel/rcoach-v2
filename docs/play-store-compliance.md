@@ -53,6 +53,22 @@ URL privacy dans `android/app/src/main/res/values/strings.xml` :
 https://rcoach.fr/legal/privacy
 ```
 
+Permissions Android déclarées : `READ_EXERCISE`, `WRITE_EXERCISE`, `READ_HEART_RATE`.
+
+### Play Console (obligatoire pour la beta / prod)
+
+1. Play Console → **Contenu de l'application** → **Santé**
+2. Déclarer l'usage de Health Connect (séances d'exercice, fréquence cardiaque en lecture)
+3. Lier la politique de confidentialité (`https://rcoach.fr/legal/privacy` doit répondre **200**)
+
+Sans cette déclaration, la demande d'autorisations Health Connect peut échouer silencieusement sur les builds Play Store.
+
+### Appareil
+
+- Android 14+ : Health Connect intégré au système
+- Android 13 et moins : installer [Health Connect](https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata) depuis le Play Store
+- Après mise à jour de l'APK : Profil → Santé Connect → **Connecter**, ou **Gérer les autorisations**
+
 ## Variables d'environnement (production)
 
 ```bash
