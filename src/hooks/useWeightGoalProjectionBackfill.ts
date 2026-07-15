@@ -6,6 +6,7 @@ import { useUserMeasurements } from '@/hooks/useUserMeasurements'
 import { useWeightEntries } from '@/hooks/useWeightEntries'
 import { useWeightGoal } from '@/hooks/useWeightGoal'
 import { needsProjectionBackfill } from '@/lib/goals/weight-goal'
+import { isWeightGoalProjectionSchemaAvailable } from '@/lib/goals/weight-goal-graphql'
 import { syncWeightGoalProjection } from '@/lib/goals/sync-weight-goal-projection'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -23,6 +24,7 @@ export function useWeightGoalProjectionBackfill() {
     if (
       !user?.id ||
       !goalRecord ||
+      !isWeightGoalProjectionSchemaAvailable() ||
       !needsProjectionBackfill(goalRecord) ||
       !nutritionSettings ||
       syncingRef.current
