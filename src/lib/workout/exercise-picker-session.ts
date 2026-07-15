@@ -37,13 +37,21 @@ let state: ExercisePickerState = {
   completedResult: null,
 }
 
+let templateRemountPendingAdds: Exercise[] = []
+
 export function getExercisePickerSession() {
   return state.session
 }
 
 export function openExercisePicker(session: ExercisePickerSession) {
+  const mode = session.mode ?? 'add'
+
   state = {
-    session,
+    session: {
+      ...session,
+      mode,
+      replaceIndex: mode === 'replace' ? session.replaceIndex : undefined,
+    },
     pendingAdds: [],
     completedResult: null,
   }
@@ -114,12 +122,30 @@ export function consumeExercisePickerOutcome(): ExercisePickerOutcome | null {
     completedResult: state.completedResult,
   }
 
+  if (outcome.pendingAdds.length > 0) {
+    templateRemountPendingAdds = outcome.pendingAdds
+  }
+
   clearExercisePickerSession()
   return outcome
 }
 
+export function takeTemplateRemountPendingAdds() {
+  const pending = templateRemountPendingAdds
+  templateRemountPendingAdds = []
+  return pending
+}
+
 export function peekExercisePickerExcludeIds() {
   return state.session?.excludeIds ?? []
+}
+
+export function peekExercisePickerPendingAdds() {
+  return [...state.pendingAdds]
+}
+
+export function hasExercisePickerPendingWork() {
+  return state.pendingAdds.length > 0 || state.completedResult != null
 }
 
 function normalizePathname(pathname: string) {

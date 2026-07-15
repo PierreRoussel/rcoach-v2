@@ -19,6 +19,7 @@ import { filterExercises, useAllExercises } from '@/hooks/useExercises'
 import {
   cancelExerciseAddNavigation,
   handleExerciseAddPageBack,
+  navigateExerciseAddBack,
   useExerciseAddBackNavigation,
 } from '@/hooks/useExerciseAddBackNavigation'
 import { useRecentExercises } from '@/hooks/useRecentExercises'
@@ -30,6 +31,8 @@ import {
   completeExercisePicker,
   excludeExerciseFromPicker,
   getExercisePickerSession,
+  peekExercisePickerExcludeIds,
+  type ExercisePickerReturnTo,
 } from '@/lib/workout/exercise-picker-session'
 
 const addExerciseSearchSchema = z.object({
@@ -49,6 +52,8 @@ function AddExercisePage() {
   const { context } = Route.useSearch()
   const session = getExercisePickerSession()
   const hadSessionRef = useRef(Boolean(session))
+  const returnToRef = useRef<ExercisePickerReturnTo | undefined>(session?.returnTo)
+  const didInitialSyncRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const quickAddResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -77,10 +82,18 @@ function AddExercisePage() {
   const { data: recentExercises = [] } = useRecentExercises(20)
 
   useEffect(() => {
-    if (session) {
+    const currentSession = getExercisePickerSession()
+
+    if (currentSession) {
       hadSessionRef.current = true
-      setExcludeIds(session.excludeIds)
-      searchInputRef.current?.focus()
+      returnToRef.current = currentSession.returnTo
+
+      if (!didInitialSyncRef.current) {
+        didInitialSyncRef.current = true
+        setExcludeIds(currentSession.excludeIds)
+        searchInputRef.current?.focus()
+      }
+
       return
     }
 
@@ -104,13 +117,11 @@ function AddExercisePage() {
     }
 
     void navigate({ to: '/app/workout/active', replace: true, viewTransition: false })
-  }, [context, navigate, session])
+  }, [context, navigate])
 
   useEffect(() => {
     return () => {
-      if (quickAddResetTimerRef.current) {
-        clearTimeout(quickAddResetTimerRef.current)
-      }
+      clearQuickAddResetTimer()
     }
   }, [])
 
@@ -145,24 +156,38 @@ function AddExercisePage() {
     return filteredExercises.filter((exercise) => !recentIdSet.has(exercise.id))
   }, [filteredExercises, recentRows, isSearchMode])
 
-  function scheduleQuickAddReset() {
+  function clearQuickAddResetTimer() {
     if (quickAddResetTimerRef.current) {
       clearTimeout(quickAddResetTimerRef.current)
+      quickAddResetTimerRef.current = null
     }
+  }
 
+  function syncExcludedExerciseIds() {
+    setExcludeIds(peekExercisePickerExcludeIds())
+  }
+
+  function scheduleQuickAddReset() {
+    clearQuickAddResetTimer()
     quickAddResetTimerRef.current = setTimeout(() => {
       setQuickAddState(null)
+      syncExcludedExerciseIds()
       quickAddResetTimerRef.current = null
     }, QUICK_ADD_SUCCESS_MS)
   }
 
-  function navigateBack() {
-    if (!session) {
+  function navigateBack(options?: { leavePage?: boolean }) {
+    if (options?.leavePage) {
+      navigateExerciseAddBack(
+        (navOptions) => navigate(navOptions as Parameters<typeof navigate>[0]),
+        returnToRef.current,
+      )
       return
     }
 
-    handleExerciseAddPageBack((options) =>
-      navigate(options as Parameters<typeof navigate>[0]),
+    handleExerciseAddPageBack(
+      (navOptions) => navigate(navOptions as Parameters<typeof navigate>[0]),
+      returnToRef.current,
     )
   }
 
@@ -170,25 +195,26 @@ function AddExercisePage() {
     exercise: Exercise,
     options?: { skipLocalExcludeUpdate?: boolean },
   ) {
-    if (!session) {
+    const pickerSession = getExercisePickerSession()
+    if (!pickerSession) {
       return
     }
 
-    if (session.mode === 'replace' && session.replaceIndex != null) {
-      if (session.context === 'active' || session.context === 'replace') {
-        await replaceExerciseInStore(session.replaceIndex, exercise)
+    if (pickerSession.mode === 'replace' && pickerSession.replaceIndex != null) {
+      if (pickerSession.context === 'active' || pickerSession.context === 'replace') {
+        await replaceExerciseInStore(pickerSession.replaceIndex, exercise)
       } else {
         completeExercisePicker({
           exercise,
           mode: 'replace',
-          replaceIndex: session.replaceIndex,
+          replaceIndex: pickerSession.replaceIndex,
         })
       }
-      navigateBack()
+      navigateBack({ leavePage: true })
       return
     }
 
-    switch (session.context) {
+    switch (pickerSession.context) {
       case 'active':
       case 'replace':
         await addExerciseToStore(exercise)
@@ -197,14 +223,14 @@ function AddExercisePage() {
         addPendingExercise(exercise)
         break
       case 'program': {
-        if (!session.programId || !session.programDayId) {
+        if (!pickerSession.programId || !pickerSession.programDayId) {
           throw new Error('Programme introuvable.')
         }
 
-        const day = program?.program_days.find((item) => item.id === session.programDayId)
+        const day = program?.program_days.find((item) => item.id === pickerSession.programDayId)
         await addProgramExercise.mutateAsync({
-          programId: session.programId,
-          programDayId: session.programDayId,
+          programId: pickerSession.programId,
+          programDayId: pickerSession.programDayId,
           exerciseId: exercise.id,
           sortOrder: (day?.program_exercises.length ?? 0) + programAddCount,
           targetSets: 3,
@@ -224,32 +250,31 @@ function AddExercisePage() {
   }
 
   function scheduleQuickAddReturn() {
-    if (quickAddResetTimerRef.current) {
-      clearTimeout(quickAddResetTimerRef.current)
-    }
-
+    clearQuickAddResetTimer()
     quickAddResetTimerRef.current = setTimeout(() => {
       quickAddResetTimerRef.current = null
-      navigateBack()
+      navigateBack({ leavePage: true })
     }, QUICK_ADD_SUCCESS_MS)
   }
 
   async function handleQuickAdd(exercise: Exercise) {
-    if (!session) {
+    const pickerSession = getExercisePickerSession()
+    if (!pickerSession) {
       return
     }
 
-    const returnAfterQuickAdd = session.context === 'template'
+    const returnAfterQuickAdd = pickerSession.context === 'template'
 
     setFeedback(null)
+    clearQuickAddResetTimer()
     setQuickAddState({ exerciseId: exercise.id, status: 'adding' })
 
     try {
       await applyExerciseAdd(exercise, {
-        skipLocalExcludeUpdate: returnAfterQuickAdd,
+        skipLocalExcludeUpdate: true,
       })
 
-      if (session.mode === 'replace') {
+      if (pickerSession.mode === 'replace') {
         return
       }
 
@@ -271,38 +296,39 @@ function AddExercisePage() {
   }
 
   async function handleDrawerAdd() {
-    if (!detailExercise || !session) {
+    const pickerSession = getExercisePickerSession()
+    if (!detailExercise || !pickerSession) {
       return
     }
 
     setFeedback(null)
 
     try {
-      if (session.mode === 'replace' && session.replaceIndex != null) {
+      if (pickerSession.mode === 'replace' && pickerSession.replaceIndex != null) {
         await applyExerciseAdd(detailExercise)
         setDetailExercise(null)
         return
       }
 
-      if (session.context === 'template') {
+      if (pickerSession.context === 'template') {
         await applyExerciseAdd(detailExercise)
         setDetailExercise(null)
-        navigateBack()
+        navigateBack({ leavePage: true })
         return
       }
 
-      if (session.context === 'active' || session.context === 'replace') {
+      if (pickerSession.context === 'active' || pickerSession.context === 'replace') {
         await addExerciseToStore(detailExercise)
         excludeExerciseFromPicker(detailExercise.id)
         setDetailExercise(null)
-        navigateBack()
+        navigateBack({ leavePage: true })
         return
       }
 
-      if (session.context === 'program') {
+      if (pickerSession.context === 'program') {
         await applyExerciseAdd(detailExercise)
         setDetailExercise(null)
-        navigateBack()
+        navigateBack({ leavePage: true })
       }
     } catch (error) {
       setFeedback({
@@ -318,8 +344,9 @@ function AddExercisePage() {
   }
 
   function handleBackClick() {
-    cancelExerciseAddNavigation((options) =>
-      navigate(options as Parameters<typeof navigate>[0]),
+    cancelExerciseAddNavigation(
+      (options) => navigate(options as Parameters<typeof navigate>[0]),
+      returnToRef.current,
     )
   }
 
@@ -331,7 +358,7 @@ function AddExercisePage() {
       ? 'Choisissez un nouvel exercice. Les séries planifiées seront conservées.'
       : 'Recherchez un exercice, parcourez vos récents ou filtrez par muscle.'
 
-  if (!session) {
+  if (!session && !hadSessionRef.current) {
     return null
   }
 
@@ -457,7 +484,7 @@ function AddExercisePage() {
         exercise={detailExercise ? exerciseToDetailTarget(detailExercise) : null}
         onAdd={() => void handleDrawerAdd()}
         addLabel={
-          session.mode === 'replace' ? "Remplacer l'exercice" : "Ajouter l'exercice"
+          session?.mode === 'replace' ? "Remplacer l'exercice" : "Ajouter l'exercice"
         }
       />
 

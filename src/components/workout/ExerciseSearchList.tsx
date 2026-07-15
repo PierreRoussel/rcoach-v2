@@ -1,7 +1,5 @@
-import { Check, Loader2, Plus } from 'lucide-react'
-
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
-import { Button } from '@/components/ui/button'
+import { QuickAddIconButton } from '@/components/ui/quick-add-icon-button'
 import { Pill } from '@/design-system'
 import type { Exercise } from '@/lib/graphql/operations'
 import { cn } from '@/lib/utils'
@@ -34,30 +32,11 @@ function QuickAddButton({
     quickAddState?.exerciseId === exercise.id ? quickAddState.status : null
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon"
-      className={cn(
-        'size-8 shrink-0 rounded-full border-primary text-primary transition-colors hover:bg-soft-primary hover:text-soft-primary-fg',
-        rowStatus === 'success' && 'bg-soft-primary text-soft-primary-fg',
-      )}
-      disabled={rowStatus === 'adding' || rowStatus === 'success'}
-      onClick={() => onQuickAdd(exercise)}
-      aria-label={
-        rowStatus === 'success'
-          ? `${exercise.name} ajouté`
-          : `Ajouter ${exercise.name}`
-      }
-    >
-      {rowStatus === 'adding' ? (
-        <Loader2 className="size-4 animate-spin" aria-hidden />
-      ) : rowStatus === 'success' ? (
-        <Check className="size-4 animate-motivation-pop" aria-hidden />
-      ) : (
-        <Plus className="size-4" aria-hidden />
-      )}
-    </Button>
+    <QuickAddIconButton
+      itemName={exercise.name}
+      rowStatus={rowStatus}
+      onQuickAdd={() => onQuickAdd(exercise)}
+    />
   )
 }
 

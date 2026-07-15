@@ -48,7 +48,17 @@ export function EmomGroupDrawer({
       return
     }
 
-    setSelectedIndices(getDefaultEmomGroupPartnerIndices(exercises, anchorIndex))
+    setSelectedIndices((current) => {
+      const next = getDefaultEmomGroupPartnerIndices(exercises, anchorIndex)
+      if (
+        current.length === next.length &&
+        current.every((value, index) => value === next[index])
+      ) {
+        return current
+      }
+
+      return next
+    })
   }, [anchorIndex, exercises, open])
 
   function togglePartner(index: number, checked: boolean) {

@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
-import { useLocation } from '@tanstack/react-router'
+import { useRouterState } from '@tanstack/react-router'
 
 import { isExerciseAddPath } from '@/hooks/useExerciseAddBackNavigation'
 import {
   consumeExercisePickerOutcome,
   getExercisePickerSession,
+  hasExercisePickerPendingWork,
   isExercisePickerReturnLocation,
 } from '@/lib/workout/exercise-picker-session'
 import type { Exercise } from '@/lib/graphql/operations'
@@ -18,7 +19,10 @@ export function useExercisePickerConsumer({
   onAdd,
   onReplace,
 }: UseExercisePickerConsumerOptions) {
-  const location = useLocation()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const navigationKey = useRouterState({
+    select: (state) => state.location.state?.key ?? state.location.href,
+  })
   const onAddRef = useRef(onAdd)
   const onReplaceRef = useRef(onReplace)
 
@@ -26,12 +30,16 @@ export function useExercisePickerConsumer({
   onReplaceRef.current = onReplace
 
   useEffect(() => {
-    if (isExerciseAddPath(location.pathname)) {
+    if (isExerciseAddPath(pathname)) {
+      return
+    }
+
+    if (!hasExercisePickerPendingWork() && !getExercisePickerSession()) {
       return
     }
 
     const session = getExercisePickerSession()
-    if (!session || !isExercisePickerReturnLocation(location.pathname, session.returnTo)) {
+    if (!session || !isExercisePickerReturnLocation(pathname, session.returnTo)) {
       return
     }
 
@@ -43,6 +51,10 @@ export function useExercisePickerConsumer({
     void (async () => {
       for (const exercise of outcome.pendingAdds) {
         await onAddRef.current(exercise)
+      }
+
+      if (outcome.pendingAdds.length > 0) {
+        return
       }
 
       if (outcome.completedResult) {
@@ -57,5 +69,5 @@ export function useExercisePickerConsumer({
         }
       }
     })()
-  }, [location.pathname])
+  }, [pathname, navigationKey])
 }

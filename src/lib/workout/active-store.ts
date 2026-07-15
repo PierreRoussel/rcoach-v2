@@ -599,6 +599,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     await persistDraft(get, {
       title: get().title,
       startedAt: get().startedAt,
+      sessionMode: get().sessionMode,
+      emom: get().emom ?? undefined,
       defaultRestSeconds: get().defaultRestSeconds,
       exercises: nextExercises,
       activeStepIndex,

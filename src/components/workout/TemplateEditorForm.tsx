@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Save } from 'lucide-react'
 
 import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
@@ -47,6 +47,7 @@ import { useMyProfile } from '@/hooks/useProfile'
 import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 import { replaceTemplateExercise } from '@/lib/workout/replace-exercise'
+import { takeTemplateRemountPendingAdds } from '@/lib/workout/exercise-picker-session'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 import {
   DEFAULT_EMOM_INTERVAL_SECONDS,
@@ -115,26 +116,24 @@ export function TemplateEditorForm({
   )
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const exercisesSyncedForRef = useRef<string | null>(null)
   const isEmom = sessionMode === 'emom'
 
   useEffect(() => {
     setName(initialName)
     setFolderName(initialFolderName ?? '')
-    setExercises(initialExercises)
     setEmomIntervalSeconds(String(initialEmomIntervalSeconds))
     setEmomTotalMinutes(String(initialEmomTotalMinutes))
   }, [
     initialName,
     initialFolderName,
-    initialExercises,
-    initialSessionMode,
     initialEmomIntervalSeconds,
     initialEmomTotalMinutes,
   ])
 
-  const activeEntries: ActiveExerciseEntry[] = templateExercisesToActive(
-    exercises,
-    sessionMode,
+  const activeEntries: ActiveExerciseEntry[] = useMemo(
+    () => templateExercisesToActive(exercises, sessionMode),
+    [exercises, sessionMode],
   )
 
   function buildSessionConfig(): TemplateEditorSessionConfig {
@@ -158,17 +157,26 @@ export function TemplateEditorForm({
     }
   }
 
-  function handleAddExercise(exercise: Exercise) {
-    if (exercises.some((item) => item.exerciseId === exercise.id)) {
-      return
+  function appendExerciseDraft(current: TemplateExerciseDraft[], exercise: Exercise) {
+    if (current.some((item) => item.exerciseId === exercise.id)) {
+      return current
     }
 
-    const next = [
-      ...exercises,
+    return [
+      ...current,
       isEmom ? exerciseToEmomDraft(exercise) : exerciseToDraft(exercise),
     ]
-    setExercises(next)
-    setActiveIndex(next.length - 1)
+  }
+
+  function handleAddExercise(exercise: Exercise) {
+    exercisesSyncedForRef.current = templateId ?? '__new__'
+    setExercises((current) => {
+      const next = appendExerciseDraft(current, exercise)
+      if (next.length !== current.length) {
+        setActiveIndex(next.length - 1)
+      }
+      return next
+    })
   }
 
   function handleReorder(from: number, to: number) {
@@ -216,8 +224,36 @@ export function TemplateEditorForm({
 
   useExercisePickerConsumer({
     onAdd: handleAddExercise,
-    onReplace: handleReplace,
+    onReplace: isEmom ? undefined : handleReplace,
   })
+
+  useEffect(() => {
+    const syncKey = templateId ?? '__new__'
+    const remountPendingAdds = takeTemplateRemountPendingAdds()
+
+    if (remountPendingAdds.length > 0) {
+      exercisesSyncedForRef.current = syncKey
+      setExercises((current) => {
+        let next = current
+        for (const exercise of remountPendingAdds) {
+          next = appendExerciseDraft(next, exercise)
+        }
+        if (next.length !== current.length) {
+          setActiveIndex(next.length - 1)
+        }
+        return next
+      })
+      return
+    }
+
+    if (exercisesSyncedForRef.current === syncKey) {
+      return
+    }
+
+    exercisesSyncedForRef.current = syncKey
+    setExercises(initialExercises)
+    setActiveIndex((current) => Math.min(current, Math.max(initialExercises.length - 1, 0)))
+  }, [templateId, initialExercises, isEmom])
 
   function handleAddSet(exerciseIndex: number) {
     setExercises((current) =>
@@ -452,7 +488,7 @@ export function TemplateEditorForm({
             onSelect={setActiveIndex}
             onReorder={handleReorder}
             onRemove={handleRemove}
-            onReplace={handleReplace}
+            onReplace={isEmom ? undefined : handleReplace}
             onApplySupersetMembership={isEmom ? undefined : handleApplySupersetMembership}
             onRemoveFromSuperset={isEmom ? undefined : handleRemoveFromSuperset}
             onApplyEmomGroupMembership={isEmom ? handleApplyEmomGroupMembership : undefined}

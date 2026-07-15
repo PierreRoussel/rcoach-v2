@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { closeTopOverlayLayer } from '@/lib/navigation/close-top-overlay'
 import {
   getExercisePickerSession,
+  clearExercisePickerSession,
   type ExercisePickerReturnTo,
 } from '@/lib/workout/exercise-picker-session'
 
@@ -36,14 +37,16 @@ function pushExerciseAddBackTrap() {
 
 export function navigateExerciseAddBack(
   navigate: (options: ExercisePickerReturnTo & { replace?: boolean }) => void | Promise<void>,
+  fallbackReturnTo?: ExercisePickerReturnTo,
 ) {
   const session = getExercisePickerSession()
-  if (!session) {
+  const returnTo = session?.returnTo ?? fallbackReturnTo
+  if (!returnTo) {
     return
   }
 
   void navigate({
-    ...session.returnTo,
+    ...returnTo,
     replace: true,
     viewTransition: false,
   })
@@ -51,12 +54,13 @@ export function navigateExerciseAddBack(
 
 export function handleExerciseAddPageBack(
   navigate: (options: ExercisePickerReturnTo & { replace?: boolean }) => void | Promise<void>,
+  fallbackReturnTo?: ExercisePickerReturnTo,
 ) {
   if (closeTopOverlayLayer()) {
     return
   }
 
-  navigateExerciseAddBack(navigate)
+  navigateExerciseAddBack(navigate, fallbackReturnTo)
 }
 
 export function useExerciseAddBackNavigation() {
@@ -101,6 +105,8 @@ export function useExerciseAddBackNavigation() {
 
 export function cancelExerciseAddNavigation(
   navigate: (options: ExercisePickerReturnTo & { replace?: boolean }) => void | Promise<void>,
+  fallbackReturnTo?: ExercisePickerReturnTo,
 ) {
-  navigateExerciseAddBack(navigate)
+  clearExercisePickerSession()
+  navigateExerciseAddBack(navigate, fallbackReturnTo)
 }
