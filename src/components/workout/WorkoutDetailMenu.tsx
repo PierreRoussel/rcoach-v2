@@ -33,6 +33,7 @@ import { useEntitlement } from '@/hooks/useSubscription'
 import { useWorkoutTemplates } from '@/hooks/useWorkoutTemplates'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { waitForDialogClose } from '@/lib/router/dialog-navigation'
+import { FREE_WORKOUT_TEMPLATES } from '@/lib/subscription/entitlements'
 import { cn } from '@/lib/utils'
 
 function openDeleteDialogAfterMenuClose(

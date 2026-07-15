@@ -13,6 +13,7 @@ import { ActiveWorkoutSummaryTile } from '@/components/workout/ActiveWorkoutSumm
 import { ActiveWorkoutTimerDrivers } from '@/components/workout/ActiveWorkoutTimerDrivers'
 import { ExercisePicker } from '@/components/workout/ExercisePicker'
 import { StartWorkoutForm } from '@/components/workout/StartWorkoutForm'
+import { useApplyExercisePickerNavigationState } from '@/hooks/useApplyExercisePickerNavigationState'
 import { useExercisePickerConsumer } from '@/hooks/useExercisePickerConsumer'
 import { UpdateTemplateFromWorkoutDialog } from '@/components/workout/UpdateTemplateFromWorkoutDialog'
 import {
@@ -85,7 +86,6 @@ import {
   getSlotForMinute,
   isEmomComplete,
 } from '@/lib/workout/emom-circuit'
-import { countLoggedEmomMinutes } from '@/lib/workout/emom-store'
 import {
   applyOverloadToWorkingSets,
   isWorkingSet,
@@ -211,6 +211,8 @@ function ActiveWorkoutPage() {
       cancelWorkout: state.cancelWorkout,
     })),
   )
+
+  useApplyExercisePickerNavigationState()
 
   useExercisePickerConsumer({
     onAdd: (exercise) => addExercise(exercise),
@@ -484,6 +486,7 @@ function ActiveWorkoutPage() {
         endedAt,
         volumeKg,
         completedSets: completedCount,
+        sessionMode: draft.sessionMode ?? 'circuit',
         estimatedCaloriesKcal: estimateWorkoutCalories({
           startedAt: draft.startedAt,
           endedAt,
@@ -533,7 +536,7 @@ function ActiveWorkoutPage() {
   async function handleFinish() {
     setFinishConfirmOpen(false)
 
-    if (completedCount === 0) {
+    if (!isEmomSession && completedCount === 0) {
       setError('Validez au moins une série avant de terminer.')
       return
     }
@@ -698,7 +701,6 @@ function ActiveWorkoutPage() {
               : null
           }
           emomProgressPercent={emomProgressPercent}
-          emomLoggedMinutes={emom ? countLoggedEmomMinutes(emom) : null}
         />
       ) : null}
 
@@ -846,22 +848,24 @@ function ActiveWorkoutPage() {
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="pill"
-          disabled={isSaving}
-          onClick={() => {
-            if (!isEmomSession && completedCount === 0) {
-              setError('Validez au moins une série avant de terminer.')
-              return
-            }
+        {!isEmomSession || emomComplete ? (
+          <Button
+            type="button"
+            variant="pill"
+            disabled={isSaving}
+            onClick={() => {
+              if (!isEmomSession && completedCount === 0) {
+                setError('Validez au moins une série avant de terminer.')
+                return
+              }
 
-            setError(null)
-            setFinishConfirmOpen(true)
-          }}
-        >
-          {isSaving ? 'Enregistrement...' : 'Terminer la séance'}
-        </Button>
+              setError(null)
+              setFinishConfirmOpen(true)
+            }}
+          >
+            {isSaving ? 'Enregistrement...' : 'Terminer la séance'}
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="ghost"
@@ -954,14 +958,10 @@ function ActiveWorkoutPage() {
         />
       ) : null}
 
-      {isEmomSession && (emomComplete || activeExercises.length > 0) ? (
+      {isEmomSession && emomComplete ? (
         <ActiveWorkoutFinishFab
           disabled={isSaving}
-          subtitle={
-            emomComplete
-              ? 'Temps écoulé — enregistrez la séance'
-              : 'Terminer à tout moment'
-          }
+          subtitle="Temps écoulé — enregistrez la séance"
           onFinish={() => {
             setError(null)
             setFinishConfirmOpen(true)

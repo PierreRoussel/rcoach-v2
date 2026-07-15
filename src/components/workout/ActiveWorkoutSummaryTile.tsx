@@ -28,7 +28,6 @@ type ActiveWorkoutSummaryTileProps = {
   sessionMode?: 'circuit' | 'emom'
   emomMinuteLabel?: string | null
   emomProgressPercent?: number | null
-  emomLoggedMinutes?: number | null
 }
 
 function WorkoutProgressRing({ percent }: { percent: number }) {
@@ -106,7 +105,6 @@ export function ActiveWorkoutSummaryTile({
   sessionMode = 'circuit',
   emomMinuteLabel,
   emomProgressPercent,
-  emomLoggedMinutes,
 }: ActiveWorkoutSummaryTileProps) {
   const elapsed = useActiveWorkoutElapsed(startedAt)
   const isEmom = sessionMode === 'emom'
@@ -168,37 +166,34 @@ export function ActiveWorkoutSummaryTile({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-        <p className="min-w-0 truncate text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">En cours :</span>{' '}
-          {isEmom ? emomMinuteLabel ?? currentExerciseLabel ?? 'EMOM' : currentExerciseLabel ?? 'Aucun exercice'}
-        </p>
-        <p className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
-          <span
-            className="flex size-5 shrink-0 items-center justify-center rounded-full bg-soft-secondary text-soft-secondary-fg"
-            aria-hidden
-          >
-            <Check className="size-3" strokeWidth={2.5} />
-          </span>
-          <span>
-            {isEmom ? (
-              <>
-                <span className="font-semibold text-foreground tabular-nums">
-                  {emomLoggedMinutes ?? 0}
-                </span>{' '}
-                minute{(emomLoggedMinutes ?? 0) > 1 ? 's' : ''} loguée
-                {(emomLoggedMinutes ?? 0) > 1 ? 's' : ''}
-              </>
-            ) : (
-              <>
+      <div className="mt-3 border-t border-border pt-3">
+        {isEmom ? (
+          <p className="min-w-0 truncate text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">En cours :</span>{' '}
+            {emomMinuteLabel ?? currentExerciseLabel ?? 'EMOM'}
+          </p>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 truncate text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">En cours :</span>{' '}
+              {currentExerciseLabel ?? 'Aucun exercice'}
+            </p>
+            <p className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+              <span
+                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-soft-secondary text-soft-secondary-fg"
+                aria-hidden
+              >
+                <Check className="size-3" strokeWidth={2.5} />
+              </span>
+              <span>
                 <span className="font-semibold text-foreground tabular-nums">
                   {completedSets}/{totalSets}
                 </span>{' '}
                 séries validées
-              </>
-            )}
-          </span>
-        </p>
+              </span>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

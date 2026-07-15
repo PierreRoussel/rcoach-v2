@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -5,10 +6,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useNavigate, useLocation } from '@tanstack/react-router'
 import { BarChart2, ChevronDown, GripVertical, Info, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
@@ -39,17 +39,46 @@ import { buildExerciseUnits } from '@/lib/workout/exercise-units'
 import { isExerciseComplete } from '@/lib/workout/format-exercise-collapsed-summary'
 import type { Exercise } from '@/lib/graphql/operations'
 import {
-  getExercisePickerSession,
   type ExercisePickerContext,
   type ExercisePickerReturnTo,
 } from '@/lib/workout/exercise-picker-session'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
+import { WORKOUT_EXERCISE_SELECTOR_ATTR } from '@/lib/workout/scroll-to-exercise'
 
-const SUPERSET_ACCENTS = [
-  'border-primary/60 bg-primary/5',
-  'border-secondary/60 bg-secondary/10',
-  'border-accent/60 bg-accent/10',
+const SUPERSET_STYLES = [
+  {
+    container:
+      'border-violet-300/40 bg-soft-purple/50 dark:border-violet-700/25 dark:bg-violet-950/25',
+    badge: 'bg-soft-purple text-soft-purple-fg',
+    label: 'text-soft-purple-fg/70',
+  },
+  {
+    container: 'border-secondary/60 bg-secondary/10',
+    badge: 'bg-soft-secondary text-soft-secondary-fg',
+    label: 'text-muted-foreground',
+  },
+  {
+    container: 'border-accent/60 bg-accent/10',
+    badge: 'bg-soft-accent text-soft-accent-fg',
+    label: 'text-muted-foreground',
+  },
 ] as const
+
+function getSupersetStyle(supersetId: number) {
+  return SUPERSET_STYLES[(supersetId - 1) % SUPERSET_STYLES.length]
+}
+
+function supersetAccentClass(supersetId: number) {
+  return getSupersetStyle(supersetId).container
+}
+
+function supersetBadgeClass(supersetId: number) {
+  return getSupersetStyle(supersetId).badge
+}
+
+function supersetLabelClass(supersetId: number) {
+  return getSupersetStyle(supersetId).label
+}
 
 type SortableExerciseListProps = {
   exercises: ActiveExerciseEntry[]
@@ -77,10 +106,6 @@ type SortableExerciseListProps = {
   pickerContext?: ExercisePickerContext
   pickerReturnTo?: ExercisePickerReturnTo
   pickerTemplateId?: string
-}
-
-function supersetAccentClass(supersetId: number) {
-  return SUPERSET_ACCENTS[(supersetId - 1) % SUPERSET_ACCENTS.length]
 }
 
 function ExerciseActionsMenu({
@@ -302,6 +327,7 @@ function SortableExerciseItem({
   const card = (
     <div
       ref={setNodeRef}
+      {...{ [WORKOUT_EXERCISE_SELECTOR_ATTR]: exercise.exerciseId }}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -309,8 +335,10 @@ function SortableExerciseItem({
       className={cn(
         'group w-full rounded-2xl border',
         embedded ? 'rounded-none border-x-0 border-t-0 first:border-t' : null,
-        isActive ? 'border-primary bg-soft-primary/60' : 'border-border bg-card',
-        inSuperset && !isActive && accent,
+        inSuperset && accent,
+        isActive && inSuperset && 'border-primary ring-2 ring-inset ring-primary/35',
+        isActive && !inSuperset && 'border-primary bg-soft-primary/60',
+        !isActive && !inSuperset && 'border-border bg-card',
         isDragging && 'opacity-70 shadow-md',
       )}
     >
@@ -350,7 +378,12 @@ function SortableExerciseItem({
                 Terminé
               </Pill>
               {supersetBadge != null ? (
-                <span className="shrink-0 rounded-full bg-soft-primary px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-soft-primary-fg">
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide',
+                    supersetBadgeClass(supersetBadge),
+                  )}
+                >
                   S{supersetBadge}
                 </span>
               ) : null}
@@ -371,7 +404,12 @@ function SortableExerciseItem({
                   </Pill>
                 ) : null}
                 {supersetBadge != null ? (
-                  <span className="shrink-0 rounded-full bg-soft-primary px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide text-soft-primary-fg">
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-2 py-0.5 font-data text-[10px] font-semibold uppercase tracking-wide',
+                      supersetBadgeClass(supersetBadge),
+                    )}
+                  >
                     S{supersetBadge}
                   </span>
                 ) : null}
@@ -531,54 +569,26 @@ export function SortableExerciseList({
   pickerTemplateId,
 }: SortableExerciseListProps) {
   const navigate = useNavigate()
-  const location = useLocation()
   const sensors = useSortableSensors()
-  const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
   const [supersetAnchorIndex, setSupersetAnchorIndex] = useState<number | null>(null)
   const [emomGroupAnchorIndex, setEmomGroupAnchorIndex] = useState<number | null>(null)
-  const launchedReplaceRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    if (replaceIndex == null || !onReplace || !pickerReturnTo) {
-      launchedReplaceRef.current = null
+  function handleReplaceRequest(index: number) {
+    if (!onReplace || !pickerReturnTo) {
       return
     }
 
-    if (launchedReplaceRef.current === replaceIndex) {
-      return
-    }
-
-    launchedReplaceRef.current = replaceIndex
     launchExercisePickerPage({
       excludeIds: exercises
-        .filter((_, index) => index !== replaceIndex)
+        .filter((_, itemIndex) => itemIndex !== index)
         .map((exercise) => exercise.exerciseId),
       mode: 'replace',
-      replaceIndex,
+      replaceIndex: index,
       context: pickerContext,
       returnTo: pickerReturnTo,
       templateId: pickerTemplateId,
       navigate: (options) => void navigate(options),
     })
-  }, [
-    exercises,
-    navigate,
-    onReplace,
-    pickerContext,
-    pickerReturnTo,
-    pickerTemplateId,
-    replaceIndex,
-  ])
-
-  useEffect(() => {
-    if (!getExercisePickerSession() && replaceIndex != null) {
-      setReplaceIndex(null)
-      launchedReplaceRef.current = null
-    }
-  }, [location.pathname, replaceIndex])
-
-  function handleReplaceRequest(index: number) {
-    setReplaceIndex(index)
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -673,7 +683,12 @@ export function SortableExerciseList({
                   supersetAccentClass(unit.supersetId),
                 )}
               >
-                <p className="px-4 font-data text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <p
+                  className={cn(
+                    'px-4 font-data text-[10px] font-semibold uppercase tracking-widest',
+                    supersetLabelClass(unit.supersetId),
+                  )}
+                >
                   Superset {unit.supersetId}
                 </p>
                 {unit.indices.map((index) => renderItem(index))}

@@ -18,6 +18,7 @@ import {
 import { formatSetPerformanceSummary } from '@/lib/workout/format-set-performance'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { cn } from '@/lib/utils'
+import { WORKOUT_EXERCISE_SELECTOR_ATTR } from '@/lib/workout/scroll-to-exercise'
 
 export function ActiveWorkoutEmomView() {
   const exercises = useActiveWorkoutStore((state) => state.exercises)
@@ -185,75 +186,91 @@ export function ActiveWorkoutEmomView() {
             {exercises.map((exercise, index) => (
               <div
                 key={exercise.exerciseId}
-                className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 px-3 py-2"
+                {...{ [WORKOUT_EXERCISE_SELECTOR_ATTR]: exercise.exerciseId }}
+                className="space-y-2 rounded-xl border border-border/70 px-3 py-3"
               >
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                   <DisplayExerciseName
                     name={exercise.exerciseName}
                     nameFr={exercise.exerciseNameFr}
                     exerciseId={exercise.exerciseId}
+                    className="font-display text-base font-black"
                   />
                   {exercise.emomGroupId != null ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       Minute groupée M{exercise.emomGroupId}
                     </p>
                   ) : null}
                 </div>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  placeholder="Reps"
-                  value={exercise.targetReps ?? ''}
-                  onChange={(event) => {
-                    const raw = event.target.value.trim()
-                    void updateExerciseTargetReps(
-                      index,
-                      raw === '' ? null : Number.parseInt(raw, 10),
-                    )
-                  }}
-                  className="h-9 w-20"
-                />
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step={0.5}
-                  placeholder="kg"
-                  value={exercise.targetWeightKg ?? ''}
-                  onChange={(event) => {
-                    const raw = event.target.value.trim()
-                    if (raw === '') {
-                      void updateExerciseTargetWeight(index, null)
-                      return
-                    }
 
-                    const parsed = Number.parseFloat(raw.replace(',', '.'))
-                    void updateExerciseTargetWeight(
-                      index,
-                      Number.isFinite(parsed) && parsed >= 0 ? parsed : null,
-                    )
-                  }}
-                  className="h-9 w-20"
-                />
-                {exercises.length > 1 ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      placeholder="—"
+                      aria-label="Reps"
+                      value={exercise.targetReps ?? ''}
+                      onChange={(event) => {
+                        const raw = event.target.value.trim()
+                        void updateExerciseTargetReps(
+                          index,
+                          raw === '' ? null : Number.parseInt(raw, 10),
+                        )
+                      }}
+                      className="h-9 w-16 text-center font-semibold text-foreground"
+                    />
+                    reps
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={0.5}
+                      placeholder="—"
+                      aria-label="Poids en kilogrammes"
+                      value={exercise.targetWeightKg ?? ''}
+                      onChange={(event) => {
+                        const raw = event.target.value.trim()
+                        if (raw === '') {
+                          void updateExerciseTargetWeight(index, null)
+                          return
+                        }
+
+                        const parsed = Number.parseFloat(raw.replace(',', '.'))
+                        void updateExerciseTargetWeight(
+                          index,
+                          Number.isFinite(parsed) && parsed >= 0 ? parsed : null,
+                        )
+                      }}
+                      className="h-9 w-16 text-center font-semibold text-foreground"
+                    />
+                    kg
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1">
+                  {exercises.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setGroupAnchorIndex(index)}
+                    >
+                      Grouper
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setGroupAnchorIndex(index)}
+                    onClick={() => void removeExercise(index)}
                   >
-                    Grouper
+                    Retirer
                   </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void removeExercise(index)}
-                >
-                  Retirer
-                </Button>
+                </div>
               </div>
             ))}
           </div>

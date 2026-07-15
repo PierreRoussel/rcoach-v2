@@ -47,8 +47,12 @@ import { useMyProfile } from '@/hooks/useProfile'
 import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
 import { replaceTemplateExercise } from '@/lib/workout/replace-exercise'
-import { takeTemplateRemountPendingAdds } from '@/lib/workout/exercise-picker-session'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
+import {
+  forgetTemplateEditorExercises,
+  recallTemplateEditorExercises,
+  rememberTemplateEditorExercises,
+} from '@/lib/workout/template-editor-exercise-cache'
 import {
   DEFAULT_EMOM_INTERVAL_SECONDS,
   DEFAULT_SESSION_MODE,
@@ -107,7 +111,16 @@ export function TemplateEditorForm({
     String(initialEmomIntervalSeconds),
   )
   const [emomTotalMinutes, setEmomTotalMinutes] = useState(String(initialEmomTotalMinutes))
-  const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(initialExercises)
+  const [exercises, setExercises] = useState<TemplateExerciseDraft[]>(() => {
+    if (templateId) {
+      const cached = recallTemplateEditorExercises(templateId)
+      if (cached) {
+        return cached
+      }
+    }
+
+    return initialExercises
+  })
   const [activeIndex, setActiveIndex] = useState(0)
   const [reorderOpen, setReorderOpen] = useState(false)
   const [detailExercise, setDetailExercise] = useState<ActiveExerciseEntry | null>(null)
@@ -168,15 +181,32 @@ export function TemplateEditorForm({
     ]
   }
 
-  function handleAddExercise(exercise: Exercise) {
+  function handleAddExercises(exercisesToAdd: Exercise[]) {
+    if (exercisesToAdd.length === 0) {
+      return
+    }
+
     exercisesSyncedForRef.current = templateId ?? '__new__'
     setExercises((current) => {
-      const next = appendExerciseDraft(current, exercise)
+      let next = current
+      for (const exercise of exercisesToAdd) {
+        next = appendExerciseDraft(next, exercise)
+      }
+
       if (next.length !== current.length) {
         setActiveIndex(next.length - 1)
       }
+
+      if (templateId) {
+        rememberTemplateEditorExercises(templateId, next)
+      }
+
       return next
     })
+  }
+
+  function handleAddExercise(exercise: Exercise) {
+    handleAddExercises([exercise])
   }
 
   function handleReorder(from: number, to: number) {
@@ -224,36 +254,34 @@ export function TemplateEditorForm({
 
   useExercisePickerConsumer({
     onAdd: handleAddExercise,
-    onReplace: isEmom ? undefined : handleReplace,
+    onAdds: handleAddExercises,
+    onReplace: handleReplace,
   })
 
   useEffect(() => {
     const syncKey = templateId ?? '__new__'
-    const remountPendingAdds = takeTemplateRemountPendingAdds()
 
-    if (remountPendingAdds.length > 0) {
-      exercisesSyncedForRef.current = syncKey
-      setExercises((current) => {
-        let next = current
-        for (const exercise of remountPendingAdds) {
-          next = appendExerciseDraft(next, exercise)
-        }
-        if (next.length !== current.length) {
-          setActiveIndex(next.length - 1)
-        }
-        return next
-      })
+    if (exercisesSyncedForRef.current === syncKey) {
       return
     }
 
-    if (exercisesSyncedForRef.current === syncKey) {
+    if (templateId && recallTemplateEditorExercises(templateId)) {
+      exercisesSyncedForRef.current = syncKey
       return
     }
 
     exercisesSyncedForRef.current = syncKey
     setExercises(initialExercises)
     setActiveIndex((current) => Math.min(current, Math.max(initialExercises.length - 1, 0)))
-  }, [templateId, initialExercises, isEmom])
+  }, [templateId, initialExercises])
+
+  useEffect(() => {
+    if (!templateId) {
+      return
+    }
+
+    rememberTemplateEditorExercises(templateId, exercises)
+  }, [exercises, templateId])
 
   function handleAddSet(exerciseIndex: number) {
     setExercises((current) =>
@@ -341,6 +369,9 @@ export function TemplateEditorForm({
 
     try {
       await onSave(trimmedName, exercises, folderName.trim() || null, buildSessionConfig())
+      if (templateId) {
+        forgetTemplateEditorExercises(templateId)
+      }
       setMessage('Séance sauvegardée.')
     } catch (saveError) {
       setError(
@@ -472,6 +503,7 @@ export function TemplateEditorForm({
             </div>
             <ExercisePicker
               excludeIds={exercises.map((exercise) => exercise.exerciseId)}
+              mode="add"
               context="template"
               templateId={templateId}
               returnTo={{
@@ -488,7 +520,7 @@ export function TemplateEditorForm({
             onSelect={setActiveIndex}
             onReorder={handleReorder}
             onRemove={handleRemove}
-            onReplace={isEmom ? undefined : handleReplace}
+            onReplace={handleReplace}
             onApplySupersetMembership={isEmom ? undefined : handleApplySupersetMembership}
             onRemoveFromSuperset={isEmom ? undefined : handleRemoveFromSuperset}
             onApplyEmomGroupMembership={isEmom ? handleApplyEmomGroupMembership : undefined}

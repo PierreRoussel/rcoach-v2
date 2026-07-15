@@ -27,6 +27,7 @@ export type WorkoutRecapData = {
   endedAt: string
   volumeKg: number
   completedSets: number
+  sessionMode?: 'circuit' | 'emom'
   estimatedCaloriesKcal: number
   records: PersonalRecordHit[]
   heartRate?: HeartRateRecap | null
@@ -151,10 +152,12 @@ export function WorkoutRecapDialog({
           />
         ) : null}
 
-        <p className="text-center font-data text-xs text-muted-foreground">
-          {recap.completedSets}{' '}
-          {recap.completedSets > 1 ? 'séries validées' : 'série validée'}
-        </p>
+        {recap.sessionMode !== 'emom' ? (
+          <p className="text-center font-data text-xs text-muted-foreground">
+            {recap.completedSets}{' '}
+            {recap.completedSets > 1 ? 'séries validées' : 'série validée'}
+          </p>
+        ) : null}
 
         {recap.heartRate ? (
           <div className="grid grid-cols-2 gap-2">

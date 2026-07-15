@@ -3,8 +3,10 @@ import { useEffect, useRef } from 'react'
 
 import { closeTopOverlayLayer } from '@/lib/navigation/close-top-overlay'
 import {
-  getExercisePickerSession,
+  buildExercisePickerReturnNavigationState,
   clearExercisePickerSession,
+  getExercisePickerSession,
+  shouldDeferTemplateSessionClear,
   type ExercisePickerReturnTo,
 } from '@/lib/workout/exercise-picker-session'
 
@@ -36,7 +38,9 @@ function pushExerciseAddBackTrap() {
 }
 
 export function navigateExerciseAddBack(
-  navigate: (options: ExercisePickerReturnTo & { replace?: boolean }) => void | Promise<void>,
+  navigate: (
+    options: ExercisePickerReturnTo & { replace?: boolean; state?: unknown },
+  ) => void | Promise<void>,
   fallbackReturnTo?: ExercisePickerReturnTo,
 ) {
   const session = getExercisePickerSession()
@@ -45,15 +49,29 @@ export function navigateExerciseAddBack(
     return
   }
 
+  const returnNavigationState = buildExercisePickerReturnNavigationState()
+  const deferSessionClear = shouldDeferTemplateSessionClear()
+  const navigationState =
+    returnNavigationState && deferSessionClear
+      ? { scrollToExerciseId: returnNavigationState.scrollToExerciseId }
+      : returnNavigationState
+
   void navigate({
     ...returnTo,
     replace: true,
     viewTransition: false,
+    ...(navigationState ? { state: navigationState } : {}),
   })
+
+  if (!deferSessionClear) {
+    clearExercisePickerSession()
+  }
 }
 
 export function handleExerciseAddPageBack(
-  navigate: (options: ExercisePickerReturnTo & { replace?: boolean }) => void | Promise<void>,
+  navigate: (
+    options: ExercisePickerReturnTo & { replace?: boolean; state?: unknown },
+  ) => void | Promise<void>,
   fallbackReturnTo?: ExercisePickerReturnTo,
 ) {
   if (closeTopOverlayLayer()) {
@@ -86,13 +104,25 @@ export function useExerciseAddBackNavigation() {
       handlingBackRef.current = true
       const session = getExercisePickerSession()
       if (session) {
+        const returnNavigationState = buildExercisePickerReturnNavigationState()
+        const deferSessionClear = shouldDeferTemplateSessionClear()
+        const navigationState =
+          returnNavigationState && deferSessionClear
+            ? { scrollToExerciseId: returnNavigationState.scrollToExerciseId }
+            : returnNavigationState
+
         void navigate({
           ...session.returnTo,
           replace: true,
           viewTransition: false,
+          ...(navigationState ? { state: navigationState } : {}),
         } as Parameters<typeof navigate>[0]).finally(() => {
           handlingBackRef.current = false
         })
+
+        if (!deferSessionClear) {
+          clearExercisePickerSession()
+        }
       } else {
         handlingBackRef.current = false
       }
@@ -104,9 +134,10 @@ export function useExerciseAddBackNavigation() {
 }
 
 export function cancelExerciseAddNavigation(
-  navigate: (options: ExercisePickerReturnTo & { replace?: boolean }) => void | Promise<void>,
+  navigate: (
+    options: ExercisePickerReturnTo & { replace?: boolean; state?: unknown },
+  ) => void | Promise<void>,
   fallbackReturnTo?: ExercisePickerReturnTo,
 ) {
-  clearExercisePickerSession()
   navigateExerciseAddBack(navigate, fallbackReturnTo)
 }

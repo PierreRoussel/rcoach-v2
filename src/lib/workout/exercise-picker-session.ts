@@ -29,15 +29,15 @@ type ExercisePickerState = {
   session: ExercisePickerSession | null
   pendingAdds: Exercise[]
   completedResult: ExercisePickerResult | null
+  scrollTargetExerciseId: string | null
 }
 
 let state: ExercisePickerState = {
   session: null,
   pendingAdds: [],
   completedResult: null,
+  scrollTargetExerciseId: null,
 }
-
-let templateRemountPendingAdds: Exercise[] = []
 
 export function getExercisePickerSession() {
   return state.session
@@ -62,6 +62,18 @@ export function clearExercisePickerSession() {
     session: null,
     pendingAdds: [],
     completedResult: null,
+    scrollTargetExerciseId: null,
+  }
+}
+
+export function markExercisePickerScrollTarget(exerciseId: string) {
+  if (!state.session) {
+    return
+  }
+
+  state = {
+    ...state,
+    scrollTargetExerciseId: exerciseId,
   }
 }
 
@@ -122,18 +134,41 @@ export function consumeExercisePickerOutcome(): ExercisePickerOutcome | null {
     completedResult: state.completedResult,
   }
 
-  if (outcome.pendingAdds.length > 0) {
-    templateRemountPendingAdds = outcome.pendingAdds
-  }
-
   clearExercisePickerSession()
   return outcome
 }
 
-export function takeTemplateRemountPendingAdds() {
-  const pending = templateRemountPendingAdds
-  templateRemountPendingAdds = []
-  return pending
+export function buildExercisePickerReturnNavigationState():
+  | ExercisePickerNavigationState
+  | undefined {
+  if (!state.session || state.session.mode !== 'add') {
+    return undefined
+  }
+
+  const scrollToExerciseId =
+    state.scrollTargetExerciseId ??
+    state.pendingAdds[state.pendingAdds.length - 1]?.id
+
+  if (state.session.context === 'template' && state.pendingAdds.length > 0) {
+    return {
+      exercisePickerAdds: [...state.pendingAdds],
+      scrollToExerciseId,
+    }
+  }
+
+  if (
+    (state.session.context === 'active' || state.session.context === 'replace') &&
+    scrollToExerciseId
+  ) {
+    return { scrollToExerciseId }
+  }
+
+  return undefined
+}
+
+export type ExercisePickerNavigationState = {
+  exercisePickerAdds?: Exercise[]
+  scrollToExerciseId?: string
 }
 
 export function peekExercisePickerExcludeIds() {
@@ -146,6 +181,26 @@ export function peekExercisePickerPendingAdds() {
 
 export function hasExercisePickerPendingWork() {
   return state.pendingAdds.length > 0 || state.completedResult != null
+}
+
+export function shouldKeepTemplateAddSessionForConsumer() {
+  return (
+    state.session?.context === 'template' &&
+    state.session.mode === 'add' &&
+    state.pendingAdds.length > 0
+  )
+}
+
+export function shouldDeferTemplateSessionClear() {
+  if (state.session?.context !== 'template') {
+    return false
+  }
+
+  return state.pendingAdds.length > 0 || state.completedResult != null
+}
+
+export function peekExercisePickerScrollTarget() {
+  return state.scrollTargetExerciseId
 }
 
 function normalizePathname(pathname: string) {

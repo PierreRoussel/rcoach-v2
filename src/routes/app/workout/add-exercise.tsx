@@ -27,10 +27,10 @@ import type { Exercise } from '@/lib/graphql/operations'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { MUSCLE_GROUPS } from '@/lib/workout/exercise-meta'
 import {
-  addPendingExercise,
   completeExercisePicker,
   excludeExerciseFromPicker,
   getExercisePickerSession,
+  markExercisePickerScrollTarget,
   peekExercisePickerExcludeIds,
   type ExercisePickerReturnTo,
 } from '@/lib/workout/exercise-picker-session'
@@ -220,7 +220,10 @@ function AddExercisePage() {
         await addExerciseToStore(exercise)
         break
       case 'template':
-        addPendingExercise(exercise)
+        completeExercisePicker({
+          exercise,
+          mode: 'add',
+        })
         break
       case 'program': {
         if (!pickerSession.programId || !pickerSession.programDayId) {
@@ -242,6 +245,7 @@ function AddExercisePage() {
     }
 
     excludeExerciseFromPicker(exercise.id)
+    markExercisePickerScrollTarget(exercise.id)
     if (!options?.skipLocalExcludeUpdate) {
       setExcludeIds((current) =>
         current.includes(exercise.id) ? current : [...current, exercise.id],
@@ -318,8 +322,7 @@ function AddExercisePage() {
       }
 
       if (pickerSession.context === 'active' || pickerSession.context === 'replace') {
-        await addExerciseToStore(detailExercise)
-        excludeExerciseFromPicker(detailExercise.id)
+        await applyExerciseAdd(detailExercise)
         setDetailExercise(null)
         navigateBack({ leavePage: true })
         return
