@@ -11,6 +11,7 @@ import {
 import {
   DEFAULT_RPE_VALUE,
   formatRpeDisplay,
+  formatRpeRepsInReserveHint,
   isRpeValue,
   RPE_VALUES,
   type RpeValue,
@@ -83,14 +84,24 @@ export function RpeDrawer({
                   type="button"
                   data-rpe-value={rpe}
                   className={cn(
-                    'flex w-full snap-center items-center justify-center rounded-2xl py-3 font-display text-2xl font-black tabular-nums transition-colors',
+                    'flex w-full snap-center items-center justify-between gap-3 rounded-2xl px-4 py-3 transition-colors',
                     isSelected
                       ? 'bg-soft-primary text-soft-primary-fg'
                       : 'text-foreground hover:bg-muted/50',
                   )}
                   onClick={() => handleSelect(rpe)}
                 >
-                  {formatRpeDisplay(rpe)}
+                  <span className="font-display text-2xl font-black tabular-nums">
+                    {formatRpeDisplay(rpe)}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-right text-sm font-medium leading-snug',
+                      isSelected ? 'text-soft-primary-fg/80' : 'text-muted-foreground',
+                    )}
+                  >
+                    {formatRpeRepsInReserveHint(rpe)}
+                  </span>
                 </button>
               )
             })}

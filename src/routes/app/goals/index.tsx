@@ -10,25 +10,45 @@ export const Route = createFileRoute('/app/goals/')({
         ? previewWeightGoalSetupRaw
         : null
 
+    const previewWeightMilestoneRaw = search.previewWeightMilestone
+    const previewWeightMilestoneParsed =
+      typeof previewWeightMilestoneRaw === 'number'
+        ? previewWeightMilestoneRaw
+        : typeof previewWeightMilestoneRaw === 'string'
+          ? Number.parseInt(previewWeightMilestoneRaw, 10)
+          : null
+    const previewWeightMilestone =
+      previewWeightMilestoneParsed != null &&
+      Number.isFinite(previewWeightMilestoneParsed) &&
+      previewWeightMilestoneParsed >= 1
+        ? previewWeightMilestoneParsed
+        : null
+
     return {
       previewWeightGoalReached:
         search.previewWeightGoalReached === '1' ||
         search.previewWeightGoalReached === 1 ||
         search.previewWeightGoalReached === true,
       previewWeightGoalSetup,
+      previewWeightMilestone,
     }
   },
   component: AppGoalsPage,
 })
 
 function AppGoalsPage() {
-  const { previewWeightGoalReached, previewWeightGoalSetup } = Route.useSearch()
+  const {
+    previewWeightGoalReached,
+    previewWeightGoalSetup,
+    previewWeightMilestone,
+  } = Route.useSearch()
 
   return (
     <div className="space-y-4">
       <GoalsPage
         previewWeightGoalReached={previewWeightGoalReached}
         previewWeightGoalSetup={previewWeightGoalSetup}
+        previewWeightMilestone={previewWeightMilestone}
       />
     </div>
   )

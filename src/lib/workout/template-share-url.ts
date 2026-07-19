@@ -1,3 +1,5 @@
+import { resolvePublicAppOrigin } from '@/lib/app/public-origin'
+
 export function buildTemplateShareUrl(shareToken: string) {
-  return `${window.location.origin}/share/template/${shareToken}`
+  return `${resolvePublicAppOrigin()}/share/template/${shareToken}`
 }

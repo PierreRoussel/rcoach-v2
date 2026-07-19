@@ -1,3 +1,5 @@
+import { resolvePublicAppOrigin } from '@/lib/app/public-origin'
+
 export function buildWorkoutShareUrl(shareToken: string) {
-  return `${window.location.origin}/share/workout/${shareToken}`
+  return `${resolvePublicAppOrigin()}/share/workout/${shareToken}`
 }

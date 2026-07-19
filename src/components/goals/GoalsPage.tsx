@@ -62,11 +62,13 @@ function formatWeeklyRate(weeklyRateKg: number) {
 type GoalsPageProps = {
   previewWeightGoalReached?: boolean
   previewWeightGoalSetup?: 'lose' | 'gain' | null
+  previewWeightMilestone?: number | null
 }
 
 export function GoalsPage({
   previewWeightGoalReached = false,
   previewWeightGoalSetup = null,
+  previewWeightMilestone = null,
 }: GoalsPageProps) {
   const { user } = useAuth()
   const { data: goal, isLoading: goalLoading } = useResolvedWeightGoal()
@@ -136,6 +138,15 @@ export function GoalsPage({
 
     openCelebration(goal)
   }, [previewWeightGoalReached, goal, openCelebration])
+
+  useEffect(() => {
+    if (previewWeightMilestone == null) {
+      return
+    }
+
+    setMilestoneCount(previewWeightMilestone)
+    setMilestoneOpen(true)
+  }, [previewWeightMilestone])
 
   const handleSwitchToMaintain = useCallback(
     async ({

@@ -1,17 +1,20 @@
 import { generatePKCEPair } from '@nhost/nhost-js/auth'
-import type { NhostClient } from '@nhost/nhost-js'
+import type { NhostClient, Session } from '@nhost/nhost-js'
 import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 
 import {
-  detectUserLocale,
-  resolveLocaleForAuthEmails,
-  type UserLocale,
-} from '@/lib/i18n/user-locale'
-
-import { consumePkceVerifier, persistPkceVerifier } from './pkce-verifier-store'
+  clearPkceVerifier,
+  persistPkceVerifier,
+  readPkceVerifier,
+} from './pkce-verifier-store'
 
 export { PKCE_VERIFIER_KEY } from './pkce-verifier-store'
+
+const pendingAuthCodeExchanges = new Map<string, Promise<Session>>()
+
+const PKCE_SESSION_MISSING_MESSAGE =
+  'Session de vérification introuvable. Rouvrez le lien depuis le même navigateur (et la même origine) que celui où vous avez demandé le reset ou Google — évitez de mélanger localhost et 127.0.0.1, et les navigateurs intégrés des apps mail.'
 
 export async function storePkceChallenge(): Promise<string> {
   const { verifier, challenge } = await generatePKCEPair()
@@ -83,38 +86,46 @@ export async function redirectToGoogleSignIn(nhost: NhostClient) {
 }
 
 export async function exchangeAuthCode(nhost: NhostClient, code: string) {
-  const codeVerifier = await consumePkceVerifier()
-
-  if (!codeVerifier) {
-    throw new Error(
-      'Session de vérification introuvable. Relancez Google depuis le même navigateur (évitez de mélanger localhost et 127.0.0.1). Sur l’app Android, mettez à jour l’APK si le problème persiste.',
-    )
+  const existing = pendingAuthCodeExchanges.get(code)
+  if (existing) {
+    return existing
   }
 
-  const response = await nhost.auth.tokenExchange({ code, codeVerifier })
+  const exchangePromise = (async () => {
+    const codeVerifier = await readPkceVerifier()
 
-  if (response.status !== 200 || response.body.session == null) {
-    throw new Error('La vérification a échoué. Le lien est peut-être expiré.')
+    if (!codeVerifier) {
+      throw new Error(PKCE_SESSION_MISSING_MESSAGE)
+    }
+
+    const response = await nhost.auth.tokenExchange({ code, codeVerifier })
+
+    if (response.status !== 200 || response.body.session == null) {
+      throw new Error('La vérification a échoué. Le lien est peut-être expiré.')
+    }
+
+    await clearPkceVerifier()
+    return response.body.session
+  })()
+
+  pendingAuthCodeExchanges.set(code, exchangePromise)
+
+  try {
+    return await exchangePromise
+  } catch (error) {
+    pendingAuthCodeExchanges.delete(code)
+    throw error
   }
-
-  return response.body.session
 }
 
-export async function requestPasswordResetEmail(
-  nhost: NhostClient,
-  email: string,
-  locale?: UserLocale,
-) {
+export async function requestPasswordResetEmail(nhost: NhostClient, email: string) {
   const codeChallenge = await storePkceChallenge()
-  const sessionLocale = nhost.getUserSession()?.user?.locale
-  const resolvedLocale =
-    locale ?? resolveLocaleForAuthEmails(sessionLocale)
 
+  // Password reset options only allow redirectTo — locale is taken from auth.users.
   return nhost.auth.sendPasswordResetEmail({
     email,
     codeChallenge,
     options: {
-      locale: resolvedLocale,
       redirectTo: `${resolveOAuthRedirectOrigin()}/auth/verify?flow=reset`,
     },
   })

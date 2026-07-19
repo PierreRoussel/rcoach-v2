@@ -120,7 +120,7 @@ export function ActiveWorkoutCircuit({
   const targetStep =
     nextPendingStepIndex != null ? steps[nextPendingStepIndex] ?? null : null
   const targetStepKey = targetStep ? stepKey(targetStep) : null
-  const activeExerciseIndex = targetStep?.exerciseIndex ?? 0
+  const activeExerciseIndex = targetStep?.exerciseIndex ?? -1
   const lastAutoScrolledStepKeyRef = useRef<string | null>(null)
   const [reorderOpen, setReorderOpen] = useState(false)
   const [statsExercise, setStatsExercise] = useState<ExerciseStatsDrawerTarget | null>(
@@ -159,34 +159,19 @@ export function ActiveWorkoutCircuit({
       return
     }
 
-    let cancelled = false
-    let cancelScroll: (() => void) | undefined
+    // Mark before scrolling so Strict Mode remounts / cleanup don't retrigger.
+    lastAutoScrolledStepKeyRef.current = targetStepKey
 
-    const frame = window.requestAnimationFrame(() => {
-      if (cancelled) {
-        return
-      }
-
-      cancelScroll = scrollElementIntoViewWhenReady(
-        () =>
-          document.querySelector(
-            `[data-circuit-step-key="${CSS.escape(targetStepKey)}"]`,
-          ) as HTMLDivElement | null,
-        {
-          behavior: 'smooth',
-          block: 'center',
-          onScroll: () => {
-            lastAutoScrolledStepKeyRef.current = targetStepKey
-          },
-        },
-      )
-    })
-
-    return () => {
-      cancelled = true
-      window.cancelAnimationFrame(frame)
-      cancelScroll?.()
-    }
+    return scrollElementIntoViewWhenReady(
+      () =>
+        document.querySelector(
+          `[data-circuit-step-key="${CSS.escape(targetStepKey)}"]`,
+        ) as HTMLDivElement | null,
+      {
+        behavior: 'smooth',
+        block: 'center',
+      },
+    )
   }, [exercises.length, targetStepKey])
 
   function handleCompleteStep(exerciseIndex: number, setIndex: number) {

@@ -99,6 +99,8 @@ export function useOverlayBackClose(
   const closingFromPopStateRef = useRef(false)
   const closingFromRouteChangeRef = useRef(false)
   const entryRef = useRef<OverlayStackEntry | null>(null)
+  const onOpenChangeRef = useRef(onOpenChange)
+  onOpenChangeRef.current = onOpenChange
   const locationKey = useRouterState({
     select: (state) => state.location.href,
   })
@@ -118,7 +120,7 @@ export function useOverlayBackClose(
       closeFromBack: () => {
         closingFromPopStateRef.current = true
         historyPushedRef.current = false
-        onOpenChange(false)
+        onOpenChangeRef.current(false)
       },
     }
     entryRef.current = entry
@@ -131,7 +133,7 @@ export function useOverlayBackClose(
         entryRef.current = null
       }
     }
-  }, [enabled, onOpenChange, open, resolvedHistoryKey])
+  }, [enabled, open, resolvedHistoryKey])
 
   useEffect(() => {
     if (!enabled || !open) {
@@ -153,13 +155,13 @@ export function useOverlayBackClose(
       removeOverlayEntry(entry)
     }
 
-    onOpenChange(false)
-  }, [enabled, locationKey, onOpenChange, open])
+    onOpenChangeRef.current(false)
+  }, [enabled, locationKey, open])
 
   return useCallback(
     (next: boolean) => {
       if (!enabled) {
-        onOpenChange(next)
+        onOpenChangeRef.current(next)
         return
       }
 
@@ -167,11 +169,11 @@ export function useOverlayBackClose(
         if (closingFromPopStateRef.current || closingFromRouteChangeRef.current) {
           closingFromPopStateRef.current = false
           closingFromRouteChangeRef.current = false
-          onOpenChange(false)
+          onOpenChangeRef.current(false)
           return
         }
 
-        onOpenChange(false)
+        onOpenChangeRef.current(false)
 
         const entry = entryRef.current
         if (entry) {
@@ -188,8 +190,8 @@ export function useOverlayBackClose(
         return
       }
 
-      onOpenChange(next)
+      onOpenChangeRef.current(next)
     },
-    [enabled, onOpenChange, open, resolvedHistoryKey],
+    [enabled, open, resolvedHistoryKey],
   )
 }

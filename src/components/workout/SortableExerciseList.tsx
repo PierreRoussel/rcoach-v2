@@ -8,7 +8,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { BarChart2, ChevronDown, GripVertical, Info, Link2, ListOrdered, MoreVertical, Plus, Replace, Trash2, Unlink } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useLayoutEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
@@ -302,16 +302,19 @@ function SortableExerciseItem({
 
   const exerciseComplete = isExerciseComplete(exercise.sets)
   const [open, setOpen] = useState(() => !exerciseComplete)
+  const wasActiveRef = useRef(isActive)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (exerciseComplete) {
-      setOpen((current) => (current ? false : current))
+      setOpen(false)
       return
     }
 
-    if (isActive) {
-      setOpen((current) => (current ? current : true))
+    if (isActive && !wasActiveRef.current) {
+      setOpen(true)
     }
+
+    wasActiveRef.current = isActive
   }, [exerciseComplete, isActive])
 
   const inSuperset = exercise.supersetId != null
@@ -493,16 +496,7 @@ function SortableExerciseItem({
 
   if (hasSetsSection) {
     return (
-      <Collapsible
-        open={open}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen && isActive && !exerciseComplete) {
-            return
-          }
-
-          setOpen(nextOpen)
-        }}
-      >
+      <Collapsible open={open} onOpenChange={setOpen}>
         {card}
       </Collapsible>
     )

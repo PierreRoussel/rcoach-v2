@@ -13,12 +13,41 @@ function readBrowserVerifier(): string | null {
   }
 }
 
-function clearBrowserVerifier() {
+async function readNativeVerifier(): Promise<string | null> {
+  if (!Capacitor.isNativePlatform()) {
+    return null
+  }
+
+  try {
+    const { Preferences } = await import('@capacitor/preferences')
+    const stored = await Preferences.get({ key: PKCE_VERIFIER_KEY })
+    return stored.value
+  } catch {
+    return null
+  }
+}
+
+export async function readPkceVerifier(): Promise<string | null> {
+  return readBrowserVerifier() ?? (await readNativeVerifier())
+}
+
+export async function clearPkceVerifier(): Promise<void> {
   try {
     localStorage.removeItem(PKCE_VERIFIER_KEY)
     sessionStorage.removeItem(PKCE_VERIFIER_KEY)
   } catch {
     // Ignore storage errors.
+  }
+
+  if (!Capacitor.isNativePlatform()) {
+    return
+  }
+
+  try {
+    const { Preferences } = await import('@capacitor/preferences')
+    await Preferences.remove({ key: PKCE_VERIFIER_KEY })
+  } catch {
+    // Ignore cleanup errors.
   }
 }
 
@@ -42,29 +71,9 @@ export async function persistPkceVerifier(verifier: string): Promise<void> {
   }
 }
 
+/** @deprecated Prefer readPkceVerifier + clearPkceVerifier after a successful exchange. */
 export async function consumePkceVerifier(): Promise<string | null> {
-  let verifier = readBrowserVerifier()
-
-  if (!verifier && Capacitor.isNativePlatform()) {
-    try {
-      const { Preferences } = await import('@capacitor/preferences')
-      const stored = await Preferences.get({ key: PKCE_VERIFIER_KEY })
-      verifier = stored.value
-    } catch {
-      verifier = null
-    }
-  }
-
-  clearBrowserVerifier()
-
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const { Preferences } = await import('@capacitor/preferences')
-      await Preferences.remove({ key: PKCE_VERIFIER_KEY })
-    } catch {
-      // Ignore cleanup errors.
-    }
-  }
-
+  const verifier = await readPkceVerifier()
+  await clearPkceVerifier()
   return verifier
 }

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { useRouterState } from '@tanstack/react-router'
 
 import { MotivationRevealOverlay } from '@/components/social/MotivationRevealOverlay'
 import { UserAvatar } from '@/components/profile/UserAvatar'
@@ -8,22 +7,11 @@ import { useHomeMotivationNotifications } from '@/hooks/useFriends'
 import type { MotivationNotification } from '@/lib/social/motivation-notifications'
 import { cn } from '@/lib/utils'
 
-function isAppHomePath(pathname: string) {
-  return pathname === '/app' || pathname === '/app/'
-}
-
 export function MotivationHomeNotificationTile() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const { latest, notifications, isPending, refetch } = useHomeMotivationNotifications()
+  const { latest, notifications, isPending } = useHomeMotivationNotifications()
   const [activeNotification, setActiveNotification] = useState<MotivationNotification | null>(
     null,
   )
-
-  useEffect(() => {
-    if (isAppHomePath(pathname)) {
-      void refetch()
-    }
-  }, [pathname, refetch])
 
   if (isPending || !latest) {
     return null

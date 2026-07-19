@@ -34,6 +34,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
   const [info, setInfo] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSendingReset, setIsSendingReset] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState(false)
 
   const validation = useMemo(
     () => validateNewPassword(newPassword, currentPassword),
@@ -83,6 +84,10 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
   }
 
   async function handleSendResetEmail() {
+    if (isSendingReset || resetEmailSent) {
+      return
+    }
+
     setError(null)
     setInfo(null)
     setIsSendingReset(true)
@@ -95,7 +100,10 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
         return
       }
 
-      setInfo('Un email de réinitialisation a été envoyé si cette adresse existe.')
+      setResetEmailSent(true)
+      setInfo(
+        'Lien envoyé. Vérifiez votre boîte mail (et les spams) pour réinitialiser votre mot de passe.',
+      )
     } catch {
       setError("Impossible d'envoyer l'email de réinitialisation.")
     } finally {
@@ -185,10 +193,14 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
           type="button"
           variant="outline"
           className="rounded-full"
-          disabled={isSendingReset}
+          disabled={isSendingReset || resetEmailSent}
           onClick={() => void handleSendResetEmail()}
         >
-          {isSendingReset ? 'Envoi...' : 'Mot de passe oublié ?'}
+          {isSendingReset
+            ? 'Envoi...'
+            : resetEmailSent
+              ? 'Lien envoyé'
+              : 'Mot de passe oublié ?'}
         </Button>
       </div>
 

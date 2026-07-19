@@ -16,17 +16,24 @@ export const Route = createFileRoute('/auth/forgot-password')({
   component: ForgotPasswordPage,
 })
 
+const RESET_SUCCESS_MESSAGE =
+  'Lien envoyé. Vérifiez votre boîte mail (et les spams) pour réinitialiser votre mot de passe.'
+
 function ForgotPasswordPage() {
   const { nhost } = useAuth()
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [info, setInfo] = useState<string | null>(null)
+  const [emailSent, setEmailSent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+
+    if (isSubmitting || emailSent) {
+      return
+    }
+
     setError(null)
-    setInfo(null)
     setIsSubmitting(true)
 
     try {
@@ -37,7 +44,7 @@ function ForgotPasswordPage() {
         return
       }
 
-      setInfo('Un email de réinitialisation a été envoyé si cette adresse existe.')
+      setEmailSent(true)
     } catch {
       setError("Impossible d'envoyer l'email de réinitialisation.")
     } finally {
@@ -69,21 +76,35 @@ function ForgotPasswordPage() {
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              if (emailSent) {
+                setEmailSent(false)
+                setError(null)
+              }
+            }}
             required
+            disabled={isSubmitting}
             className="h-12"
           />
         </FormField>
         {error ? <FormMessage>{error}</FormMessage> : null}
-        {info ? <FeedbackMessage variant="success">{info}</FeedbackMessage> : null}
+        {emailSent ? (
+          <FeedbackMessage variant="success">{RESET_SUCCESS_MESSAGE}</FeedbackMessage>
+        ) : null}
         <Button
           className="h-12 w-full rounded-full"
           variant="pill"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || emailSent}
         >
-          {isSubmitting ? 'Envoi...' : 'Envoyer le lien'}
+          {isSubmitting ? 'Envoi...' : emailSent ? 'Lien envoyé' : 'Envoyer le lien'}
         </Button>
+        {emailSent ? (
+          <p className="text-center text-xs text-muted-foreground">
+            Vous pouvez modifier l’email ci-dessus pour renvoyer un lien à une autre adresse.
+          </p>
+        ) : null}
       </form>
     </AuthMobileShell>
   )

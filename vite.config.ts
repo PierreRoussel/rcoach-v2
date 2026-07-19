@@ -49,6 +49,13 @@ export default defineConfig(({ mode }) => {
         background_color: '#F7F5FB',
         display: 'standalone',
         start_url: '/app',
+        // Keep share routes (/share/…) inside the installed PWA scope.
+        scope: '/',
+        // Prefer opening in-scope links in the installed PWA when the OS allows it.
+        handle_links: 'preferred',
+        launch_handler: {
+          client_mode: ['navigate-existing', 'auto'],
+        },
         icons: [
           {
             src: '/pwa-192.png',

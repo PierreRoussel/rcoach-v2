@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { AuthMobileShell } from '@/components/auth/AuthMobileShell'
@@ -25,6 +25,7 @@ function VerifyPage() {
   const search = Route.useSearch()
   const [status, setStatus] = useState<'verifying' | 'error'>('verifying')
   const [error, setError] = useState<string | null>(null)
+  const verifiedCodeRef = useRef<string | null>(null)
 
   useEffect(() => {
     const oauthError = search.error
@@ -41,6 +42,11 @@ function VerifyPage() {
       setError('Lien de vérification invalide.')
       return
     }
+
+    if (verifiedCodeRef.current === code) {
+      return
+    }
+    verifiedCodeRef.current = code
 
     async function verify() {
       if (!code) {
@@ -67,6 +73,7 @@ function VerifyPage() {
         const destination = await resolveDefaultAuthenticatedPath()
         await navigate({ to: destination })
       } catch (verifyError) {
+        verifiedCodeRef.current = null
         setStatus('error')
         setError(
           verifyError instanceof Error

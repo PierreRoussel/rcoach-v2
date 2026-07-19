@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { format, startOfDay, subDays, subWeeks } from 'date-fns'
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 
 import {
   COUNT_UNREAD_MOTIVATIONS,
@@ -49,8 +49,8 @@ export const UNREAD_MOTIVATIONS_KEY = ['friend-motivations', 'unread']
 const SENT_MOTIVATIONS_KEY = ['friend-motivations', 'sent']
 
 const MOTIVATION_QUERY_OPTIONS = {
-  staleTime: 5_000,
-  refetchOnMount: 'always' as const,
+  staleTime: 60_000,
+  refetchOnMount: false,
   refetchOnReconnect: true,
 }
 
@@ -103,12 +103,17 @@ export function useHomeMotivationNotifications() {
     [incoming.data, replies.data],
   )
 
+  const refetch = useCallback(
+    () => Promise.all([incoming.refetch(), replies.refetch()]),
+    [incoming.refetch, replies.refetch],
+  )
+
   return {
     notifications,
     latest: notifications[0] ?? null,
     isPending: incoming.isPending || replies.isPending,
     isError: incoming.isError || replies.isError,
-    refetch: () => Promise.all([incoming.refetch(), replies.refetch()]),
+    refetch,
   }
 }
 
@@ -331,7 +336,11 @@ export function useUnreadMotivations(options?: { enabled?: boolean }) {
           { userId: userId! },
         )
         return data.friend_motivations
-      } catch {
+      } catch (error) {
+        if (!isUnreadMotivationsSchemaError(error)) {
+          throw error
+        }
+
         const data = await graphqlRequest<{ friend_motivations: FriendMotivation[] }>(
           nhost,
           LIST_UNREAD_MOTIVATIONS_LEGACY,
@@ -408,6 +417,16 @@ export function useSentMotivations() {
 function isSenderReplySeenSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : ''
   return message.includes('sender_reply_seen_at')
+}
+
+function isUnreadMotivationsSchemaError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  return (
+    message.includes('is_premium') ||
+    message.includes("field 'sender'") ||
+    message.includes('field "sender"') ||
+    message.includes('sender_reply_seen_at')
+  )
 }
 
 async function invalidateSocialQueries(queryClient: ReturnType<typeof useQueryClient>) {
