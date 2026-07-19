@@ -9,7 +9,8 @@ alwaysApply: false
 ## Client & session
 
 - Singleton `nhost` dans `AuthProvider.tsx` ; `useAuth()` partout
-- `AuthQuerySync` vide React Query + cache nutrition au changement d'utilisateur
+- Sync cross-onglets : `session-cross-tab-sync.ts` (événement `storage` + focus) car `sessionStorage.onChange` ne fire que dans l'onglet qui écrit
+- `AuthQuerySync` (dans `__root`) vide React Query + invalide le router au changement d'identité (login/logout/autre onglet)
 
 ## Email / mot de passe
 

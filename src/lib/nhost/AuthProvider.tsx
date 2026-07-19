@@ -10,6 +10,8 @@ import {
 
 import type { StoredSession } from '@nhost/nhost-js/session'
 
+import { subscribeCrossTabSessionSync } from '@/lib/auth/session-cross-tab-sync'
+
 const subdomain = import.meta.env.VITE_NHOST_SUBDOMAIN
 const region = import.meta.env.VITE_NHOST_REGION
 
@@ -34,6 +36,17 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+function applySessionState(
+  nextSession: StoredSession | null,
+  setUser: (user: StoredSession['user'] | null) => void,
+  setSession: (session: StoredSession | null) => void,
+  setIsAuthenticated: (value: boolean) => void,
+) {
+  setUser(nextSession?.user ?? null)
+  setSession(nextSession)
+  setIsAuthenticated(Boolean(nextSession))
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<StoredSession['user'] | null>(null)
   const [session, setSession] = useState<StoredSession | null>(null)
@@ -53,18 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const currentSession = nhost.getUserSession()
-    setUser(currentSession?.user ?? null)
-    setSession(currentSession)
-    setIsAuthenticated(Boolean(currentSession))
+    applySessionState(currentSession, setUser, setSession, setIsAuthenticated)
     setIsLoading(false)
 
-    const unsubscribe = nhost.sessionStorage.onChange((nextSession) => {
-      setUser(nextSession?.user ?? null)
-      setSession(nextSession)
-      setIsAuthenticated(Boolean(nextSession))
+    const unsubscribeSession = nhost.sessionStorage.onChange((nextSession) => {
+      applySessionState(nextSession, setUser, setSession, setIsAuthenticated)
     })
+    const unsubscribeCrossTab = subscribeCrossTabSessionSync(nhost)
 
-    return unsubscribe
+    return () => {
+      unsubscribeSession()
+      unsubscribeCrossTab()
+    }
   }, [])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
