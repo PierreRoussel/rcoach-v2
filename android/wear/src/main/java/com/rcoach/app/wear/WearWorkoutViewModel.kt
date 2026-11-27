@@ -1,5 +1,6 @@
 package com.rcoach.app.wear
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -40,6 +41,7 @@ data class WearUiState(
 class WearWorkoutViewModel(
     private val repository: WearSyncRepository,
     private val defaultSessionTitle: String,
+    private val appContext: Context,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WearUiState())
     val uiState: StateFlow<WearUiState> = _uiState.asStateFlow()
@@ -47,6 +49,7 @@ class WearWorkoutViewModel(
     private var restJob: Job? = null
     private var totalSteps: Int = 0
     private var activeStepIndex: Int = 0
+    private var restCompleteHapticFired = false
 
     init {
         repository.onSnapshot = { json -> applySnapshot(json) }
@@ -155,6 +158,7 @@ class WearWorkoutViewModel(
             startLocalRestTimer(restSecondsLeft)
         } else {
             restJob?.cancel()
+            restCompleteHapticFired = false
         }
     }
 
@@ -208,6 +212,7 @@ class WearWorkoutViewModel(
 
     fun skipRest() {
         restJob?.cancel()
+        restCompleteHapticFired = false
         viewModelScope.launch {
             repository.sendCommand(JSONObject().put("type", "skipRest").toString())
         }
@@ -215,11 +220,18 @@ class WearWorkoutViewModel(
 
     private fun startLocalRestTimer(seconds: Int) {
         restJob?.cancel()
+        restCompleteHapticFired = false
         restJob = viewModelScope.launch {
             var remaining = seconds
             while (remaining >= 0) {
                 _uiState.value = _uiState.value.copy(isResting = true, restSecondsLeft = remaining)
-                if (remaining == 0) break
+                if (remaining == 0) {
+                    if (!restCompleteHapticFired) {
+                        restCompleteHapticFired = true
+                        WearHaptics.pulseRestComplete(appContext)
+                    }
+                    break
+                }
                 delay(1000)
                 remaining -= 1
             }

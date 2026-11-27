@@ -87,6 +87,7 @@ fun WearApp() {
         factory = WearWorkoutViewModelFactory(
             LocalWearSyncRepository.current,
             context.getString(R.string.wear_default_session_title),
+            context.applicationContext,
         ),
     )
     val state by viewModel.uiState.collectAsState()

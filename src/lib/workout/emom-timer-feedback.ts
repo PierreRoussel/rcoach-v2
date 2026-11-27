@@ -3,12 +3,11 @@ import {
   playRestCompleteBeep,
   playRestCountdownBeep,
 } from '@/lib/workout/rest-timer-audio'
-
-function vibrate(pattern: number | number[]) {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    navigator.vibrate(pattern)
-  }
-}
+import {
+  HAPTIC_COMPLETE_PATTERN,
+  vibrate,
+  vibrateSoftTick,
+} from '@/lib/workout/timer-haptics'
 
 function playCountdownSecond(secondsLeft: number) {
   if (secondsLeft === 3 || secondsLeft === 2 || secondsLeft === 1) {
@@ -21,19 +20,19 @@ export async function handleEmomTickEvents(events: EmomTickEvent[]) {
     switch (event.type) {
       case 'countdown_tick':
         playCountdownSecond(event.secondsLeft)
-        vibrate(35)
+        vibrateSoftTick()
         break
       case 'countdown_complete':
         void playRestCompleteBeep()
-        vibrate([50, 40, 50])
+        void vibrate(HAPTIC_COMPLETE_PATTERN)
         break
       case 'minute_start':
         void playRestCompleteBeep()
-        vibrate(70)
+        void vibrate(70)
         break
       case 'workout_complete':
         void playRestCompleteBeep()
-        vibrate([90, 45, 90])
+        void vibrate([90, 45, 90])
         break
       default:
         break
