@@ -17,7 +17,7 @@ Ce dépôt utilise des **Cursor rules** dans [`.cursor/rules/`](.cursor/rules/).
 | `60-rcoach-nutrition-offline.mdc` | Nutrition, diet | Cache Dexie, sync queue, policy |
 | `61-rcoach-workout-active.mdc` | Séance active | Zustand, circuit, Dexie draft |
 | `70-rcoach-coach.mdc` | `/coach` | ERP, rôles, layout |
-| `80-rcoach-tests.mdc` | `*.test.ts` | Vitest, périmètre |
+| `80-rcoach-tests.mdc` | `*.test.ts`, `e2e/**` | Vitest + Playwright e2e visuels |
 
 ## Démarrage rapide
 

@@ -42,7 +42,9 @@
     "cap:sync": "node scripts/verify-android-shell-dist.mjs && npx cap sync android && node scripts/patch-android-agp.mjs",
     "cap:open:android": "npx cap open android",
     "postinstall": "node scripts/patch-android-agp.mjs",
-    "generate:brand-assets": "python scripts/generate-brand-assets.py"
+    "generate:brand-assets": "python scripts/generate-brand-assets.py",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^7.5.0",
@@ -130,6 +132,7 @@
     "@graphql-codegen/client-preset": "^5.2.3",
     "@graphql-codegen/typescript": "^5.0.8",
     "@graphql-codegen/typescript-operations": "^5.0.8",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^24.12.3",

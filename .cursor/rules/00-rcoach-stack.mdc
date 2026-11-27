@@ -17,7 +17,8 @@ PWA coach/athlète (FR) : **React 19 + Vite 8 + TanStack Router/Query + Nhost (A
 | Package manager | npm | `10.8.2` |
 | TypeScript | strict | `6.0.3` |
 | Bundler | Vite | `8.1.0` |
-| Tests | Vitest (node) | `4.1.9` |
+| Tests unit | Vitest (node) | `4.1.9` |
+| Tests e2e visuels | Playwright (`@playwright/test`) | `1.61.1` |
 | Lint | ESLint flat + TS + react-hooks | `10.x` |
 
 ## Frontend
@@ -71,6 +72,7 @@ Web et Android partagent le même bundle Vite (`webDir: dist`). Pas de support i
 npm run typecheck
 npm run lint
 npm test
+npm run test:e2e         # si Acceptance UX / fichiers e2e/ touchés (gate locale, pas CI v1)
 npm run verify:graphql   # après changement schema Hasura
 npm run verify:routes    # après nouvelle route
 npm run build:android    # après changement Capacitor / natif
