@@ -12,10 +12,8 @@ import {
   type PerformanceSummary,
 } from '@/lib/workout/progressive-overload'
 import { requestExerciseContentEnrichment } from '@/lib/workout/enrich-exercise-content'
-import {
-  exerciseNameMatchesQuery,
-  resolveExerciseDisplayName,
-} from '@/lib/workout/translate-exercise-name'
+import { exerciseMatchesTextQuery } from '@/lib/workout/exercise-equipment-family'
+import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
 export function useAllExercises(options?: { enabled?: boolean }) {
@@ -138,22 +136,12 @@ export function filterExercises(
   query: string,
   muscleGroup: string | 'all',
 ) {
-  const normalized = query.trim().toLowerCase()
-
   return exercises.filter((exercise) => {
     if (muscleGroup !== 'all' && exercise.muscle_group !== muscleGroup) {
       return false
     }
 
-    if (!normalized) {
-      return true
-    }
-
-    return (
-      exerciseNameMatchesQuery(exercise, query) ||
-      exercise.muscle_group?.toLowerCase().includes(normalized) ||
-      exercise.equipment?.toLowerCase().includes(normalized)
-    )
+    return exerciseMatchesTextQuery(exercise, query)
   })
 }
 

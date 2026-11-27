@@ -12,9 +12,11 @@ import { useEffect, useRef, useState } from 'react'
 
 import { launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
+import { ExerciseEquipmentChips } from '@/components/workout/ExerciseEquipmentChips'
 import { SupersetMembershipDrawer } from '@/components/workout/SupersetMembershipDrawer'
 import { EmomGroupDrawer } from '@/components/workout/EmomGroupDrawer'
 import { Pill } from '@/design-system'
+import { useAllExercises } from '@/hooks/useExercises'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -35,6 +37,8 @@ import {
   wrapSortableDragEnd,
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
+import { siblingsForExercise } from '@/lib/workout/exercise-equipment-family'
+import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
 import { isExerciseComplete } from '@/lib/workout/format-exercise-collapsed-summary'
 import type { Exercise } from '@/lib/graphql/operations'
@@ -270,6 +274,8 @@ function SortableExerciseItem({
   renderSetsContent,
   renderBelowTitle,
   renderCollapsedSummary,
+  equipmentSiblings,
+  onSwapEquipment,
   supersetBadge,
 }: {
   exercise: ActiveExerciseEntry
@@ -295,6 +301,8 @@ function SortableExerciseItem({
   renderSetsContent?: (index: number) => ReactNode
   renderBelowTitle?: (index: number) => ReactNode
   renderCollapsedSummary?: (index: number) => string | null
+  equipmentSiblings?: Exercise[]
+  onSwapEquipment?: (exercise: Exercise) => void
   supersetBadge?: number
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -302,7 +310,11 @@ function SortableExerciseItem({
 
   const exerciseComplete = isExerciseComplete(exercise.sets)
   const [open, setOpen] = useState(() => !exerciseComplete)
+  const [equipmentOpen, setEquipmentOpen] = useState(false)
   const wasActiveRef = useRef(isActive)
+  const equipmentLabel = formatEquipmentLabel(exercise.equipment)
+  const canSwapEquipment =
+    Boolean(onSwapEquipment) && (equipmentSiblings?.length ?? 0) > 1
 
   useEffect(() => {
     if (exerciseComplete) {
@@ -416,6 +428,36 @@ function SortableExerciseItem({
                   </span>
                 ) : null}
               </div>
+              {equipmentLabel ? (
+                <div
+                  className="mt-1"
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  {canSwapEquipment ? (
+                    <button
+                      type="button"
+                      className="opacity-90"
+                      onClick={() => setEquipmentOpen((value) => !value)}
+                    >
+                      <Pill tone="default">{equipmentLabel}</Pill>
+                    </button>
+                  ) : (
+                    <Pill tone="default">{equipmentLabel}</Pill>
+                  )}
+                  {canSwapEquipment && equipmentOpen && equipmentSiblings ? (
+                    <ExerciseEquipmentChips
+                      className="mt-1.5"
+                      variants={equipmentSiblings}
+                      selectedId={exercise.exerciseId}
+                      onSelect={(variant) => {
+                        onSwapEquipment?.(variant)
+                        setEquipmentOpen(false)
+                      }}
+                    />
+                  ) : null}
+                </div>
+              ) : null}
               {open ? renderBelowTitle?.(index) : null}
               {showSetCount ? (
                 <p className="text-xs text-muted-foreground">{exercise.sets.length} sets</p>
@@ -572,6 +614,9 @@ export function SortableExerciseList({
 }: SortableExerciseListProps) {
   const navigate = useNavigate()
   const sensors = useSortableSensors()
+  const { data: catalogExercises = [] } = useAllExercises({
+    enabled: Boolean(onReplace),
+  })
   const [supersetAnchorIndex, setSupersetAnchorIndex] = useState<number | null>(null)
   const [emomGroupAnchorIndex, setEmomGroupAnchorIndex] = useState<number | null>(null)
 
@@ -608,11 +653,23 @@ export function SortableExerciseList({
     onReorder(oldIndex, newIndex)
   }
 
+  function equipmentSiblingsFor(entry: ActiveExerciseEntry): Exercise[] {
+    if (!onReplace || catalogExercises.length === 0) {
+      return []
+    }
+    const fromCatalog = catalogExercises.find((item) => item.id === entry.exerciseId)
+    if (!fromCatalog) {
+      return []
+    }
+    return siblingsForExercise(fromCatalog, catalogExercises)
+  }
+
   function renderItem(index: number) {
+    const entry = exercises[index]!
     return (
       <SortableExerciseItem
-        key={exercises[index]!.exerciseId}
-        exercise={exercises[index]!}
+        key={entry.exerciseId}
+        exercise={entry}
         index={index}
         exercises={exercises}
         isActive={index === activeIndex}
@@ -643,6 +700,10 @@ export function SortableExerciseList({
         renderSetsContent={renderSetsContent}
         renderBelowTitle={renderBelowTitle}
         renderCollapsedSummary={renderCollapsedSummary}
+        equipmentSiblings={equipmentSiblingsFor(entry)}
+        onSwapEquipment={
+          onReplace ? (variant) => onReplace(index, variant) : undefined
+        }
         supersetBadge={isSplitSuperset(exercises, index)}
       />
     )
