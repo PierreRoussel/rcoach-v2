@@ -61,28 +61,30 @@ export function SetPerformanceInputs({
 }: SetPerformanceInputsProps) {
   const isInline = variant === 'inline'
 
-  if (kind === 'timed' || kind === 'cardio') {
-    return (
-      <Input
-        inputMode="numeric"
-        placeholder="30"
-        value={formatDurationInput(values.durationSeconds)}
-        disabled={disabled}
-        className={fieldClass(variant, className)}
-        onFocus={() => onFieldFocus?.('durationSeconds')}
-        onChange={(event) => {
-          const parsed = parseDurationInput(event.target.value)
+  const durationInput = (
+    <Input
+      inputMode="numeric"
+      placeholder="30"
+      value={formatDurationInput(values.durationSeconds)}
+      disabled={disabled}
+      className={fieldClass(variant, className)}
+      onFocus={() => onFieldFocus?.('durationSeconds')}
+      onChange={(event) => {
+        const parsed = parseDurationInput(event.target.value)
+        onChange({ durationSeconds: parsed })
+      }}
+      onBlur={(event) => {
+        const parsed = parseDurationInput(event.target.value)
+        if (parsed != null) {
           onChange({ durationSeconds: parsed })
-        }}
-        onBlur={(event) => {
-          const parsed = parseDurationInput(event.target.value)
-          if (parsed != null) {
-            onChange({ durationSeconds: parsed })
-          }
-          onFieldBlur?.('durationSeconds', parsed)
-        }}
-      />
-    )
+        }
+        onFieldBlur?.('durationSeconds', parsed)
+      }}
+    />
+  )
+
+  if (kind === 'timed' || kind === 'cardio') {
+    return durationInput
   }
 
   if (kind === 'bodyweight' || kind === 'band') {
@@ -96,35 +98,45 @@ export function SetPerformanceInputs({
     )
   }
 
-  const fields = (
-    <>
-      <Input
-        inputMode="decimal"
-        placeholder={isInline ? '—' : 'kg'}
-        value={values.weightKg ?? ''}
-        disabled={disabled}
-        className={fieldClass(variant, className)}
-        onFocus={() => onFieldFocus?.('weightKg')}
-        onChange={(event) =>
-          onChange({
-            weightKg: event.target.value ? Number(event.target.value) : null,
-          })
-        }
-        onBlur={(event) =>
-          onFieldBlur?.(
-            'weightKg',
-            event.target.value ? Number(event.target.value) : null,
-          )
-        }
-      />
-      <RepsSelect
-        value={values.reps}
-        disabled={disabled}
-        variant={variant}
-        onChange={(reps) => onChange({ reps })}
-      />
-    </>
+  const weightInput = (
+    <Input
+      inputMode="decimal"
+      placeholder={isInline ? '—' : 'kg'}
+      value={values.weightKg ?? ''}
+      disabled={disabled}
+      className={fieldClass(variant, className)}
+      onFocus={() => onFieldFocus?.('weightKg')}
+      onChange={(event) =>
+        onChange({
+          weightKg: event.target.value ? Number(event.target.value) : null,
+        })
+      }
+      onBlur={(event) =>
+        onFieldBlur?.(
+          'weightKg',
+          event.target.value ? Number(event.target.value) : null,
+        )
+      }
+    />
   )
+
+  const fields =
+    kind === 'loaded_timed' ? (
+      <>
+        {weightInput}
+        {durationInput}
+      </>
+    ) : (
+      <>
+        {weightInput}
+        <RepsSelect
+          value={values.reps}
+          disabled={disabled}
+          variant={variant}
+          onChange={(reps) => onChange({ reps })}
+        />
+      </>
+    )
 
   if (!isInline) {
     return fields

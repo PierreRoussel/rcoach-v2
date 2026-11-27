@@ -32,6 +32,7 @@ import {
   playRestCompleteBeep,
   warmUpRestTimerAudio,
 } from '@/lib/workout/rest-timer-audio'
+import { notifyRestComplete } from '@/lib/workout/timer-haptics'
 import {
   DEFAULT_EMOM_INTERVAL_SECONDS,
   DEFAULT_SESSION_MODE,
@@ -389,8 +390,16 @@ function syncAfterExerciseStructureChange(exercises: ActiveExerciseEntry[]) {
   return syncWorkoutProgress(exercises, lastCompletedStep, lastCompletedStep)
 }
 
-function advanceAfterRest(get: () => ActiveWorkoutState, set: (partial: Partial<ActiveWorkoutState>) => void) {
-  void playRestCompleteBeep()
+function advanceAfterRest(
+  get: () => ActiveWorkoutState,
+  set: (partial: Partial<ActiveWorkoutState>) => void,
+  options?: { naturalEnd?: boolean },
+) {
+  if (options?.naturalEnd) {
+    notifyRestComplete()
+  } else {
+    void playRestCompleteBeep()
+  }
 
   const { exercises, lastCompletedStep } = get()
   const steps = buildCircuitSteps(exercises)
@@ -1171,7 +1180,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     const left = syncRestSecondsLeft(state.restEndsAt)
     if (left <= 0) {
-      advanceAfterRest(get, set)
+      advanceAfterRest(get, set, { naturalEnd: true })
       return
     }
 
@@ -1189,7 +1198,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       return
     }
 
-    advanceAfterRest(get, set)
+    advanceAfterRest(get, set, { naturalEnd: false })
   },
 
   startHold: (exerciseIndex, setIndex) => {

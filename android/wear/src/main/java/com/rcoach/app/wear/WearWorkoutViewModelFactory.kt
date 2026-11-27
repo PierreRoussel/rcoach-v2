@@ -14,10 +14,15 @@ val LocalWearSyncRepository = staticCompositionLocalOf<WearSyncRepository> {
 class WearWorkoutViewModelFactory(
     private val repository: WearSyncRepository,
     private val defaultSessionTitle: String,
+    private val appContext: android.content.Context,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return WearWorkoutViewModel(repository, defaultSessionTitle) as T
+        return WearWorkoutViewModel(
+            repository,
+            defaultSessionTitle,
+            appContext.applicationContext,
+        ) as T
     }
 }
 

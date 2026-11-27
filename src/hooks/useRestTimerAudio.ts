@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import { playRestCountdownBeep } from '@/lib/workout/rest-timer-audio'
+import { notifyRestCountdownTick } from '@/lib/workout/timer-haptics'
 
 export function useRestTimerAudio(isResting: boolean, restSecondsLeft: number) {
   const lastBeepSecondRef = useRef<number | null>(null)
@@ -26,5 +27,6 @@ export function useRestTimerAudio(isResting: boolean, restSecondsLeft: number) {
 
     lastBeepSecondRef.current = restSecondsLeft
     void playRestCountdownBeep(restSecondsLeft)
+    notifyRestCountdownTick(restSecondsLeft)
   }, [isResting, restSecondsLeft])
 }
