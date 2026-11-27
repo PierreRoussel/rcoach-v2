@@ -25,6 +25,7 @@ import {
 import { useRecentExercises } from '@/hooks/useRecentExercises'
 import type { Exercise } from '@/lib/graphql/operations'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import { MUSCLE_GROUP_LABELS } from '@/lib/stats/muscle-groups'
 import { MUSCLE_GROUPS } from '@/lib/workout/exercise-meta'
 import {
   completeExercisePicker,
@@ -428,7 +429,9 @@ function AddExercisePage() {
             onClick={() => setMuscleGroup(group)}
             className={muscleGroup === group ? 'opacity-100' : 'opacity-60'}
           >
-            <Pill tone={muscleGroup === group ? 'secondary' : 'default'}>{group}</Pill>
+            <Pill tone={muscleGroup === group ? 'secondary' : 'default'}>
+              {MUSCLE_GROUP_LABELS[group]}
+            </Pill>
           </button>
         ))}
       </div>

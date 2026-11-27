@@ -14,12 +14,14 @@ import { FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader, Pill } from '@/design-system'
-import { DisplayExerciseName } from '@/components/workout/DisplayExerciseName'
 import {
   filterExercises,
   useAllExercises,
   useCreateExercise,
 } from '@/hooks/useExercises'
+import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
+import { groupExercisesByFamily } from '@/lib/workout/exercise-equipment-family'
+import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
 import { EQUIPMENT, MUSCLE_GROUPS, inferExerciseMeta } from '@/lib/workout/exercise-meta'
 
 export const Route = createFileRoute('/app/exercises/')({
@@ -37,8 +39,8 @@ function ExercisesPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
 
-  const filtered = useMemo(
-    () => filterExercises(exercises, query, muscleGroup),
+  const filteredGroups = useMemo(
+    () => groupExercisesByFamily(filterExercises(exercises, query, muscleGroup)),
     [exercises, query, muscleGroup],
   )
 
@@ -101,7 +103,9 @@ function ExercisesPage() {
             </button>
             {MUSCLE_GROUPS.map((group) => (
               <button key={group} type="button" onClick={() => setMuscleGroup(group)}>
-                <Pill tone={muscleGroup === group ? 'secondary' : 'default'}>{group}</Pill>
+                <Pill tone={muscleGroup === group ? 'secondary' : 'default'}>
+                  {MUSCLE_GROUP_LABELS[group]}
+                </Pill>
               </button>
             ))}
           </div>
@@ -179,7 +183,7 @@ function ExercisesPage() {
       <Card className="rounded-2xl border-border">
         <CardHeader>
           <CardTitle className="font-display font-black">
-            {filtered.length} résultats
+            {filteredGroups.length} résultats
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -192,22 +196,30 @@ function ExercisesPage() {
             </p>
           ) : null}
           <ul className="max-h-[28rem] space-y-2 overflow-y-auto">
-            {filtered.map((exercise) => (
-              <li
-                key={exercise.id}
-                className="flex items-center justify-between rounded-2xl border border-border px-3 py-2.5"
-              >
-                <div>
-                  <p className="font-medium">
-                    <DisplayExerciseName name={exercise.name} nameFr={exercise.name_fr} exerciseId={exercise.id} />
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {exercise.muscle_group ?? '—'} · {exercise.equipment ?? '—'}
-                  </p>
-                </div>
-                {!exercise.is_public ? <Pill tone="purple">Perso</Pill> : null}
-              </li>
-            ))}
+            {filteredGroups.map((group) => {
+              const muscleLabel = group.muscleGroup
+                ? MUSCLE_GROUP_LABELS[normalizeMuscleGroup(group.muscleGroup)]
+                : null
+              const equipmentMeta =
+                group.variants.length > 1
+                  ? `${group.variants.length} équipements`
+                  : formatEquipmentLabel(group.variants[0]?.equipment)
+              const isPersonal = group.variants.some((variant) => !variant.is_public)
+              return (
+                <li
+                  key={group.familyKey}
+                  className="flex items-center justify-between rounded-2xl border border-border px-3 py-2.5"
+                >
+                  <div>
+                    <p className="font-medium">{group.baseLabel}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {[muscleLabel, equipmentMeta].filter(Boolean).join(' · ') || '—'}
+                    </p>
+                  </div>
+                  {isPersonal ? <Pill tone="purple">Perso</Pill> : null}
+                </li>
+              )
+            })}
           </ul>
           <Button variant="outline" className="mt-4 rounded-full" asChild>
             <Link to="/app/workout/active">Démarrer une séance</Link>
