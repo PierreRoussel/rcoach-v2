@@ -1,18 +1,32 @@
 ---
-description: Tests Vitest — conventions et périmètre
-globs: src/**/*.test.ts
+description: Tests Vitest + e2e Playwright — conventions et périmètre
+globs: src/**/*.test.ts,e2e/**/*.ts,playwright.config.ts
 alwaysApply: false
 ---
 
-# Tests Vitest
+# Tests
 
-## Config
+## Couches
+
+| Couche | Où | Rôle |
+|--------|-----|------|
+| Unit | `src/**/*.test.ts` (Vitest `node`) | Logique pure / policy |
+| E2E visuel | `e2e/**/*.spec.ts` (Playwright) | Parcours UI + `toHaveScreenshot` |
+
+ADR : `adr-playwright-visual-e2e` (rcoach-mind).
+
+## Vitest
 
 - `vitest.config.ts` : `environment: 'node'`, `include: ['src/**/*.test.ts']`
 - **Pas** de `*.test.tsx` sans élargir la config
 - Alias `@/` identique à l'app
+- Co-localiser : `foo.ts` + `foo.test.ts`
+- `vi.stubGlobal` / `vi.stubEnv` pour `window`, `import.meta.env`
+- Pas de tests qui assertent le trivial (re-export, constante seule)
 
-## Où tester
+```ts
+import { describe, expect, it, vi } from 'vitest'
+```
 
 | Priorité | Cible | Exemples |
 |----------|-------|----------|
@@ -21,21 +35,25 @@ alwaysApply: false
 | Moyenne | Hooks helpers extraits | fonctions exportées testables sans render |
 | Basse | Composants React | éviter sauf config jsdom ajoutée |
 
-## Style
+## Playwright e2e
 
-```ts
-import { describe, expect, it, vi } from 'vitest'
-```
+- Config : `playwright.config.ts` ; helpers : `e2e/helpers/`
+- Baselines versionnés sous `e2e/**/*-snapshots/`
+- Auth : `.local/test-account.md` (gitignored) — skip propre si absent
+- Prerender marketing (`scripts/prerender-public-routes.mjs`) ≠ suite e2e
 
-- Co-localiser : `foo.ts` + `foo.test.ts`
-- `vi.stubGlobal` / `vi.stubEnv` pour `window`, `import.meta.env`
-- Pas de tests qui assertent le trivial (re-export, constante seule)
+### Quand ajouter un e2e
+
+Ajouter `e2e/<domaine>/*.spec.ts` (+ baseline) si la feature a des **Acceptance UX / routes**.  
+Sinon justifier dans Non-goals de la SPEC. Ne pas remplacer un test Vitest de logique pure.
 
 ## Commandes
 
 ```bash
-npm test              # CI
-npm run test:watch    # dev
+npm test                 # Vitest
+npm run test:watch       # Vitest watch
+npm run test:e2e         # Playwright (compare snapshots)
+npm run test:e2e:update  # régénère baselines
 ```
 
-Ajouter un test quand la logique métier a des branches (offline, policy, calculs).
+Gate agent (`us-to-mr`) : lancer `npm run test:e2e` si Acceptance UX ou fichiers `e2e/` touchés. **Pas de CI** e2e en v1.
