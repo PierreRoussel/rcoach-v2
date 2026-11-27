@@ -16,6 +16,7 @@ export const TRACKING_KIND_LABELS: Record<ExerciseKind, string> = {
   weighted: 'Charge + répétitions',
   bodyweight: 'Répétitions au poids du corps',
   timed: 'Durée (isométrique)',
+  loaded_timed: 'Charge + durée',
   cardio: 'Cardio',
   band: 'Élastique / résistance',
 }

@@ -24,7 +24,10 @@ import {
 } from '@/lib/workout/emom-store'
 import { handleEmomTickEvents } from '@/lib/workout/emom-timer-feedback'
 import { replaceActiveExercise } from '@/lib/workout/replace-exercise'
-import { getExerciseTrackingKind, isTimedExercise } from '@/lib/workout/exercise-tracking'
+import {
+  getExerciseTrackingKind,
+  isHoldCapableExercise,
+} from '@/lib/workout/exercise-tracking'
 import {
   playRestCompleteBeep,
   warmUpRestTimerAudio,
@@ -571,11 +574,13 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     const defaultRestSeconds = get().defaultRestSeconds
     const isEmom = get().sessionMode === 'emom'
-    const timed = !isEmom && isTimedExercise({
-      name: exercise.name,
-      equipment: exercise.equipment ?? null,
-      tracking_mode: exercise.tracking_mode ?? null,
-    })
+    const holdCapable =
+      !isEmom &&
+      isHoldCapableExercise({
+        name: exercise.name,
+        equipment: exercise.equipment ?? null,
+        tracking_mode: exercise.tracking_mode ?? null,
+      })
     const nextExercises = [
       ...get().exercises,
       {
@@ -584,12 +589,15 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         exerciseNameFr: exercise.name_fr ?? null,
         muscleGroup: exercise.muscle_group ?? null,
         equipment: exercise.equipment ?? null,
+        trackingMode: exercise.tracking_mode ?? null,
         supersetId: null,
         emomGroupId: null,
         targetReps: null,
         targetWeightKg: null,
         defaultRestSeconds,
-        sets: isEmom ? [] : [createEmptySet(0, defaultRestSeconds, { timed })],
+        sets: isEmom
+          ? []
+          : [createEmptySet(0, defaultRestSeconds, { timed: holdCapable })],
       },
     ]
     const { activeStepIndex, lastCompletedStep } =
@@ -1199,11 +1207,13 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       return
     }
 
-    const kind = getExerciseTrackingKind({
-      name: exercise.exerciseName,
-      equipment: exercise.equipment ?? null,
-    })
-    if (kind !== 'timed') {
+    if (
+      !isHoldCapableExercise({
+        name: exercise.exerciseName,
+        equipment: exercise.equipment ?? null,
+        tracking_mode: exercise.trackingMode,
+      })
+    ) {
       return
     }
 

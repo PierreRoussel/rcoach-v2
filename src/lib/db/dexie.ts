@@ -43,6 +43,7 @@ export type ActiveExerciseDraft = {
   exerciseNameFr?: string | null
   muscleGroup?: string | null
   equipment?: string | null
+  trackingMode?: string | null
   supersetId?: number | null
   emomGroupId?: number | null
   targetReps?: number | null

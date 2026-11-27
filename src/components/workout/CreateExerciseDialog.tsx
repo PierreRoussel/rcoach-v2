@@ -155,6 +155,7 @@ export function CreateExerciseDialog({
               <option value="weighted">Charge + reps</option>
               <option value="bodyweight">Reps au poids du corps</option>
               <option value="timed">Durée (isométrique)</option>
+              <option value="loaded_timed">Charge + durée</option>
             </select>
           </div>
           {error ? <FormMessage>{error}</FormMessage> : null}

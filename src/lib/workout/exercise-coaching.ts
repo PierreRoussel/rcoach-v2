@@ -113,6 +113,8 @@ const TRACKING_HINTS: Record<string, string> = {
   bodyweight:
     'Priorise l’amplitude et la qualité du mouvement avant d’ajouter des répétitions.',
   timed: 'Maintiens une tension constante sur toute la durée visée, sans relâcher la posture.',
+  loaded_timed:
+    'Tiens la charge stable pendant toute la durée visée, sans sacrifier la posture.',
   cardio: 'Garde un rythme soutenable et une respiration régulière du début à la fin.',
 }
 

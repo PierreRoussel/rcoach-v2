@@ -16,7 +16,11 @@ export type ExerciseKind =
   | 'bodyweight'
   | 'cardio'
   | 'timed'
+  | 'loaded_timed'
   | 'band'
+
+/** Plafond durée (s) avant progression en charge pour loaded_timed. */
+export const LOADED_TIMED_DURATION_CEILING_SECONDS = 45
 
 export type PerformanceSummary = {
   date: string
@@ -78,6 +82,16 @@ export function isWarmUpExerciseName(name: string): boolean {
 export function classifyExercise(exercise: Pick<Exercise, 'name' | 'equipment'>): ExerciseKind {
   const name = exercise.name.toLowerCase()
   const equipment = exercise.equipment?.toLowerCase() ?? ''
+
+  // Carry / farmer before generic hold (ex. « farmer hold » → loaded_timed)
+  if (
+    name.includes('farmer') ||
+    name.includes('carry') ||
+    name.includes('yoke') ||
+    name.includes('suitcase')
+  ) {
+    return 'loaded_timed'
+  }
 
   if (
     name.includes('plank') ||
@@ -195,6 +209,15 @@ function formatRpeSuffix(rpe: number | null | undefined): string {
 }
 
 export function formatLastSessionReference(best: SetSnapshot): string {
+  if (
+    best.weight_kg != null &&
+    best.duration_seconds != null &&
+    best.duration_seconds > 0 &&
+    (best.reps == null || best.reps === 0)
+  ) {
+    return `${best.weight_kg} kg × ${best.duration_seconds}s${formatRpeSuffix(best.rpe)}`
+  }
+
   if (best.weight_kg != null && best.reps != null) {
     return `${best.weight_kg} kg x ${best.reps}${formatRpeSuffix(best.rpe)}`
   }
@@ -515,6 +538,47 @@ export function suggestProgressiveOverload(
         suggestedWeightKg: null,
         suggestedReps: null,
         suggestedDurationSeconds: duration + 10,
+        suggestedDistanceKm: null,
+        actionable: true,
+      }
+    }
+
+    case 'loaded_timed': {
+      const rpeGate = checkRpeProgressionGate(kind, referenceSet, options)
+      if (rpeGate) {
+        return rpeGate
+      }
+
+      const weight = referenceSet.weight_kg ?? 0
+      const duration = referenceSet.duration_seconds ?? 0
+      if (weight <= 0 || duration <= 0) {
+        return null
+      }
+
+      const equipment = exercise.equipment?.toLowerCase() ?? ''
+      const profile = resolveProgressionProfile(exercise)
+
+      if (duration < LOADED_TIMED_DURATION_CEILING_SECONDS) {
+        const nextDuration = duration + 10
+        return {
+          kind,
+          message: `Dernière séance : ${lastSession}. Viser ${weight} kg × ${nextDuration}s.`,
+          suggestedWeightKg: weight,
+          suggestedReps: null,
+          suggestedDurationSeconds: nextDuration,
+          suggestedDistanceKm: null,
+          actionable: true,
+        }
+      }
+
+      const increment = profile.resolveWeightIncrementKg(weight, equipment)
+      const nextWeight = weight + increment
+      return {
+        kind,
+        message: `Dernière séance : ${lastSession}. Viser ${nextWeight} kg × ${duration}s.`,
+        suggestedWeightKg: nextWeight,
+        suggestedReps: null,
+        suggestedDurationSeconds: duration,
         suggestedDistanceKm: null,
         actionable: true,
       }
