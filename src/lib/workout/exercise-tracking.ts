@@ -10,6 +10,7 @@ export type ExerciseTrackingMode =
   | 'bodyweight'
   | 'timed'
   | 'cardio'
+  | 'loaded_timed'
 
 export type ExerciseTrackingSource = {
   name: string
@@ -32,6 +33,13 @@ export function getExerciseTrackingKind(
   })
 }
 
+/** Hold / chrono isométrique : timed pur et charge+durée. */
+export function isHoldCapableExercise(exercise: ExerciseTrackingSource): boolean {
+  const kind = getExerciseTrackingKind(exercise)
+  return kind === 'timed' || kind === 'loaded_timed'
+}
+
+/** @deprecated Prefer isHoldCapableExercise — kept for timed-only callers. */
 export function isTimedExercise(exercise: ExerciseTrackingSource): boolean {
   return getExerciseTrackingKind(exercise) === 'timed'
 }

@@ -193,6 +193,7 @@ export function TemplateExerciseSetsEditor({
   const trackingKind = getExerciseTrackingKind({
     name: exercise.exerciseName,
     equipment: exercise.equipment,
+    tracking_mode: exercise.trackingMode,
   })
   const columnLabels = getSetPerformanceColumnLabels(trackingKind)
   const performanceColumnCount = columnLabels.length

@@ -40,9 +40,10 @@ export function getSetPerformanceColumnLabels(kind: ExerciseKind): string[] {
     case 'band':
       return ['reps']
     case 'timed':
-      return ['durée (s)']
     case 'cardio':
       return ['durée (s)']
+    case 'loaded_timed':
+      return ['kg', 'durée (s)']
     default:
       return ['kg', 'reps']
   }

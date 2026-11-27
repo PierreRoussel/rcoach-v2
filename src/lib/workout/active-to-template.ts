@@ -39,6 +39,7 @@ export function activeExercisesToTemplateDrafts(
       exerciseNameFr: exercise.exerciseNameFr ?? null,
       muscleGroup: exercise.muscleGroup ?? null,
       equipment: exercise.equipment ?? null,
+      trackingMode: exercise.trackingMode ?? null,
       supersetId: exercise.supersetId ?? null,
       defaultRestSeconds: exerciseDefaultRest,
       sets,

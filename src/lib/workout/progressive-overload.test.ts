@@ -242,6 +242,107 @@ describe('suggestProgressiveOverload', () => {
     })
     expect(suggestion?.message).toContain('30s')
   })
+
+  it('suggests +10s duration under ceiling for loaded_timed', () => {
+    const last = summarizePerformance(
+      'Carry day',
+      '2026-01-01T10:00:00Z',
+      [
+        {
+          set_index: 0,
+          set_type: 'normal',
+          weight_kg: 30,
+          reps: null,
+          duration_seconds: 30,
+          rpe: 7,
+        },
+      ],
+      { name: 'Farmer carry', equipment: 'dumbbell', tracking_mode: 'loaded_timed' },
+    )
+
+    const suggestion = suggestProgressiveOverload(
+      {
+        name: 'Farmer carry',
+        equipment: 'dumbbell',
+        tracking_mode: 'loaded_timed',
+        muscle_group: 'full_body',
+      },
+      last,
+    )
+
+    expect(suggestion).toMatchObject({
+      kind: 'loaded_timed',
+      suggestedWeightKg: 30,
+      suggestedDurationSeconds: 40,
+      actionable: true,
+    })
+    expect(suggestion?.message).toContain('30 kg × 40s')
+  })
+
+  it('suggests +weight and keeps duration at loaded_timed ceiling', () => {
+    const last = summarizePerformance(
+      'Carry day',
+      '2026-01-01T10:00:00Z',
+      [
+        {
+          set_index: 0,
+          set_type: 'normal',
+          weight_kg: 30,
+          reps: null,
+          duration_seconds: 45,
+          rpe: 7,
+        },
+      ],
+      { name: 'Farmer carry', equipment: 'dumbbell', tracking_mode: 'loaded_timed' },
+    )
+
+    const suggestion = suggestProgressiveOverload(
+      {
+        name: 'Farmer carry',
+        equipment: 'dumbbell',
+        tracking_mode: 'loaded_timed',
+        muscle_group: 'full_body',
+      },
+      last,
+    )
+
+    expect(suggestion).toMatchObject({
+      kind: 'loaded_timed',
+      suggestedWeightKg: 32.5,
+      suggestedDurationSeconds: 45,
+      actionable: true,
+    })
+  })
+
+  it('blocks loaded_timed progression when RPE >= 9', () => {
+    const last = summarizePerformance(
+      'Carry day',
+      '2026-01-01T10:00:00Z',
+      [
+        {
+          set_index: 0,
+          set_type: 'normal',
+          weight_kg: 30,
+          reps: null,
+          duration_seconds: 30,
+          rpe: 9,
+        },
+      ],
+      { name: 'Farmer carry', equipment: 'dumbbell', tracking_mode: 'loaded_timed' },
+    )
+
+    const suggestion = suggestProgressiveOverload(
+      {
+        name: 'Farmer carry',
+        equipment: 'dumbbell',
+        tracking_mode: 'loaded_timed',
+        muscle_group: 'full_body',
+      },
+      last,
+    )
+
+    expect(suggestion?.actionable).toBe(false)
+  })
 })
 
 describe('isWorkingSet', () => {
@@ -273,6 +374,30 @@ describe('applyOverloadToWorkingSets', () => {
     expect(updated[0]).toEqual(sets[0])
     expect(updated[1]).toMatchObject({ weightKg: 62.5, reps: 7 })
     expect(updated[2]).toMatchObject({ weightKg: 62.5, reps: 7 })
+  })
+
+  it('applies weight and duration for loaded_timed', () => {
+    const sets = [
+      {
+        setIndex: 0,
+        setType: 'normal' as const,
+        weightKg: 30,
+        reps: null,
+        durationSeconds: 30,
+      },
+    ]
+
+    const updated = applyOverloadToWorkingSets(sets, {
+      kind: 'loaded_timed',
+      message: 'test',
+      suggestedWeightKg: 30,
+      suggestedReps: null,
+      suggestedDurationSeconds: 40,
+      suggestedDistanceKm: null,
+      actionable: true,
+    })
+
+    expect(updated[0]).toMatchObject({ weightKg: 30, durationSeconds: 40 })
   })
 
   it('does not modify sets when suggestion is not actionable', () => {

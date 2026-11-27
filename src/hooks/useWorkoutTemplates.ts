@@ -38,6 +38,7 @@ export type TemplateExerciseDraft = {
   exerciseNameFr?: string | null
   muscleGroup: string | null
   equipment: string | null
+  trackingMode?: string | null
   supersetId: number | null
   emomGroupId?: number | null
   targetReps?: number | null
@@ -292,6 +293,7 @@ export function exerciseToDraft(exercise: Exercise): TemplateExerciseDraft {
     exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group,
     equipment: exercise.equipment,
+    trackingMode: exercise.tracking_mode ?? null,
     supersetId: null,
     emomGroupId: null,
     targetReps: null,

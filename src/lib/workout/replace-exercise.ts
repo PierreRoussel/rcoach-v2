@@ -7,6 +7,7 @@ export type ReplaceExerciseSelection = {
   name_fr?: string | null
   muscle_group?: string | null
   equipment?: string | null
+  tracking_mode?: string | null
 }
 
 export function replaceActiveExercise(
@@ -20,6 +21,7 @@ export function replaceActiveExercise(
     exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group ?? null,
     equipment: exercise.equipment ?? null,
+    trackingMode: exercise.tracking_mode ?? null,
     sets: current.sets.map((set) => ({
       ...set,
       completedAt: null,
@@ -38,5 +40,6 @@ export function replaceTemplateExercise(
     exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group ?? null,
     equipment: exercise.equipment ?? null,
+    trackingMode: exercise.tracking_mode ?? null,
   }
 }

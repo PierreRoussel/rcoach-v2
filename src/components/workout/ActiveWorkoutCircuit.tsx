@@ -22,7 +22,10 @@ import {
 } from '@/components/workout/SetPerformanceInputs'
 import { cn } from '@/lib/utils'
 import type { ActiveExerciseEntry, ActiveSet } from '@/lib/workout/active-store'
-import { getExerciseTrackingKind } from '@/lib/workout/exercise-tracking'
+import {
+  getExerciseTrackingKind,
+  isHoldCapableExercise,
+} from '@/lib/workout/exercise-tracking'
 import {
   buildCircuitSteps,
   findNextStepIndexAfter,
@@ -225,8 +228,13 @@ export function ActiveWorkoutCircuit({
     const trackingKind = getExerciseTrackingKind({
       name: exercise.exerciseName,
       equipment: exercise.equipment ?? null,
+      tracking_mode: exercise.trackingMode,
     })
-    const isTimed = trackingKind === 'timed'
+    const isHoldCapable = isHoldCapableExercise({
+      name: exercise.exerciseName,
+      equipment: exercise.equipment ?? null,
+      tracking_mode: exercise.trackingMode,
+    })
 
     return (
       <div
@@ -309,9 +317,11 @@ export function ActiveWorkoutCircuit({
                 'size-8 shrink-0 rounded-full',
                 !isNextToDo && 'text-muted-foreground hover:text-foreground',
               )}
-              aria-label={isTimed ? 'Démarrer le maintien' : 'Valider la série'}
+              aria-label={
+                isHoldCapable ? 'Démarrer le maintien' : 'Valider la série'
+              }
               onClick={() =>
-                isTimed
+                isHoldCapable
                   ? onStartHold(exerciseIndex, setIndex)
                   : handleCompleteStep(exerciseIndex, setIndex)
               }
@@ -408,6 +418,7 @@ export function ActiveWorkoutCircuit({
             exerciseName: exercise.exerciseName,
             equipment: exercise.equipment,
             muscleGroup: exercise.muscleGroup,
+            trackingMode: exercise.trackingMode,
           })
         }}
         renderSetsContent={(index) => {
@@ -419,6 +430,7 @@ export function ActiveWorkoutCircuit({
           const trackingKind = getExerciseTrackingKind({
             name: exercise.exerciseName,
             equipment: exercise.equipment ?? null,
+            tracking_mode: exercise.trackingMode,
           })
           const columnLabels = getSetPerformanceColumnLabels(trackingKind)
           const performanceColumnCount = columnLabels.length
@@ -435,6 +447,7 @@ export function ActiveWorkoutCircuit({
                   name: exercise.exerciseName,
                   equipment: exercise.equipment ?? null,
                   muscle_group: exercise.muscleGroup ?? null,
+                  tracking_mode: exercise.trackingMode ?? null,
                 }}
                 overloadGate={
                   overloadGate

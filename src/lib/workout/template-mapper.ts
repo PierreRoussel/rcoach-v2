@@ -14,6 +14,7 @@ export function templateExercisesToActive(
     exerciseNameFr: exercise.exerciseNameFr ?? null,
     muscleGroup: exercise.muscleGroup,
     equipment: exercise.equipment,
+    trackingMode: exercise.trackingMode ?? null,
     supersetId: isEmom ? null : exercise.supersetId,
     emomGroupId: isEmom ? exercise.emomGroupId ?? null : null,
     targetReps: isEmom ? exercise.targetReps ?? null : null,

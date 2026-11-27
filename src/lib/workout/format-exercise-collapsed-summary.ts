@@ -7,6 +7,7 @@ type ExerciseSummarySource = {
   exerciseName: string
   equipment?: string | null
   muscleGroup?: string | null
+  trackingMode?: string | null
 }
 
 function completedWorkingSets(sets: ActiveSet[]): ActiveSet[] {
@@ -45,6 +46,7 @@ export function formatActiveExerciseCollapsedSummary(
   const trackingKind = getExerciseTrackingKind({
     name: exercise.exerciseName,
     equipment: exercise.equipment ?? null,
+    tracking_mode: exercise.trackingMode,
   })
 
   if (trackingKind === 'timed') {
@@ -61,6 +63,29 @@ export function formatActiveExerciseCollapsedSummary(
     }
 
     return durations.map((duration) => `${duration}s`).join(', ')
+  }
+
+  if (trackingKind === 'loaded_timed') {
+    const parts = completed.map((set) => {
+      const weight = set.weightKg
+      const duration = set.durationSeconds
+      if (weight != null && weight > 0 && duration != null && duration > 0) {
+        return `${weight} kg × ${duration}s`
+      }
+      if (duration != null && duration > 0) {
+        return `${duration}s`
+      }
+      if (weight != null && weight > 0) {
+        return `${weight} kg`
+      }
+      return null
+    }).filter((part): part is string => Boolean(part))
+
+    if (parts.length === 0) {
+      return null
+    }
+
+    return parts.join(', ')
   }
 
   const reps = completed
