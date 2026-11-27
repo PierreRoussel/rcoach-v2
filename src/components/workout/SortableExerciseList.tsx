@@ -428,7 +428,7 @@ function SortableExerciseItem({
                   </span>
                 ) : null}
               </div>
-              {open && equipmentLabel ? (
+              {equipmentLabel ? (
                 <div
                   className="mt-1"
                   onClick={(event) => event.stopPropagation()}
@@ -658,13 +658,10 @@ export function SortableExerciseList({
       return []
     }
     const fromCatalog = catalogExercises.find((item) => item.id === entry.exerciseId)
-    if (fromCatalog) {
-      return siblingsForExercise(fromCatalog, catalogExercises)
+    if (!fromCatalog) {
+      return []
     }
-    return siblingsForExercise(
-      { id: entry.exerciseId, name: entry.exerciseName, is_public: true },
-      catalogExercises,
-    )
+    return siblingsForExercise(fromCatalog, catalogExercises)
   }
 
   function renderItem(index: number) {

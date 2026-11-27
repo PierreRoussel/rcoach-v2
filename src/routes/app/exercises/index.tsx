@@ -19,9 +19,11 @@ import {
   useAllExercises,
   useCreateExercise,
 } from '@/hooks/useExercises'
-import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
-import { groupExercisesByFamily } from '@/lib/workout/exercise-equipment-family'
-import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
+import { MUSCLE_GROUP_LABELS } from '@/lib/stats/muscle-groups'
+import {
+  familyGroupMetaLabel,
+  groupExercisesByFamily,
+} from '@/lib/workout/exercise-equipment-family'
 import { EQUIPMENT, MUSCLE_GROUPS, inferExerciseMeta } from '@/lib/workout/exercise-meta'
 
 export const Route = createFileRoute('/app/exercises/')({
@@ -197,13 +199,6 @@ function ExercisesPage() {
           ) : null}
           <ul className="max-h-[28rem] space-y-2 overflow-y-auto">
             {filteredGroups.map((group) => {
-              const muscleLabel = group.muscleGroup
-                ? MUSCLE_GROUP_LABELS[normalizeMuscleGroup(group.muscleGroup)]
-                : null
-              const equipmentMeta =
-                group.variants.length > 1
-                  ? `${group.variants.length} équipements`
-                  : formatEquipmentLabel(group.variants[0]?.equipment)
               const isPersonal = group.variants.some((variant) => !variant.is_public)
               return (
                 <li
@@ -213,7 +208,7 @@ function ExercisesPage() {
                   <div>
                     <p className="font-medium">{group.baseLabel}</p>
                     <p className="text-xs text-muted-foreground">
-                      {[muscleLabel, equipmentMeta].filter(Boolean).join(' · ') || '—'}
+                      {familyGroupMetaLabel(group)}
                     </p>
                   </div>
                   {isPersonal ? <Pill tone="purple">Perso</Pill> : null}

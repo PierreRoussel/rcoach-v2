@@ -4,12 +4,12 @@ import { ExerciseEquipmentChips } from '@/components/workout/ExerciseEquipmentCh
 import { QuickAddIconButton } from '@/components/ui/quick-add-icon-button'
 import { Pill } from '@/design-system'
 import type { Exercise } from '@/lib/graphql/operations'
-import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 import {
+  familyGroupMetaLabel,
   groupExercisesByFamily,
   type FamilyGroup,
 } from '@/lib/workout/exercise-equipment-family'
-import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
+import { formatExerciseSubtitle } from '@/lib/workout/format-exercise-collapsed-summary'
 import { cn } from '@/lib/utils'
 
 export type ExerciseQuickAddState = {
@@ -24,23 +24,9 @@ type ExerciseSearchListProps = {
   quickAddState?: ExerciseQuickAddState
   emptyLabel?: string
   sectionTitle?: string
+  /** When false, render flat rows (e.g. recent unique list). Default true. */
+  groupByFamily?: boolean
   className?: string
-}
-
-function familyMetaLabel(group: FamilyGroup): string {
-  const parts: string[] = []
-  if (group.muscleGroup) {
-    parts.push(MUSCLE_GROUP_LABELS[normalizeMuscleGroup(group.muscleGroup)])
-  }
-  if (group.variants.length > 1) {
-    parts.push(`${group.variants.length} équipements`)
-  } else {
-    const equipmentLabel = formatEquipmentLabel(group.variants[0]?.equipment)
-    if (equipmentLabel) {
-      parts.push(equipmentLabel)
-    }
-  }
-  return parts.join(' · ') || '—'
 }
 
 function QuickAddButton({
@@ -117,7 +103,9 @@ function FamilySearchRow({
             <span className="truncate">{group.baseLabel}</span>
             {isPersonal ? <Pill tone="purple">Perso</Pill> : null}
           </div>
-          <div className="text-xs text-muted-foreground">{familyMetaLabel(group)}</div>
+          <div className="text-xs text-muted-foreground">
+            {familyGroupMetaLabel(group)}
+          </div>
         </button>
         {onQuickAdd ? (
           multi ? (
@@ -151,6 +139,45 @@ function FamilySearchRow({
   )
 }
 
+function FlatSearchRow({
+  exercise,
+  onSelect,
+  onQuickAdd,
+  quickAddState,
+}: {
+  exercise: Exercise
+  onSelect: (exercise: Exercise) => void
+  onQuickAdd?: (exercise: Exercise) => void
+  quickAddState: ExerciseQuickAddState
+}) {
+  return (
+    <div className="flex items-center gap-3 py-3">
+      <button
+        type="button"
+        className="min-w-0 flex-1 text-left"
+        onClick={() => onSelect(exercise)}
+      >
+        <div className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
+          <span className="truncate">
+            {exercise.name_fr?.trim() || exercise.name}
+          </span>
+          {!exercise.is_public ? <Pill tone="purple">Perso</Pill> : null}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {formatExerciseSubtitle(exercise.muscle_group, exercise.equipment) ?? '—'}
+        </div>
+      </button>
+      {onQuickAdd ? (
+        <QuickAddButton
+          exercise={exercise}
+          quickAddState={quickAddState}
+          onQuickAdd={onQuickAdd}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 export function ExerciseSearchList({
   exercises,
   onSelect,
@@ -158,9 +185,13 @@ export function ExerciseSearchList({
   quickAddState = null,
   emptyLabel = 'Aucun exercice trouvé.',
   sectionTitle,
+  groupByFamily = true,
   className,
 }: ExerciseSearchListProps) {
-  const groups = useMemo(() => groupExercisesByFamily(exercises), [exercises])
+  const groups = useMemo(
+    () => (groupByFamily ? groupExercisesByFamily(exercises) : []),
+    [exercises, groupByFamily],
+  )
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [pendingQuickAddKey, setPendingQuickAddKey] = useState<string | null>(null)
 
@@ -180,24 +211,34 @@ export function ExerciseSearchList({
         </p>
       ) : null}
       <div className="divide-y divide-border/70">
-        {groups.map((group) => (
-          <FamilySearchRow
-            key={group.familyKey}
-            group={group}
-            expanded={expandedKey === group.familyKey}
-            onToggle={() =>
-              setExpandedKey((current) =>
-                current === group.familyKey ? null : group.familyKey,
-              )
-            }
-            onSelect={onSelect}
-            onQuickAdd={onQuickAdd}
-            quickAddState={quickAddState}
-            pendingQuickAdd={pendingQuickAddKey === group.familyKey}
-            onPendingQuickAdd={() => setPendingQuickAddKey(group.familyKey)}
-            onClearPendingQuickAdd={() => setPendingQuickAddKey(null)}
-          />
-        ))}
+        {groupByFamily
+          ? groups.map((group) => (
+              <FamilySearchRow
+                key={group.familyKey}
+                group={group}
+                expanded={expandedKey === group.familyKey}
+                onToggle={() =>
+                  setExpandedKey((current) =>
+                    current === group.familyKey ? null : group.familyKey,
+                  )
+                }
+                onSelect={onSelect}
+                onQuickAdd={onQuickAdd}
+                quickAddState={quickAddState}
+                pendingQuickAdd={pendingQuickAddKey === group.familyKey}
+                onPendingQuickAdd={() => setPendingQuickAddKey(group.familyKey)}
+                onClearPendingQuickAdd={() => setPendingQuickAddKey(null)}
+              />
+            ))
+          : exercises.map((exercise) => (
+              <FlatSearchRow
+                key={exercise.id}
+                exercise={exercise}
+                onSelect={onSelect}
+                onQuickAdd={onQuickAdd}
+                quickAddState={quickAddState}
+              />
+            ))}
       </div>
     </div>
   )

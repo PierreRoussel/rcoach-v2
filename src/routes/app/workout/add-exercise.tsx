@@ -463,6 +463,7 @@ function AddExercisePage() {
         <ExerciseSearchList
           exercises={recentRows}
           sectionTitle="Récents"
+          groupByFamily={false}
           onSelect={setDetailExercise}
           onQuickAdd={(exercise) => void handleQuickAdd(exercise)}
           quickAddState={quickAddState}

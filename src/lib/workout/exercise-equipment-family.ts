@@ -32,6 +32,22 @@ export type FamilyGroup = {
   variants: Exercise[]
 }
 
+export function familyGroupMetaLabel(group: FamilyGroup): string {
+  const parts: string[] = []
+  if (group.muscleGroup) {
+    parts.push(MUSCLE_GROUP_LABELS[normalizeMuscleGroup(group.muscleGroup)])
+  }
+  if (group.variants.length > 1) {
+    parts.push(`${group.variants.length} équipements`)
+  } else {
+    const equipmentLabel = formatEquipmentLabel(group.variants[0]?.equipment)
+    if (equipmentLabel) {
+      parts.push(equipmentLabel)
+    }
+  }
+  return parts.join(' · ') || '—'
+}
+
 export function stripEquipmentSuffix(name: string): string {
   return name.replace(SUFFIX_PATTERN, '').trim()
 }
