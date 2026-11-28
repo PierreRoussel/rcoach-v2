@@ -11,7 +11,7 @@ import {
   Plus,
   UtensilsCrossed,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,14 +31,16 @@ import { isNutritionConfigured } from '@/lib/nutrition/onboarding'
 import type { NutritionDayAggregate } from '@/lib/nutrition/streak'
 import { MEAL_LABELS, MEAL_TYPES } from '@/lib/nutrition/types'
 import {
+  allWorkoutsFromMarkers,
   canStartPlannedOccurrence,
   isPastCalendarDay,
   type CalendarMarkers,
 } from '@/lib/schedule/calendar-markers'
 import {
   findFulfillingWorkout,
-  occurrenceIsFulfilled,
+  workoutOccurrenceKey,
 } from '@/lib/schedule/occurrence-fulfillment'
+import type { CalendarWorkoutSummary } from '@/lib/graphql/operations'
 import type { ScheduleOccurrence } from '@/lib/schedule/expand-occurrences'
 import { cn } from '@/lib/utils'
 
@@ -144,6 +146,34 @@ export function CalendarDayDetail({
   isStarting = false,
 }: CalendarDayDetailProps) {
   const marker = getDayMarker(markers, date)
+  const fulfillmentWorkouts = useMemo(
+    () => allWorkoutsFromMarkers(markers),
+    [markers],
+  )
+  const plannedFulfillment = useMemo(() => {
+    const consumedWorkoutKeys = new Set<string>()
+    const byKey = new Map<
+      string,
+      { isFulfilled: boolean; fulfillingWorkout?: CalendarWorkoutSummary }
+    >()
+
+    for (const occurrence of marker?.planned ?? []) {
+      const key = `${occurrence.sessionId}-${occurrence.date}`
+      const fulfillingWorkout = findFulfillingWorkout(
+        fulfillmentWorkouts,
+        occurrence,
+        undefined,
+        consumedWorkoutKeys,
+      )
+      const isFulfilled = fulfillingWorkout !== undefined
+      if (fulfillingWorkout) {
+        consumedWorkoutKeys.add(workoutOccurrenceKey(fulfillingWorkout))
+      }
+      byKey.set(key, { isFulfilled, fulfillingWorkout })
+    }
+
+    return byKey
+  }, [marker?.planned, fulfillmentWorkouts])
   const isPastDay = isPastCalendarDay(date)
   const hasSportContent = Boolean(marker?.workouts.length || marker?.planned.length)
   const hasNutritionContent = Boolean(showNutrition && nutritionDay?.hasLogs)
@@ -222,9 +252,20 @@ export function CalendarDayDetail({
           </p>
           <ul className="space-y-2">
             {marker.planned.map((occurrence) => {
-              const isFulfilled = occurrenceIsFulfilled(marker.workouts, occurrence)
-              const fulfillingWorkout = findFulfillingWorkout(marker.workouts, occurrence)
-              const canStartThis = canStartPlannedOccurrence(date, marker, occurrence)
+              const fulfillmentKey = `${occurrence.sessionId}-${occurrence.date}`
+              const { isFulfilled, fulfillingWorkout } =
+                plannedFulfillment.get(fulfillmentKey) ?? {
+                  isFulfilled: false,
+                  fulfillingWorkout: undefined,
+                }
+              const canStartThis = canStartPlannedOccurrence(
+                date,
+                {
+                  workouts: fulfillmentWorkouts,
+                  planned: marker?.planned ?? [],
+                },
+                occurrence,
+              )
               const isMissed = isPastDay && !isFulfilled
 
               const occurrenceContent = (

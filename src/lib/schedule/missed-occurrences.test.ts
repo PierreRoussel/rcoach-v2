@@ -101,6 +101,24 @@ describe('getYesterdayMissedOccurrences', () => {
 
     expect(getYesterdayMissedOccurrences(sessions, [], now)).toHaveLength(0)
   })
+
+  it('returns empty when yesterday miss was caught up today', () => {
+    const sessions = [weeklySession({ weekdays: [3] })]
+
+    const missed = getYesterdayMissedOccurrences(
+      sessions,
+      [
+        {
+          started_at: '2026-06-25T07:00:00.000Z',
+          ended_at: '2026-06-25T08:00:00.000Z',
+          workout_template_id: 'tpl-1',
+        },
+      ],
+      now,
+    )
+
+    expect(missed).toHaveLength(0)
+  })
 })
 
 describe('getMissedOccurrencesForDay', () => {

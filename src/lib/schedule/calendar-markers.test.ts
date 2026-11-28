@@ -197,7 +197,49 @@ describe('getMarkerKind', () => {
     const marker = markers.get('2026-06-20')
 
     expect(getMarkerKind(marker)).toBe('missed')
-    expect(marker?.kinds.has('done')).toBe(false)
+    expect(marker?.kinds.has('done')).toBe(true)
+  })
+
+  it('marks catch-up: planned 20 missed cleared, 21 done', () => {
+    const now = new Date(2026, 5, 21, 12, 0)
+    const rangeStart = new Date(2026, 5, 1)
+    const rangeEnd = new Date(2026, 5, 30)
+    const workouts: CalendarWorkoutSummary[] = [
+      {
+        id: 'w1',
+        title: 'Full Body A',
+        started_at: '2026-06-21T10:00:00.000Z',
+        ended_at: '2026-06-21T11:00:00.000Z',
+        workout_template_id: 'tpl-a',
+      },
+    ]
+    const sessions: ScheduledSession[] = [
+      {
+        id: 's1',
+        title: 'Full Body A',
+        workout_template_id: 'tpl-a',
+        recurrence_type: 'once',
+        weekdays: null,
+        scheduled_date: '2026-06-20',
+        time_local: null,
+        start_date: '2026-06-20',
+        end_date: null,
+        is_active: true,
+      },
+    ]
+
+    const markers = buildCalendarMarkers(
+      workouts,
+      sessions,
+      rangeStart,
+      rangeEnd,
+      now,
+    )
+    const plannedDay = markers.get('2026-06-20')
+    const catchUpDay = markers.get('2026-06-21')
+
+    expect(getMarkerKind(plannedDay)).not.toBe('missed')
+    expect(getMarkerKind(catchUpDay)).toBe('done')
   })
 })
 

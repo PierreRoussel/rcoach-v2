@@ -8,8 +8,10 @@ import {
   type ScheduleOccurrence,
 } from '@/lib/schedule/expand-occurrences'
 import {
+  findFulfillingWorkout,
   isCompletedWorkout,
   occurrenceIsFulfilled,
+  workoutOccurrenceKey,
 } from '@/lib/schedule/occurrence-fulfillment'
 
 export type DayMarkerKind = 'done' | 'planned' | 'missed' | 'mixed'
@@ -23,6 +25,24 @@ export type DayMarker = {
 
 export type CalendarMarkers = Map<string, DayMarker>
 
+export function allWorkoutsFromMarkers(
+  markers: CalendarMarkers,
+): CalendarWorkoutSummary[] {
+  const seen = new Set<string>()
+  const workouts: CalendarWorkoutSummary[] = []
+
+  for (const marker of markers.values()) {
+    for (const workout of marker.workouts) {
+      if (!seen.has(workout.id)) {
+        seen.add(workout.id)
+        workouts.push(workout)
+      }
+    }
+  }
+
+  return workouts
+}
+
 function emptyMarker(date: string): DayMarker {
   return {
     date,
@@ -33,10 +53,6 @@ function emptyMarker(date: string): DayMarker {
 }
 
 function recomputeSpontaneousDoneKind(marker: DayMarker) {
-  if (marker.planned.length > 0) {
-    return
-  }
-
   if (marker.workouts.some(isCompletedWorkout)) {
     marker.kinds.add('done')
   }
@@ -60,16 +76,30 @@ export function buildCalendarMarkers(
   }
 
   const planned = expandAllOccurrences(sessions, rangeStart, rangeEnd)
+  const consumedFulfillmentWorkouts = new Set<string>()
 
   for (const occurrence of planned) {
     const marker = markers.get(occurrence.date) ?? emptyMarker(occurrence.date)
     marker.planned.push(occurrence)
 
     const day = startOfDay(parseISO(`${occurrence.date}T12:00:00`))
-    const fulfilled = occurrenceIsFulfilled(marker.workouts, occurrence)
+    const fulfillingWorkout = findFulfillingWorkout(
+      workouts,
+      occurrence,
+      now,
+      consumedFulfillmentWorkouts,
+    )
+    const fulfilled = fulfillingWorkout !== undefined
 
     if (fulfilled) {
-      marker.kinds.add('done')
+      consumedFulfillmentWorkouts.add(workoutOccurrenceKey(fulfillingWorkout))
+      const fulfilledSameDay = datesMatchWorkoutDay(
+        fulfillingWorkout.started_at,
+        parseISO(`${occurrence.date}T12:00:00`),
+      )
+      if (fulfilledSameDay) {
+        marker.kinds.add('done')
+      }
     } else if (isBefore(day, today)) {
       marker.kinds.add('missed')
     } else {
@@ -157,7 +187,7 @@ export function canStartPlannedOccurrence(
   }
 
   if (occurrence) {
-    return !occurrenceIsFulfilled(marker?.workouts ?? [], occurrence)
+    return !occurrenceIsFulfilled(marker?.workouts ?? [], occurrence, now)
   }
 
   if (!marker?.planned.length) {
@@ -166,7 +196,7 @@ export function canStartPlannedOccurrence(
 
   return marker.planned.some(
     (plannedOccurrence) =>
-      !occurrenceIsFulfilled(marker.workouts, plannedOccurrence),
+      !occurrenceIsFulfilled(marker.workouts, plannedOccurrence, now),
   )
 }
 

@@ -38,12 +38,13 @@ function formatMissedSessionMessage(occurrences: ScheduleOccurrence[]): string {
 export function MissedPlannedSessionHomeTile() {
   const activeWorkoutStartedAt = useActiveWorkoutStore((state) => state.startedAt)
   const { data: sessionsResult, isLoading: sessionsLoading } = useScheduledSessions()
-  const yesterdayRange = useMemo(() => {
-    const day = subDays(startOfDay(new Date()), 1)
-    return { start: day, end: endOfDay(day) }
+  const catchUpWorkoutRange = useMemo(() => {
+    const today = startOfDay(new Date())
+    const yesterday = subDays(today, 1)
+    return { start: yesterday, end: endOfDay(today) }
   }, [])
-  const { data: yesterdayWorkouts = [], isLoading: workoutsLoading } =
-    useMyWorkoutsInRange(yesterdayRange)
+  const { data: catchUpWorkouts = [], isLoading: workoutsLoading } =
+    useMyWorkoutsInRange(catchUpWorkoutRange)
   const { startPlannedSession, isStarting } = useStartPlannedSession()
   const [confirmOpen, setConfirmOpen] = useState(false)
 
@@ -52,9 +53,9 @@ export function MissedPlannedSessionHomeTile() {
     () =>
       getYesterdayMissedOccurrences(
         sessionsResult?.sessions ?? [],
-        yesterdayWorkouts,
+        catchUpWorkouts,
       ),
-    [sessionsResult?.sessions, yesterdayWorkouts],
+    [sessionsResult?.sessions, catchUpWorkouts],
   )
 
   const primaryOccurrence = missedOccurrences[0] ?? null
