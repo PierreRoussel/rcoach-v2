@@ -25,6 +25,12 @@ Contrat mind : `AGENTS.md` + `_schema.md` + rule `06-rcoach-mind`.
 - Explore / reviews → synthèses courtes. Gates → **erreurs seulement**.
 - Modèle fort : §0 + correctifs ambigus. §5 review → modèle léger, jamais le plus lourd.
 
+**Hygiène git (Windows / redirects)** :
+- Ne **jamais** écrire `tmp-*.txt` / `tmp-*.md` à la racine du repo (sale le `git status`).
+- Redirects shell → `$env:TEMP\rcoach\…` (créer le dossier) **ou** `.scratchpad/_out/` (gitignored).
+- Préférer capturer stdout/stderr via le résultat d’outil Shell plutôt que des fichiers temporaires.
+- `.scratchpad/` est gitignored ; y mettre uniquement l’état skill + outs jetables.
+
 **Branches** : `<défaut>` via `git symbolic-ref --short refs/remotes/origin/HEAD` (sans `origin/`), sinon HEAD de `git remote show origin` — jamais `main` en dur. `<base>` = `<défaut>` (ou branche d’une SPEC précédente si dépendance).
 
 Plusieurs specs → §0 groupé, puis §1–§7 **une spec à la fois** (1 branche + 1 PR par id).

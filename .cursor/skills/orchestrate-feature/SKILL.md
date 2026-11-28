@@ -22,6 +22,8 @@ Chef d’orchestre. Les skills enfants font le travail ; celui-ci **décide**, *
 **Mind** : `../rcoach-mind` (`C:/Users/leobr/Documents/dev/rcoach-mind`).  
 **État** : `<scratchpad>/orchestrate/<slug>.md` — seule source de reprise.
 
+**Hygiène git** : pas de `tmp-*` à la racine. Redirects → `$env:TEMP\rcoach\` ou `.scratchpad/_out/` (gitignored). Même règle que `us-to-mr`.
+
 ## Budgets (durs)
 
 | Budget | Plafond | Au-delà |

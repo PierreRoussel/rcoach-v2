@@ -1,0 +1,12 @@
+---
+description: Ne pas polluer git avec des fichiers tmp d’agents / skills
+globs:
+alwaysApply: true
+---
+
+# Fichiers temporaires agents
+
+- **Interdit** : créer `tmp-*`, `tmp-*.txt`, `agent-tools*.txt` à la racine de `rcoach-v2`.
+- **OK** : `$TEMP/rcoach/` (Windows) / `/tmp/rcoach/` ; ou `.scratchpad/_out/` (gitignored).
+- Scratchpad skill : `.scratchpad/<skill>/<id>.md` uniquement — déjà dans `.gitignore`.
+- Prefer lire la sortie des tools Shell plutôt que RedirectStandardOutput vers le repo.

@@ -15,6 +15,12 @@ dist-ssr
 .tmp-nhost
 scripts/.tmp/
 
+# Agent / skill local state & shell redirects (never commit)
+.scratchpad/
+/tmp-*
+/agent-tools*.txt
+/agent-tools-*/
+
 # Playwright
 /test-results/
 /playwright-report/
