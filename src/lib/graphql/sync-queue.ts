@@ -46,6 +46,7 @@ export async function syncWorkoutDraft(
     workoutTemplateId?: string | null
     exercises: Array<{
       exerciseId: string
+      equipment?: string | null
       sets: Array<{
         setIndex: number
         setType: string
@@ -68,6 +69,7 @@ export async function syncWorkoutDraft(
       data: draft.exercises.map((exercise, sortOrder) => ({
         sort_order: sortOrder,
         exercise_id: exercise.exerciseId,
+        ...(exercise.equipment ? { equipment: exercise.equipment } : {}),
         sets: {
           data: exercise.sets.map((set) => ({
             set_index: set.setIndex,

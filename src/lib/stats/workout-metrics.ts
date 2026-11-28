@@ -5,6 +5,7 @@ import type { ActiveExerciseDraft } from '@/lib/db/dexie'
 import type { WorkoutSummary } from '@/lib/graphql/operations'
 import { estimateOneRepMax } from '@/lib/stats/strength-benchmarks'
 import type { CircuitExercise } from '@/lib/workout/workout-circuit'
+import { exerciseInstanceKey } from '@/lib/workout/exercise-instance-key'
 
 type WorkoutSet = WorkoutSummary['workout_exercises'][number]['sets'][number]
 type WorkoutExercise = WorkoutSummary['workout_exercises'][number]
@@ -34,7 +35,9 @@ function scoreSet(weightKg: number | null, reps: number | null) {
 }
 
 function getExerciseKey(entry: WorkoutExercise) {
-  return entry.exercise?.id ?? entry.exercise?.name ?? entry.id
+  const exerciseId = entry.exercise?.id ?? entry.id
+  const equipment = entry.equipment ?? entry.exercise?.equipment ?? null
+  return exerciseInstanceKey(exerciseId, equipment)
 }
 
 function getExerciseMeta(entry: WorkoutExercise) {

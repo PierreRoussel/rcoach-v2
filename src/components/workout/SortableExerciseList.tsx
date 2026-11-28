@@ -37,7 +37,10 @@ import {
   wrapSortableDragEnd,
 } from '@/lib/dnd/interaction'
 import { cn } from '@/lib/utils'
-import { siblingsForExercise } from '@/lib/workout/exercise-equipment-family'
+import {
+  exerciseInstanceKey,
+  resolveEquipmentOptions,
+} from '@/lib/workout/exercise-instance-key'
 import { formatEquipmentLabel } from '@/lib/workout/exercise-labels'
 import { buildExerciseUnits } from '@/lib/workout/exercise-units'
 import { isExerciseComplete } from '@/lib/workout/format-exercise-collapsed-summary'
@@ -103,6 +106,7 @@ type SortableExerciseListProps = {
   onOpenReorder?: () => void
   onAddSet?: (index: number) => void
   onReplace?: (index: number, exercise: Exercise) => void
+  onSwapEquipment?: (index: number, equipment: string) => void
   onViewStats?: (index: number) => void
   onViewDetails?: (index: number) => void
   renderBelowTitle?: (index: number) => ReactNode
@@ -274,7 +278,7 @@ function SortableExerciseItem({
   renderSetsContent,
   renderBelowTitle,
   renderCollapsedSummary,
-  equipmentSiblings,
+  equipmentOptions,
   onSwapEquipment,
   supersetBadge,
 }: {
@@ -301,12 +305,12 @@ function SortableExerciseItem({
   renderSetsContent?: (index: number) => ReactNode
   renderBelowTitle?: (index: number) => ReactNode
   renderCollapsedSummary?: (index: number) => string | null
-  equipmentSiblings?: Exercise[]
-  onSwapEquipment?: (exercise: Exercise) => void
+  equipmentOptions?: string[]
+  onSwapEquipment?: (equipment: string) => void
   supersetBadge?: number
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: exercise.exerciseId, disabled: !dragEnabled })
+    useSortable({ id: exerciseInstanceKey(exercise.exerciseId, exercise.equipment), disabled: !dragEnabled })
 
   const exerciseComplete = isExerciseComplete(exercise.sets)
   const [open, setOpen] = useState(() => !exerciseComplete)
@@ -314,7 +318,7 @@ function SortableExerciseItem({
   const wasActiveRef = useRef(isActive)
   const equipmentLabel = formatEquipmentLabel(exercise.equipment)
   const canSwapEquipment =
-    Boolean(onSwapEquipment) && (equipmentSiblings?.length ?? 0) > 1
+    Boolean(onSwapEquipment) && (equipmentOptions?.length ?? 0) > 1
 
   useEffect(() => {
     if (exerciseComplete) {
@@ -445,13 +449,13 @@ function SortableExerciseItem({
                   ) : (
                     <Pill tone="default">{equipmentLabel}</Pill>
                   )}
-                  {canSwapEquipment && equipmentOpen && equipmentSiblings ? (
+                  {canSwapEquipment && equipmentOpen && equipmentOptions ? (
                     <ExerciseEquipmentChips
                       className="mt-1.5"
-                      variants={equipmentSiblings}
-                      selectedId={exercise.exerciseId}
-                      onSelect={(variant) => {
-                        onSwapEquipment?.(variant)
+                      options={equipmentOptions}
+                      selectedEquipment={exercise.equipment}
+                      onSelect={(equipment) => {
+                        onSwapEquipment?.(equipment)
                         setEquipmentOpen(false)
                       }}
                     />
@@ -604,6 +608,7 @@ export function SortableExerciseList({
   onOpenReorder,
   onAddSet,
   onReplace,
+  onSwapEquipment,
   onViewStats,
   onViewDetails,
   renderBelowTitle,
@@ -644,8 +649,12 @@ export function SortableExerciseList({
       return
     }
 
-    const oldIndex = exercises.findIndex((item) => item.exerciseId === active.id)
-    const newIndex = exercises.findIndex((item) => item.exerciseId === over.id)
+    const oldIndex = exercises.findIndex(
+      (item) => exerciseInstanceKey(item.exerciseId, item.equipment) === active.id,
+    )
+    const newIndex = exercises.findIndex(
+      (item) => exerciseInstanceKey(item.exerciseId, item.equipment) === over.id,
+    )
     if (oldIndex < 0 || newIndex < 0) {
       return
     }
@@ -653,15 +662,12 @@ export function SortableExerciseList({
     onReorder(oldIndex, newIndex)
   }
 
-  function equipmentSiblingsFor(entry: ActiveExerciseEntry): Exercise[] {
-    if (!onReplace || catalogExercises.length === 0) {
-      return []
-    }
+  function equipmentOptionsFor(entry: ActiveExerciseEntry): string[] {
     const fromCatalog = catalogExercises.find((item) => item.id === entry.exerciseId)
     if (!fromCatalog) {
-      return []
+      return entry.equipment ? [entry.equipment] : []
     }
-    return siblingsForExercise(fromCatalog, catalogExercises)
+    return resolveEquipmentOptions(fromCatalog)
   }
 
   function renderItem(index: number) {
@@ -700,9 +706,9 @@ export function SortableExerciseList({
         renderSetsContent={renderSetsContent}
         renderBelowTitle={renderBelowTitle}
         renderCollapsedSummary={renderCollapsedSummary}
-        equipmentSiblings={equipmentSiblingsFor(entry)}
+        equipmentOptions={equipmentOptionsFor(entry)}
         onSwapEquipment={
-          onReplace ? (variant) => onReplace(index, variant) : undefined
+          onSwapEquipment ? (equipment) => onSwapEquipment(index, equipment) : undefined
         }
         supersetBadge={isSplitSuperset(exercises, index)}
       />
@@ -728,7 +734,7 @@ export function SortableExerciseList({
       onDragEnd={wrapSortableDragEnd(handleDragEnd)}
     >
       <SortableContext
-        items={exercises.map((exercise) => exercise.exerciseId)}
+        items={exercises.map((exercise) => exerciseInstanceKey(exercise.exerciseId, exercise.equipment))}
         strategy={verticalListSortingStrategy}
       >
         <div className={cn('space-y-2', embedded && 'space-y-0')}>

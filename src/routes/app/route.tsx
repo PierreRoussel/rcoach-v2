@@ -17,6 +17,7 @@ import { resolveDisplayName } from '@/lib/profile/resolve-display-name'
 import { flushSyncQueue } from '@/lib/graphql/sync-queue'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
+import { useExerciseMergeRemap } from '@/hooks/useExerciseMergeRemap'
 import { useMyProfile } from '@/hooks/useProfile'
 import { useNutritionSync } from '@/hooks/useNutritionSync'
 import { useProfileNavBadgeCount, useRefreshFriendMotivationsOnAppResume } from '@/hooks/useFriends'
@@ -45,6 +46,7 @@ function AppLayout() {
   })
 
   useNutritionSync()
+  useExerciseMergeRemap()
   useProfileNavBadgeCount()
   useRefreshFriendMotivationsOnAppResume()
 

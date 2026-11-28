@@ -245,7 +245,7 @@ export function ExerciseOverloadHint({
   className,
   overloadGate,
 }: ExerciseOverloadHintProps) {
-  const { data: lastPerformance, isLoading } = useLastExercisePerformance(exercise.id)
+  const { data: lastPerformance, isLoading } = useLastExercisePerformance(exercise.id, exercise.equipment)
   const [adjustOpen, setAdjustOpen] = useState(false)
 
   const suggestion = lastPerformance

@@ -46,7 +46,10 @@ import {
 import { useMyProfile } from '@/hooks/useProfile'
 import type { Exercise } from '@/lib/graphql/operations'
 import type { ActiveExerciseEntry } from '@/lib/workout/active-store'
-import { replaceTemplateExercise } from '@/lib/workout/replace-exercise'
+import {
+  replaceTemplateExercise,
+  setTemplateExerciseEquipment,
+} from '@/lib/workout/replace-exercise'
 import { templateExercisesToActive } from '@/lib/workout/template-mapper'
 import {
   forgetTemplateEditorExercises,
@@ -240,8 +243,23 @@ export function TemplateEditorForm({
     setActiveIndex(Math.min(activeIndex, Math.max(next.length - 1, 0)))
   }
 
+  function handleSwapEquipment(index: number, equipment: string) {
+    setExercises((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? setTemplateExerciseEquipment(item, equipment) : item,
+      ),
+    )
+  }
+
   function handleReplace(index: number, exercise: Exercise) {
-    if (exercises.some((item, itemIndex) => itemIndex !== index && item.exerciseId === exercise.id)) {
+    if (
+      exercises.some(
+        (item, itemIndex) =>
+          itemIndex !== index &&
+          item.exerciseId === exercise.id &&
+          item.equipment === exercise.equipment,
+      )
+    ) {
       return
     }
 
@@ -502,7 +520,7 @@ export function TemplateEditorForm({
               </CardDescription>
             </div>
             <ExercisePicker
-              excludeIds={exercises.map((exercise) => exercise.exerciseId)}
+              excludeIds={[]}
               mode="add"
               context="template"
               templateId={templateId}
@@ -521,6 +539,7 @@ export function TemplateEditorForm({
             onReorder={handleReorder}
             onRemove={handleRemove}
             onReplace={handleReplace}
+            onSwapEquipment={handleSwapEquipment}
             onApplySupersetMembership={isEmom ? undefined : handleApplySupersetMembership}
             onRemoveFromSuperset={isEmom ? undefined : handleRemoveFromSuperset}
             onApplyEmomGroupMembership={isEmom ? handleApplyEmomGroupMembership : undefined}

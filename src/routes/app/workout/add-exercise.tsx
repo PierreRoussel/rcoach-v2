@@ -23,6 +23,7 @@ import {
   useExerciseAddBackNavigation,
 } from '@/hooks/useExerciseAddBackNavigation'
 import { useRecentExercises } from '@/hooks/useRecentExercises'
+import { defaultLineEquipment } from '@/lib/workout/exercise-instance-key'
 import type { Exercise } from '@/lib/graphql/operations'
 import { useActiveWorkoutStore } from '@/lib/workout/active-store'
 import { MUSCLE_GROUP_LABELS } from '@/lib/stats/muscle-groups'
@@ -196,6 +197,10 @@ function AddExercisePage() {
     exercise: Exercise,
     options?: { skipLocalExcludeUpdate?: boolean },
   ) {
+    const resolvedExercise: Exercise = {
+      ...exercise,
+      equipment: exercise.equipment ?? defaultLineEquipment(exercise),
+    }
     const pickerSession = getExercisePickerSession()
     if (!pickerSession) {
       return
@@ -203,10 +208,10 @@ function AddExercisePage() {
 
     if (pickerSession.mode === 'replace' && pickerSession.replaceIndex != null) {
       if (pickerSession.context === 'active' || pickerSession.context === 'replace') {
-        await replaceExerciseInStore(pickerSession.replaceIndex, exercise)
+        await replaceExerciseInStore(pickerSession.replaceIndex, resolvedExercise)
       } else {
         completeExercisePicker({
-          exercise,
+          exercise: resolvedExercise,
           mode: 'replace',
           replaceIndex: pickerSession.replaceIndex,
         })
@@ -218,11 +223,11 @@ function AddExercisePage() {
     switch (pickerSession.context) {
       case 'active':
       case 'replace':
-        await addExerciseToStore(exercise)
+        await addExerciseToStore(resolvedExercise)
         break
       case 'template':
         completeExercisePicker({
-          exercise,
+          exercise: resolvedExercise,
           mode: 'add',
         })
         break
@@ -235,7 +240,7 @@ function AddExercisePage() {
         await addProgramExercise.mutateAsync({
           programId: pickerSession.programId,
           programDayId: pickerSession.programDayId,
-          exerciseId: exercise.id,
+          exerciseId: resolvedExercise.id,
           sortOrder: (day?.program_exercises.length ?? 0) + programAddCount,
           targetSets: 3,
           targetReps: '8-12',
@@ -245,11 +250,11 @@ function AddExercisePage() {
       }
     }
 
-    excludeExerciseFromPicker(exercise.id)
-    markExercisePickerScrollTarget(exercise.id)
+    excludeExerciseFromPicker(resolvedExercise.id)
+    markExercisePickerScrollTarget(resolvedExercise.id)
     if (!options?.skipLocalExcludeUpdate) {
       setExcludeIds((current) =>
-        current.includes(exercise.id) ? current : [...current, exercise.id],
+        current.includes(resolvedExercise.id) ? current : [...current, resolvedExercise.id],
       )
     }
   }

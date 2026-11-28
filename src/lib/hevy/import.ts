@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale'
 import Papa from 'papaparse'
 
 import type { Exercise } from '@/lib/graphql/operations'
+import { resolveHevyExerciseMatch } from '@/lib/workout/exercise-merge-map'
 
 export type HevyRow = {
   title: string
@@ -167,18 +168,19 @@ export function parseHevyCsv(content: string): ParsedHevyWorkout[] {
 
 export function mapHevyWorkoutToInsertInput(
   workout: ParsedHevyWorkout,
-  exerciseLookup: Map<string, Exercise>,
+  catalog: Exercise[],
 ) {
   const workoutExercises = workout.exercises
     .map((exercise, sortOrder) => {
-      const match = exerciseLookup.get(exercise.exerciseName.toLowerCase())
-      if (!match) {
+      const resolved = resolveHevyExerciseMatch(exercise.exerciseName, catalog)
+      if (!resolved) {
         return null
       }
 
       return {
         sort_order: sortOrder,
-        exercise_id: match.id,
+        exercise_id: resolved.exercise.id,
+        equipment: resolved.equipment,
         superset_id: exercise.supersetId,
         notes: exercise.notes,
         sets: {
@@ -211,7 +213,5 @@ export function mapHevyWorkoutToInsertInput(
 }
 
 export function buildExerciseLookup(exercises: Exercise[]) {
-  return new Map(
-    exercises.map((exercise) => [exercise.name.toLowerCase(), exercise]),
-  )
+  return exercises
 }

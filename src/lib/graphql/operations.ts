@@ -57,6 +57,7 @@ export type Exercise = {
   name_fr?: string | null
   muscle_group: string | null
   equipment: string | null
+  equipment_options?: string[] | null
   is_public: boolean
   tracking_mode?: string | null
   description_fr?: string | null
@@ -77,6 +78,7 @@ export type WorkoutSummary = {
   workout_template_id?: string | null
   workout_exercises: Array<{
     id: string
+    equipment?: string | null
     exercise: {
       id: string
       name: string
@@ -113,6 +115,7 @@ export type WorkoutTemplateSet = {
 export type WorkoutTemplateExercise = {
   id: string
   sort_order: number
+  equipment?: string | null
   superset_id?: number | null
   default_rest_seconds?: number
   target_reps?: number | null
@@ -147,6 +150,7 @@ export type WorkoutDetail = Omit<WorkoutSummary, 'workout_exercises'> & {
   workout_exercises: Array<{
     id: string
     sort_order: number
+    equipment?: string | null
     exercise: {
       id: string
       name: string
@@ -377,6 +381,7 @@ export const LIST_MY_WORKOUTS = `
       workout_template_id
       workout_exercises {
         id
+        equipment
         exercise {
           id
           name
@@ -414,6 +419,7 @@ export const GET_MY_LAST_COMPLETED_WORKOUT = `
       workout_template_id
       workout_exercises {
         id
+        equipment
         exercise {
           id
           name
@@ -490,6 +496,7 @@ export const LIST_MY_WORKOUTS_PAGE = `
       workout_template_id
       workout_exercises {
         id
+        equipment
         exercise {
           id
           name
@@ -535,6 +542,7 @@ export const LIST_MY_WORKOUTS_STATS_PAGE = `
       workout_template_id
       workout_exercises {
         id
+        equipment
         exercise {
           id
           name
@@ -573,6 +581,7 @@ export const LIST_MY_WORKOUTS_STATS_ALL_PAGE = `
       workout_template_id
       workout_exercises {
         id
+        equipment
         exercise {
           id
           name
@@ -713,6 +722,7 @@ export const LIST_PUBLIC_EXERCISES = `
       name_fr
       muscle_group
       equipment
+      equipment_options
       is_public
     }
   }
@@ -726,12 +736,23 @@ export const LIST_ALL_EXERCISES = `
       name_fr
       muscle_group
       equipment
+      equipment_options
       is_public
       tracking_mode
       created_by
     }
   }
 `
+
+export const LIST_EXERCISE_MERGE_MAP = `
+  query ListExerciseMergeMap {
+    exercise_merge_map {
+      old_id
+      new_id
+    }
+  }
+`
+
 
 export const INSERT_EXERCISE = `
   mutation InsertExercise($object: exercises_insert_input!) {
@@ -741,6 +762,7 @@ export const INSERT_EXERCISE = `
         name_fr
         muscle_group
       equipment
+      equipment_options
       is_public
       tracking_mode
       content_status
@@ -768,15 +790,16 @@ export const GET_EXERCISE_CONTENT = `
 `
 
 export const GET_LAST_EXERCISE_PERFORMANCE = `
-  query GetLastExercisePerformance($exerciseId: uuid!) {
+  query GetLastExercisePerformance($exerciseId: uuid!, $equipment: String) {
     workout_exercises(
       where: {
         exercise_id: { _eq: $exerciseId }
         workout: { ended_at: { _is_null: false } }
       }
       order_by: { workout: { started_at: desc } }
-      limit: 1
+      limit: 12
     ) {
+      equipment
       workout {
         title
         started_at
@@ -845,6 +868,7 @@ export const INSERT_WORKOUT = `
       started_at
       workout_exercises {
         id
+        equipment
         exercise {
           name
         }
@@ -966,6 +990,7 @@ export const LIST_MY_PROGRAMS = `
           target_sets
           target_reps
           notes
+          equipment
           exercise {
         id
         name
@@ -997,6 +1022,7 @@ export const GET_PROGRAM = `
           target_sets
           target_reps
           notes
+          equipment
           exercise {
         id
         name
@@ -1109,6 +1135,7 @@ const GET_WORKOUT_BY_ID_FIELDS = `
       workout_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
+        equipment
         exercise {
           id
           name
@@ -1160,6 +1187,7 @@ export const GET_SHARED_WORKOUT_BY_TOKEN = `
       workout_exercises(order_by: { sort_order: asc }) {
         id
         sort_order
+        equipment
         exercise {
           id
           name
@@ -1214,6 +1242,7 @@ export const GET_SHARED_TEMPLATE_BY_TOKEN = `
         target_reps
         target_weight_kg
         emom_group_id
+        equipment
         exercise {
           id
           name
@@ -1287,6 +1316,7 @@ export const LIST_MY_WORKOUT_TEMPLATES = `
         target_reps
         target_weight_kg
         emom_group_id
+        equipment
         exercise {
           id
           name
@@ -1329,6 +1359,7 @@ export const GET_WORKOUT_TEMPLATE = `
         target_reps
         target_weight_kg
         emom_group_id
+        equipment
         exercise {
           id
           name
@@ -3082,6 +3113,7 @@ export const GET_FRIEND_PROFILE_SUMMARY = `
         share_token
         workout_exercises(order_by: { sort_order: asc }) {
           id
+          equipment
           exercise {
             id
             name
@@ -3135,6 +3167,7 @@ export const GET_FRIEND_PROFILE = `
         share_token
         workout_exercises(order_by: { sort_order: asc }) {
           id
+          equipment
           exercise {
             id
             name

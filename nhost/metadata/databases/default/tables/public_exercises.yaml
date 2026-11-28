@@ -40,6 +40,7 @@ select_permissions:
         - demo_poster_file_id
         - content_status
         - content_source
+        - equipment_options
       filter:
         _or:
           - is_public:
@@ -54,6 +55,7 @@ select_permissions:
         - name_fr
         - muscle_group
         - equipment
+        - equipment_options
         - description_fr
         - coaching_cues
         - demo_file_id

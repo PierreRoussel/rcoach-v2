@@ -43,3 +43,23 @@ export function replaceTemplateExercise(
     trackingMode: exercise.tracking_mode ?? null,
   }
 }
+
+export function setActiveExerciseEquipment(
+  current: ActiveExerciseEntry,
+  equipment: string,
+): ActiveExerciseEntry {
+  return {
+    ...current,
+    equipment,
+  }
+}
+
+export function setTemplateExerciseEquipment(
+  current: TemplateExerciseDraft,
+  equipment: string,
+): TemplateExerciseDraft {
+  return {
+    ...current,
+    equipment,
+  }
+}

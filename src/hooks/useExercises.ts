@@ -4,6 +4,7 @@ import {
   GET_LAST_EXERCISE_PERFORMANCE,
   INSERT_EXERCISE,
   LIST_ALL_EXERCISES,
+  LIST_EXERCISE_MERGE_MAP,
   type Exercise,
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
@@ -12,7 +13,11 @@ import {
   type PerformanceSummary,
 } from '@/lib/workout/progressive-overload'
 import { requestExerciseContentEnrichment } from '@/lib/workout/enrich-exercise-content'
-import { exerciseMatchesTextQuery } from '@/lib/workout/exercise-equipment-family'
+import {
+  exerciseMatchesTextQuery,
+  stripEquipmentSuffix,
+} from '@/lib/workout/exercise-equipment-family'
+import { exerciseOptionsIncludeEquipment } from '@/lib/workout/exercise-instance-key'
 import { resolveExerciseDisplayName } from '@/lib/workout/translate-exercise-name'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 
@@ -30,6 +35,23 @@ export function useAllExercises(options?: { enabled?: boolean }) {
         LIST_ALL_EXERCISES,
       )
       return data.exercises
+    },
+  })
+}
+
+
+export function useExerciseMergeMap() {
+  const { nhost, isAuthenticated } = useAuth()
+
+  return useQuery({
+    queryKey: ['exercise-merge-map'],
+    enabled: isAuthenticated,
+    staleTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const data = await graphqlRequest<{
+        exercise_merge_map: Array<{ old_id: string; new_id: string }>
+      }>(nhost, LIST_EXERCISE_MERGE_MAP)
+      return data.exercise_merge_map
     },
   })
 }
@@ -85,16 +107,20 @@ export function useCreateExercise() {
   })
 }
 
-export function useLastExercisePerformance(exerciseId: string | undefined) {
+export function useLastExercisePerformance(
+  exerciseId: string | undefined,
+  equipment?: string | null,
+) {
   const { nhost, isAuthenticated } = useAuth()
 
   return useQuery({
-    queryKey: ['exercise-performance', exerciseId],
+    queryKey: ['exercise-performance', exerciseId, equipment ?? null],
     enabled: isAuthenticated && Boolean(exerciseId),
     queryFn: async (): Promise<PerformanceSummary | null> => {
       const data = await graphqlRequest<{
         workout_exercises: Array<{
           workout: { title: string; started_at: string }
+          equipment: string | null
           exercise: {
             name: string
             equipment: string | null
@@ -110,9 +136,14 @@ export function useLastExercisePerformance(exerciseId: string | undefined) {
             distance_km: number | null
           }>
         }>
-      }>(nhost, GET_LAST_EXERCISE_PERFORMANCE, { exerciseId })
+      }>(nhost, GET_LAST_EXERCISE_PERFORMANCE, { exerciseId, equipment: equipment ?? null })
 
-      const last = data.workout_exercises[0]
+      const matching = equipment
+        ? data.workout_exercises.filter(
+            (row) => (row.equipment ?? null) === equipment,
+          )
+        : data.workout_exercises
+      const last = matching[0]
       if (!last) {
         return null
       }
@@ -141,7 +172,13 @@ export function filterExercises(
       return false
     }
 
-    return exerciseMatchesTextQuery(exercise, query)
+    const textMatch = exerciseMatchesTextQuery(exercise, query)
+    const equipMatch = exerciseOptionsIncludeEquipment(exercise, query)
+    const baseMatch =
+      query.trim().length > 0 &&
+      stripEquipmentSuffix(exercise.name).toLowerCase().includes(query.trim().toLowerCase())
+
+    return textMatch || equipMatch || baseMatch
   })
 }
 

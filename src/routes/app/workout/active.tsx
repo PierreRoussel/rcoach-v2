@@ -169,6 +169,7 @@ function ActiveWorkoutPage() {
     addExercise,
     removeExercise,
     replaceExercise,
+    setExerciseEquipment,
     reorderExercises,
     updateExerciseDefaultRest,
     applySupersetMembership,
@@ -196,6 +197,7 @@ function ActiveWorkoutPage() {
       addExercise: state.addExercise,
       removeExercise: state.removeExercise,
       replaceExercise: state.replaceExercise,
+      setExerciseEquipment: state.setExerciseEquipment,
       reorderExercises: state.reorderExercises,
       updateExerciseDefaultRest: state.updateExerciseDefaultRest,
       applySupersetMembership: state.applySupersetMembership,
@@ -431,6 +433,7 @@ function ActiveWorkoutPage() {
           workoutTemplateId: draft.sourceTemplateId,
           exercises: validatedExercises.map((exercise) => ({
             exerciseId: exercise.exerciseId,
+            equipment: exercise.equipment,
             sets: exercise.sets.map((set) => ({
               setIndex: set.setIndex,
               setType: set.setType ?? 'normal',
@@ -756,6 +759,9 @@ function ActiveWorkoutPage() {
               onRemoveExercise={(index) => void removeExercise(index)}
               onReplaceExercise={(exerciseIndex, exercise) =>
                 void replaceExercise(exerciseIndex, exercise)
+              }
+              onSwapEquipment={(exerciseIndex, equipment) =>
+                void setExerciseEquipment(exerciseIndex, equipment)
               }
               onApplySupersetMembership={(anchor, partners) =>
                 void applySupersetMembership(anchor, partners)

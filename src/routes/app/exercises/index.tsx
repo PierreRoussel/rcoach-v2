@@ -25,6 +25,7 @@ import {
   groupExercisesByFamily,
 } from '@/lib/workout/exercise-equipment-family'
 import { EQUIPMENT, MUSCLE_GROUPS, inferExerciseMeta } from '@/lib/workout/exercise-meta'
+import { EQUIPMENT_LABELS, formatEquipmentOptionsSubtitle } from '@/lib/workout/exercise-labels'
 
 export const Route = createFileRoute('/app/exercises/')({
   component: ExercisesPage,
@@ -164,7 +165,7 @@ function ExercisesPage() {
                 >
                   {EQUIPMENT.map((item) => (
                     <option key={item} value={item}>
-                      {item}
+                      {EQUIPMENT_LABELS[item]}
                     </option>
                   ))}
                 </select>
@@ -208,7 +209,7 @@ function ExercisesPage() {
                   <div>
                     <p className="font-medium">{group.baseLabel}</p>
                     <p className="text-xs text-muted-foreground">
-                      {familyGroupMetaLabel(group)}
+                      {formatEquipmentOptionsSubtitle(group.variants[0]!)}
                     </p>
                   </div>
                   {isPersonal ? <Pill tone="purple">Perso</Pill> : null}

@@ -102,6 +102,7 @@ export function ActiveWorkoutCircuit({
   onReorderExercises,
   onRemoveExercise,
   onReplaceExercise,
+  onSwapEquipment,
   onApplySupersetMembership,
   onRemoveFromSuperset,
   onUpdateExerciseRest,
@@ -343,6 +344,7 @@ export function ActiveWorkoutCircuit({
         onReorder={onReorderExercises}
         onRemove={onRemoveExercise}
         onReplace={onReplaceExercise}
+        onSwapEquipment={onSwapEquipment}
         onApplySupersetMembership={onApplySupersetMembership}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={() => setReorderOpen(true)}

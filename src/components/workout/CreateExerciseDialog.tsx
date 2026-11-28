@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { useCreateExercise } from '@/hooks/useExercises'
 import type { Exercise } from '@/lib/graphql/operations'
 import { EQUIPMENT, MUSCLE_GROUPS, inferExerciseMeta } from '@/lib/workout/exercise-meta'
+import { EQUIPMENT_LABELS } from '@/lib/workout/exercise-labels'
 import type { ExerciseTrackingMode } from '@/lib/workout/exercise-tracking'
 
 type CreateExerciseDialogProps = {
@@ -135,7 +136,7 @@ export function CreateExerciseDialog({
               >
                 {EQUIPMENT.map((item) => (
                   <option key={item} value={item}>
-                    {item}
+                    {EQUIPMENT_LABELS[item]}
                   </option>
                 ))}
               </select>

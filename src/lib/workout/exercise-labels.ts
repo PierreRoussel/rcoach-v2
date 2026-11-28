@@ -1,3 +1,5 @@
+import type { Exercise } from '@/lib/graphql/operations'
+import { resolveEquipmentOptions } from '@/lib/workout/exercise-instance-key'
 import type { Equipment } from '@/lib/workout/exercise-meta'
 import type { ExerciseKind } from '@/lib/workout/progressive-overload'
 
@@ -32,4 +34,13 @@ export function formatEquipmentLabel(equipment: string | null | undefined): stri
   }
 
   return equipment
+}
+
+export function formatEquipmentOptionsSubtitle(
+  exercise: Pick<Exercise, 'equipment' | 'equipment_options'>,
+): string {
+  const labels = resolveEquipmentOptions(exercise)
+    .map((key) => formatEquipmentLabel(key))
+    .filter((label): label is string => Boolean(label))
+  return labels.join(' · ') || formatEquipmentLabel(exercise.equipment) || '—'
 }

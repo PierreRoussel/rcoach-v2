@@ -12,6 +12,7 @@ import {
 } from '@/lib/graphql/operations'
 import { graphqlRequest } from '@/lib/graphql/request'
 import { insertTemplateExercises } from '@/lib/workout/insert-template-exercises'
+import { defaultLineEquipment } from '@/lib/workout/exercise-instance-key'
 import { useAuth } from '@/lib/nhost/AuthProvider'
 import {
   DEFAULT_EMOM_INTERVAL_SECONDS,
@@ -119,7 +120,7 @@ export function templateToDraft(template: WorkoutTemplate): TemplateDraft {
         exerciseName: entry.exercise.name,
         exerciseNameFr: entry.exercise.name_fr ?? null,
         muscleGroup: entry.exercise.muscle_group,
-        equipment: entry.exercise.equipment,
+        equipment: entry.equipment ?? entry.exercise.equipment,
         supersetId: entry.superset_id ?? null,
         emomGroupId: entry.emom_group_id ?? null,
         targetReps: entry.target_reps ?? null,
@@ -286,13 +287,16 @@ export function useDeleteWorkoutTemplate() {
   })
 }
 
-export function exerciseToDraft(exercise: Exercise): TemplateExerciseDraft {
+export function exerciseToDraft(
+  exercise: Exercise,
+  lineEquipment?: string | null,
+): TemplateExerciseDraft {
   return {
     exerciseId: exercise.id,
     exerciseName: exercise.name,
     exerciseNameFr: exercise.name_fr ?? null,
     muscleGroup: exercise.muscle_group,
-    equipment: exercise.equipment,
+    equipment: lineEquipment ?? defaultLineEquipment(exercise),
     trackingMode: exercise.tracking_mode ?? null,
     supersetId: null,
     emomGroupId: null,

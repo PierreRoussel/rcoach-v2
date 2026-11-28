@@ -23,7 +23,11 @@ import {
   type EmomTimerState,
 } from '@/lib/workout/emom-store'
 import { handleEmomTickEvents } from '@/lib/workout/emom-timer-feedback'
-import { replaceActiveExercise } from '@/lib/workout/replace-exercise'
+import { replaceActiveExercise, setActiveExerciseEquipment } from '@/lib/workout/replace-exercise'
+import {
+  defaultLineEquipment,
+  exerciseInstanceKey,
+} from '@/lib/workout/exercise-instance-key'
 import {
   getExerciseTrackingKind,
   isHoldCapableExercise,
@@ -196,6 +200,7 @@ type ActiveWorkoutState = {
     tracking_mode?: string | null
   }) => Promise<void>
   removeExercise: (exerciseIndex: number) => Promise<void>
+  setExerciseEquipment: (exerciseIndex: number, equipment: string) => Promise<void>
   replaceExercise: (
     exerciseIndex: number,
     exercise: {
@@ -577,7 +582,14 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   },
 
   addExercise: async (exercise) => {
-    if (get().exercises.some((item) => item.exerciseId === exercise.id)) {
+    const lineEquipment =
+      exercise.equipment ?? defaultLineEquipment(exercise)
+    const instanceKey = exerciseInstanceKey(exercise.id, lineEquipment)
+    if (
+      get().exercises.some(
+        (item) => exerciseInstanceKey(item.exerciseId, item.equipment) === instanceKey,
+      )
+    ) {
       return
     }
 
@@ -587,7 +599,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       !isEmom &&
       isHoldCapableExercise({
         name: exercise.name,
-        equipment: exercise.equipment ?? null,
+        equipment: lineEquipment,
         tracking_mode: exercise.tracking_mode ?? null,
       })
     const nextExercises = [
@@ -597,7 +609,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
         exerciseName: exercise.name,
         exerciseNameFr: exercise.name_fr ?? null,
         muscleGroup: exercise.muscle_group ?? null,
-        equipment: exercise.equipment ?? null,
+        equipment: lineEquipment,
         trackingMode: exercise.tracking_mode ?? null,
         supersetId: null,
         emomGroupId: null,
@@ -644,22 +656,67 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     })
   },
 
-  replaceExercise: async (exerciseIndex, exercise) => {
+
+
+  setExerciseEquipment: async (exerciseIndex, equipment) => {
     const current = get().exercises[exerciseIndex]
-    if (!current || current.exerciseId === exercise.id) {
+    if (!current || current.equipment === equipment) {
       return
     }
 
+    const instanceKey = exerciseInstanceKey(current.exerciseId, equipment)
     if (
       get().exercises.some(
-        (entry, index) => index !== exerciseIndex && entry.exerciseId === exercise.id,
+        (entry, index) =>
+          index !== exerciseIndex &&
+          exerciseInstanceKey(entry.exerciseId, entry.equipment) === instanceKey,
       )
     ) {
       return
     }
 
     const nextExercises = get().exercises.map((entry, index) =>
-      index === exerciseIndex ? replaceActiveExercise(entry, exercise) : entry,
+      index === exerciseIndex ? setActiveExerciseEquipment(entry, equipment) : entry,
+    )
+    const { activeStepIndex, lastCompletedStep } =
+      syncAfterExerciseStructureChange(nextExercises)
+
+    set({ exercises: nextExercises, activeStepIndex, lastCompletedStep })
+    await persistDraft(get, {
+      title: get().title,
+      startedAt: get().startedAt,
+      defaultRestSeconds: get().defaultRestSeconds,
+      exercises: nextExercises,
+      activeStepIndex,
+      lastCompletedStep,
+    })
+  },
+
+  replaceExercise: async (exerciseIndex, exercise) => {
+    const current = get().exercises[exerciseIndex]
+    if (!current) {
+      return
+    }
+
+    const lineEquipment =
+      exercise.equipment ?? defaultLineEquipment(exercise)
+    const instanceKey = exerciseInstanceKey(exercise.id, lineEquipment)
+    if (
+      get().exercises.some(
+        (entry, index) =>
+          index !== exerciseIndex &&
+          exerciseInstanceKey(entry.exerciseId, entry.equipment) === instanceKey,
+      )
+    ) {
+      return
+    }
+
+    if (current.exerciseId === exercise.id && current.equipment === lineEquipment) {
+      return
+    }
+
+    const nextExercises = get().exercises.map((entry, index) =>
+      index === exerciseIndex ? replaceActiveExercise(entry, { ...exercise, id: exercise.id, equipment: lineEquipment }) : entry,
     )
     const { activeStepIndex, lastCompletedStep } =
       syncAfterExerciseStructureChange(nextExercises)

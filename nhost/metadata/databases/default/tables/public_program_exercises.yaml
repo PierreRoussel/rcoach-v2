@@ -19,6 +19,7 @@ select_permissions:
         - target_sets
         - target_reps
         - notes
+        - equipment
       filter:
         program_day:
           program:
@@ -39,6 +40,7 @@ insert_permissions:
         - target_sets
         - target_reps
         - notes
+        - equipment
 update_permissions:
   - role: user
     permission:
@@ -47,6 +49,7 @@ update_permissions:
         - target_sets
         - target_reps
         - notes
+        - equipment
       filter:
         program_day:
           program:

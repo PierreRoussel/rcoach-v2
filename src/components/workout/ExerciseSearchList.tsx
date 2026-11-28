@@ -9,7 +9,12 @@ import {
   groupExercisesByFamily,
   type FamilyGroup,
 } from '@/lib/workout/exercise-equipment-family'
-import { formatExerciseSubtitle } from '@/lib/workout/format-exercise-collapsed-summary'
+import { formatEquipmentOptionsSubtitle } from '@/lib/workout/exercise-labels'
+import {
+  defaultLineEquipment,
+  resolveEquipmentOptions,
+} from '@/lib/workout/exercise-instance-key'
+import { MUSCLE_GROUP_LABELS, normalizeMuscleGroup } from '@/lib/stats/muscle-groups'
 import { cn } from '@/lib/utils'
 
 export type ExerciseQuickAddState = {
@@ -19,7 +24,7 @@ export type ExerciseQuickAddState = {
 
 type ExerciseSearchListProps = {
   exercises: Exercise[]
-  onSelect: (exercise: Exercise) => void
+  onSelect: (exercise: Exercise, equipment?: string) => void
   onQuickAdd?: (exercise: Exercise) => void
   quickAddState?: ExerciseQuickAddState
   emptyLabel?: string
@@ -57,14 +62,14 @@ function FamilySearchRow({
   onSelect,
   onQuickAdd,
   quickAddState,
-  pendingQuickAdd,
+  pendingQuickAdd: _pendingQuickAdd,
   onPendingQuickAdd,
-  onClearPendingQuickAdd,
+  onClearPendingQuickAdd: _onClearPendingQuickAdd,
 }: {
   group: FamilyGroup
   expanded: boolean
   onToggle: () => void
-  onSelect: (exercise: Exercise) => void
+  onSelect: (exercise: Exercise, equipment?: string) => void
   onQuickAdd?: (exercise: Exercise) => void
   quickAddState: ExerciseQuickAddState
   pendingQuickAdd: boolean
@@ -74,16 +79,6 @@ function FamilySearchRow({
   const multi = group.variants.length > 1
   const only = group.variants[0]!
   const isPersonal = group.variants.some((variant) => !variant.is_public)
-
-  function handleChip(variant: Exercise) {
-    if (pendingQuickAdd && onQuickAdd) {
-      onQuickAdd(variant)
-      onClearPendingQuickAdd()
-      return
-    }
-    onClearPendingQuickAdd()
-    onSelect(variant)
-  }
 
   return (
     <div className="py-3">
@@ -96,7 +91,7 @@ function FamilySearchRow({
               onToggle()
               return
             }
-            onSelect(only)
+            onSelect(only, defaultLineEquipment(only))
           }}
         >
           <div className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
@@ -129,11 +124,7 @@ function FamilySearchRow({
         ) : null}
       </div>
       {multi && expanded ? (
-        <ExerciseEquipmentChips
-          className="mt-2"
-          variants={group.variants}
-          onSelect={handleChip}
-        />
+        <p className="mt-2 text-xs text-muted-foreground">Plusieurs variantes — utilisez la recherche après fusion.</p>
       ) : null}
     </div>
   )
@@ -146,32 +137,61 @@ function FlatSearchRow({
   quickAddState,
 }: {
   exercise: Exercise
-  onSelect: (exercise: Exercise) => void
+  onSelect: (exercise: Exercise, equipment?: string) => void
   onQuickAdd?: (exercise: Exercise) => void
   quickAddState: ExerciseQuickAddState
 }) {
+  const [pickEquipment, setPickEquipment] = useState(false)
+  const options = resolveEquipmentOptions(exercise)
+  const multi = options.length > 1
+  const muscle =
+    exercise.muscle_group != null
+      ? MUSCLE_GROUP_LABELS[normalizeMuscleGroup(exercise.muscle_group)]
+      : null
+
+  function confirm(equipment: string) {
+    onSelect({ ...exercise, equipment }, equipment)
+    setPickEquipment(false)
+  }
+
   return (
-    <div className="flex items-center gap-3 py-3">
-      <button
-        type="button"
-        className="min-w-0 flex-1 text-left"
-        onClick={() => onSelect(exercise)}
-      >
-        <div className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
-          <span className="truncate">
-            {exercise.name_fr?.trim() || exercise.name}
-          </span>
-          {!exercise.is_public ? <Pill tone="purple">Perso</Pill> : null}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {formatExerciseSubtitle(exercise.muscle_group, exercise.equipment) ?? '—'}
-        </div>
-      </button>
-      {onQuickAdd ? (
-        <QuickAddButton
-          exercise={exercise}
-          quickAddState={quickAddState}
-          onQuickAdd={onQuickAdd}
+    <div className="py-3">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={() => {
+            if (multi) {
+              setPickEquipment((value) => !value)
+              return
+            }
+            confirm(defaultLineEquipment(exercise))
+          }}
+        >
+          <div className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
+            <span className="truncate">
+              {exercise.name_fr?.trim() || exercise.name}
+            </span>
+            {!exercise.is_public ? <Pill tone="purple">Perso</Pill> : null}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {[muscle, formatEquipmentOptionsSubtitle(exercise)].filter(Boolean).join(' · ') || '—'}
+          </div>
+        </button>
+        {onQuickAdd ? (
+          <QuickAddButton
+            exercise={exercise}
+            quickAddState={quickAddState}
+            onQuickAdd={onQuickAdd}
+          />
+        ) : null}
+      </div>
+      {multi && pickEquipment ? (
+        <ExerciseEquipmentChips
+          className="mt-2"
+          options={options}
+          selectedEquipment={defaultLineEquipment(exercise)}
+          onSelect={confirm}
         />
       ) : null}
     </div>
@@ -185,7 +205,7 @@ export function ExerciseSearchList({
   quickAddState = null,
   emptyLabel = 'Aucun exercice trouvé.',
   sectionTitle,
-  groupByFamily = true,
+  groupByFamily = false,
   className,
 }: ExerciseSearchListProps) {
   const groups = useMemo(

@@ -25,6 +25,7 @@ type TemplateInsertOptions = {
   includeDefaultRestSeconds?: boolean
   includeSetType?: boolean
   includeDurationSeconds?: boolean
+  includeEquipment?: boolean
 }
 
 const FULL_TEMPLATE_INSERT_OPTIONS: TemplateInsertOptions = {
@@ -35,6 +36,7 @@ const FULL_TEMPLATE_INSERT_OPTIONS: TemplateInsertOptions = {
   includeDefaultRestSeconds: true,
   includeSetType: true,
   includeDurationSeconds: true,
+  includeEquipment: true,
 }
 
 function buildExerciseRows(
@@ -227,6 +229,10 @@ function degradeTemplateInsertOptions(
     isGraphqlMissingFieldError(error, 'duration_seconds')
   ) {
     return { ...options, includeDurationSeconds: false }
+  }
+
+  if (options.includeEquipment && isGraphqlMissingFieldError(error, 'equipment')) {
+    return { ...options, includeEquipment: false }
   }
 
   return null

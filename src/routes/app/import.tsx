@@ -48,7 +48,7 @@ function ImportPage() {
     try {
       const content = await file.text()
       const parsedWorkouts = parseHevyCsv(content)
-      const lookup = buildExerciseLookup(exercises)
+      const catalog = buildExerciseLookup(exercises)
       let imported = 0
       let skipped = 0
 
@@ -57,7 +57,7 @@ function ImportPage() {
           `Import ${index + 1}/${parsedWorkouts.length} — ${workout.title}`,
         )
 
-        const object = mapHevyWorkoutToInsertInput(workout, lookup)
+        const object = mapHevyWorkoutToInsertInput(workout, catalog)
         if (!object) {
           skipped += 1
           continue

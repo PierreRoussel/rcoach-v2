@@ -2,6 +2,7 @@ export function buildTemplateExerciseInsertObjects(
   templateId: string,
   exercises: Array<{
     exerciseId: string
+    equipment?: string | null
     supersetId: number | null
     emomGroupId?: number | null
     targetReps?: number | null
@@ -24,6 +25,7 @@ export function buildTemplateExerciseInsertObjects(
     includeTargetWeightKg?: boolean
     includeDefaultRestSeconds?: boolean
     includeSetType?: boolean
+    includeEquipment?: boolean
   },
 ) {
   const includeSupersetId = options?.includeSupersetId ?? false
@@ -32,6 +34,7 @@ export function buildTemplateExerciseInsertObjects(
   const includeTargetWeightKg = options?.includeTargetWeightKg ?? false
   const includeDefaultRestSeconds = options?.includeDefaultRestSeconds ?? false
   const includeSetType = options?.includeSetType ?? false
+  const includeEquipment = options?.includeEquipment ?? false
 
   return exercises.map((exercise, sortOrder) => {
     const setRows = exercise.sets.map((set) => {
@@ -83,6 +86,10 @@ export function buildTemplateExerciseInsertObjects(
 
     if (includeDefaultRestSeconds) {
       object.default_rest_seconds = exercise.defaultRestSeconds
+    }
+
+    if (includeEquipment && exercise.equipment) {
+      object.equipment = exercise.equipment
     }
 
     return object
