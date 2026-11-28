@@ -107,6 +107,7 @@ type SortableExerciseListProps = {
   onAddSet?: (index: number) => void
   onReplace?: (index: number, exercise: Exercise) => void
   onSwapEquipment?: (index: number, equipment: string) => void
+  onEditInstance?: (index: number) => void
   onViewStats?: (index: number) => void
   onViewDetails?: (index: number) => void
   renderBelowTitle?: (index: number) => ReactNode
@@ -442,14 +443,14 @@ function SortableExerciseItem({
                     <button
                       type="button"
                       className="opacity-90"
-                      onClick={() => setEquipmentOpen((value) => !value)}
+                      onClick={() => (onEditInstance ? onEditInstance() : setEquipmentOpen((value) => !value))}
                     >
                       <Pill tone="default">{equipmentLabel}</Pill>
                     </button>
                   ) : (
                     <Pill tone="default">{equipmentLabel}</Pill>
                   )}
-                  {canSwapEquipment && equipmentOpen && equipmentOptions ? (
+                  {canSwapEquipment && !onEditInstance && equipmentOpen && equipmentOptions ? (
                     <ExerciseEquipmentChips
                       className="mt-1.5"
                       options={equipmentOptions}
@@ -674,7 +675,7 @@ export function SortableExerciseList({
     const entry = exercises[index]!
     return (
       <SortableExerciseItem
-        key={entry.exerciseId}
+        key={exerciseInstanceKey(entry.exerciseId, entry.equipment)}
         exercise={entry}
         index={index}
         exercises={exercises}
@@ -710,6 +711,7 @@ export function SortableExerciseList({
         onSwapEquipment={
           onSwapEquipment ? (equipment) => onSwapEquipment(index, equipment) : undefined
         }
+        onEditInstance={onEditInstance ? () => onEditInstance(index) : undefined}
         supersetBadge={isSplitSuperset(exercises, index)}
       />
     )

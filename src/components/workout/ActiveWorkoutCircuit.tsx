@@ -51,6 +51,8 @@ type ActiveWorkoutCircuitProps = {
   onSelectExercise: (exerciseIndex: number) => void
   onReorderExercises: (fromIndex: number, toIndex: number) => void
   onRemoveExercise: (exerciseIndex: number) => void
+  onSwapEquipment?: (exerciseIndex: number, equipment: string) => void
+  onEditInstance?: (exerciseIndex: number) => void
   onReplaceExercise: (exerciseIndex: number, exercise: {
     id: string
     name: string
@@ -103,6 +105,7 @@ export function ActiveWorkoutCircuit({
   onRemoveExercise,
   onReplaceExercise,
   onSwapEquipment,
+  onEditInstance,
   onApplySupersetMembership,
   onRemoveFromSuperset,
   onUpdateExerciseRest,
@@ -345,6 +348,7 @@ export function ActiveWorkoutCircuit({
         onRemove={onRemoveExercise}
         onReplace={onReplaceExercise}
         onSwapEquipment={onSwapEquipment}
+        onEditInstance={onEditInstance}
         onApplySupersetMembership={onApplySupersetMembership}
         onRemoveFromSuperset={onRemoveFromSuperset}
         onOpenReorder={() => setReorderOpen(true)}

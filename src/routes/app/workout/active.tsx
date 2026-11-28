@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useShallow } from 'zustand/react/shallow'
 
+import { ExerciseInstanceEditSheet } from '@/components/workout/ExerciseInstanceEditSheet'
 import { ActiveWorkoutCircuit } from '@/components/workout/ActiveWorkoutCircuit'
 import { ActiveWorkoutEmomView } from '@/components/workout/ActiveWorkoutEmomView'
 import { ActiveWorkoutFinishFab } from '@/components/workout/ActiveWorkoutFinishFab'
@@ -242,6 +243,7 @@ function ActiveWorkoutPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [instanceEditIndex, setInstanceEditIndex] = useState<number | null>(null)
   const [recapOpen, setRecapOpen] = useState(false)
   const [recapData, setRecapData] = useState<WorkoutRecapData | null>(null)
   const [celebrationQueue, setCelebrationQueue] = useState<WorkoutCelebrationItem[]>([])
@@ -950,6 +952,14 @@ function ActiveWorkoutPage() {
       ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
 
+      
+      <ExerciseInstanceEditSheet
+        open={instanceEditIndex != null}
+        onOpenChange={(open) => { if (!open) setInstanceEditIndex(null) }}
+        target={instanceEditIndex != null ? { exerciseId: activeExercises[instanceEditIndex].exerciseId, exerciseName: activeExercises[instanceEditIndex].exerciseName, exerciseNameFr: activeExercises[instanceEditIndex].exerciseNameFr, equipment: activeExercises[instanceEditIndex].equipment ?? null, defaultRestSeconds: activeExercises[instanceEditIndex].defaultRestSeconds ?? 90 } : null}
+        onEquipmentChange={(equipment) => { if (instanceEditIndex != null) void setExerciseEquipment(instanceEditIndex, equipment) }}
+        onRestChange={(restSeconds) => { if (instanceEditIndex != null) void updateExerciseDefaultRest(instanceEditIndex, restSeconds) }}
+      />
       <ActiveWorkoutTimerDrivers />
       {!isEmomSession ? <ActiveWorkoutHoldTimerOverlay /> : null}
       {!isEmomSession ? <ActiveWorkoutRestTimerOverlay /> : null}

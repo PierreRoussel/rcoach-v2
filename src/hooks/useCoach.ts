@@ -215,6 +215,7 @@ export function useAddProgramExercise() {
       sortOrder,
       targetSets,
       targetReps,
+      equipment,
     }: {
       programId: string
       programDayId: string
@@ -222,6 +223,7 @@ export function useAddProgramExercise() {
       sortOrder: number
       targetSets?: number
       targetReps?: string
+      equipment?: string
     }) => {
       const data = await graphqlRequest<{
         insert_program_exercises_one: { id: string }
@@ -232,6 +234,7 @@ export function useAddProgramExercise() {
           sort_order: sortOrder,
           target_sets: targetSets ?? null,
           target_reps: targetReps ?? null,
+          equipment: equipment ?? null,
         },
       })
       return data.insert_program_exercises_one

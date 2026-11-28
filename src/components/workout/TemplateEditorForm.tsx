@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { Play, Save } from 'lucide-react'
 
 import { ExerciseDetailDrawer } from '@/components/workout/ExerciseDetailDrawer'
-import { ExercisePicker } from '@/components/workout/ExercisePicker'
+import { ExerciseInstanceEditSheet } from '@/components/workout/ExerciseInstanceEditSheet'
+import { ExercisePicker, launchExercisePickerPage } from '@/components/workout/ExercisePicker'
 import { ExerciseReorderDrawer } from '@/components/workout/ExerciseReorderDrawer'
 import { SortableExerciseList } from '@/components/workout/SortableExerciseList'
 import { Pill } from '@/design-system'
@@ -540,6 +542,7 @@ export function TemplateEditorForm({
             onRemove={handleRemove}
             onReplace={handleReplace}
             onSwapEquipment={handleSwapEquipment}
+            onEditInstance={(index) => setInstanceEditIndex(index)}
             onApplySupersetMembership={isEmom ? undefined : handleApplySupersetMembership}
             onRemoveFromSuperset={isEmom ? undefined : handleRemoveFromSuperset}
             onApplyEmomGroupMembership={isEmom ? handleApplyEmomGroupMembership : undefined}
@@ -649,6 +652,63 @@ export function TemplateEditorForm({
           </div>
         </CardContent>
       </Card>
+
+      
+      <ExerciseInstanceEditSheet
+        open={instanceEditIndex != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInstanceEditIndex(null)
+          }
+        }}
+        target={
+          instanceEditIndex != null
+            ? {
+                exerciseId: exercises[instanceEditIndex]!.exerciseId,
+                exerciseName: exercises[instanceEditIndex]!.exerciseName,
+                exerciseNameFr: exercises[instanceEditIndex]!.exerciseNameFr,
+                equipment: exercises[instanceEditIndex]!.equipment,
+                defaultRestSeconds: exercises[instanceEditIndex]!.defaultRestSeconds,
+              }
+            : null
+        }
+        onEquipmentChange={(equipment) => {
+          if (instanceEditIndex == null) return
+          handleSwapEquipment(instanceEditIndex, equipment)
+        }}
+        onRestChange={(restSeconds) => {
+          if (instanceEditIndex == null) return
+          setExercises((current) =>
+            current.map((item, itemIndex) =>
+              itemIndex === instanceEditIndex
+                ? { ...item, defaultRestSeconds: restSeconds }
+                : item,
+            ),
+          )
+        }}
+        onReplace={
+          instanceEditIndex != null
+            ? () => {
+                const replaceIndex = instanceEditIndex
+                setInstanceEditIndex(null)
+                launchExercisePickerPage({
+                  excludeIds: exercises
+                    .filter((_, itemIndex) => itemIndex !== replaceIndex)
+                    .map((item) => item.exerciseId),
+                  mode: 'replace',
+                  replaceIndex,
+                  context: 'template',
+                  returnTo: {
+                    to: '/app/sessions/$templateId',
+                    params: templateId ? { templateId } : undefined,
+                  },
+                  templateId,
+                  navigate: (options) => void navigate(options),
+                })
+              }
+            : undefined
+        }
+      />
 
       <ExerciseDetailDrawer
         open={detailExercise != null}
