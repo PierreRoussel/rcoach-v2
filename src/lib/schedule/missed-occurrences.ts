@@ -6,7 +6,9 @@ import {
   type ScheduleOccurrence,
 } from '@/lib/schedule/expand-occurrences'
 import {
+  findFulfillingWorkout,
   occurrenceIsFulfilled,
+  workoutOccurrenceKey,
   type WorkoutOccurrenceCheck,
 } from '@/lib/schedule/occurrence-fulfillment'
 
@@ -25,9 +27,23 @@ export function getMissedOccurrencesForDay(
     return []
   }
 
-  return getOccurrencesForDate(sessions, day).filter(
-    (occurrence) => !occurrenceIsFulfilled(workouts, occurrence),
-  )
+  const consumedWorkoutKeys = new Set<string>()
+
+  return getOccurrencesForDate(sessions, day).filter((occurrence) => {
+    if (occurrenceIsFulfilled(workouts, occurrence, now, consumedWorkoutKeys)) {
+      const fulfilling = findFulfillingWorkout(
+        workouts,
+        occurrence,
+        now,
+        consumedWorkoutKeys,
+      )
+      if (fulfilling) {
+        consumedWorkoutKeys.add(workoutOccurrenceKey(fulfilling))
+      }
+      return false
+    }
+    return true
+  })
 }
 
 export function getYesterdayMissedOccurrences(

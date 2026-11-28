@@ -5,6 +5,7 @@ import {
   findFulfillingWorkout,
   occurrenceIsFulfilled,
   workoutFulfillsOccurrence,
+  workoutOccurrenceKey,
 } from '@/lib/schedule/occurrence-fulfillment'
 
 const occurrenceA: ScheduleOccurrence = {
@@ -31,6 +32,8 @@ const completedWorkoutA = {
   workout_template_id: 'template-a',
 }
 
+const nowCatchUp = new Date('2026-06-21T12:00:00')
+
 describe('workoutFulfillsOccurrence', () => {
   it('matches the planned template on the same day', () => {
     expect(workoutFulfillsOccurrence(completedWorkoutA, occurrenceA)).toBe(true)
@@ -48,6 +51,42 @@ describe('workoutFulfillsOccurrence', () => {
       ),
     ).toBe(false)
   })
+
+  it('fulfills yesterday occurrence via catch-up on the next day', () => {
+    const catchUp = {
+      ...completedWorkoutA,
+      started_at: '2026-06-21T10:00:00.000Z',
+      ended_at: '2026-06-21T11:00:00.000Z',
+    }
+
+    expect(
+      workoutFulfillsOccurrence(catchUp, occurrenceA, nowCatchUp),
+    ).toBe(true)
+  })
+
+  it('does not fulfill via catch-up from J-2', () => {
+    const tooLate = {
+      ...completedWorkoutA,
+      started_at: '2026-06-22T10:00:00.000Z',
+      ended_at: '2026-06-22T11:00:00.000Z',
+    }
+
+    expect(workoutFulfillsOccurrence(tooLate, occurrenceA, nowCatchUp)).toBe(
+      false,
+    )
+  })
+
+  it('does not catch up with wrong template on J', () => {
+    const wrongTemplate = {
+      ...completedWorkoutB,
+      started_at: '2026-06-21T10:00:00.000Z',
+      ended_at: '2026-06-21T11:00:00.000Z',
+    }
+
+    expect(
+      workoutFulfillsOccurrence(wrongTemplate, occurrenceA, nowCatchUp),
+    ).toBe(false)
+  })
 })
 
 describe('occurrenceIsFulfilled', () => {
@@ -59,5 +98,29 @@ describe('occurrenceIsFulfilled', () => {
     expect(findFulfillingWorkout([completedWorkoutB, completedWorkoutA], occurrenceA)).toEqual(
       completedWorkoutA,
     )
+  })
+
+  it('consumes one workout for two same-template misses on J-1', () => {
+    const occurrenceB: ScheduleOccurrence = {
+      ...occurrenceA,
+      sessionId: 'session-2',
+    }
+    const catchUp = {
+      ...completedWorkoutA,
+      started_at: '2026-06-21T10:00:00.000Z',
+      ended_at: '2026-06-21T11:00:00.000Z',
+    }
+    const consumed = new Set<string>()
+    const first = findFulfillingWorkout(
+      [catchUp],
+      occurrenceA,
+      nowCatchUp,
+      consumed,
+    )
+    expect(first).toEqual(catchUp)
+    consumed.add(workoutOccurrenceKey(catchUp))
+    expect(
+      findFulfillingWorkout([catchUp], occurrenceB, nowCatchUp, consumed),
+    ).toBeUndefined()
   })
 })
